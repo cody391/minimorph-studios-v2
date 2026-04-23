@@ -104,6 +104,14 @@ For ${channelLabel}s, consider: response time expectations, appropriate length, 
     await extractTrainingInsights(input.repId, input.communicationType, feedback);
 
     console.log(`[AI Coach] Analyzed ${input.communicationType} #${input.referenceId} for rep #${input.repId}: score ${feedback.overallScore}`);
+
+    // Push notification for coaching feedback
+    try {
+      const { notifyCoachingFeedback } = await import("./pushNotification");
+      await notifyCoachingFeedback(input.repId, input.communicationType);
+    } catch (pushErr) {
+      console.error("[AI Coach] Push notification failed:", pushErr);
+    }
   } catch (err) {
     console.error("[AI Coach] Failed to analyze communication:", err);
     // Non-blocking — don't fail the main operation

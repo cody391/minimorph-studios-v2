@@ -14,4 +14,8 @@ export const ENV = {
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER ?? "",
   twilioTwimlAppSid: process.env.TWILIO_TWIML_APP_SID ?? "",
   resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET ?? "",
+  ownerName: process.env.OWNER_NAME ?? "",
+  // Web push VAPID keys (generated at startup if not set)
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? "",
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? "",
 };

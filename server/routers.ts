@@ -6,7 +6,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { notifyOwner } from "./_core/notification";
-import { repTrainingRouter, repActivityRouter, repGamificationRouter, repCommsRouter, repApplicationRouter } from "./repEcosystem";
+import { storagePut } from "./storage";
+import { repTrainingRouter, repActivityRouter, repGamificationRouter, repCommsRouter, repApplicationRouter, repSupportTicketsRouter, repNotifPrefsRouter } from "./repEcosystem";
 
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
@@ -169,7 +170,47 @@ const repsRouter = router({
       });
       return { success: true };
     }),
+
+  // Upload profile photo (base64 encoded)
+  uploadPhoto: protectedProcedure
+    .input(z.object({ photoBase64: z.string(), mimeType: z.string().default("image/jpeg") }))
+    .mutation(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "NOT_FOUND", message: "Rep profile not found" });
+      const buffer = Buffer.from(input.photoBase64, "base64");
+      const ext = input.mimeType === "image/png" ? "png" : "jpg";
+      const { url } = await storagePut(`rep-photos/${rep.id}.${ext}`, buffer, input.mimeType);
+      await db.updateRepProfilePhoto(rep.id, url);
+      return { photoUrl: url };
+    }),
+
+  // Get email signature HTML for the rep
+  getEmailSignature: protectedProcedure
+    .query(async ({ ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) return null;
+      return buildEmailSignature(rep);
+    }),
 });
+
+// Build a branded email signature HTML block
+export function buildEmailSignature(rep: { fullName: string; email: string; phone?: string | null; profilePhotoUrl?: string | null }) {
+  const photoHtml = rep.profilePhotoUrl
+    ? `<img src="${rep.profilePhotoUrl}" alt="${rep.fullName}" width="60" height="60" style="border-radius:50%;object-fit:cover;margin-right:12px;" />`
+    : `<div style="width:60px;height:60px;border-radius:50%;background:#2d5a3d;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;margin-right:12px;">${rep.fullName.charAt(0)}</div>`;
+  const phoneHtml = rep.phone ? `<br/><span style="color:#666;">📱 ${rep.phone}</span>` : "";
+  return `
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#333;margin-top:20px;border-top:2px solid #2d5a3d;padding-top:12px;">
+  <tr>
+    <td style="vertical-align:top;padding-right:12px;">${photoHtml}</td>
+    <td style="vertical-align:top;">
+      <strong style="font-size:14px;color:#2d5a3d;">${rep.fullName}</strong><br/>
+      <span style="color:#666;">Sales Representative — MiniMorph Studios</span><br/>
+      <span style="color:#666;">✉️ ${rep.email}</span>${phoneHtml}
+    </td>
+  </tr>
+</table>`;
+}
 
 /* ═══════════════════════════════════════════════════════
    LEADS ROUTER
@@ -304,6 +345,10 @@ const leadsRouter = router({
         title: "New Lead Assigned",
         message: `A new lead has been assigned to you.`,
         metadata: { leadId: input.leadId },
+      });
+      // Push notification (async, non-blocking)
+      import("./services/pushNotification").then(({ notifyNewLead }) => {
+        notifyNewLead(input.repId, "A new lead").catch((e: any) => console.error("[Push] Lead assign push failed:", e));
       });
       return { success: true };
     }),
@@ -593,7 +638,8 @@ const leadsRouter = router({
 
       const proposal = JSON.parse(result.choices[0].message.content as string);
 
-      // Actually send the proposal email via Resend
+      // Actually send the proposal email via Resend with signature
+      const signature = buildEmailSignature(rep);
       let deliveryStatus = "generated";
       if (lead.email) {
         try {
@@ -601,8 +647,8 @@ const leadsRouter = router({
           const delivery = await deliverEmail({
             to: lead.email,
             subject: proposal.subject,
-            html: proposal.htmlContent,
-            text: proposal.plainTextContent,
+            html: proposal.htmlContent + signature,
+            text: proposal.plainTextContent + `\n\n--\n${rep.fullName}\nSales Representative — MiniMorph Studios\n${rep.email}${rep.phone ? '\n' + rep.phone : ''}`,
             replyTo: ctx.user.email || undefined,
           });
           deliveryStatus = delivery.success ? "sent" : "delivery_failed";
@@ -1873,6 +1919,8 @@ export const appRouter = router({
   repComms: repCommsRouter,
   repApplication: repApplicationRouter,
   repNotifications: repNotificationsRouter,
+  repTickets: repSupportTicketsRouter,
+  repNotifPrefs: repNotifPrefsRouter,
 });
 
 export type AppRouter = typeof appRouter;

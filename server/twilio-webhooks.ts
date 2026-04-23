@@ -152,6 +152,60 @@ export function registerTwilioWebhooks(app: Express) {
         console.error("[SMS Webhook] Failed to look up rep:", e);
       }
 
+      // Check if this is an owner reply to a ticket approval request
+      const ownerUser = await db.getOwnerUser();
+      const bodyLower = Body?.trim().toLowerCase() || "";
+      if (ownerUser) {
+        // Check if the sender might be the owner (we match by checking pending tickets)
+        const approvalKeywords = ["yes", "approve", "approved", "ok", "no", "reject", "rejected", "deny", "denied"];
+        if (approvalKeywords.includes(bodyLower)) {
+          const pendingTicket = await db.getMostRecentPendingTicket();
+          if (pendingTicket) {
+            const isApproved = ["yes", "approve", "approved", "ok"].includes(bodyLower);
+            await db.updateSupportTicket(pendingTicket.id, {
+              status: isApproved ? "approved" : "rejected",
+              ownerApproval: isApproved ? "approved" : "rejected",
+              ownerNotes: `Owner replied: ${Body?.trim()}`,
+              resolvedAt: new Date(),
+            });
+            // Notify the rep
+            await db.createRepNotification({
+              repId: pendingTicket.repId,
+              type: "general",
+              title: isApproved ? "✅ Ticket Approved" : "❌ Ticket Rejected",
+              message: isApproved
+                ? `Your ticket "${pendingTicket.subject}" has been approved! Solution: ${pendingTicket.aiSolution?.slice(0, 200) || "See ticket details."}`
+                : `Your ticket "${pendingTicket.subject}" was not approved by the owner.`,
+              metadata: { ticketId: pendingTicket.id },
+            });
+            console.log(`[Ticket Approval] Ticket #${pendingTicket.id} ${isApproved ? "approved" : "rejected"} via owner SMS`);
+            // Push notification for ticket update
+            try {
+              const { notifyTicketUpdate } = await import("./services/pushNotification");
+              await notifyTicketUpdate(pendingTicket.repId, pendingTicket.subject, isApproved);
+            } catch (pushErr) {
+              console.error("[Ticket Approval] Push notification failed:", pushErr);
+            }
+            res.type("text/xml");
+            res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>Ticket #${pendingTicket.id} has been ${isApproved ? "approved" : "rejected"}. The rep has been notified.</Message></Response>`);
+            return;
+          }
+        }
+      }
+
+      // Handle STOP/opt-out keywords
+      const stopKeywords = ["stop", "unsubscribe", "cancel", "quit", "end"];
+      const isStopRequest = stopKeywords.includes(bodyLower);
+
+      if (isStopRequest && leadId) {
+        await db.markLeadSmsOptedOut(leadId);
+        console.log(`[SMS Compliance] Lead ${leadId} opted out via STOP from ${From}`);
+        // Send confirmation
+        res.type("text/xml");
+        res.send('<?xml version="1.0" encoding="UTF-8"?><Response><Message>You have been unsubscribed from MiniMorph Studios messages. You will not receive further texts.</Message></Response>');
+        return;
+      }
+
       if (repId) {
         await db.createSmsMessage({
           repId,
@@ -168,8 +222,10 @@ export function registerTwilioWebhooks(app: Express) {
         await db.createRepNotification({
           repId,
           type: "general",
-          title: "New SMS Reply",
-          message: `Reply from ${From}: "${Body.slice(0, 100)}${Body.length > 100 ? "..." : ""}"`,
+          title: isStopRequest ? "Lead Opted Out of SMS" : "New SMS Reply",
+          message: isStopRequest
+            ? `${From} has opted out of SMS messages.`
+            : `Reply from ${From}: "${Body.slice(0, 100)}${Body.length > 100 ? "..." : ""}"`,
           metadata: { fromNumber: From, leadId },
         });
       }

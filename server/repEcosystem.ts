@@ -3,6 +3,7 @@
  * Split from main routers.ts to keep files manageable
  */
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, adminProcedure } from "./_core/trpc";
 import * as db from "./db";
 
@@ -425,13 +426,17 @@ export const repCommsRouter = router({
         subject: input.subject,
         body: input.body,
       });
+      // Build email with signature
+      const { buildEmailSignature } = await import("./routers");
+      const signature = buildEmailSignature(rep);
+      const htmlBody = input.body.replace(/\n/g, "<br/>") + signature;
       // Actually send the email via Resend
       const { sendEmail: deliverEmail } = await import("./services/email");
       const delivery = await deliverEmail({
         to: input.recipientEmail,
         subject: input.subject,
-        html: input.body.replace(/\n/g, "<br/>"),
-        text: input.body,
+        html: htmlBody,
+        text: input.body + `\n\n--\n${rep.fullName}\nSales Representative — MiniMorph Studios\n${rep.email}${rep.phone ? '\n' + rep.phone : ''}`,
         replyTo: ctx.user.email || undefined,
       });
       if (delivery.success && delivery.resendId) {
@@ -564,8 +569,29 @@ Return JSON: { "subject": "...", "body": "..." }`,
     .mutation(async ({ input, ctx }) => {
       const rep = await db.getRepByUserId(ctx.user.id);
       if (!rep) throw new Error("Not a rep");
+
+      // SMS compliance: check opt-out status
+      if (input.leadId) {
+        const lead = await db.getLeadById(input.leadId);
+        if (lead?.smsOptedOut) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "This lead has opted out of SMS messages. Cannot send." });
+        }
+      }
+
+      // Append opt-out footer on first SMS to this number
+      let messageBody = input.body;
+      const existingMessages = await db.listSmsThread(rep.id, input.toNumber);
+      const isFirstMessage = existingMessages.filter(m => m.direction === "outbound").length === 0;
+      if (isFirstMessage) {
+        messageBody += "\n\nReply STOP to opt out of messages.";
+        // Mark first message sent if we have a lead
+        if (input.leadId) {
+          await db.markLeadFirstSmsSent(input.leadId);
+        }
+      }
+
       const { sendSms } = await import("./services/sms");
-      const result = await sendSms({ to: input.toNumber, body: input.body });
+      const result = await sendSms({ to: input.toNumber, body: messageBody });
       const smsRecord = await db.createSmsMessage({
         repId: rep.id,
         leadId: input.leadId,
@@ -762,5 +788,249 @@ export const repApplicationRouter = router({
         await db.updateRep(input.repId, { status: "inactive" });
       }
       return { success: true };
+    }),
+});
+
+
+/* ═══════════════════════════════════════════════════════
+   REP SUPPORT TICKETS ROUTER
+   AI triage → Owner SMS approval → Rep notification
+   ═══════════════════════════════════════════════════════ */
+export const repSupportTicketsRouter = router({
+  // Submit a new support ticket
+  submit: protectedProcedure
+    .input(z.object({
+      subject: z.string().min(3).max(255),
+      description: z.string().min(10),
+      category: z.enum(["technical", "billing", "lead_issue", "training", "feature_request", "other"]).optional(),
+      priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
+
+      // 1. Create the ticket
+      const ticketId = await db.createSupportTicket({
+        repId: rep.id,
+        subject: input.subject,
+        description: input.description,
+        category: input.category || "other",
+        priority: input.priority || "medium",
+        status: "open",
+      });
+
+      // 2. AI analysis (async but we await it for the SMS)
+      let aiAnalysis = "";
+      let aiSolution = "";
+      let aiConfidence = "0.50";
+      try {
+        const { invokeLLM } = await import("./_core/llm");
+        const aiResult = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a support ticket triage AI for MiniMorph Studios, a web design agency. Analyze the support ticket and provide:
+1. A brief analysis of the issue
+2. A proposed solution or action
+3. A confidence score (0.0 to 1.0) for your proposed solution
+
+Return JSON: { "analysis": "...", "solution": "...", "confidence": 0.85 }`,
+            },
+            {
+              role: "user",
+              content: `Ticket from rep "${rep.fullName}":
+Subject: ${input.subject}
+Category: ${input.category || "other"}
+Priority: ${input.priority || "medium"}
+Description: ${input.description}`,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "ticket_triage",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  analysis: { type: "string", description: "Analysis of the issue" },
+                  solution: { type: "string", description: "Proposed solution" },
+                  confidence: { type: "number", description: "Confidence score 0-1" },
+                },
+                required: ["analysis", "solution", "confidence"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const rawContent = aiResult.choices[0].message.content;
+        const parsed = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
+        aiAnalysis = parsed.analysis || "";
+        aiSolution = parsed.solution || "";
+        aiConfidence = String(Math.min(1, Math.max(0, parsed.confidence || 0.5)));
+      } catch (err) {
+        console.error("[Support Ticket] AI triage failed:", err);
+        aiAnalysis = "AI analysis unavailable — manual review required.";
+        aiSolution = "Please review this ticket manually.";
+      }
+
+      // 3. Update ticket with AI results
+      await db.updateSupportTicket(ticketId, {
+        aiAnalysis,
+        aiSolution,
+        aiConfidence,
+        status: "ai_reviewed",
+      });
+
+      // 4. Send SMS to owner for approval
+      try {
+        const { sendSms } = await import("./services/sms");
+        const { ENV } = await import("./_core/env");
+        // We need the owner's phone number — use the Twilio number as the "from" and
+        // the owner can configure their phone. For now, use notifyOwner as fallback.
+        // The owner's phone is not stored in DB, so we use the notification system
+        // and also send an SMS if we have a phone number configured.
+        const ownerUser = await db.getOwnerUser();
+
+        // Send notification via Manus notification system
+        const { notifyOwner } = await import("./_core/notification");
+        await notifyOwner({
+          title: `🎫 Support Ticket #${ticketId} — Needs Approval`,
+          content: `Rep: ${rep.fullName}\nSubject: ${input.subject}\nPriority: ${input.priority || "medium"}\n\nAI Analysis: ${aiAnalysis}\n\nProposed Solution: ${aiSolution}\n\nConfidence: ${(parseFloat(aiConfidence) * 100).toFixed(0)}%\n\nReply YES to approve or NO to reject via SMS to your Twilio number.`,
+        });
+
+        // Update ticket to pending_approval
+        await db.updateSupportTicket(ticketId, {
+          status: "pending_approval",
+          ownerApproval: "pending",
+        });
+      } catch (err) {
+        console.error("[Support Ticket] Owner notification failed:", err);
+      }
+
+      return { ticketId, aiAnalysis, aiSolution, aiConfidence: parseFloat(aiConfidence) };
+    }),
+
+  // List my tickets
+  myTickets: protectedProcedure
+    .query(async ({ ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) return [];
+      return db.listRepSupportTickets(rep.id);
+    }),
+
+  // Get a specific ticket
+  getTicket: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
+      const ticket = await db.getSupportTicketById(input.id);
+      if (!ticket || ticket.repId !== rep.id) throw new TRPCError({ code: "NOT_FOUND" });
+      return ticket;
+    }),
+
+  // Admin: list all tickets
+  adminList: adminProcedure
+    .query(async () => {
+      return db.listAllSupportTickets();
+    }),
+
+  // Admin: manually approve/reject a ticket
+  adminResolve: adminProcedure
+    .input(z.object({
+      ticketId: z.number(),
+      approved: z.boolean(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const ticket = await db.getSupportTicketById(input.ticketId);
+      if (!ticket) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.updateSupportTicket(input.ticketId, {
+        status: input.approved ? "approved" : "rejected",
+        ownerApproval: input.approved ? "approved" : "rejected",
+        ownerNotes: input.notes || undefined,
+        resolvedAt: new Date(),
+      });
+
+      // Notify the rep
+      await db.createRepNotification({
+        repId: ticket.repId,
+        type: "general",
+        title: input.approved ? "✅ Ticket Approved" : "❌ Ticket Rejected",
+        message: input.approved
+          ? `Your ticket "${ticket.subject}" has been approved. Solution: ${ticket.aiSolution?.slice(0, 200) || "See ticket details."}`
+          : `Your ticket "${ticket.subject}" was not approved.${input.notes ? ` Notes: ${input.notes}` : ""}`,
+        metadata: { ticketId: input.ticketId },
+      });
+
+      return { success: true };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
+   REP NOTIFICATION PREFERENCES ROUTER
+   ═══════════════════════════════════════════════════════ */
+export const repNotifPrefsRouter = router({
+  // Get my notification preferences
+  myPreferences: protectedProcedure
+    .query(async ({ ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) return [];
+      // Initialize defaults if none exist
+      await db.initDefaultNotificationPreferences(rep.id);
+      return db.getRepNotificationPreferences(rep.id);
+    }),
+
+  // Update a preference
+  update: protectedProcedure
+    .input(z.object({
+      category: z.string(),
+      enabled: z.boolean(),
+      pushEnabled: z.boolean(),
+      inAppEnabled: z.boolean(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
+      await db.upsertNotificationPreference(rep.id, input.category, input.enabled, input.pushEnabled, input.inAppEnabled);
+      return { success: true };
+    }),
+
+  // Subscribe to push notifications
+  subscribePush: protectedProcedure
+    .input(z.object({
+      endpoint: z.string(),
+      p256dh: z.string(),
+      auth: z.string(),
+      userAgent: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
+      await db.savePushSubscription({
+        repId: rep.id,
+        endpoint: input.endpoint,
+        p256dh: input.p256dh,
+        auth: input.auth,
+        userAgent: input.userAgent,
+      });
+      return { success: true };
+    }),
+
+  // Unsubscribe from push notifications
+  unsubscribePush: protectedProcedure
+    .input(z.object({ endpoint: z.string() }))
+    .mutation(async ({ input }) => {
+      await db.deletePushSubscription(input.endpoint);
+      return { success: true };
+    }),
+
+  // Get VAPID public key for client-side push subscription
+  vapidPublicKey: protectedProcedure
+    .query(async () => {
+      const { ENV } = await import("./_core/env");
+      return { vapidPublicKey: ENV.vapidPublicKey };
     }),
 });

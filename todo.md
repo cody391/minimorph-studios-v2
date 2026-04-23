@@ -265,3 +265,23 @@
 - [x] Persist resendMessageId for proposal email records (nurture emails are admin-sent, not tracked per-rep)
 - [x] Add Vitest test for Resend webhook processing (7 tests for webhook handler and db helpers)
 - [x] PWA manifest, service worker, icons, and registration all in place (manifest.json, sw.js, main.tsx registration)
+
+### Phase 26: Rep Experience Enhancements
+- [x] Add profilePhotoUrl column to reps table
+- [x] Add rep photo upload endpoint (upload to S3 via storagePut)
+- [x] Add photo upload step in rep onboarding/application flow
+- [x] Display rep photo as avatar throughout the app (dashboard, leaderboard, admin views)
+- [x] Build branded email signature block using rep photo, name, title, phone
+- [x] Inject email signature into all outbound rep emails (compose + proposals)
+- [x] SMS legal compliance: append "Reply STOP to opt out" to first SMS in each new conversation
+- [x] SMS STOP handling: auto-detect STOP replies in Twilio webhook, mark lead as opted-out
+- [x] Create rep_support_tickets table (id, repId, subject, description, status, aiAnalysis, aiSolution, ownerApproval, createdAt, updatedAt)
+- [x] Rep ticket submission endpoint + UI in rep dashboard
+- [x] AI ticket triage: analyze ticket, propose solution, text owner for approval
+- [x] Owner SMS approval: send ticket summary + solution to owner via Twilio, parse yes/no reply
+- [x] Notify rep of ticket resolution outcome
+- [x] Create rep_notification_preferences table (repId, category, enabled) + push_subscriptions table
+- [x] Notification preferences UI panel in rep dashboard settings
+- [x] Web push notification setup (VAPID keys, service worker push handler)
+- [x] Push notification on new lead assignment, coaching feedback, ticket updates
+- [x] Vitest tests for all new features (21 tests, all passing)

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import {
   CheckCircle, ArrowLeft, ArrowRight, DollarSign, Users, TrendingUp,
-  Zap, User, Briefcase, Heart, FileCheck, Sparkles, Trophy, Star,
+  Zap, User, Briefcase, Heart, FileCheck, Sparkles, Trophy, Star, Camera,
 } from "lucide-react";
 
 const STEPS = [
@@ -40,6 +40,9 @@ export default function BecomeRep() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Step 2: Experience
   const [availability, setAvailability] = useState<"full_time" | "part_time">("full_time");
@@ -55,9 +58,25 @@ export default function BecomeRep() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToTaxInfo, setAgreedToTaxInfo] = useState(false);
 
+  const uploadPhoto = trpc.reps.uploadPhoto.useMutation({
+    onSuccess: () => {
+      toast.success("Photo uploaded!");
+    },
+    onError: (err: any) => console.error("Photo upload failed:", err.message),
+  });
+
   const submitApp = trpc.reps.submitApplication.useMutation({
     onSuccess: () => {
       toast.success("Profile created! Let's continue your application.");
+      // Upload photo after profile creation if one was selected
+      if (photoFile) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(",")[1];
+          uploadPhoto.mutate({ photoBase64: base64, mimeType: photoFile.type });
+        };
+        reader.readAsDataURL(photoFile);
+      }
       setStep(2);
     },
     onError: (err: any) => toast.error(err.message),
@@ -232,6 +251,56 @@ export default function BecomeRep() {
                 <div>
                   <Label className="text-forest/80 text-sm">LinkedIn Profile (optional)</Label>
                   <Input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="mt-1 border-sage/30 focus:border-forest" />
+                </div>
+                {/* Profile Photo Upload */}
+                <div>
+                  <Label className="text-forest/80 text-sm">Profile Photo</Label>
+                  <p className="text-[11px] text-forest/40 font-sans mb-2">This photo will be used as your avatar and in your email signature.</p>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="relative w-20 h-20 rounded-full border-2 border-dashed border-sage/40 flex items-center justify-center cursor-pointer hover:border-terracotta/50 transition-colors overflow-hidden group"
+                      onClick={() => photoInputRef.current?.click()}
+                    >
+                      {photoPreview ? (
+                        <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera className="w-6 h-6 text-forest/30 group-hover:text-terracotta/60 transition-colors" />
+                      )}
+                      {photoPreview && (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Camera className="w-5 h-5 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => photoInputRef.current?.click()}
+                        className="text-xs font-sans rounded-full"
+                      >
+                        {photoPreview ? "Change Photo" : "Upload Photo"}
+                      </Button>
+                      <p className="text-[10px] text-forest/30 mt-1">JPG or PNG, max 5MB</p>
+                    </div>
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (!file.type.startsWith("image/")) { toast.error("Please select an image"); return; }
+                        if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
+                        setPhotoFile(file);
+                        const reader = new FileReader();
+                        reader.onload = () => setPhotoPreview(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </div>
                 </div>
                 <Button onClick={handleStep1} disabled={submitApp.isPending} className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans">
                   {submitApp.isPending ? "Creating Profile..." : "Continue"} <ArrowRight className="w-4 h-4 ml-2" />

@@ -2,6 +2,8 @@ import { useState, useMemo, lazy, Suspense } from "react";
 import NotificationsBell from "./rep/NotificationsBell";
 const PipelineTab = lazy(() => import("./rep/PipelineTab"));
 const CommsHub = lazy(() => import("./rep/CommsHub"));
+const SupportTicketsPanel = lazy(() => import("./rep/SupportTicketsPanel"));
+const RepSettingsPanel = lazy(() => import("./rep/RepSettingsPanel"));
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -93,6 +95,14 @@ export default function RepDashboard() {
       <div className="bg-forest text-white">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
+            {/* Rep Avatar */}
+            {repProfile.profilePhotoUrl ? (
+              <img src={repProfile.profilePhotoUrl} alt={repProfile.fullName} className="w-12 h-12 rounded-full object-cover border-2 border-white/30" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-terracotta flex items-center justify-center text-white font-bold text-lg border-2 border-white/30">
+                {repProfile.fullName?.charAt(0) || "?"}
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-3 mb-0.5">
                 <h1 className="text-lg font-serif">Welcome back, {repProfile.fullName}</h1>
@@ -126,6 +136,8 @@ export default function RepDashboard() {
             <TabsTrigger value="earnings" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Earnings</TabsTrigger>
             <TabsTrigger value="pipeline" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Pipeline</TabsTrigger>
             <TabsTrigger value="leaderboard" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Leaderboard</TabsTrigger>
+            <TabsTrigger value="support" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Support</TabsTrigger>
+            <TabsTrigger value="settings" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Settings</TabsTrigger>
           </TabsList>
 
           {/* ═══════ OVERVIEW TAB ═══════ */}
@@ -420,6 +432,20 @@ export default function RepDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ═══════ SUPPORT TAB ═══════ */}
+          <TabsContent value="support" className="space-y-6">
+            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+              <SupportTicketsPanel repId={repProfile.id} />
+            </Suspense>
+          </TabsContent>
+
+          {/* ═══════ SETTINGS TAB ═══════ */}
+          <TabsContent value="settings" className="space-y-6">
+            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+              <RepSettingsPanel repProfile={repProfile} />
+            </Suspense>
           </TabsContent>
         </Tabs>
       </div>

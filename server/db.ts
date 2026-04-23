@@ -57,6 +57,12 @@ import {
   InsertAiCoachingFeedback,
   trainingInsights,
   InsertTrainingInsight,
+  repSupportTickets,
+  InsertRepSupportTicket,
+  repNotificationPreferences,
+  InsertRepNotificationPreference,
+  pushSubscriptions,
+  InsertPushSubscription,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1072,5 +1078,168 @@ export async function getSentEmailById(id: number) {
   const db = await getDb();
   if (!db) return null;
   const result = await db.select().from(repSentEmails).where(eq(repSentEmails.id, id)).limit(1);
+  return result[0] ?? null;
+}
+
+
+// ═══════════════════════════════════════════════════════
+// REP PROFILE PHOTO
+// ═══════════════════════════════════════════════════════
+export async function updateRepProfilePhoto(repId: number, photoUrl: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(reps).set({ profilePhotoUrl: photoUrl }).where(eq(reps.id, repId));
+}
+
+// ═══════════════════════════════════════════════════════
+// SMS OPT-OUT
+// ═══════════════════════════════════════════════════════
+export async function markLeadSmsOptedOut(leadId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(leads).set({ smsOptedOut: true, smsOptOutAt: new Date() }).where(eq(leads.id, leadId));
+}
+
+export async function markLeadFirstSmsSent(leadId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(leads).set({ smsFirstMessageSent: true }).where(eq(leads.id, leadId));
+}
+
+export async function getLeadByPhone(phone: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(leads).where(eq(leads.phone, phone)).limit(1);
+  return result[0] ?? null;
+}
+
+// ═══════════════════════════════════════════════════════
+// SUPPORT TICKETS
+// ═══════════════════════════════════════════════════════
+export async function createSupportTicket(data: InsertRepSupportTicket) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(repSupportTickets).values(data);
+  return result[0].insertId;
+}
+
+export async function getSupportTicketById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(repSupportTickets).where(eq(repSupportTickets.id, id)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function listRepSupportTickets(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repSupportTickets)
+    .where(eq(repSupportTickets.repId, repId))
+    .orderBy(desc(repSupportTickets.createdAt));
+}
+
+export async function listAllSupportTickets() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repSupportTickets)
+    .orderBy(desc(repSupportTickets.createdAt));
+}
+
+export async function updateSupportTicket(id: number, data: Partial<InsertRepSupportTicket>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(repSupportTickets).set(data).where(eq(repSupportTickets.id, id));
+}
+
+// ═══════════════════════════════════════════════════════
+// NOTIFICATION PREFERENCES
+// ═══════════════════════════════════════════════════════
+const DEFAULT_NOTIFICATION_CATEGORIES = [
+  "new_lead", "coaching_feedback", "ticket_update", "commission", "training", "system"
+];
+
+export async function getRepNotificationPreferences(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repNotificationPreferences)
+    .where(eq(repNotificationPreferences.repId, repId));
+}
+
+export async function upsertNotificationPreference(repId: number, category: string, enabled: boolean, pushEnabled: boolean, inAppEnabled: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Check if preference exists
+  const existing = await db.select().from(repNotificationPreferences)
+    .where(and(eq(repNotificationPreferences.repId, repId), eq(repNotificationPreferences.category, category)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db.update(repNotificationPreferences)
+      .set({ enabled, pushEnabled, inAppEnabled })
+      .where(eq(repNotificationPreferences.id, existing[0].id));
+  } else {
+    await db.insert(repNotificationPreferences).values({ repId, category, enabled, pushEnabled, inAppEnabled });
+  }
+}
+
+export async function initDefaultNotificationPreferences(repId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(repNotificationPreferences)
+    .where(eq(repNotificationPreferences.repId, repId));
+  if (existing.length === 0) {
+    const values = DEFAULT_NOTIFICATION_CATEGORIES.map(cat => ({
+      repId,
+      category: cat,
+      enabled: true,
+      pushEnabled: true,
+      inAppEnabled: true,
+    }));
+    await db.insert(repNotificationPreferences).values(values);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// PUSH SUBSCRIPTIONS
+// ═══════════════════════════════════════════════════════
+export async function savePushSubscription(data: InsertPushSubscription) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Remove existing subscription for same endpoint
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, data.endpoint as string));
+  const result = await db.insert(pushSubscriptions).values(data);
+  return result[0].insertId;
+}
+
+export async function getRepPushSubscriptions(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pushSubscriptions)
+    .where(eq(pushSubscriptions.repId, repId));
+}
+
+export async function deletePushSubscription(endpoint: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint));
+}
+
+// ═══════════════════════════════════════════════════════
+// OWNER LOOKUP
+// ═══════════════════════════════════════════════════════
+export async function getOwnerUser() {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.openId, ENV.ownerOpenId)).limit(1);
+  return result[0] ?? null;
+}
+
+// Get the most recent pending_approval ticket (for owner SMS reply matching)
+export async function getMostRecentPendingTicket() {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(repSupportTickets)
+    .where(eq(repSupportTickets.status, "pending_approval"))
+    .orderBy(desc(repSupportTickets.createdAt))
+    .limit(1);
   return result[0] ?? null;
 }

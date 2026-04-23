@@ -48,6 +48,7 @@ export const reps = mysqlTable("reps", {
   totalRevenue: decimal("totalRevenue", { precision: 12, scale: 2 }).default("0.00"),
   bio: text("bio"),
   referralCode: varchar("referralCode", { length: 32 }),
+  profilePhotoUrl: varchar("profilePhotoUrl", { length: 512 }),
   stripeConnectAccountId: varchar("stripeConnectAccountId", { length: 128 }),
   stripeConnectOnboarded: boolean("stripeConnectOnboarded").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -92,11 +93,13 @@ export const leads = mysqlTable("leads", {
   notes: text("notes"),
   enrichmentData: json("enrichmentData"),
   lastTouchAt: timestamp("lastTouchAt"),
+  smsOptedOut: boolean("smsOptedOut").default(false).notNull(),
+  smsOptOutAt: timestamp("smsOptOutAt"),
+  smsFirstMessageSent: boolean("smsFirstMessageSent").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
-export type Lead = typeof leads.$inferSelect;
+export type Lead = typeof leads.$inferSelect;;
 export type InsertLead = typeof leads.$inferInsert;
 
 /* ═══════════════════════════════════════════════════════
@@ -686,3 +689,60 @@ export const trainingInsights = mysqlTable("training_insights", {
 });
 export type TrainingInsight = typeof trainingInsights.$inferSelect;
 export type InsertTrainingInsight = typeof trainingInsights.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP SUPPORT TICKETS — Internal ticket system with AI triage
+   ═══════════════════════════════════════════════════════ */
+export const repSupportTickets = mysqlTable("rep_support_tickets", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  category: mysqlEnum("ticketCategory", ["technical", "billing", "lead_issue", "training", "feature_request", "other"])
+    .default("other")
+    .notNull(),
+  priority: mysqlEnum("ticketPriority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  status: mysqlEnum("ticketStatus", ["open", "ai_reviewed", "pending_approval", "approved", "rejected", "resolved", "closed"])
+    .default("open")
+    .notNull(),
+  aiAnalysis: text("aiAnalysis"), // AI's analysis of the issue
+  aiSolution: text("aiSolution"), // AI's proposed solution
+  aiConfidence: decimal("aiConfidence", { precision: 3, scale: 2 }), // 0.00 - 1.00
+  ownerApproval: mysqlEnum("ownerApproval", ["pending", "approved", "rejected"]),
+  ownerNotes: text("ownerNotes"),
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type RepSupportTicket = typeof repSupportTickets.$inferSelect;
+export type InsertRepSupportTicket = typeof repSupportTickets.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP NOTIFICATION PREFERENCES — Per-category toggle
+   ═══════════════════════════════════════════════════════ */
+export const repNotificationPreferences = mysqlTable("rep_notification_preferences", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  category: varchar("notifCategory", { length: 64 }).notNull(), // e.g. "new_lead", "coaching", "ticket_update", "commission", "training"
+  enabled: boolean("enabled").default(true).notNull(),
+  pushEnabled: boolean("pushEnabled").default(true).notNull(),
+  inAppEnabled: boolean("inAppEnabled").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type RepNotificationPreference = typeof repNotificationPreferences.$inferSelect;
+export type InsertRepNotificationPreference = typeof repNotificationPreferences.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   PUSH SUBSCRIPTIONS — Web push notification endpoints
+   ═══════════════════════════════════════════════════════ */
+export const pushSubscriptions = mysqlTable("push_subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(), // public key
+  auth: text("auth").notNull(), // auth secret
+  userAgent: varchar("userAgent", { length: 512 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
