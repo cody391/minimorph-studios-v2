@@ -322,10 +322,18 @@ export const leadGenRouter = router({
       lat: z.number().optional(),
       lng: z.number().optional(),
       radius: z.number().optional(),
+      sources: z.array(z.enum(["google_maps", "yelp", "facebook", "bbb", "homeadvisor", "opentable", "directory"])).optional(),
+      priorityLevel: z.enum(["high", "medium", "low", "all"]).optional(),
+      maxPerSource: z.number().min(5).max(50).optional(),
     }))
     .mutation(async ({ input }) => {
       return runMultiSourceScrape(input);
     }),
+
+  getSourceQuality: adminProcedure.query(async () => {
+    const { getSourceQuality } = await import("./services/leadGenMultiSource");
+    return getSourceQuality();
+  }),
 
   // ─── Competitor Intelligence ───
   enrichWithCompetitors: adminProcedure

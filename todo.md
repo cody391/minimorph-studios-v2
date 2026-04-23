@@ -337,3 +337,21 @@
 - [x] Performance-based rep routing: route leads to reps with highest close rate for that lead type
 - [x] Update admin dashboard with ML Scoring tab, Rep Performance tab, enhanced outreach panel
 - [x] Vitest tests for all improvements (16 tests, all passing)
+
+### Phase 30: Strengthen ML Scoring & Multi-Source Scraping
+- [x] ML: Add location-based scoring (city/region win rates)
+- [x] ML: Add time-of-contact correlation (best contact times per industry)
+- [x] ML: Add lead source scoring (which scraping source produces best leads)
+- [x] ML: Add recency decay factor (recent data weighted more than old data)
+- [x] ML: Auto-retraining trigger when enough new closed leads accumulate
+- [x] ML: Scoring confidence bands (high/medium/low with visual indicator)
+- [x] ML: Track scoring accuracy over time (predicted score vs actual outcome)
+- [x] Scrape: Add Facebook Business Pages scraping via Data API
+- [x] Scrape: Add BBB listings scraping via Data API
+- [x] Scrape: Add industry-specific directories (HomeAdvisor, OpenTable)
+- [x] Scrape: Google Business Profile deep enrichment (hours, photos, services)
+- [x] Scrape: Batch scraping with configurable rate limiting and exponential retry
+- [x] Scrape: Source quality tracking (which source produces most conversions)
+- [x] Scrape: Parallel source scraping with sequential rate-limited execution
+- [x] Update admin dashboard with source quality endpoint and scheduler stats
+- [x] Vitest tests for all enhancements (22 tests, all passing)
