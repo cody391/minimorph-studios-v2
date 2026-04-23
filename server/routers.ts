@@ -40,17 +40,18 @@ const repsRouter = router({
 
   // Protected: get current user's rep profile
   myProfile: protectedProcedure.query(async ({ ctx }) => {
-    return db.getRepByUserId(ctx.user.id);
+    const rep = await db.getRepByUserId(ctx.user.id);
+    return rep ?? null;
   }),
 
   // Protected: get a rep by ID
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      return db.getRepById(input.id);
+      const rep = await db.getRepById(input.id);
+      return rep ?? null;
     }),
-
-  // Admin: list all reps
+  // Admin: list all repss
   list: adminProcedure
     .input(z.object({ status: z.string().optional() }).optional())
     .query(async ({ input }) => {
@@ -209,10 +210,10 @@ const leadsRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      return db.getLeadById(input.id);
+      const lead = await db.getLeadById(input.id);
+      return lead ?? null;
     }),
-
-  // Admin: update lead
+  // Admin: update leadd
   update: adminProcedure
     .input(
       z.object({
@@ -652,7 +653,8 @@ const customersRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      return db.getCustomerById(input.id);
+      const customer = await db.getCustomerById(input.id);
+      return customer ?? null;
     }),
 
   update: adminProcedure
@@ -700,7 +702,8 @@ const contractsRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      return db.getContractById(input.id);
+      const contract = await db.getContractById(input.id);
+      return contract ?? null;
     }),
 
   byCustomer: protectedProcedure
@@ -1222,7 +1225,8 @@ const onboardingRouter = router({
   myProject: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      return db.getOnboardingProjectById(input.id);
+      const project = await db.getOnboardingProjectById(input.id);
+      return project ?? null;
     }),
 
   // Protected: submit questionnaire

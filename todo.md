@@ -231,3 +231,6 @@
 - [x] Add closed_lost to updateMyLead stage enum so reps can mark leads as lost
 - [x] Add loading/error states to NotificationsBell component
 - [x] Add Vitest tests for leads.closeDeal, leads.transferLeads, repNotifications.*, and pipeline endpoints (30 tests, all passing)
+
+### Bug: /rep page errors
+- [x] Fix 2 errors on the /rep page that prevent user from accessing it (endpoints returning undefined → null)

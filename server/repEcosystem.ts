@@ -365,7 +365,8 @@ export const repGamificationRouter = router({
   myStats: protectedProcedure.query(async ({ ctx }) => {
     const rep = await db.getRepByUserId(ctx.user.id);
     if (!rep) return null;
-    return db.getRepGamification(rep.id);
+    const stats = await db.getRepGamification(rep.id);
+    return stats ?? null;
   }),
   // Get leaderboard
   leaderboard: protectedProcedure
@@ -561,7 +562,8 @@ export const repApplicationRouter = router({
   myApplication: protectedProcedure.query(async ({ ctx }) => {
     const rep = await db.getRepByUserId(ctx.user.id);
     if (!rep) return null;
-    return db.getRepApplication(rep.id);
+    const app = await db.getRepApplication(rep.id);
+    return app ?? null;
   }),
   // Admin: review application
   review: adminProcedure
