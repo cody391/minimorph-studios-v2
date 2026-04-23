@@ -1,92 +1,61 @@
 /*
  * Design: Warm Machine — Humanized AI Aesthetic
- * How It Works: Vertical storytelling with alternating left-right blocks.
- * Shows the lifecycle loop — from lead to renewal.
+ * How It Works: Customer-facing journey — what YOU experience as a client.
+ * Simple, warm, and focused on the customer's perspective.
  */
 import { motion } from "framer-motion";
 import {
-  Search,
-  UserCheck,
+  MessageSquare,
   Palette,
   Rocket,
-  HeartPulse,
-  TrendingUp,
-  BarChart3,
-  RefreshCw,
+  Shield,
 } from "lucide-react";
-
-const LIFECYCLE_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663588302560/i4ip8JQRqo7cEvPbPwFp5A/lifecycle-illustration-KvXZwqhARYUPZQKvFGGpqk.webp";
 
 const steps = [
   {
-    icon: Search,
+    icon: MessageSquare,
     number: "01",
-    title: "We Find Your Customers",
+    title: "Tell Us About Your Business",
     description:
-      "Our AI lead system continuously identifies, qualifies, and warms potential customers — so by the time they reach you, they're ready to talk.",
-    tag: "AI-Powered",
-  },
-  {
-    icon: UserCheck,
-    number: "02",
-    title: "You Close the Deal",
-    description:
-      "Our trained sales representatives receive warm leads and guide prospects through the buying process. You focus on closing — we handle everything else.",
-    tag: "Human Touch",
+      "Share your vision, your audience, and your goals. We'll ask the right questions to understand exactly what you need — no jargon, no overwhelm.",
+    color: "bg-terracotta/10 text-terracotta",
+    accent: "border-terracotta/30",
   },
   {
     icon: Palette,
-    number: "03",
-    title: "Choose Your Vision",
+    number: "02",
+    title: "We Design Your Perfect Website",
     description:
-      "Explore examples, select your package, and shape the direction of your build. Our guided process ensures you get exactly what you need — no confusion.",
-    tag: "Guided Experience",
+      "Our team crafts a custom website tailored to your brand. You'll see mockups, give feedback, and watch your vision come to life — all within days, not months.",
+    color: "bg-sage/20 text-forest",
+    accent: "border-sage/40",
   },
   {
     icon: Rocket,
+    number: "03",
+    title: "Your Site Goes Live",
+    description:
+      "We handle hosting, domain setup, and launch. Your new website is live, fast, and ready to attract customers from day one.",
+    color: "bg-forest/10 text-forest",
+    accent: "border-forest/20",
+  },
+  {
+    icon: Shield,
     number: "04",
-    title: "We Build & Launch",
+    title: "We Keep It Growing",
     description:
-      "Your custom website is designed, developed, and launched with care. Every detail is crafted to convert visitors into customers.",
-    tag: "Premium Quality",
-  },
-  {
-    icon: HeartPulse,
-    number: "05",
-    title: "Ongoing Nurture & Support",
-    description:
-      "For the full 12 months of your contract, AI agents check in, manage requests, and keep your relationship active. You're never abandoned after launch.",
-    tag: "AI-Managed",
-  },
-  {
-    icon: TrendingUp,
-    number: "06",
-    title: "Growth & Upgrades",
-    description:
-      "As your business evolves, we identify opportunities for new features, additional pages, and enhanced capabilities to keep you ahead.",
-    tag: "Proactive",
-  },
-  {
-    icon: BarChart3,
-    number: "07",
-    title: "Performance Reports",
-    description:
-      "Monthly analytics reports show exactly how your website is performing — clear, actionable insights delivered automatically.",
-    tag: "Data-Driven",
-  },
-  {
-    icon: RefreshCw,
-    number: "08",
-    title: "Seamless Renewal",
-    description:
-      "Before your contract ends, we proactively work to ensure continuity. The cycle repeats — better, smarter, stronger.",
-    tag: "Lifecycle Loop",
+      "Monthly performance reports, proactive updates, and ongoing support for the full life of your contract. Your website gets better every month — without you lifting a finger.",
+    color: "bg-terracotta/10 text-terracotta",
+    accent: "border-terracotta/30",
   },
 ];
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-24 lg:py-32 bg-warm-white relative overflow-hidden">
+    <section
+      id="how-it-works"
+      className="py-24 lg:py-32 bg-warm-white relative overflow-hidden"
+    >
       <div className="container">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16 lg:mb-24">
@@ -96,7 +65,7 @@ export default function HowItWorks() {
             viewport={{ once: true }}
             className="text-sm font-sans font-medium text-terracotta uppercase tracking-widest mb-4 block"
           >
-            The Lifecycle
+            How It Works
           </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -105,7 +74,8 @@ export default function HowItWorks() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-serif text-forest leading-tight mb-6"
           >
-            How the <span className="italic">machine</span> works
+            From first hello to{" "}
+            <span className="italic text-terracotta">lasting growth</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -114,79 +84,64 @@ export default function HowItWorks() {
             transition={{ delay: 0.2 }}
             className="text-lg text-forest/60 font-sans leading-relaxed"
           >
-            One connected system that finds leads, closes deals, builds sites, nurtures customers, and renews contracts — automatically.
+            Getting a website that works for your business should be simple.
+            Here's what your experience looks like with MiniMorph.
           </motion.p>
-
-          {/* Lifecycle illustration */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="mt-10 mx-auto w-48 h-48 lg:w-64 lg:h-64"
-          >
-            <img
-              src={LIFECYCLE_IMG}
-              alt="Lifecycle loop illustration"
-              className="w-full h-full object-contain"
-            />
-          </motion.div>
         </div>
 
-        {/* Steps — Vertical Timeline */}
-        <div className="relative max-w-3xl mx-auto">
-          {/* Vertical line */}
-          <div className="absolute left-6 lg:left-1/2 top-0 bottom-0 w-px bg-border lg:-translate-x-px" />
+        {/* Steps — Clean Card Grid */}
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-10 max-w-4xl mx-auto">
+          {steps.map((step, idx) => (
+            <motion.div
+              key={step.number}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              className={`relative bg-white rounded-2xl p-8 lg:p-10 border ${step.accent} shadow-sm hover:shadow-md transition-shadow duration-300`}
+            >
+              {/* Step number — large watermark */}
+              <span className="absolute top-4 right-6 text-6xl font-serif font-bold text-forest/5 select-none">
+                {step.number}
+              </span>
 
-          {steps.map((step, idx) => {
-            const isLeft = idx % 2 === 0;
-            return (
-              <motion.div
-                key={step.number}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: idx * 0.05 }}
-                className={`relative flex items-start gap-6 mb-12 lg:mb-16 ${
-                  isLeft ? "lg:flex-row" : "lg:flex-row-reverse"
-                }`}
+              {/* Icon */}
+              <div
+                className={`w-12 h-12 rounded-xl ${step.color} flex items-center justify-center mb-5`}
               >
-                {/* Timeline dot */}
-                <div className="absolute left-6 lg:left-1/2 w-3 h-3 rounded-full bg-terracotta -translate-x-1.5 mt-2 z-10 ring-4 ring-warm-white" />
+                <step.icon size={22} />
+              </div>
 
-                {/* Content */}
-                <div
-                  className={`ml-14 lg:ml-0 lg:w-[calc(50%-2rem)] ${
-                    isLeft ? "lg:pr-8 lg:text-right" : "lg:pl-8 lg:text-left"
-                  }`}
-                >
-                  <div className={`flex items-center gap-3 mb-3 ${isLeft ? "lg:justify-end" : "lg:justify-start"}`}>
-                    <span className="text-xs font-sans font-medium text-terracotta/80 uppercase tracking-widest">
-                      {step.tag}
-                    </span>
-                  </div>
-                  <div className={`flex items-center gap-3 mb-2 ${isLeft ? "lg:justify-end" : "lg:justify-start"}`}>
-                    <div className="w-9 h-9 rounded-lg bg-forest/8 flex items-center justify-center">
-                      <step.icon size={18} className="text-forest" />
-                    </div>
-                    <span className="text-sm font-sans font-bold text-forest/30">
-                      {step.number}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-serif text-forest mb-2">
-                    {step.title}
-                  </h3>
-                  <p className="text-base text-forest/60 font-sans leading-relaxed">
-                    {step.description}
-                  </p>
-                </div>
-
-                {/* Spacer for other side */}
-                <div className="hidden lg:block lg:w-[calc(50%-2rem)]" />
-              </motion.div>
-            );
-          })}
+              {/* Content */}
+              <h3 className="text-xl lg:text-2xl font-serif text-forest mb-3">
+                {step.title}
+              </h3>
+              <p className="text-base text-forest/60 font-sans leading-relaxed">
+                {step.description}
+              </p>
+            </motion.div>
+          ))}
         </div>
+
+        {/* Bottom CTA nudge */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="text-center mt-16"
+        >
+          <p className="text-forest/50 font-sans text-base mb-4">
+            That's it. No complicated process, no hidden steps.
+          </p>
+          <a
+            href="/get-started"
+            className="inline-flex items-center gap-2 text-terracotta font-sans font-semibold hover:underline underline-offset-4 transition-all"
+          >
+            Ready to get started?
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+        </motion.div>
       </div>
     </section>
   );

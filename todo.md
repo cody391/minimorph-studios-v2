@@ -70,7 +70,7 @@
 - [x] Stats / social proof section
 - [x] Services grid
 - [x] Portfolio showcase (7 projects with AI-generated mockups, category filters)
-- [x] How It Works lifecycle timeline (8 steps)
+- [x] How It Works — customer-facing 4-step journey (Tell Us → We Design → Goes Live → We Keep Growing)
 - [x] Core Principle section ("Humans close. AI does everything else.")
 - [x] 3-tier Pricing cards (Starter/Growth/Premium)
 - [x] Testimonials carousel
@@ -104,3 +104,7 @@
   - [x] Admin Orders page with revenue metrics and order table
   - [x] Checkout success page (/checkout/success)
   - [x] 31 unit tests passing (7 new Stripe/orders tests)
+
+## How It Works — Customer-Facing Rewrite
+- [x] Rewrite public "How It Works" section to show customer journey (outward-facing), not internal ops lifecycle
+- [x] Keep internal lifecycle visualization only in admin dashboard
