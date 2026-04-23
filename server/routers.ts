@@ -126,6 +126,63 @@ const leadsRouter = router({
       return { success: true };
     }),
 
+  // Admin: AI-powered lead enrichment using LLM
+  enrich: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const { invokeLLM } = await import("./_core/llm");
+      const lead = await db.getLeadById(input.id);
+      if (!lead) throw new Error("Lead not found");
+
+      const enrichResult = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: "You are a business research assistant. Given a business name, contact info, and industry, generate a brief enrichment profile. Return JSON with: companySize (string), estimatedRevenue (string), onlinePresence (string rating: poor/fair/good/excellent), websiteNeeds (string[]), competitorExamples (string[]), recommendedPackage (starter/growth/premium), and enrichmentSummary (2-3 sentence summary).",
+          },
+          {
+            role: "user",
+            content: `Enrich this lead:\nBusiness: ${lead.businessName}\nContact: ${lead.contactName}\nIndustry: ${lead.industry || "Unknown"}\nEmail: ${lead.email}\nWebsite: ${lead.website || "None"}`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "lead_enrichment",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                companySize: { type: "string", description: "Estimated company size" },
+                estimatedRevenue: { type: "string", description: "Estimated annual revenue" },
+                onlinePresence: { type: "string", enum: ["poor", "fair", "good", "excellent"], description: "Current online presence rating" },
+                websiteNeeds: { type: "array", items: { type: "string" }, description: "Key website needs" },
+                competitorExamples: { type: "array", items: { type: "string" }, description: "Example competitors with good websites" },
+                recommendedPackage: { type: "string", enum: ["starter", "growth", "premium"], description: "Recommended package tier" },
+                enrichmentSummary: { type: "string", description: "2-3 sentence enrichment summary" },
+              },
+              required: ["companySize", "estimatedRevenue", "onlinePresence", "websiteNeeds", "competitorExamples", "recommendedPackage", "enrichmentSummary"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const enrichmentData = JSON.parse(enrichResult.choices[0].message.content as string);
+
+      // Update lead with enrichment data and advance stage
+      await db.updateLead(input.id, {
+        enrichmentData,
+        stage: lead.stage === "new" ? "enriched" : lead.stage,
+        qualificationScore: Math.min(
+          100,
+          lead.qualificationScore + 15
+        ),
+      } as any);
+
+      return { success: true, enrichmentData };
+    }),
+
   // Admin: assign lead to rep
   assign: adminProcedure
     .input(z.object({ leadId: z.number(), repId: z.number() }))
@@ -317,6 +374,78 @@ const nurtureRouter = router({
     .input(z.object({ customerId: z.number() }))
     .query(async ({ input }) => {
       return db.listNurtureLogsByCustomer(input.customerId);
+    }),
+
+  // Admin: send automated nurture notification (uses notifyOwner + marks as sent)
+  sendNotification: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const logs = await db.listAllNurtureLogs();
+      const log = logs.find((l: any) => l.id === input.id);
+      if (!log) throw new Error("Nurture log not found");
+
+      // Send notification to owner about the nurture activity
+      await notifyOwner({
+        title: `Nurture: ${log.subject || log.type}`,
+        content: `Customer #${log.customerId} — ${log.type.replace(/_/g, " ")}\nChannel: ${log.channel}\n\n${log.content || "No content"}`,
+      });
+
+      // Mark as sent
+      await db.updateNurtureLog(input.id, { status: "sent", sentAt: new Date() });
+      return { success: true };
+    }),
+
+  // Admin: auto-generate nurture check-in using AI
+  generateCheckIn: adminProcedure
+    .input(z.object({ customerId: z.number(), contractId: z.number().optional() }))
+    .mutation(async ({ input }) => {
+      const { invokeLLM } = await import("./_core/llm");
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer) throw new Error("Customer not found");
+
+      const result = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: "You are a friendly customer success AI for MiniMorph Studios, a web design company. Generate a brief, warm check-in message for a customer. Return JSON with: subject (string, short email subject), content (string, 2-3 paragraph friendly check-in message asking how their website is performing and if they need anything).",
+          },
+          {
+            role: "user",
+            content: `Generate a check-in for:\nBusiness: ${customer.businessName}\nContact: ${customer.contactName}\nHealth Score: ${customer.healthScore}/100\nStatus: ${customer.status}`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "nurture_checkin",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                subject: { type: "string", description: "Email subject line" },
+                content: { type: "string", description: "Check-in message body" },
+              },
+              required: ["subject", "content"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const checkin = JSON.parse(result.choices[0].message.content as string);
+
+      // Create the nurture log entry
+      const logResult = await db.createNurtureLog({
+        customerId: input.customerId,
+        contractId: input.contractId,
+        type: "check_in",
+        channel: "email",
+        subject: checkin.subject,
+        content: checkin.content,
+        status: "scheduled",
+      } as any);
+
+      return { success: true, subject: checkin.subject, content: checkin.content };
     }),
 
   update: adminProcedure

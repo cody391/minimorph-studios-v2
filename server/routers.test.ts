@@ -195,6 +195,102 @@ describe("admin-only routes", () => {
   });
 });
 
+// Mock LLM for lead enrichment and nurture check-in tests
+vi.mock("./_core/llm", () => ({
+  invokeLLM: vi.fn().mockResolvedValue({
+    choices: [{
+      message: {
+        content: JSON.stringify({
+          companySize: "10-50",
+          estimatedRevenue: "$500K-$1M",
+          onlinePresence: "fair",
+          websiteNeeds: ["responsive design", "SEO"],
+          recommendedPackage: "growth",
+          enrichmentSummary: "Test enrichment summary",
+          subject: "Checking in on your website",
+          content: "Hi there, just checking in!",
+        }),
+      },
+    }],
+  }),
+}));
+
+describe("leads.enrich", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.leads.enrich({ id: 1 })).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.leads.enrich({ id: 1 })).rejects.toThrow();
+  });
+
+  it("is accessible to admin users (fails at DB level, not auth)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.leads.enrich({ id: 999 });
+    } catch (e: any) {
+      // Should fail at DB level (lead not found), not auth
+      expect(e.code).not.toBe("UNAUTHORIZED");
+      expect(e.code).not.toBe("FORBIDDEN");
+    }
+  });
+});
+
+describe("nurture.sendNotification", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.nurture.sendNotification({ id: 1 })).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.nurture.sendNotification({ id: 1 })).rejects.toThrow();
+  });
+
+  it("is accessible to admin users (fails at DB level, not auth)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.nurture.sendNotification({ id: 999 });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+      expect(e.code).not.toBe("FORBIDDEN");
+    }
+  });
+});
+
+describe("nurture.generateCheckIn", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.nurture.generateCheckIn({ customerId: 1 })).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.nurture.generateCheckIn({ customerId: 1 })).rejects.toThrow();
+  });
+
+  it("is accessible to admin users (fails at DB level, not auth)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.nurture.generateCheckIn({ customerId: 999 });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+      expect(e.code).not.toBe("FORBIDDEN");
+    }
+  });
+});
+
 describe("protected routes", () => {
   it("reps.myProfile rejects unauthenticated users", async () => {
     const { ctx } = createPublicContext();

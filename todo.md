@@ -94,7 +94,7 @@
 - [x] Demo data: 4 reps, 6 leads, 3 customers, 3 contracts, 4 commissions, 5 nurture logs, 4 reports, 3 upsells, 3 contact submissions
 
 ## Future Enhancements
-- [ ] Analytics integration placeholder (Google Analytics)
-- [ ] Automated email notifications for nurture sequences
-- [ ] AI-powered lead enrichment integration
-- [ ] Stripe payment integration for online purchases
+- [x] Analytics dashboard page with placeholder data and GA4 connect prompt
+- [x] Automated nurture notifications (send via notifyOwner, AI-generated check-ins via LLM)
+- [x] AI-powered lead enrichment (LLM analyzes business and returns company size, revenue, online presence, recommended package, website needs)
+- [ ] Stripe payment integration for online purchases (available via webdev_add_feature)

@@ -19,6 +19,7 @@ const AdminReports = lazy(() => import("./pages/admin/Reports"));
 const AdminUpsells = lazy(() => import("./pages/admin/Upsells"));
 const AdminRenewals = lazy(() => import("./pages/admin/Renewals"));
 const AdminSubmissions = lazy(() => import("./pages/admin/Submissions"));
+const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
 
 // Lazy-load portals
 const RepDashboard = lazy(() => import("./pages/RepDashboard"));
@@ -102,6 +103,9 @@ function Router() {
       </Route>
       <Route path="/admin/submissions">
         <AdminPage><AdminSubmissions /></AdminPage>
+      </Route>
+      <Route path="/admin/analytics">
+        <AdminPage><AdminAnalytics /></AdminPage>
       </Route>
 
       <Route path={"/404"} component={NotFound} />

@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Target, Plus, Flame, Snowflake, Sun } from "lucide-react";
+import { Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -46,6 +46,7 @@ export default function Leads() {
   const [showCreate, setShowCreate] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [enrichingId, setEnrichingId] = useState<number | null>(null);
   const [form, setForm] = useState({ businessName: "", contactName: "", email: "", phone: "", industry: "", website: "", source: "manual" as const, notes: "" });
 
   const { data: leads, isLoading, refetch } = trpc.leads.list.useQuery();
@@ -57,6 +58,22 @@ export default function Leads() {
     onSuccess: () => { toast.success("Lead updated"); refetch(); },
     onError: (e) => toast.error(e.message),
   });
+  const enrichLead = trpc.leads.enrich.useMutation({
+    onSuccess: (data) => {
+      toast.success("Lead enriched with AI insights");
+      refetch();
+      setEnrichingId(null);
+      if (selectedLead) {
+        setSelectedLead({ ...selectedLead, enrichmentData: data.enrichmentData, stage: "enriched" });
+      }
+    },
+    onError: (e) => { toast.error(`Enrichment failed: ${e.message}`); setEnrichingId(null); },
+  });
+
+  const handleEnrich = (leadId: number) => {
+    setEnrichingId(leadId);
+    enrichLead.mutate({ id: leadId });
+  };
 
   return (
     <div className="space-y-6">
@@ -121,9 +138,17 @@ export default function Leads() {
                 <tbody>
                   {leads.map((lead: any) => {
                     const ti = tempIcons[lead.temperature] ?? tempIcons.cold;
+                    const hasEnrichment = lead.enrichmentData && Object.keys(lead.enrichmentData).length > 0;
                     return (
                       <tr key={lead.id} className="border-b border-border/30 hover:bg-cream-dark/20 transition-colors">
-                        <td className="py-3 px-2 font-medium text-forest">{lead.businessName}</td>
+                        <td className="py-3 px-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-forest">{lead.businessName}</span>
+                            {hasEnrichment && (
+                              <span title="AI Enriched"><Sparkles className="h-3.5 w-3.5 text-terracotta/60" /></span>
+                            )}
+                          </div>
+                        </td>
                         <td className="py-3 px-2 text-forest/60">{lead.contactName}</td>
                         <td className="py-3 px-2">
                           <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${ti.bg}`}>
@@ -138,7 +163,22 @@ export default function Leads() {
                         </td>
                         <td className="py-3 px-2 text-forest/70">{lead.qualificationScore}/100</td>
                         <td className="py-3 px-2 text-forest/50 text-xs">{lead.source.replace(/_/g, " ")}</td>
-                        <td className="py-3 px-2 text-right">
+                        <td className="py-3 px-2 text-right space-x-1">
+                          {!hasEnrichment && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs text-terracotta hover:text-terracotta hover:bg-terracotta/10"
+                              onClick={() => handleEnrich(lead.id)}
+                              disabled={enrichingId === lead.id}
+                            >
+                              {enrichingId === lead.id ? (
+                                <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enriching...</>
+                              ) : (
+                                <><Sparkles className="h-3 w-3 mr-1" /> Enrich</>
+                              )}
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" className="text-xs text-forest/60 hover:text-forest"
                             onClick={() => { setSelectedLead(lead); setShowDetail(true); }}>
                             View
@@ -211,7 +251,7 @@ export default function Leads() {
 
       {/* Lead Detail Dialog */}
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif text-forest">{selectedLead?.businessName}</DialogTitle>
           </DialogHeader>
@@ -245,6 +285,73 @@ export default function Leads() {
                   </Select>
                 </div>
               </div>
+
+              {/* AI Enrichment Data */}
+              {selectedLead.enrichmentData && Object.keys(selectedLead.enrichmentData).length > 0 ? (
+                <div className="border border-terracotta/20 rounded-xl p-4 bg-terracotta/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="h-4 w-4 text-terracotta" />
+                    <span className="text-sm font-medium text-forest">AI Enrichment Profile</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-forest/50 text-xs">Company Size</span>
+                      <p className="text-forest">{selectedLead.enrichmentData.companySize}</p>
+                    </div>
+                    <div>
+                      <span className="text-forest/50 text-xs">Est. Revenue</span>
+                      <p className="text-forest">{selectedLead.enrichmentData.estimatedRevenue}</p>
+                    </div>
+                    <div>
+                      <span className="text-forest/50 text-xs">Online Presence</span>
+                      <Badge className={`text-xs ${
+                        selectedLead.enrichmentData.onlinePresence === "poor" ? "bg-red-100 text-red-700" :
+                        selectedLead.enrichmentData.onlinePresence === "fair" ? "bg-yellow-100 text-yellow-700" :
+                        selectedLead.enrichmentData.onlinePresence === "good" ? "bg-green-100 text-green-700" :
+                        "bg-emerald-100 text-emerald-700"
+                      }`}>{selectedLead.enrichmentData.onlinePresence}</Badge>
+                    </div>
+                    <div>
+                      <span className="text-forest/50 text-xs">Recommended Package</span>
+                      <Badge className="text-xs bg-forest/10 text-forest capitalize">{selectedLead.enrichmentData.recommendedPackage}</Badge>
+                    </div>
+                  </div>
+                  {selectedLead.enrichmentData.websiteNeeds?.length > 0 && (
+                    <div className="mt-3">
+                      <span className="text-forest/50 text-xs">Website Needs</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {selectedLead.enrichmentData.websiteNeeds.map((need: string, i: number) => (
+                          <Badge key={i} variant="outline" className="text-xs border-forest/20 text-forest/70">{need}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedLead.enrichmentData.enrichmentSummary && (
+                    <div className="mt-3">
+                      <span className="text-forest/50 text-xs">Summary</span>
+                      <p className="text-sm text-forest/80 mt-1">{selectedLead.enrichmentData.enrichmentSummary}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="border border-dashed border-terracotta/30 rounded-xl p-4 text-center">
+                  <Sparkles className="h-5 w-5 text-terracotta/40 mx-auto mb-2" />
+                  <p className="text-xs text-forest/50 mb-2">No AI enrichment data yet</p>
+                  <Button
+                    size="sm"
+                    className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-xs"
+                    onClick={() => handleEnrich(selectedLead.id)}
+                    disabled={enrichingId === selectedLead.id}
+                  >
+                    {enrichingId === selectedLead.id ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enriching...</>
+                    ) : (
+                      <><Sparkles className="h-3 w-3 mr-1" /> Enrich with AI</>
+                    )}
+                  </Button>
+                </div>
+              )}
+
               {selectedLead.notes && (
                 <div><span className="text-xs text-forest/50">Notes</span><p className="text-sm text-forest/80 mt-1">{selectedLead.notes}</p></div>
               )}
