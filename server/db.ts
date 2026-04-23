@@ -23,6 +23,10 @@ import {
   InsertContactSubmission,
   orders,
   InsertOrder,
+  onboardingProjects,
+  InsertOnboardingProject,
+  projectAssets,
+  InsertProjectAsset,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -445,4 +449,65 @@ export async function updateOrderBySessionId(sessionId: string, data: Partial<In
   const db = await getDb();
   if (!db) return;
   await db.update(orders).set(data as any).where(eq(orders.stripeCheckoutSessionId, sessionId));
+}
+
+/* ═══════════════════════════════════════════════════════
+   ONBOARDING PROJECTS
+   ═══════════════════════════════════════════════════════ */
+export async function createOnboardingProject(data: InsertOnboardingProject) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(onboardingProjects).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function getOnboardingProjectById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(onboardingProjects).where(eq(onboardingProjects.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getOnboardingProjectByCustomerId(customerId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(onboardingProjects).where(eq(onboardingProjects.customerId, customerId)).orderBy(desc(onboardingProjects.createdAt)).limit(1);
+  return result[0];
+}
+
+export async function listOnboardingProjects(stageFilter?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  if (stageFilter) {
+    return db.select().from(onboardingProjects).where(eq(onboardingProjects.stage, stageFilter as any)).orderBy(desc(onboardingProjects.createdAt));
+  }
+  return db.select().from(onboardingProjects).orderBy(desc(onboardingProjects.createdAt));
+}
+
+export async function updateOnboardingProject(id: number, data: Partial<InsertOnboardingProject>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(onboardingProjects).set(data).where(eq(onboardingProjects.id, id));
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROJECT ASSETS
+   ═══════════════════════════════════════════════════════ */
+export async function createProjectAsset(data: InsertProjectAsset) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(projectAssets).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function listProjectAssets(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(projectAssets).where(eq(projectAssets.projectId, projectId)).orderBy(desc(projectAssets.createdAt));
+}
+
+export async function deleteProjectAsset(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(projectAssets).where(eq(projectAssets.id, id));
 }

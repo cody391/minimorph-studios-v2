@@ -365,3 +365,134 @@ describe("orders.list", () => {
     await expect(caller.orders.list()).rejects.toThrow();
   });
 });
+
+describe("onboarding.create", () => {
+  it("is accessible as a public procedure (does not throw UNAUTHORIZED)", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.onboarding.create({
+        businessName: "Test Biz",
+        contactName: "John",
+        contactEmail: "john@test.com",
+        packageTier: "starter",
+      });
+    } catch (e: any) {
+      // DB error is expected, but should NOT be auth error
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+
+  it("is accessible to authenticated users (fails at DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.onboarding.create({
+        businessName: "Test Biz",
+        contactName: "John",
+        contactEmail: "john@test.com",
+        packageTier: "growth",
+      });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("onboarding.myProject", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.onboarding.myProject()).rejects.toThrow();
+  });
+
+  it("is accessible to authenticated users (fails at DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.onboarding.myProject();
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("onboarding.list (admin)", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.onboarding.list({})).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.onboarding.list({})).rejects.toThrow();
+  });
+
+  it("is accessible to admin users (fails at DB level, not auth)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.onboarding.list({});
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+      expect(e.code).not.toBe("FORBIDDEN");
+    }
+  });
+});
+
+describe("onboarding.updateStage (admin)", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.onboarding.updateStage({ id: 1, stage: "design" })
+    ).rejects.toThrow();
+  });
+
+  it("is accessible to admin users (fails at DB level, not auth)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.onboarding.updateStage({ id: 999, stage: "review" });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+      expect(e.code).not.toBe("FORBIDDEN");
+    }
+  });
+});
+
+describe("onboarding.uploadAsset", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.onboarding.uploadAsset({
+        projectId: 1,
+        fileName: "logo.png",
+        fileType: "image/png",
+        fileSize: 1024,
+        fileBase64: "iVBORw0KGgo=",
+        category: "logo",
+      })
+    ).rejects.toThrow();
+  });
+
+  it("is accessible to authenticated users (fails at storage/DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.onboarding.uploadAsset({
+        projectId: 1,
+        fileName: "logo.png",
+        fileType: "image/png",
+        fileSize: 1024,
+        fileBase64: "iVBORw0KGgo=",
+        category: "logo",
+      });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});

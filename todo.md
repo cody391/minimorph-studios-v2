@@ -112,3 +112,15 @@
 ## CorePrinciple Section — Customer-Facing Rewrite
 - [x] Rewrite "Humans close. AI does everything else." section to focus on customer outcomes, not internal AI/human split
 - [x] Remove internal language about reps, AI system mechanics — replace with "dedicated team" messaging
+
+## Customer Onboarding Portal
+- [x] Create onboarding_projects table (tracks project status from intake to launch)
+- [x] Create project_assets table (stores uploaded files: logos, photos, docs)
+- [x] Create onboarding questionnaire (brand tone, colors, target audience, competitors, content preferences, must-have features, inspiration URLs)
+- [x] Build asset upload system (logo, photos, brand guidelines, written content, documents — stored in S3)
+- [x] Build domain handling (I have a domain / I need a new domain / Not sure yet — with domain input and registrar fields)
+- [x] Build project tracker page (Intake → Design → Review → Revisions → Launch → Live status)
+- [ ] Build review & feedback system (customer views mockups, leaves comments, approves for launch)
+- [x] Wire onboarding into customer portal (/onboarding)
+- [x] Add onboarding management to admin dashboard (/admin/onboarding)
+- [x] Write tests for onboarding API routes (42 tests total passing)

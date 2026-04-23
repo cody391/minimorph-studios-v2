@@ -283,3 +283,103 @@ export const orders = mysqlTable("orders", {
 
 export type Order = typeof orders.$inferSelect;
 export type InsertOrder = typeof orders.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   ONBOARDING_PROJECTS — Tracks customer website projects from intake to launch
+   ═══════════════════════════════════════════════════════ */
+export const onboardingProjects = mysqlTable("onboarding_projects", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId"),
+  orderId: int("orderId"),
+  contractId: int("contractId"),
+
+  // Project status
+  stage: mysqlEnum("stage", [
+    "intake",
+    "questionnaire",
+    "assets_upload",
+    "design",
+    "review",
+    "revisions",
+    "final_approval",
+    "launch",
+    "complete",
+  ])
+    .default("intake")
+    .notNull(),
+
+  // Business info
+  businessName: varchar("businessName", { length: 255 }).notNull(),
+  contactName: varchar("contactName", { length: 255 }).notNull(),
+  contactEmail: varchar("contactEmail", { length: 320 }).notNull(),
+  contactPhone: varchar("contactPhone", { length: 32 }),
+  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium"]).notNull(),
+
+  // Domain handling
+  domainOption: mysqlEnum("domainOption", ["existing", "new", "undecided"]).default("undecided"),
+  existingDomain: varchar("existingDomain", { length: 512 }),
+  domainRegistrar: varchar("domainRegistrar", { length: 255 }),
+  domainNotes: text("domainNotes"),
+
+  // Questionnaire responses (stored as JSON)
+  questionnaire: json("questionnaire"),
+  // Example structure:
+  // {
+  //   brandColors: string[],
+  //   brandTone: "professional" | "friendly" | "bold" | "elegant" | "playful",
+  //   targetAudience: string,
+  //   competitors: string[],
+  //   contentPreference: "we_write" | "customer_provides" | "mix",
+  //   mustHaveFeatures: string[],
+  //   inspirationUrls: string[],
+  //   specialRequests: string
+  // }
+
+  // Design review
+  designMockupUrl: varchar("designMockupUrl", { length: 512 }),
+  feedbackNotes: text("feedbackNotes"),
+  revisionsCount: int("revisionsCount").default(0).notNull(),
+
+  // Launch
+  launchedAt: timestamp("launchedAt"),
+  liveUrl: varchar("liveUrl", { length: 512 }),
+
+  assignedRepId: int("assignedRepId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type OnboardingProject = typeof onboardingProjects.$inferSelect;
+export type InsertOnboardingProject = typeof onboardingProjects.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   PROJECT_ASSETS — Files uploaded by customers (logos, photos, docs)
+   ═══════════════════════════════════════════════════════ */
+export const projectAssets = mysqlTable("project_assets", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  customerId: int("customerId"),
+
+  // File info
+  fileName: varchar("fileName", { length: 512 }).notNull(),
+  fileKey: varchar("fileKey", { length: 512 }).notNull(), // S3 key
+  fileUrl: varchar("fileUrl", { length: 1024 }).notNull(), // /manus-storage/... URL
+  fileSize: int("fileSize"), // bytes
+  mimeType: varchar("mimeType", { length: 128 }),
+  category: mysqlEnum("category", [
+    "logo",
+    "photo",
+    "brand_guidelines",
+    "copy",
+    "document",
+    "other",
+  ])
+    .default("other")
+    .notNull(),
+
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectAsset = typeof projectAssets.$inferSelect;
+export type InsertProjectAsset = typeof projectAssets.$inferInsert;

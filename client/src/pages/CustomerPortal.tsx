@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   FileText, BarChart3, HeadphonesIcon, ArrowLeft,
   Calendar, TrendingUp, Eye, Users as UsersIcon,
-  Clock, CheckCircle, AlertCircle, Shield,
+  Clock, CheckCircle, AlertCircle, Shield, Rocket,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
@@ -151,6 +151,7 @@ export default function CustomerPortal() {
             <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Reports</TabsTrigger>
             <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Support</TabsTrigger>
             <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Upgrades</TabsTrigger>
+            <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Onboarding</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
@@ -393,6 +394,34 @@ export default function CustomerPortal() {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ONBOARDING TAB */}
+          <TabsContent value="onboarding" className="space-y-6">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+                  <Rocket className="h-4 w-4 text-terracotta" />
+                  Your Onboarding
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Rocket className="h-12 w-12 text-forest/15 mx-auto mb-4" />
+                  <h3 className="text-lg font-serif text-forest mb-2">Website Onboarding Portal</h3>
+                  <p className="text-sm text-forest/60 font-sans mb-6 max-w-md mx-auto">
+                    Complete your brand questionnaire, upload your assets (logo, photos, brand guidelines), set up your domain, and track your project from design to launch.
+                  </p>
+                  <Button
+                    onClick={() => setLocation("/onboarding")}
+                    className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8"
+                  >
+                    <Rocket className="h-4 w-4 mr-2" />
+                    Go to Onboarding Portal
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

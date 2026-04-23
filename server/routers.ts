@@ -688,6 +688,181 @@ const ordersRouter = router({
 });
 
 /* ═══════════════════════════════════════════════════════
+   ONBOARDING ROUTER
+   ═══════════════════════════════════════════════════════ */
+const onboardingRouter = router({
+  // Public: create a new onboarding project (from guided buying wizard)
+  create: publicProcedure
+    .input(
+      z.object({
+        businessName: z.string().min(1),
+        contactName: z.string().min(1),
+        contactEmail: z.string().email(),
+        contactPhone: z.string().optional(),
+        packageTier: z.enum(["starter", "growth", "premium"]),
+        orderId: z.number().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const project = await db.createOnboardingProject({
+        ...input,
+        stage: "questionnaire",
+        customerId: null,
+      });
+      return project;
+    }),
+
+  // Protected: get my onboarding project
+  myProject: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return db.getOnboardingProjectById(input.id);
+    }),
+
+  // Protected: submit questionnaire
+  submitQuestionnaire: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        questionnaire: z.object({
+          brandColors: z.array(z.string()).optional(),
+          brandTone: z.enum(["professional", "friendly", "bold", "elegant", "playful"]).optional(),
+          targetAudience: z.string().optional(),
+          competitors: z.array(z.string()).optional(),
+          contentPreference: z.enum(["we_write", "customer_provides", "mix"]).optional(),
+          mustHaveFeatures: z.array(z.string()).optional(),
+          inspirationUrls: z.array(z.string()).optional(),
+          specialRequests: z.string().optional(),
+        }),
+      })
+    )
+    .mutation(async ({ input }) => {
+      await db.updateOnboardingProject(input.projectId, {
+        questionnaire: input.questionnaire,
+        stage: "assets_upload",
+      });
+      return { success: true };
+    }),
+
+  // Protected: set domain preference
+  setDomain: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        domainOption: z.enum(["existing", "new", "undecided"]),
+        existingDomain: z.string().optional(),
+        domainRegistrar: z.string().optional(),
+        domainNotes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { projectId, ...domainData } = input;
+      await db.updateOnboardingProject(projectId, domainData);
+      return { success: true };
+    }),
+
+  // Protected: upload an asset file
+  uploadAsset: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        fileName: z.string(),
+        fileBase64: z.string(),
+        mimeType: z.string().optional(),
+        category: z.enum(["logo", "photo", "brand_guidelines", "copy", "document", "other"]).optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { storagePut } = await import("./storage");
+      const buffer = Buffer.from(input.fileBase64, "base64");
+      const fileKey = `onboarding/${input.projectId}/${input.fileName}`;
+      const { key, url } = await storagePut(fileKey, buffer, input.mimeType || "application/octet-stream");
+
+      return db.createProjectAsset({
+        projectId: input.projectId,
+        fileName: input.fileName,
+        fileKey: key,
+        fileUrl: url,
+        fileSize: buffer.length,
+        mimeType: input.mimeType || "application/octet-stream",
+        category: input.category || "other",
+        notes: input.notes,
+      });
+    }),
+
+  // Protected: list assets for a project
+  listAssets: protectedProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ input }) => {
+      return db.listProjectAssets(input.projectId);
+    }),
+
+  // Protected: delete an asset
+  deleteAsset: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.deleteProjectAsset(input.id);
+      return { success: true };
+    }),
+
+  // Protected: submit feedback on design
+  submitFeedback: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        feedbackNotes: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      await db.updateOnboardingProject(input.projectId, {
+        feedbackNotes: input.feedbackNotes,
+        stage: "revisions",
+        revisionsCount: (project?.revisionsCount || 0) + 1,
+      });
+      return { success: true };
+    }),
+
+  // Protected: approve for launch
+  approveLaunch: protectedProcedure
+    .input(z.object({ projectId: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.updateOnboardingProject(input.projectId, {
+        stage: "final_approval",
+      });
+      return { success: true };
+    }),
+
+  // Admin: list all onboarding projects
+  list: adminProcedure
+    .input(z.object({ stage: z.string().optional() }).optional())
+    .query(async ({ input }) => {
+      return db.listOnboardingProjects(input?.stage);
+    }),
+
+  // Admin: update project stage
+  updateStage: adminProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        stage: z.enum(["intake", "questionnaire", "assets_upload", "design", "review", "revisions", "final_approval", "launch", "complete"]),
+        designMockupUrl: z.string().optional(),
+        liveUrl: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      const updateData: any = { ...data };
+      if (data.stage === "launch") {
+        updateData.launchedAt = new Date();
+      }
+      await db.updateOnboardingProject(id, updateData);
+      return { success: true };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
    DASHBOARD ROUTER
    ═══════════════════════════════════════════════════════ */
 const dashboardRouter = router({
@@ -719,6 +894,7 @@ export const appRouter = router({
   upsells: upsellsRouter,
   contact: contactRouter,
   orders: ordersRouter,
+  onboarding: onboardingRouter,
   dashboard: dashboardRouter,
 });
 

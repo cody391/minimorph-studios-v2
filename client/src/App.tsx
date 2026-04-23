@@ -21,6 +21,7 @@ const AdminRenewals = lazy(() => import("./pages/admin/Renewals"));
 const AdminSubmissions = lazy(() => import("./pages/admin/Submissions"));
 const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
 const AdminOrders = lazy(() => import("./pages/admin/Orders"));
+const AdminOnboarding = lazy(() => import("./pages/admin/OnboardingProjects"));
 
 // Lazy-load portals
 const RepDashboard = lazy(() => import("./pages/RepDashboard"));
@@ -28,6 +29,7 @@ const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
 const GetStarted = lazy(() => import("./pages/GetStarted"));
 const BecomeRep = lazy(() => import("./pages/BecomeRep"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 
 // Admin layout wrapper
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -77,6 +79,11 @@ function Router() {
         <LazyPage><CheckoutSuccess /></LazyPage>
       </Route>
 
+      {/* Customer onboarding */}
+      <Route path="/onboarding">
+        <LazyPage><Onboarding /></LazyPage>
+      </Route>
+
       {/* Admin dashboard */}
       <Route path="/admin">
         <AdminPage><AdminOverview /></AdminPage>
@@ -116,6 +123,9 @@ function Router() {
       </Route>
       <Route path="/admin/orders">
         <AdminPage><AdminOrders /></AdminPage>
+      </Route>
+      <Route path="/admin/onboarding">
+        <AdminPage><AdminOnboarding /></AdminPage>
       </Route>
 
       <Route path={"/404"} component={NotFound} />

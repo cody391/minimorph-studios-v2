@@ -1,0 +1,41 @@
+CREATE TABLE `onboarding_projects` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`customerId` int,
+	`orderId` int,
+	`contractId` int,
+	`stage` enum('intake','questionnaire','assets_upload','design','review','revisions','final_approval','launch','complete') NOT NULL DEFAULT 'intake',
+	`businessName` varchar(255) NOT NULL,
+	`contactName` varchar(255) NOT NULL,
+	`contactEmail` varchar(320) NOT NULL,
+	`contactPhone` varchar(32),
+	`packageTier` enum('starter','growth','premium') NOT NULL,
+	`domainOption` enum('existing','new','undecided') DEFAULT 'undecided',
+	`existingDomain` varchar(512),
+	`domainRegistrar` varchar(255),
+	`domainNotes` text,
+	`questionnaire` json,
+	`designMockupUrl` varchar(512),
+	`feedbackNotes` text,
+	`revisionsCount` int NOT NULL DEFAULT 0,
+	`launchedAt` timestamp,
+	`liveUrl` varchar(512),
+	`assignedRepId` int,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `onboarding_projects_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `project_assets` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`projectId` int NOT NULL,
+	`customerId` int,
+	`fileName` varchar(512) NOT NULL,
+	`fileKey` varchar(512) NOT NULL,
+	`fileUrl` varchar(1024) NOT NULL,
+	`fileSize` int,
+	`mimeType` varchar(128),
+	`category` enum('logo','photo','brand_guidelines','copy','document','other') NOT NULL DEFAULT 'other',
+	`notes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `project_assets_id` PRIMARY KEY(`id`)
+);
