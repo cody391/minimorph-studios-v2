@@ -1,24 +1,69 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { CheckCircle, ArrowLeft, DollarSign, Users, TrendingUp, Zap } from "lucide-react";
+import {
+  CheckCircle, ArrowLeft, ArrowRight, DollarSign, Users, TrendingUp,
+  Zap, User, Briefcase, Heart, FileCheck, Sparkles, Trophy, Star,
+} from "lucide-react";
+
+const STEPS = [
+  { id: 1, title: "Personal Info", icon: User },
+  { id: 2, title: "Experience", icon: Briefcase },
+  { id: 3, title: "Why MiniMorph?", icon: Heart },
+  { id: 4, title: "Agreement", icon: FileCheck },
+];
+
+const INDUSTRIES = [
+  "SaaS / Technology", "Real Estate", "Healthcare", "E-commerce", "Restaurants / Food",
+  "Professional Services", "Construction / Trades", "Beauty / Wellness", "Fitness / Sports",
+  "Education", "Automotive", "Financial Services", "Other",
+];
 
 export default function BecomeRep() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated } = useAuth();
+  const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    experience: "",
-  });
+
+  // Step 1: Personal Info
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+
+  // Step 2: Experience
+  const [availability, setAvailability] = useState<"full_time" | "part_time">("full_time");
+  const [hoursPerWeek, setHoursPerWeek] = useState(40);
+  const [salesExperience, setSalesExperience] = useState<"none" | "1_2_years" | "3_5_years" | "5_plus_years">("none");
+  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
+
+  // Step 3: Motivation
+  const [motivation, setMotivation] = useState("");
+  const [referredBy, setReferredBy] = useState("");
+
+  // Step 4: Agreement
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToTaxInfo, setAgreedToTaxInfo] = useState(false);
 
   const submitApp = trpc.reps.submitApplication.useMutation({
+    onSuccess: () => {
+      toast.success("Profile created! Let's continue your application.");
+      setStep(2);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const submitExtended = trpc.repApplication.submit.useMutation({
     onSuccess: () => {
       setSubmitted(true);
       toast.success("Application submitted!");
@@ -26,33 +71,78 @@ export default function BecomeRep() {
     onError: (err: any) => toast.error(err.message),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.fullName || !form.email) {
-      toast.error("Name and email are required");
-      return;
-    }
-    submitApp.mutate(form);
+  const handleStep1 = () => {
+    if (!fullName || !email) { toast.error("Name and email are required"); return; }
+    submitApp.mutate({ fullName, email, phone, bio: "" });
   };
+
+  const handleStep2 = () => {
+    if (hoursPerWeek < 5) { toast.error("Minimum 5 hours per week"); return; }
+    setStep(3);
+  };
+
+  const handleStep3 = () => {
+    if (motivation.length < 50) { toast.error("Please write at least 50 characters about your motivation"); return; }
+    setStep(4);
+  };
+
+  const handleStep4 = () => {
+    if (!agreedToTerms || !agreedToTaxInfo) { toast.error("Please accept all agreements"); return; }
+    submitExtended.mutate({
+      availability, hoursPerWeek, salesExperience,
+      previousIndustries: selectedIndustries,
+      motivation, linkedinUrl: linkedinUrl || undefined,
+      referredBy: referredBy || undefined,
+      agreedToTerms, agreedToTaxInfo,
+    });
+  };
+
+  const toggleIndustry = (ind: string) => {
+    setSelectedIndustries((prev) =>
+      prev.includes(ind) ? prev.filter((i) => i !== ind) : [...prev, ind]
+    );
+  };
+
+  const earningsEstimate = useMemo(() => {
+    const dealsPerMonth = availability === "full_time" ? 4 : 2;
+    const avgDealValue = 249 * 12;
+    return Math.round(dealsPerMonth * avgDealValue * 0.1);
+  }, [availability]);
 
   if (submitted) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-        <Card className="max-w-md w-full border-sage/20 shadow-lg">
-          <CardContent className="pt-8 pb-8 text-center">
-            <div className="w-16 h-16 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-forest" />
+        <Card className="max-w-lg w-full border-sage/20 shadow-lg">
+          <CardContent className="pt-10 pb-10 text-center">
+            <div className="w-20 h-20 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Sparkles className="w-10 h-10 text-forest" />
             </div>
-            <h2 className="text-2xl font-serif text-forest mb-3">Application Received</h2>
-            <p className="text-forest/60 font-sans mb-6 leading-relaxed">
-              Thank you for your interest in becoming a MiniMorph rep. We'll review your application and get back to you within 48 hours.
+            <h2 className="text-2xl font-serif text-forest mb-3">You're Almost In!</h2>
+            <p className="text-forest/60 font-sans mb-4 leading-relaxed max-w-md mx-auto">
+              Your application has been submitted. Our team will review it within 24-48 hours. Once approved, you'll get access to:
             </p>
-            <Button
-              onClick={() => setLocation("/")}
-              className="bg-forest text-white hover:bg-forest/90 rounded-full px-8"
-            >
-              Back to Home
-            </Button>
+            <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto mb-8">
+              {[
+                { icon: Trophy, label: "Training Academy" },
+                { icon: Users, label: "Lead Pipeline" },
+                { icon: DollarSign, label: "Commission Tracker" },
+                { icon: Star, label: "Gamification & Badges" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2 text-left p-2 rounded-lg bg-forest/5">
+                  <item.icon className="w-4 h-4 text-terracotta shrink-0" />
+                  <span className="text-xs font-sans text-forest">{item.label}</span>
+                </div>
+              ))}
+            </div>
+            {isAuthenticated ? (
+              <Button onClick={() => setLocation("/rep")} className="bg-forest text-white hover:bg-forest/90 rounded-full px-8">
+                Go to Rep Dashboard
+              </Button>
+            ) : (
+              <Button onClick={() => setLocation("/")} className="bg-forest text-white hover:bg-forest/90 rounded-full px-8">
+                Back to Home
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -61,97 +151,245 @@ export default function BecomeRep() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <div className="bg-forest text-white py-16 px-4">
+      {/* Hero */}
+      <div className="bg-forest text-white py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <button
-            onClick={() => setLocation("/")}
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white mb-6 font-sans text-sm transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Back to MiniMorph
+          <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-white/70 hover:text-white mb-4 font-sans text-sm transition-colors">
+            <ArrowLeft size={16} /> Back to MiniMorph
           </button>
-          <h1 className="text-3xl sm:text-4xl font-serif mb-4">Become a MiniMorph Rep</h1>
+          <h1 className="text-3xl sm:text-4xl font-serif mb-3">Become a MiniMorph Rep</h1>
           <p className="text-lg text-white/80 font-sans max-w-2xl mx-auto">
-            Join our network of sales professionals. Earn commissions by connecting local businesses with AI-powered websites.
+            Join our network of sales professionals. Earn 10% commission on every sale — that's up to <span className="text-terracotta font-medium">${earningsEstimate.toLocaleString()}/mo</span>.
           </p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 -mt-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Benefits Row */}
+      <div className="max-w-4xl mx-auto px-4 -mt-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { icon: DollarSign, label: "Competitive Commissions", desc: "Earn on every sale" },
-            { icon: Users, label: "Warm Leads", desc: "AI-sourced prospects" },
-            { icon: TrendingUp, label: "Recurring Revenue", desc: "Renewal commissions" },
-            { icon: Zap, label: "AI Support", desc: "We handle delivery" },
+            { icon: DollarSign, label: "10% Commission", desc: "On every sale you close" },
+            { icon: Users, label: "AI-Sourced Leads", desc: "Warm prospects ready to buy" },
+            { icon: TrendingUp, label: "Recurring Revenue", desc: "Earn on renewals too" },
+            { icon: Zap, label: "We Handle Delivery", desc: "You sell, we build" },
           ].map((b, i) => (
             <Card key={i} className="border-sage/20 bg-white shadow-sm">
-              <CardContent className="pt-5 pb-5 text-center">
-                <b.icon className="w-6 h-6 text-terracotta mx-auto mb-2" />
+              <CardContent className="pt-4 pb-4 text-center">
+                <b.icon className="w-5 h-5 text-terracotta mx-auto mb-2" />
                 <p className="text-sm font-medium text-forest">{b.label}</p>
-                <p className="text-xs text-forest/50 mt-1">{b.desc}</p>
+                <p className="text-[11px] text-forest/50 mt-0.5">{b.desc}</p>
               </CardContent>
             </Card>
           ))}
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-12">
+      {/* Step Progress */}
+      <div className="max-w-lg mx-auto px-4 mt-8 mb-4">
+        <div className="flex items-center justify-between">
+          {STEPS.map((s, i) => (
+            <div key={s.id} className="flex items-center">
+              <div className={`flex items-center gap-1.5 ${step >= s.id ? "text-forest" : "text-forest/30"}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  step > s.id ? "bg-forest text-white" : step === s.id ? "bg-terracotta text-white" : "bg-sage/20 text-forest/40"
+                }`}>
+                  {step > s.id ? <CheckCircle className="w-4 h-4" /> : s.id}
+                </div>
+                <span className="text-xs font-sans hidden sm:inline">{s.title}</span>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className={`w-8 sm:w-16 h-0.5 mx-2 transition-colors ${step > s.id ? "bg-forest" : "bg-sage/20"}`} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Form Card */}
+      <div className="max-w-lg mx-auto px-4 pb-12">
         <Card className="border-sage/20 shadow-lg">
-          <CardHeader>
-            <CardTitle className="font-serif text-forest text-xl">Apply Now</CardTitle>
-            <CardDescription className="text-forest/60">
-              Fill out the form below and we'll be in touch.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <Label className="text-forest/80 text-sm">Full Name *</Label>
-                <Input
-                  value={form.fullName}
-                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                  placeholder="Your full name"
-                  className="mt-1 border-sage/30 focus:border-forest"
-                />
-              </div>
-              <div>
-                <Label className="text-forest/80 text-sm">Email *</Label>
-                <Input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="you@example.com"
-                  className="mt-1 border-sage/30 focus:border-forest"
-                />
-              </div>
-              <div>
-                <Label className="text-forest/80 text-sm">Phone</Label>
-                <Input
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  placeholder="(555) 123-4567"
-                  className="mt-1 border-sage/30 focus:border-forest"
-                />
-              </div>
-              <div>
-                <Label className="text-forest/80 text-sm">Sales Experience</Label>
-                <Input
-                  value={form.experience}
-                  onChange={(e) => setForm({ ...form, experience: e.target.value })}
-                  placeholder="Brief description of your sales background"
-                  className="mt-1 border-sage/30 focus:border-forest"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={submitApp.isPending}
-                className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans"
-              >
-                {submitApp.isPending ? "Submitting..." : "Submit Application"}
-              </Button>
-            </form>
-          </CardContent>
+          {step === 1 && (
+            <>
+              <CardHeader>
+                <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
+                  <User className="w-5 h-5 text-terracotta" /> Personal Information
+                </CardTitle>
+                <CardDescription className="text-forest/60">Tell us about yourself.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-forest/80 text-sm">Full Name *</Label>
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" className="mt-1 border-sage/30 focus:border-forest" />
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm">Email *</Label>
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="mt-1 border-sage/30 focus:border-forest" />
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm">Phone</Label>
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 123-4567" className="mt-1 border-sage/30 focus:border-forest" />
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm">LinkedIn Profile (optional)</Label>
+                  <Input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="mt-1 border-sage/30 focus:border-forest" />
+                </div>
+                <Button onClick={handleStep1} disabled={submitApp.isPending} className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans">
+                  {submitApp.isPending ? "Creating Profile..." : "Continue"} <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <CardHeader>
+                <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-terracotta" /> Sales Experience
+                </CardTitle>
+                <CardDescription className="text-forest/60">Help us understand your background so we can set you up for success.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div>
+                  <Label className="text-forest/80 text-sm">Availability *</Label>
+                  <Select value={availability} onValueChange={(v: any) => setAvailability(v)}>
+                    <SelectTrigger className="mt-1 border-sage/30"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full_time">Full-Time (30-40+ hrs/week)</SelectItem>
+                      <SelectItem value="part_time">Part-Time (10-25 hrs/week)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm">Hours Per Week: {hoursPerWeek}</Label>
+                  <input type="range" min={5} max={60} value={hoursPerWeek} onChange={(e) => setHoursPerWeek(Number(e.target.value))} className="w-full mt-2 accent-terracotta" />
+                  <div className="flex justify-between text-[10px] text-forest/40 font-sans"><span>5 hrs</span><span>60 hrs</span></div>
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm">Sales Experience *</Label>
+                  <Select value={salesExperience} onValueChange={(v: any) => setSalesExperience(v)}>
+                    <SelectTrigger className="mt-1 border-sage/30"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No formal sales experience</SelectItem>
+                      <SelectItem value="1_2_years">1-2 years</SelectItem>
+                      <SelectItem value="3_5_years">3-5 years</SelectItem>
+                      <SelectItem value="5_plus_years">5+ years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm mb-2 block">Industries You've Worked In</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {INDUSTRIES.map((ind) => (
+                      <Badge key={ind} variant={selectedIndustries.includes(ind) ? "default" : "outline"}
+                        className={`cursor-pointer text-xs font-sans transition-colors ${
+                          selectedIndustries.includes(ind) ? "bg-forest text-white hover:bg-forest/90" : "border-sage/30 text-forest/60 hover:bg-sage/10"
+                        }`}
+                        onClick={() => toggleIndustry(ind)}>
+                        {ind}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-full border-sage/30 text-forest">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                  </Button>
+                  <Button onClick={handleStep2} className="flex-1 bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans">
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <CardHeader>
+                <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-terracotta" /> Why MiniMorph?
+                </CardTitle>
+                <CardDescription className="text-forest/60">Quality reps who care about small businesses thrive here.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div>
+                  <Label className="text-forest/80 text-sm">Why do you want to join MiniMorph Studios? *</Label>
+                  <Textarea value={motivation} onChange={(e) => setMotivation(e.target.value)}
+                    placeholder="Tell us what excites you about helping small businesses get online with AI-powered websites. What makes you a great fit? (minimum 50 characters)"
+                    className="mt-1 border-sage/30 focus:border-forest min-h-[140px]" />
+                  <p className={`text-[11px] mt-1 font-sans ${motivation.length >= 50 ? "text-green-600" : "text-forest/40"}`}>
+                    {motivation.length}/50 minimum characters
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm">Referred by someone? (optional)</Label>
+                  <Input value={referredBy} onChange={(e) => setReferredBy(e.target.value)} placeholder="Name or email of the person who referred you" className="mt-1 border-sage/30 focus:border-forest" />
+                  <p className="text-[11px] text-forest/40 mt-1 font-sans">Referrers earn a $200 bonus when you close your first deal.</p>
+                </div>
+                <div className="bg-forest/5 rounded-xl p-4 border border-forest/10">
+                  <p className="text-sm font-serif text-forest mb-2 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-terracotta" /> Your Earnings Potential
+                  </p>
+                  <p className="text-2xl font-serif text-forest">${earningsEstimate.toLocaleString()}<span className="text-sm text-forest/50 font-sans">/month</span></p>
+                  <p className="text-[11px] text-forest/50 font-sans mt-1">
+                    Based on {availability === "full_time" ? "4" : "2"} deals/month at avg. Growth package value with 10% commission
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-full border-sage/30 text-forest">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                  </Button>
+                  <Button onClick={handleStep3} className="flex-1 bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans">
+                    Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </>
+          )}
+
+          {step === 4 && (
+            <>
+              <CardHeader>
+                <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-terracotta" /> Review & Agreement
+                </CardTitle>
+                <CardDescription className="text-forest/60">Almost there! Review the terms and submit.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="bg-cream-dark/30 rounded-xl p-4 space-y-2">
+                  <p className="text-xs font-sans text-forest/50 uppercase tracking-wide">Application Summary</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm font-sans">
+                    <div><span className="text-forest/50">Name:</span> <span className="text-forest font-medium">{fullName}</span></div>
+                    <div><span className="text-forest/50">Email:</span> <span className="text-forest font-medium">{email}</span></div>
+                    <div><span className="text-forest/50">Availability:</span> <span className="text-forest font-medium">{availability === "full_time" ? "Full-Time" : "Part-Time"}</span></div>
+                    <div><span className="text-forest/50">Experience:</span> <span className="text-forest font-medium">{salesExperience.replace(/_/g, " ")}</span></div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-sage/20 bg-white">
+                    <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(v) => setAgreedToTerms(!!v)} className="mt-0.5" />
+                    <label htmlFor="terms" className="text-sm text-forest/70 font-sans leading-relaxed cursor-pointer">
+                      I agree to the <span className="text-forest font-medium">MiniMorph Rep Agreement</span>, including the 10% commission structure, brand representation guidelines, and code of conduct. I understand that I am an independent contractor, not an employee.
+                    </label>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-sage/20 bg-white">
+                    <Checkbox id="tax" checked={agreedToTaxInfo} onCheckedChange={(v) => setAgreedToTaxInfo(!!v)} className="mt-0.5" />
+                    <label htmlFor="tax" className="text-sm text-forest/70 font-sans leading-relaxed cursor-pointer">
+                      I agree to provide my <span className="text-forest font-medium">tax information and bank account details</span> via Stripe's secure platform for commission payouts. I understand I am responsible for reporting my own taxes as an independent contractor.
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-full border-sage/30 text-forest">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                  </Button>
+                  <Button onClick={handleStep4} disabled={submitExtended.isPending || !agreedToTerms || !agreedToTaxInfo}
+                    className="flex-1 bg-forest hover:bg-forest/90 text-white rounded-full font-sans">
+                    {submitExtended.isPending ? "Submitting..." : "Submit Application"} <CheckCircle className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </>
+          )}
         </Card>
       </div>
     </div>

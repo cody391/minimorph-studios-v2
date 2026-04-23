@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Heart, Plus, MessageCircle, Calendar, Send, Sparkles, Loader2, Bell } from "lucide-react";
+import { Heart, Plus, MessageCircle, Calendar, Send, Sparkles, Loader2, Bell, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -33,7 +33,9 @@ const statusColors: Record<string, string> = {
 export default function Nurture() {
   const [showCreate, setShowCreate] = useState(false);
   const [showGenerate, setShowGenerate] = useState(false);
+  const [showUpsellEmail, setShowUpsellEmail] = useState(false);
   const [generateForm, setGenerateForm] = useState({ customerId: "" });
+  const [upsellForm, setUpsellForm] = useState({ customerId: "" });
   const [sendingId, setSendingId] = useState<number | null>(null);
   const [form, setForm] = useState({ customerId: "", type: "check_in" as "check_in" | "support_request" | "update_request" | "feedback" | "upsell_attempt" | "renewal_outreach" | "report_delivery", subject: "", content: "", channel: "email" as "email" | "sms" | "in_app" | "phone" });
 
@@ -55,6 +57,15 @@ export default function Nurture() {
     },
     onError: (e) => toast.error(`Generation failed: ${e.message}`),
   });
+  const generateUpsellEmail = trpc.widgetCatalog.generateUpsellEmail.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Upsell email generated: "${data.subject}"`);
+      refetch();
+      setShowUpsellEmail(false);
+      setUpsellForm({ customerId: "" });
+    },
+    onError: (e) => toast.error(`Generation failed: ${e.message}`),
+  });
 
   const handleSend = (id: number) => {
     setSendingId(id);
@@ -69,6 +80,9 @@ export default function Nurture() {
           <p className="text-sm text-forest/60 font-sans mt-1">AI-managed check-ins, support, and relationship tracking during 12-month contracts</p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setShowUpsellEmail(true)} variant="outline" className="border-terracotta/30 text-terracotta hover:bg-terracotta/5 font-sans text-sm">
+            <TrendingUp className="h-4 w-4 mr-1" /> Upsell Email
+          </Button>
           <Button onClick={() => setShowGenerate(true)} className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-sm">
             <Sparkles className="h-4 w-4 mr-1" /> AI Check-in
           </Button>
@@ -176,6 +190,40 @@ export default function Nurture() {
                 <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Generating...</>
               ) : (
                 <><Sparkles className="h-4 w-4 mr-1" /> Generate</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Upsell Email Dialog */}
+      <Dialog open={showUpsellEmail} onOpenChange={setShowUpsellEmail}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-forest flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-terracotta" /> AI Upsell Email
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 font-sans">
+            <p className="text-sm text-forest/60">
+              AI will analyze the customer's business type, current package, and site performance to generate a personalized upsell email with 1-2 relevant widget/add-on recommendations.
+            </p>
+            <div>
+              <label className="text-xs text-forest/50">Customer ID *</label>
+              <Input type="number" value={upsellForm.customerId} onChange={(e) => setUpsellForm({ ...upsellForm, customerId: e.target.value })} placeholder="Enter customer ID" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUpsellEmail(false)} className="font-sans text-sm">Cancel</Button>
+            <Button
+              onClick={() => generateUpsellEmail.mutate({ customerId: parseInt(upsellForm.customerId) })}
+              disabled={!upsellForm.customerId || generateUpsellEmail.isPending}
+              className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-sm"
+            >
+              {generateUpsellEmail.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Generating...</>
+              ) : (
+                <><TrendingUp className="h-4 w-4 mr-1" /> Generate Upsell Email</>
               )}
             </Button>
           </DialogFooter>

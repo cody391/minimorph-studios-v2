@@ -124,3 +124,79 @@
 - [x] Wire onboarding into customer portal (/onboarding)
 - [x] Add onboarding management to admin dashboard (/admin/onboarding)
 - [x] Write tests for onboarding API routes (42 tests total passing)
+
+## Phase 18: Conversational AI Onboarding Agent
+- [x] Create backend tRPC endpoint for onboarding AI chat (invokeLLM with system prompt about MiniMorph services, questionnaire fields, brand guidance)
+- [x] AI agent asks discovery questions, suggests brand tone/colors/features, generates copy from descriptions
+- [x] AI auto-extracts structured data from conversation to populate questionnaire fields
+- [x] Add AI chat panel to onboarding questionnaire step using AIChatBox component
+- [x] Suggested prompts for common starting points ("I don't have a logo yet", "Help me describe my brand", "What features do I need?")
+
+## Phase 19: AI Concierge in Customer Portal
+- [x] Create backend tRPC endpoint for portal AI concierge chat (context-aware: knows customer's package, site status, available upsells)
+- [x] AI steers indecisive customers with logic: asks about goals, recommends actions, explains upsell value
+- [x] Add AI concierge chat panel to customer portal (floating or tab-based)
+- [x] Suggested prompts: "What should I do next?", "How can I get more traffic?", "What add-ons would help my business?"
+
+## Phase 20: Domain Cost Transparency + Revision Policy
+- [x] Update domain setup step to show pricing: free Year 1 on Growth/Premium, $15/yr on Starter
+- [x] Add revision policy display: 3 rounds included, $149/round after that
+- [x] Show policy in onboarding review step and customer portal
+
+## Phase 21: Post-Build AI Widget/Agent Upsell Catalog
+- [x] Define upsell product catalog: AI Chatbot ($299/mo), Booking Widget ($199/mo), Review Collector ($149/mo), Lead Capture Bot ($249/mo), SEO Autopilot ($199/mo), Extra Pages ($499 one-time), Priority Support ($99/mo)
+- [x] Add "Grow Your Site" section to customer portal with upsell cards, descriptions, and pricing
+- [x] Wire upsell acceptance to create upsell_opportunities records and notify admin
+- [x] Update admin upsells page to show catalog-based upsells with product details
+
+## Phase 22: Monthly Email Upsell Sequences
+- [x] Create AI-powered nurture email generator that includes personalized upsell recommendations
+- [x] AI analyzes customer business type, current package, site performance to recommend relevant add-ons
+- [x] Generate email content with value proposition tied to customer's specific metrics
+- [x] Add "Generate Upsell Email" action to admin nurture page
+- [x] Include upsell tracking in nurture logs (type: upsell_attempt with product reference)
+
+## Phase 23: Complete Rep Ecosystem — End-to-End Sales Force Platform
+
+### Rep Onboarding (Uber/DoorDash style)
+- [x] Multi-step rep application: personal info, experience, motivation, availability
+- [x] Rep training modules: company overview, sales scripts, product knowledge, objection handling
+- [x] Certification quiz: must pass to activate as rep
+- [x] Rep agreement/contract acceptance step
+- [x] Tax info collection (W-9/W-8BEN) via secure form (via Stripe Connect)
+- [x] Bank account / payout info via Stripe Connect onboarding
+- [x] Rep profile with photo, bio, branded materials
+
+### Rep Dashboard & Daily Workflow
+- [x] Rep home dashboard: today's tasks, pipeline, earnings, rank
+- [x] Gamification system: points, levels, badges, streaks
+- [x] Leaderboard: top reps by sales, revenue, conversion rate
+- [x] Daily activity tracker: calls made, emails sent, meetings booked
+- [x] Lead assignment queue: hot leads auto-assigned to top performers
+
+### Rep Communication Tools
+- [x] Email templates library: intro, follow-up, proposal, close
+- [x] Send email to customer directly from rep dashboard
+- [x] Call logging: log call outcomes, notes, next steps
+- [x] Text/SMS templates for quick outreach (email-based, SMS ready for future integration)
+- [x] Customer-facing proposal/pitch deck generator (AI-powered email generator)
+- [x] Branded collateral: digital business card, one-pagers (in rep profile)
+
+### Commission & Payouts
+- [x] 10% commission on every sale, tracked automatically
+- [x] Commission dashboard: pending, approved, paid history
+- [x] Automated payout via Stripe Connect (monthly or threshold-based)
+- [x] Bonus tiers: higher commission % for top performers (gamification levels)
+- [x] Clawback rules for cancelled contracts within 30 days (tracked in commission status)
+
+### Admin Rep Management
+- [x] Admin rep overview: all reps, status, performance metrics
+- [x] Rep quality scoring: based on customer satisfaction, conversion rate
+- [x] Rep deactivation/suspension workflow
+- [x] Training completion tracking per rep
+- [x] Commission approval workflow before payout
+
+### Social Media Recruitment Strategy
+- [ ] Create recruitment landing page for reps (Careers page — next phase)
+- [ ] Social media post templates for recruiting reps (next phase)
+- [ ] Referral program: existing reps refer new reps for bonus (next phase)

@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DollarSign, Clock, CheckCircle } from "lucide-react";
+import { DollarSign, Clock, CheckCircle, ArrowUpRight } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700",
@@ -14,7 +15,18 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Commissions() {
-  const { data: commissions, isLoading } = trpc.commissions.list.useQuery();
+  const { data: commissions, isLoading, refetch } = trpc.commissions.list.useQuery();
+  const { data: reps } = trpc.reps.list.useQuery();
+
+  const approveCommission = trpc.reps.approveCommission.useMutation({
+    onSuccess: () => { toast.success("Commission approved"); refetch(); },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const initiatePayout = trpc.reps.initiatePayout.useMutation({
+    onSuccess: () => { toast.success("Payout sent via Stripe Connect"); refetch(); },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   const totals = useMemo(() => {
     if (!commissions) return { pending: 0, paid: 0, total: 0 };
@@ -24,6 +36,16 @@ export default function Commissions() {
       total: commissions.reduce((s: number, c: any) => s + Number(c.amount), 0),
     };
   }, [commissions]);
+
+  const getRepName = (repId: number) => {
+    const rep = reps?.find((r: any) => r.id === repId);
+    return rep?.fullName || `Rep #${repId}`;
+  };
+
+  const getRepStripeStatus = (repId: number) => {
+    const rep = reps?.find((r: any) => r.id === repId);
+    return rep?.stripeConnectOnboarded || false;
+  };
 
   return (
     <div className="space-y-6">
@@ -70,16 +92,36 @@ export default function Commissions() {
                     <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Amount</th>
                     <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Status</th>
                     <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Date</th>
+                    <th className="text-right py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {commissions.map((c: any) => (
                     <tr key={c.id} className="border-b border-border/30 hover:bg-cream-dark/20 transition-colors">
-                      <td className="py-3 px-2 font-medium text-forest">Rep #{c.repId}</td>
-                      <td className="py-3 px-2 text-forest/70 capitalize">{c.commissionType.replace(/_/g, " ")}</td>
-                      <td className="py-3 px-2 text-forest font-medium">${Number(c.amount).toLocaleString()}</td>
+                      <td className="py-3 px-2 font-medium text-forest">{getRepName(c.repId)}</td>
+                      <td className="py-3 px-2 text-forest/70 capitalize">{c.commissionType?.replace(/_/g, " ") || c.type?.replace(/_/g, " ") || "—"}</td>
+                      <td className="py-3 px-2 text-forest font-medium">${Number(c.amount).toFixed(2)}</td>
                       <td className="py-3 px-2"><Badge className={`text-xs font-sans ${statusColors[c.status] ?? ""}`}>{c.status}</Badge></td>
                       <td className="py-3 px-2 text-forest/50 text-xs">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}</td>
+                      <td className="py-3 px-2 text-right">
+                        {c.status === "pending" && (
+                          <Button size="sm" className="bg-forest text-white hover:bg-forest/90 text-xs font-sans"
+                            disabled={approveCommission.isPending}
+                            onClick={() => approveCommission.mutate({ commissionId: c.id })}>
+                            <CheckCircle className="h-3 w-3 mr-1" /> Approve
+                          </Button>
+                        )}
+                        {c.status === "approved" && (
+                          <Button size="sm" disabled={!getRepStripeStatus(c.repId) || initiatePayout.isPending}
+                            className="bg-green-600 text-white hover:bg-green-700 text-xs font-sans"
+                            onClick={() => initiatePayout.mutate({ commissionId: c.id })}>
+                            <ArrowUpRight className="h-3 w-3 mr-1" /> Pay
+                          </Button>
+                        )}
+                        {c.status === "paid" && (
+                          <span className="text-xs text-green-600 font-sans">Paid</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

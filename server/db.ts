@@ -26,7 +26,27 @@ import {
   onboardingProjects,
   InsertOnboardingProject,
   projectAssets,
+  aiChatLogs,
+  InsertAiChatLog,
+  widgetCatalog,
+  InsertWidgetCatalogItem,
   InsertProjectAsset,
+  repTrainingModules,
+  InsertRepTrainingModule,
+  repTrainingProgress,
+  InsertRepTrainingProgress,
+  repQuizResults,
+  InsertRepQuizResult,
+  repActivityLogs,
+  InsertRepActivityLog,
+  repGamification,
+  InsertRepGamification,
+  repEmailTemplates,
+  InsertRepEmailTemplate,
+  repSentEmails,
+  InsertRepSentEmail,
+  repApplications,
+  InsertRepApplication,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -510,4 +530,273 @@ export async function deleteProjectAsset(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(projectAssets).where(eq(projectAssets.id, id));
+}
+
+/* ═══════════════════════════════════════════════════════
+   AI CHAT LOGS
+   ═══════════════════════════════════════════════════════ */
+export async function createAiChatLog(data: InsertAiChatLog) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(aiChatLogs).values(data);
+  return { id: result[0].insertId };
+}
+export async function listAiChatLogs(opts: { context: "onboarding" | "portal"; userId?: number; projectId?: number; customerId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(aiChatLogs.context, opts.context)];
+  if (opts.userId) conditions.push(eq(aiChatLogs.userId, opts.userId));
+  if (opts.projectId) conditions.push(eq(aiChatLogs.projectId, opts.projectId));
+  if (opts.customerId) conditions.push(eq(aiChatLogs.customerId, opts.customerId));
+  return db.select().from(aiChatLogs).where(and(...conditions)).orderBy(aiChatLogs.createdAt);
+}
+
+/* ═══════════════════════════════════════════════════════
+   WIDGET CATALOG
+   ═══════════════════════════════════════════════════════ */
+export async function createWidgetCatalogItem(data: InsertWidgetCatalogItem) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(widgetCatalog).values(data);
+  return { id: result[0].insertId };
+}
+export async function listWidgetCatalog(activeOnly = false) {
+  const db = await getDb();
+  if (!db) return [];
+  if (activeOnly) {
+    return db.select().from(widgetCatalog).where(eq(widgetCatalog.isActive, true)).orderBy(widgetCatalog.sortOrder);
+  }
+  return db.select().from(widgetCatalog).orderBy(widgetCatalog.sortOrder);
+}
+export async function getWidgetBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(widgetCatalog).where(eq(widgetCatalog.slug, slug)).limit(1);
+  return result[0];
+}
+export async function updateWidgetCatalogItem(id: number, data: Partial<InsertWidgetCatalogItem>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(widgetCatalog).set(data).where(eq(widgetCatalog.id, id));
+}
+export async function getCustomerByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
+  return result[0];
+}
+
+/* ═══════════════════════════════════════════════════════
+   REP TRAINING MODULES
+   ═══════════════════════════════════════════════════════ */
+export async function listTrainingModules(activeOnly = false) {
+  const db = await getDb();
+  if (!db) return [];
+  if (activeOnly) {
+    return db.select().from(repTrainingModules).where(eq(repTrainingModules.isActive, true)).orderBy(repTrainingModules.sortOrder);
+  }
+  return db.select().from(repTrainingModules).orderBy(repTrainingModules.sortOrder);
+}
+export async function getTrainingModule(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(repTrainingModules).where(eq(repTrainingModules.id, id)).limit(1);
+  return result[0];
+}
+export async function createTrainingModule(data: InsertRepTrainingModule) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(repTrainingModules).values(data);
+  return { id: result[0].insertId };
+}
+export async function updateTrainingModule(id: number, data: Partial<InsertRepTrainingModule>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(repTrainingModules).set(data).where(eq(repTrainingModules.id, id));
+}
+/* ═══════════════════════════════════════════════════════
+   REP TRAINING PROGRESS
+   ═══════════════════════════════════════════════════════ */
+export async function getRepTrainingProgress(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repTrainingProgress).where(eq(repTrainingProgress.repId, repId));
+}
+export async function upsertTrainingProgress(repId: number, moduleId: number, status: "not_started" | "in_progress" | "completed") {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(repTrainingProgress)
+    .where(and(eq(repTrainingProgress.repId, repId), eq(repTrainingProgress.moduleId, moduleId))).limit(1);
+  if (existing.length > 0) {
+    await db.update(repTrainingProgress)
+      .set({ status, completedAt: status === "completed" ? new Date() : null })
+      .where(eq(repTrainingProgress.id, existing[0].id));
+    return existing[0].id;
+  } else {
+    const result = await db.insert(repTrainingProgress).values({
+      repId, moduleId, status, completedAt: status === "completed" ? new Date() : undefined,
+    });
+    return result[0].insertId;
+  }
+}
+/* ═══════════════════════════════════════════════════════
+   REP QUIZ RESULTS
+   ═══════════════════════════════════════════════════════ */
+export async function createQuizResult(data: InsertRepQuizResult) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(repQuizResults).values(data);
+  return { id: result[0].insertId };
+}
+export async function getRepQuizResults(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repQuizResults).where(eq(repQuizResults.repId, repId)).orderBy(desc(repQuizResults.createdAt));
+}
+/* ═══════════════════════════════════════════════════════
+   REP ACTIVITY LOGS
+   ═══════════════════════════════════════════════════════ */
+export async function createActivityLog(data: InsertRepActivityLog) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(repActivityLogs).values(data);
+  return { id: result[0].insertId };
+}
+export async function listRepActivities(repId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repActivityLogs).where(eq(repActivityLogs.repId, repId)).orderBy(desc(repActivityLogs.createdAt)).limit(limit);
+}
+export async function getRepActivityStats(repId: number) {
+  const db = await getDb();
+  if (!db) return { totalActivities: 0, todayActivities: 0, totalPoints: 0 };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [total] = await db.select({ count: sql<number>`count(*)`, points: sql<number>`COALESCE(sum(pointsEarned), 0)` })
+    .from(repActivityLogs).where(eq(repActivityLogs.repId, repId));
+  const [todayCount] = await db.select({ count: sql<number>`count(*)` })
+    .from(repActivityLogs).where(and(eq(repActivityLogs.repId, repId), gte(repActivityLogs.createdAt, today)));
+  return { totalActivities: total?.count || 0, todayActivities: todayCount?.count || 0, totalPoints: total?.points || 0 };
+}
+export async function getRepFollowUps(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repActivityLogs)
+    .where(and(eq(repActivityLogs.repId, repId), sql`followUpAt IS NOT NULL AND followUpAt >= NOW()`))
+    .orderBy(repActivityLogs.followUpAt).limit(20);
+}
+/* ═══════════════════════════════════════════════════════
+   REP GAMIFICATION
+   ═══════════════════════════════════════════════════════ */
+export async function getRepGamification(repId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(repGamification).where(eq(repGamification.repId, repId)).limit(1);
+  return result[0];
+}
+export async function upsertRepGamification(repId: number, data: Partial<InsertRepGamification>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(repGamification).where(eq(repGamification.repId, repId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(repGamification).set(data).where(eq(repGamification.repId, repId));
+    return existing[0].id;
+  } else {
+    const result = await db.insert(repGamification).values({ repId, ...data } as any);
+    return result[0].insertId;
+  }
+}
+export async function getLeaderboard(limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    repId: repGamification.repId,
+    totalPoints: repGamification.totalPoints,
+    level: repGamification.level,
+    currentStreak: repGamification.currentStreak,
+    monthlyDeals: repGamification.monthlyDeals,
+    repName: reps.fullName,
+  }).from(repGamification)
+    .leftJoin(reps, eq(repGamification.repId, reps.id))
+    .orderBy(desc(repGamification.totalPoints))
+    .limit(limit);
+}
+/* ═══════════════════════════════════════════════════════
+   REP EMAIL TEMPLATES
+   ═══════════════════════════════════════════════════════ */
+export async function listEmailTemplates(activeOnly = false) {
+  const db = await getDb();
+  if (!db) return [];
+  if (activeOnly) {
+    return db.select().from(repEmailTemplates).where(eq(repEmailTemplates.isActive, true)).orderBy(repEmailTemplates.sortOrder);
+  }
+  return db.select().from(repEmailTemplates).orderBy(repEmailTemplates.sortOrder);
+}
+export async function getEmailTemplate(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(repEmailTemplates).where(eq(repEmailTemplates.id, id)).limit(1);
+  return result[0];
+}
+export async function createEmailTemplate(data: InsertRepEmailTemplate) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(repEmailTemplates).values(data);
+  return { id: result[0].insertId };
+}
+export async function updateEmailTemplate(id: number, data: Partial<InsertRepEmailTemplate>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(repEmailTemplates).set(data).where(eq(repEmailTemplates.id, id));
+}
+/* ═══════════════════════════════════════════════════════
+   REP SENT EMAILS
+   ═══════════════════════════════════════════════════════ */
+export async function createSentEmail(data: InsertRepSentEmail) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(repSentEmails).values(data);
+  return { id: result[0].insertId };
+}
+export async function listRepSentEmails(repId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repSentEmails).where(eq(repSentEmails.repId, repId)).orderBy(desc(repSentEmails.sentAt)).limit(limit);
+}
+/* ═══════════════════════════════════════════════════════
+   REP APPLICATIONS
+   ═══════════════════════════════════════════════════════ */
+export async function createRepApplication(data: InsertRepApplication) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(repApplications).values(data);
+  return { id: result[0].insertId };
+}
+export async function getRepApplication(repId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(repApplications).where(eq(repApplications.repId, repId)).limit(1);
+  return result[0];
+}
+export async function updateRepApplication(repId: number, data: Partial<InsertRepApplication>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(repApplications).set(data).where(eq(repApplications.repId, repId));
+}
+
+
+// Get a single commission by ID
+export async function getCommissionById(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [row] = await db.select().from(commissions).where(eq(commissions.id, id));
+  return row || null;
+}
+
+// Get a single widget catalog item by ID
+export async function getWidgetCatalogItem(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(widgetCatalog).where(eq(widgetCatalog.id, id)).limit(1);
+  return result[0];
 }

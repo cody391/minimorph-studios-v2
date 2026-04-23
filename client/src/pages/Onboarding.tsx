@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { Link } from "wouter";
+import { AIChatBox } from "@/components/AIChatBox";
 
 /* ═══════════════════════════════════════════════════════
    TYPES
@@ -231,15 +232,44 @@ function QuestionnaireStep({
   const [inspirationUrls, setInspirationUrls] = useState("");
   const [specialRequests, setSpecialRequests] = useState("");
   const [brandColors, setBrandColors] = useState("");
-
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{role: "system" | "user" | "assistant"; content: string}>>([]);
+  const [aiAutoFilled, setAiAutoFilled] = useState(false);
   const createProject = trpc.onboarding.create.useMutation();
   const submitQuestionnaire = trpc.onboarding.submitQuestionnaire.useMutation();
-
+  const aiChat = trpc.ai.onboardingChat.useMutation({
+    onSuccess: (data) => {
+      setChatMessages(prev => [...prev, { role: "assistant", content: data.response }]);
+      if (data.extractedData) {
+        const d = data.extractedData;
+        if (d.brandTone) setBrandTone(d.brandTone);
+        if (d.brandColors?.length) setBrandColors(d.brandColors.join(", "));
+        if (d.targetAudience) setTargetAudience(d.targetAudience);
+        if (d.competitors?.length) setCompetitors(d.competitors.join(", "));
+        if (d.contentPreference) setContentPreference(d.contentPreference);
+        if (d.mustHaveFeatures?.length) setMustHaveFeatures(d.mustHaveFeatures.join(", "));
+        if (d.inspirationUrls?.length) setInspirationUrls(d.inspirationUrls.join(", "));
+        if (d.specialRequests) setSpecialRequests(d.specialRequests);
+        setAiAutoFilled(true);
+        toast.success("AI has filled in your questionnaire based on our conversation!");
+      }
+    },
+    onError: () => {
+      setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I had trouble processing that. Could you try again?" }]);
+    },
+  });
+  const handleSendMessage = (content: string) => {
+    setChatMessages(prev => [...prev, { role: "user", content }]);
+    aiChat.mutate({
+      projectId: projectId ?? undefined,
+      message: content,
+      history: chatMessages.filter(m => m.role !== "system"),
+    });
+  };
   const handleSubmit = async () => {
     try {
       let pid = projectId;
       if (!pid) {
-        // Create project first
         const result = await createProject.mutateAsync({
           businessName: "My Business",
           contactName: "Customer",
@@ -249,7 +279,6 @@ function QuestionnaireStep({
         pid = result.id;
         onProjectCreated(pid);
       }
-
       await submitQuestionnaire.mutateAsync({
         projectId: pid,
         questionnaire: {
@@ -263,135 +292,132 @@ function QuestionnaireStep({
           brandColors: brandColors.split(",").map((s) => s.trim()).filter(Boolean),
         },
       });
-
       toast.success("Questionnaire saved!");
       onNext();
     } catch (err) {
       toast.error("Failed to save questionnaire. Please try again.");
     }
   };
-
   const isSubmitting = createProject.isPending || submitQuestionnaire.isPending;
-
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-serif text-[#2D5A3D] mb-2">Tell Us About Your Brand</h2>
         <p className="text-gray-600">
           Help us understand your vision so we can design a website that truly represents your business.
         </p>
       </div>
-
-      <Card className="border-[#2D5A3D]/10">
-        <CardContent className="p-8 space-y-6">
-          {/* Brand Tone */}
-          <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">What tone best describes your brand?</Label>
-            <Select value={brandTone} onValueChange={setBrandTone}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="professional">Professional & Trustworthy</SelectItem>
-                <SelectItem value="friendly">Friendly & Approachable</SelectItem>
-                <SelectItem value="bold">Bold & Energetic</SelectItem>
-                <SelectItem value="elegant">Elegant & Refined</SelectItem>
-                <SelectItem value="playful">Playful & Creative</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* AI Assistant Toggle */}
+      <div className="mb-6 flex justify-center">
+        <button
+          onClick={() => setShowAiChat(!showAiChat)}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all border-2 ${
+            showAiChat
+              ? "bg-[#C4704B] text-white border-[#C4704B] shadow-md"
+              : "bg-white text-[#2D5A3D] border-[#2D5A3D]/20 hover:border-[#C4704B]/50 hover:bg-[#C4704B]/5"
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          {showAiChat ? "Switch to Form View" : "Not sure where to start? Chat with our AI assistant"}
+        </button>
+      </div>
+      {aiAutoFilled && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
+          <div className="flex items-center justify-center gap-2 text-green-700 text-sm font-medium">
+            <CheckCircle2 className="w-4 h-4" />
+            AI has pre-filled the form based on your conversation. Review and adjust anything below, then save.
           </div>
-
-          {/* Brand Colors */}
-          <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">Brand colors (comma-separated, e.g. "#2D5A3D, #C4704B")</Label>
-            <Input
-              value={brandColors}
-              onChange={(e) => setBrandColors(e.target.value)}
-              placeholder="Your brand colors, or leave blank and we'll suggest some"
-            />
-          </div>
-
-          {/* Target Audience */}
-          <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">Who is your target audience?</Label>
-            <Textarea
-              value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value)}
-              placeholder="Describe your ideal customers — age range, interests, location, etc."
-              rows={3}
-            />
-          </div>
-
-          {/* Competitors */}
-          <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">Competitors or businesses you admire (comma-separated)</Label>
-            <Input
-              value={competitors}
-              onChange={(e) => setCompetitors(e.target.value)}
-              placeholder="e.g. Acme Corp, BetterBrand, TopCompetitor"
-            />
-          </div>
-
-          {/* Content Preference */}
-          <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">Who will write the website content?</Label>
-            <Select value={contentPreference} onValueChange={setContentPreference}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="we_write">MiniMorph writes everything</SelectItem>
-                <SelectItem value="customer_provides">I'll provide all content</SelectItem>
-                <SelectItem value="mix">A mix — I'll provide some, you write the rest</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Must-Have Features */}
-          <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">Must-have features (comma-separated)</Label>
-            <Input
-              value={mustHaveFeatures}
-              onChange={(e) => setMustHaveFeatures(e.target.value)}
-              placeholder="e.g. Contact form, Photo gallery, Online booking, Menu page"
-            />
-          </div>
-
-          {/* Inspiration URLs */}
-          <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">Websites you love (comma-separated URLs)</Label>
-            <Input
-              value={inspirationUrls}
-              onChange={(e) => setInspirationUrls(e.target.value)}
-              placeholder="e.g. https://example.com, https://nicebrand.com"
-            />
-          </div>
-
-          {/* Special Requests */}
-          <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">Anything else we should know?</Label>
-            <Textarea
-              value={specialRequests}
-              onChange={(e) => setSpecialRequests(e.target.value)}
-              placeholder="Special requirements, deadlines, integrations, or anything else on your mind..."
-              rows={4}
-            />
-          </div>
-
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="w-full bg-[#2D5A3D] hover:bg-[#234A31] text-white h-12 text-base"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-            ) : (
-              <ArrowRight className="w-5 h-5 mr-2" />
-            )}
-            Save & Continue to Asset Upload
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+      )}
+      <div className={`grid gap-6 ${showAiChat ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
+        {/* AI Chat Panel */}
+        {showAiChat && (
+          <Card className="border-[#C4704B]/20 bg-white overflow-hidden">
+            <CardHeader className="pb-2 bg-gradient-to-r from-[#C4704B]/5 to-transparent">
+              <CardTitle className="text-base font-serif text-[#C4704B] flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                AI Design Assistant
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Just describe your business and what you want — the AI will fill out the form for you.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <AIChatBox
+                messages={chatMessages}
+                onSendMessage={handleSendMessage}
+                isLoading={aiChat.isPending}
+                placeholder="Tell me about your business..."
+                height={520}
+                emptyStateMessage="Hi! I'm your design assistant. Tell me about your business and I'll help you fill out this questionnaire."
+                suggestedPrompts={[
+                  "I run a bakery in Austin",
+                  "I'm a freelance photographer",
+                  "I have a law firm",
+                  "I sell handmade jewelry online",
+                ]}
+              />
+            </CardContent>
+          </Card>
+        )}
+        {/* Form Panel */}
+        <Card className={`border-[#2D5A3D]/10 ${aiAutoFilled ? "ring-2 ring-green-300/50" : ""}`}>
+          <CardContent className="p-8 space-y-6">
+            <div className="space-y-2">
+              <Label className="text-[#2D5A3D] font-medium">What tone best describes your brand?</Label>
+              <Select value={brandTone} onValueChange={setBrandTone}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="professional">Professional & Trustworthy</SelectItem>
+                  <SelectItem value="friendly">Friendly & Approachable</SelectItem>
+                  <SelectItem value="bold">Bold & Energetic</SelectItem>
+                  <SelectItem value="elegant">Elegant & Refined</SelectItem>
+                  <SelectItem value="playful">Playful & Creative</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#2D5A3D] font-medium">Brand colors (comma-separated, e.g. "#2D5A3D, #C4704B")</Label>
+              <Input value={brandColors} onChange={(e) => setBrandColors(e.target.value)} placeholder="Your brand colors, or leave blank and we'll suggest some" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#2D5A3D] font-medium">Who is your target audience?</Label>
+              <Textarea value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} placeholder="Describe your ideal customers — age range, interests, location, etc." rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#2D5A3D] font-medium">Competitors or businesses you admire (comma-separated)</Label>
+              <Input value={competitors} onChange={(e) => setCompetitors(e.target.value)} placeholder="e.g. Acme Corp, BetterBrand, TopCompetitor" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#2D5A3D] font-medium">Who will write the website content?</Label>
+              <Select value={contentPreference} onValueChange={setContentPreference}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="we_write">MiniMorph writes everything</SelectItem>
+                  <SelectItem value="customer_provides">I'll provide all content</SelectItem>
+                  <SelectItem value="mix">A mix — I'll provide some, you write the rest</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#2D5A3D] font-medium">Must-have features (comma-separated)</Label>
+              <Input value={mustHaveFeatures} onChange={(e) => setMustHaveFeatures(e.target.value)} placeholder="e.g. Contact form, Photo gallery, Online booking, Menu page" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#2D5A3D] font-medium">Websites you love (comma-separated URLs)</Label>
+              <Input value={inspirationUrls} onChange={(e) => setInspirationUrls(e.target.value)} placeholder="e.g. https://example.com, https://nicebrand.com" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[#2D5A3D] font-medium">Anything else we should know?</Label>
+              <Textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} placeholder="Special requirements, deadlines, integrations, or anything else on your mind..." rows={4} />
+            </div>
+            <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full bg-[#2D5A3D] hover:bg-[#234A31] text-white h-12 text-base">
+              {isSubmitting ? (<Loader2 className="w-5 h-5 animate-spin mr-2" />) : (<ArrowRight className="w-5 h-5 mr-2" />)}
+              Save & Continue to Asset Upload
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -723,14 +749,34 @@ function DomainStep({
           )}
 
           {domainOption === "new" && (
-            <div className="p-5 bg-[#2D5A3D]/5 rounded-xl">
-              <p className="text-gray-700 mb-2">
+            <div className="p-5 bg-[#2D5A3D]/5 rounded-xl space-y-4">
+              <p className="text-gray-700">
                 We'll help you find the perfect domain name for your business. After your website design is approved,
                 we'll present you with available options and handle the registration.
               </p>
-              <p className="text-sm text-gray-500">
-                Domain registration is included in all packages at no extra cost for the first year.
-              </p>
+              <div className="bg-white rounded-lg p-4 border border-[#2D5A3D]/10">
+                <h4 className="font-medium text-[#2D5A3D] mb-3 text-sm">Domain Pricing</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">.com domain</span>
+                    <div className="text-right">
+                      <span className="font-medium text-[#2D5A3D]">FREE first year</span>
+                      <span className="text-gray-400 text-xs ml-1">(with Growth or Premium)</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Renewal (year 2+)</span>
+                    <span className="text-gray-700">$15/year</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Starter package</span>
+                    <span className="text-gray-700">$15/year from day one</span>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-xs text-gray-500">We handle registration, DNS setup, SSL certificates, and renewals. No technical knowledge required.</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -964,6 +1010,15 @@ function ProjectStatusStep({
                 Revisions so far: {project.revisionsCount}
               </p>
             )}
+            <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+              <p className="text-xs text-amber-800 font-sans">
+                <strong>Revision Policy:</strong> Your package includes <strong>3 rounds of revisions</strong> at no extra cost.
+                {project.revisionsCount >= 3
+                  ? " You've used all included revisions. Additional rounds are $149 each."
+                  : ` You have ${3 - (project.revisionsCount || 0)} revision(s) remaining.`}
+                {" "}Additional revision rounds are available at $149 per round.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}

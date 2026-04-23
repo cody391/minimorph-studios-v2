@@ -46,11 +46,12 @@ export const reps = mysqlTable("reps", {
   performanceScore: decimal("performanceScore", { precision: 5, scale: 2 }).default("0.00"),
   totalDeals: int("totalDeals").default(0).notNull(),
   totalRevenue: decimal("totalRevenue", { precision: 12, scale: 2 }).default("0.00"),
-  bio: text("bio"),
+   bio: text("bio"),
+  stripeConnectAccountId: varchar("stripeConnectAccountId", { length: 128 }),
+  stripeConnectOnboarded: boolean("stripeConnectOnboarded").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type Rep = typeof reps.$inferSelect;
 export type InsertRep = typeof reps.$inferInsert;
 
@@ -225,7 +226,7 @@ export const upsellOpportunities = mysqlTable("upsell_opportunities", {
   id: int("id").autoincrement().primaryKey(),
   customerId: int("customerId").notNull(),
   contractId: int("contractId"),
-  type: mysqlEnum("type", ["tier_upgrade", "add_pages", "add_feature", "add_service"])
+  type: mysqlEnum("type", ["tier_upgrade", "add_pages", "add_feature", "add_service", "ai_widget"])
     .default("tier_upgrade")
     .notNull(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -339,6 +340,7 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   designMockupUrl: varchar("designMockupUrl", { length: 512 }),
   feedbackNotes: text("feedbackNotes"),
   revisionsCount: int("revisionsCount").default(0).notNull(),
+  maxRevisions: int("maxRevisions").default(3).notNull(),
 
   // Launch
   launchedAt: timestamp("launchedAt"),
@@ -383,3 +385,190 @@ export const projectAssets = mysqlTable("project_assets", {
 
 export type ProjectAsset = typeof projectAssets.$inferSelect;
 export type InsertProjectAsset = typeof projectAssets.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   AI_CHAT_LOGS — Conversation history for onboarding + portal AI agents
+   ═══════════════════════════════════════════════════════ */
+export const aiChatLogs = mysqlTable("ai_chat_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  customerId: int("customerId"),
+  projectId: int("projectId"),
+  context: mysqlEnum("context", ["onboarding", "portal"]).notNull(),
+  role: mysqlEnum("role", ["system", "user", "assistant"]).notNull(),
+  content: text("content").notNull(),
+  metadata: json("metadata"), // extracted form fields, suggested actions, etc.
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AiChatLog = typeof aiChatLogs.$inferSelect;
+export type InsertAiChatLog = typeof aiChatLogs.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   WIDGET_CATALOG — Post-build AI widget/agent upsell products
+   ═══════════════════════════════════════════════════════ */
+export const widgetCatalog = mysqlTable("widget_catalog", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  monthlyPrice: decimal("monthlyPrice", { precision: 8, scale: 2 }).notNull(),
+  setupFee: decimal("setupFee", { precision: 8, scale: 2 }).default("0.00"),
+  category: mysqlEnum("category", ["ai_agent", "widget", "service", "integration"]).default("widget").notNull(),
+  features: json("features"), // string[]
+  icon: varchar("icon", { length: 64 }), // lucide icon name
+  isActive: boolean("isActive").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WidgetCatalogItem = typeof widgetCatalog.$inferSelect;
+export type InsertWidgetCatalogItem = typeof widgetCatalog.$inferInsert;
+/* ═══════════════════════════════════════════════════════
+   REP_TRAINING_MODULES — Training content for reps
+   ═══════════════════════════════════════════════════════ */
+export const repTrainingModules = mysqlTable("rep_training_modules", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  content: text("content").notNull(), // markdown training content
+  sortOrder: int("sortOrder").default(0).notNull(),
+  estimatedMinutes: int("estimatedMinutes").default(15).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RepTrainingModule = typeof repTrainingModules.$inferSelect;
+export type InsertRepTrainingModule = typeof repTrainingModules.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_TRAINING_PROGRESS — Tracks which modules each rep completed
+   ═══════════════════════════════════════════════════════ */
+export const repTrainingProgress = mysqlTable("rep_training_progress", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  moduleId: int("moduleId").notNull(),
+  status: mysqlEnum("status", ["not_started", "in_progress", "completed"]).default("not_started").notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RepTrainingProgressRow = typeof repTrainingProgress.$inferSelect;
+export type InsertRepTrainingProgress = typeof repTrainingProgress.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_QUIZ_RESULTS — Certification quiz attempts
+   ═══════════════════════════════════════════════════════ */
+export const repQuizResults = mysqlTable("rep_quiz_results", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  score: int("score").notNull(), // 0-100
+  passed: boolean("passed").default(false).notNull(),
+  answers: json("answers"), // { questionId: selectedAnswer }
+  attemptNumber: int("attemptNumber").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RepQuizResult = typeof repQuizResults.$inferSelect;
+export type InsertRepQuizResult = typeof repQuizResults.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_ACTIVITY_LOGS — Daily activity tracking
+   ═══════════════════════════════════════════════════════ */
+export const repActivityLogs = mysqlTable("rep_activity_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  type: mysqlEnum("type", ["call", "email", "meeting", "proposal", "follow_up", "note", "deal_closed"]).notNull(),
+  leadId: int("leadId"),
+  customerId: int("customerId"),
+  subject: varchar("subject", { length: 255 }),
+  notes: text("notes"),
+  outcome: mysqlEnum("outcome", ["connected", "voicemail", "no_answer", "scheduled", "sent", "completed", "cancelled"]),
+  followUpAt: timestamp("followUpAt"),
+  pointsEarned: int("pointsEarned").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RepActivityLog = typeof repActivityLogs.$inferSelect;
+export type InsertRepActivityLog = typeof repActivityLogs.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_GAMIFICATION — Points, levels, badges, streaks
+   ═══════════════════════════════════════════════════════ */
+export const repGamification = mysqlTable("rep_gamification", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull().unique(),
+  totalPoints: int("totalPoints").default(0).notNull(),
+  level: mysqlEnum("level", ["rookie", "closer", "ace", "elite", "legend"]).default("rookie").notNull(),
+  currentStreak: int("currentStreak").default(0).notNull(),
+  longestStreak: int("longestStreak").default(0).notNull(),
+  lastActiveDate: varchar("lastActiveDate", { length: 10 }),
+  badges: json("badges"), // string[]
+  monthlyDeals: int("monthlyDeals").default(0).notNull(),
+  monthlyResetAt: timestamp("monthlyResetAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type RepGamificationRow = typeof repGamification.$inferSelect;
+export type InsertRepGamification = typeof repGamification.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_EMAIL_TEMPLATES — Pre-built email templates for reps
+   ═══════════════════════════════════════════════════════ */
+export const repEmailTemplates = mysqlTable("rep_email_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  category: mysqlEnum("category", ["intro", "follow_up", "proposal", "close", "check_in", "referral"]).notNull(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(), // markdown with {{variable}} placeholders
+  variables: json("variables"), // string[]
+  isActive: boolean("isActive").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RepEmailTemplate = typeof repEmailTemplates.$inferSelect;
+export type InsertRepEmailTemplate = typeof repEmailTemplates.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_SENT_EMAILS — Emails sent by reps to leads/customers
+   ═══════════════════════════════════════════════════════ */
+export const repSentEmails = mysqlTable("rep_sent_emails", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  templateId: int("templateId"),
+  leadId: int("leadId"),
+  customerId: int("customerId"),
+  recipientEmail: varchar("recipientEmail", { length: 320 }).notNull(),
+  recipientName: varchar("recipientName", { length: 255 }),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(),
+  status: mysqlEnum("status", ["sent", "delivered", "opened", "clicked", "bounced"]).default("sent").notNull(),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+});
+export type RepSentEmail = typeof repSentEmails.$inferSelect;
+export type InsertRepSentEmail = typeof repSentEmails.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_APPLICATIONS — Extended application data for rep recruitment
+   ═══════════════════════════════════════════════════════ */
+export const repApplications = mysqlTable("rep_applications", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  photoUrl: varchar("photoUrl", { length: 1024 }),
+  availability: mysqlEnum("availability", ["full_time", "part_time"]).default("full_time").notNull(),
+  hoursPerWeek: int("hoursPerWeek").default(40).notNull(),
+  salesExperience: mysqlEnum("salesExperience", ["none", "1_2_years", "3_5_years", "5_plus_years"]).default("none").notNull(),
+  previousIndustries: json("previousIndustries"), // string[]
+  motivation: text("motivation"), // why MiniMorph essay
+  linkedinUrl: varchar("linkedinUrl", { length: 512 }),
+  referredBy: varchar("referredBy", { length: 255 }),
+  agreedToTerms: boolean("agreedToTerms").default(false).notNull(),
+  agreedToTaxInfo: boolean("agreedToTaxInfo").default(false).notNull(),
+  stripeConnectAccountId: varchar("stripeConnectAccountId", { length: 128 }),
+  stripeConnectOnboarded: boolean("stripeConnectOnboarded").default(false).notNull(),
+  reviewNotes: text("reviewNotes"),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewedBy: int("reviewedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type RepApplication = typeof repApplications.$inferSelect;
+export type InsertRepApplication = typeof repApplications.$inferInsert;

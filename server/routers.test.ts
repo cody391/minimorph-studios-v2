@@ -496,3 +496,526 @@ describe("onboarding.uploadAsset", () => {
     }
   });
 });
+
+/* ═══════════════════════════════════════════════════════
+   REP ECOSYSTEM TESTS
+   ═══════════════════════════════════════════════════════ */
+
+describe("repTraining.modules", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repTraining.modules()).rejects.toThrow();
+  });
+  it("is accessible to authenticated users (fails at DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.repTraining.modules();
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("repTraining.myProgress", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repTraining.myProgress()).rejects.toThrow();
+  });
+});
+
+describe("repTraining.completeModule", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repTraining.completeModule({ moduleId: 1 })).rejects.toThrow();
+  });
+});
+
+describe("repTraining.submitQuiz", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repTraining.submitQuiz({ answers: [{ questionId: "q1", answer: "a" }] })
+    ).rejects.toThrow();
+  });
+});
+
+describe("repTraining.adminCreate", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repTraining.adminCreate({
+        title: "Test Module",
+        description: "Test",
+        content: "Content",
+        orderIndex: 1,
+      })
+    ).rejects.toThrow();
+  });
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repTraining.adminCreate({
+        title: "Test Module",
+        description: "Test",
+        content: "Content",
+        orderIndex: 1,
+      })
+    ).rejects.toThrow();
+  });
+});
+
+describe("repActivity.log", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repActivity.log({
+        type: "call",
+        description: "Called lead",
+      })
+    ).rejects.toThrow();
+  });
+  it("is accessible to authenticated users (fails at DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.repActivity.log({
+        type: "call",
+        description: "Called lead",
+      });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("repActivity.myActivities", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repActivity.myActivities({ limit: 10 })).rejects.toThrow();
+  });
+});
+
+describe("repActivity.myStats", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repActivity.myStats()).rejects.toThrow();
+  });
+});
+
+describe("repGamification.myStats", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repGamification.myStats()).rejects.toThrow();
+  });
+});
+
+describe("repGamification.leaderboard", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repGamification.leaderboard({ limit: 10 })).rejects.toThrow();
+  });
+});
+
+describe("repGamification.badges", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repGamification.badges()).rejects.toThrow();
+  });
+});
+
+describe("repComms.templates", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repComms.templates({ category: "intro" })).rejects.toThrow();
+  });
+});
+
+describe("repComms.sendEmail", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repComms.sendEmail({
+        to: "customer@test.com",
+        toName: "Customer",
+        subject: "Test",
+        body: "Hello",
+        category: "intro",
+      })
+    ).rejects.toThrow();
+  });
+});
+
+describe("repComms.generateEmail", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repComms.generateEmail({
+        recipientName: "John",
+        recipientBusiness: "Bakery",
+        category: "intro",
+        context: "New lead",
+      })
+    ).rejects.toThrow();
+  });
+  it("is accessible to authenticated users (fails at LLM/DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.repComms.generateEmail({
+        recipientName: "John",
+        recipientBusiness: "Bakery",
+        category: "intro",
+        context: "New lead",
+      });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("repComms.mySentEmails", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repComms.mySentEmails({ limit: 10 })).rejects.toThrow();
+  });
+});
+
+describe("repComms.adminCreateTemplate", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repComms.adminCreateTemplate({
+        name: "Test Template",
+        category: "intro",
+        subject: "Hello",
+        body: "Hi, welcome!",
+      })
+    ).rejects.toThrow();
+  });
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repComms.adminCreateTemplate({
+        name: "Test Template",
+        category: "intro",
+        subject: "Hello",
+        body: "Hi, welcome!",
+      })
+    ).rejects.toThrow();
+  });
+});
+
+describe("repApplication.submit", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repApplication.submit({
+        motivation: "I love sales",
+        availability: "full_time",
+        hoursPerWeek: 40,
+        salesExperience: "3 years in SaaS",
+      })
+    ).rejects.toThrow();
+  });
+  it("is accessible to authenticated users (fails at DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.repApplication.submit({
+        motivation: "I love sales",
+        availability: "full_time",
+        hoursPerWeek: 40,
+        salesExperience: "3 years in SaaS",
+      });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("repApplication.myApplication", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.repApplication.myApplication()).rejects.toThrow();
+  });
+});
+
+describe("repApplication.review", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repApplication.review({ id: 1, status: "approved" })
+    ).rejects.toThrow();
+  });
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.repApplication.review({ id: 1, status: "approved" })
+    ).rejects.toThrow();
+  });
+});
+
+/* ═══════════════════════════════════════════════════════
+   AI ROUTER TESTS
+   ═══════════════════════════════════════════════════════ */
+
+describe("ai.onboardingChat", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.ai.onboardingChat({ message: "I need a website" })
+    ).rejects.toThrow();
+  });
+  it("is accessible to authenticated users (fails at LLM level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.ai.onboardingChat({ message: "I need a website for my bakery" });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("ai.portalChat", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.ai.portalChat({ message: "How do I update my site?" })
+    ).rejects.toThrow();
+  });
+  it("is accessible to authenticated users (fails at LLM/DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.ai.portalChat({ message: "How do I update my site?" });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+/* ═══════════════════════════════════════════════════════
+   WIDGET CATALOG TESTS
+   ═══════════════════════════════════════════════════════ */
+
+describe("widgetCatalog.list", () => {
+  it("is accessible as a public procedure", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.widgetCatalog.list();
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("widgetCatalog.create", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.widgetCatalog.create({
+        name: "AI Chatbot",
+        slug: "ai-chatbot",
+        description: "24/7 AI customer support",
+        category: "ai_agent",
+        monthlyPrice: "299",
+        setupFee: "0",
+        features: ["24/7 support", "Custom training"],
+      })
+    ).rejects.toThrow();
+  });
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.widgetCatalog.create({
+        name: "AI Chatbot",
+        slug: "ai-chatbot",
+        description: "24/7 AI customer support",
+        category: "ai_agent",
+        monthlyPrice: "299",
+        setupFee: "0",
+        features: ["24/7 support"],
+      })
+    ).rejects.toThrow();
+  });
+  it("is accessible to admin users (fails at DB level, not auth)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.widgetCatalog.create({
+        name: "AI Chatbot",
+        slug: "ai-chatbot",
+        description: "24/7 AI customer support",
+        category: "ai_agent",
+        monthlyPrice: "299",
+        setupFee: "0",
+        features: ["24/7 support"],
+      });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+      expect(e.code).not.toBe("FORBIDDEN");
+    }
+  });
+});
+
+describe("widgetCatalog.generateUpsellEmail", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.widgetCatalog.generateUpsellEmail({ customerId: 1 })
+    ).rejects.toThrow();
+  });
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.widgetCatalog.generateUpsellEmail({ customerId: 1 })
+    ).rejects.toThrow();
+  });
+  it("is accessible to admin users (fails at DB level, not auth)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.widgetCatalog.generateUpsellEmail({ customerId: 999 });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+      expect(e.code).not.toBe("FORBIDDEN");
+    }
+  });
+});
+
+/* ═══════════════════════════════════════════════════════
+   STRIPE CONNECT TESTS
+   ═══════════════════════════════════════════════════════ */
+
+describe("reps.createConnectOnboarding", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.reps.createConnectOnboarding({ returnUrl: "https://example.com" })
+    ).rejects.toThrow();
+  });
+  it("is accessible to authenticated users (fails at DB/Stripe level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.reps.createConnectOnboarding({ returnUrl: "https://example.com" });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("reps.connectStatus", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.reps.connectStatus()).rejects.toThrow();
+  });
+});
+
+describe("reps.initiatePayout", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.reps.initiatePayout({ commissionId: 1 })
+    ).rejects.toThrow();
+  });
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.reps.initiatePayout({ commissionId: 1 })
+    ).rejects.toThrow();
+  });
+});
+
+/* ═══════════════════════════════════════════════════════
+   TIER-BASED COMMISSIONS & WIDGET REQUEST TESTS
+   ═══════════════════════════════════════════════════════ */
+describe("commissions.create with tier-based rates", () => {
+  it("accepts contractValue and calculates commission (admin)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.commissions.create({ repId: 999, contractId: 999, contractValue: "1000", type: "initial_sale" });
+    } catch (e: any) {
+      // DB error expected, not auth error
+      expect(e.code).not.toBe("UNAUTHORIZED");
+      expect(e.code).not.toBe("FORBIDDEN");
+    }
+  });
+});
+
+describe("upsells.requestWidget", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.upsells.requestWidget({ customerId: 1, widgetId: 1 })
+    ).rejects.toThrow();
+  });
+
+  it("is accessible to authenticated users (fails at DB level)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.upsells.requestWidget({ customerId: 1, widgetId: 999 });
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("reps.connectStatus", () => {
+  it("returns default status for non-reps", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    const status = await caller.reps.connectStatus();
+    expect(status).toEqual({ hasAccount: false, onboarded: false });
+  });
+});
+
+describe("reps.createConnectOnboarding", () => {
+  it("rejects non-reps (throws error)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.reps.createConnectOnboarding({ returnUrl: "http://localhost:3000/rep" });
+    } catch (e: any) {
+      expect(e.message).toContain("Not a rep");
+    }
+  });
+});

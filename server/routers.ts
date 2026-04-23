@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_
 import { z } from "zod";
 import * as db from "./db";
 import { notifyOwner } from "./_core/notification";
+import { repTrainingRouter, repActivityRouter, repGamificationRouter, repCommsRouter, repApplicationRouter } from "./repEcosystem";
 
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
@@ -62,6 +63,89 @@ const repsRouter = router({
         updateData.certifiedAt = new Date();
       }
       await db.updateRep(id, updateData);
+      return { success: true };
+    }),
+
+  // Protected: Create Stripe Connect onboarding link for rep
+  createConnectOnboarding: protectedProcedure
+    .input(z.object({ returnUrl: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new Error("Not a rep");
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+      let accountId = rep.stripeConnectAccountId;
+      if (!accountId) {
+        const account = await stripe.accounts.create({
+          type: "express",
+          email: rep.email,
+          metadata: { repId: String(rep.id), repName: rep.fullName },
+          capabilities: { transfers: { requested: true } },
+        });
+        accountId = account.id;
+        await db.updateRep(rep.id, { stripeConnectAccountId: accountId });
+      }
+      const link = await stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: input.returnUrl,
+        return_url: input.returnUrl,
+        type: "account_onboarding",
+      });
+      return { url: link.url, accountId };
+    }),
+
+  // Protected: Check Stripe Connect onboarding status
+  connectStatus: protectedProcedure.query(async ({ ctx }) => {
+    const rep = await db.getRepByUserId(ctx.user.id);
+    if (!rep) return { hasAccount: false, onboarded: false };
+    if (!rep.stripeConnectAccountId) return { hasAccount: false, onboarded: false };
+    if (rep.stripeConnectOnboarded) return { hasAccount: true, onboarded: true };
+    // Check with Stripe
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+    try {
+      const account = await stripe.accounts.retrieve(rep.stripeConnectAccountId);
+      const onboarded = account.details_submitted === true;
+      if (onboarded && !rep.stripeConnectOnboarded) {
+        await db.updateRep(rep.id, { stripeConnectOnboarded: true });
+      }
+      return { hasAccount: true, onboarded };
+    } catch {
+      return { hasAccount: true, onboarded: false };
+    }
+  }),
+
+  // Admin: initiate payout to rep via Stripe Connect
+  initiatePayout: adminProcedure
+    .input(z.object({ commissionId: z.number() }))
+    .mutation(async ({ input }) => {
+      const commission = await db.getCommissionById(input.commissionId);
+      if (!commission) throw new Error("Commission not found");
+      if (commission.status === "paid") throw new Error("Already paid");
+      const rep = await db.getRepById(commission.repId);
+      if (!rep) throw new Error("Rep not found");
+      if (!rep.stripeConnectAccountId) throw new Error("Rep has no Stripe Connect account");
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+      const amount = Math.round(parseFloat(commission.amount || "0") * 100);
+      if (amount <= 0) throw new Error("Invalid amount");
+      const transfer = await stripe.transfers.create({
+        amount,
+        currency: "usd",
+        destination: rep.stripeConnectAccountId,
+        metadata: { commissionId: String(commission.id), repId: String(rep.id) },
+      });
+      await db.updateCommission(commission.id, { status: "paid", paidAt: new Date() });
+      return { success: true, transferId: transfer.id };
+    }),
+
+  // Admin: approve commission for payout
+  approveCommission: adminProcedure
+    .input(z.object({ commissionId: z.number() }))
+    .mutation(async ({ input }) => {
+      const commission = await db.getCommissionById(input.commissionId);
+      if (!commission) throw new Error("Commission not found");
+      await db.updateCommission(commission.id, { status: "approved" });
       return { success: true };
     }),
 });
@@ -313,12 +397,30 @@ const commissionsRouter = router({
       z.object({
         repId: z.number(),
         contractId: z.number(),
-        amount: z.string(),
+        contractValue: z.string(), // The total contract value — commission calculated from this
         type: z.enum(["initial_sale", "renewal", "upsell"]).optional(),
       })
     )
     .mutation(async ({ input }) => {
-      return db.createCommission(input);
+      // Calculate commission based on rep's gamification level (tier-based rates)
+      const gamification = await db.getRepGamification(input.repId);
+      const level = gamification?.level || "rookie";
+      const tierRates: Record<string, number> = {
+        rookie: 0.10,
+        closer: 0.12,
+        ace: 0.14,
+        elite: 0.16,
+        legend: 0.20,
+      };
+      const rate = tierRates[level] || 0.10;
+      const contractValue = parseFloat(input.contractValue) || 0;
+      const commissionAmount = (contractValue * rate).toFixed(2);
+      return db.createCommission({
+        repId: input.repId,
+        contractId: input.contractId,
+        amount: commissionAmount,
+        type: input.type,
+      });
     }),
 
   list: adminProcedure.query(async () => {
@@ -520,7 +622,7 @@ const upsellsRouter = router({
       z.object({
         customerId: z.number(),
         contractId: z.number().optional(),
-        type: z.enum(["tier_upgrade", "add_pages", "add_feature", "add_service"]).optional(),
+        type: z.enum(["tier_upgrade", "add_pages", "add_feature", "add_service", "ai_widget"]).optional(),
         title: z.string().min(1),
         description: z.string().optional(),
         estimatedValue: z.string().optional(),
@@ -555,6 +657,30 @@ const upsellsRouter = router({
       const { id, ...data } = input;
       await db.updateUpsellOpportunity(id, data);
       return { success: true };
+    }),
+  // Customer-facing: express interest in a widget
+  requestWidget: protectedProcedure
+    .input(z.object({
+      customerId: z.number(),
+      widgetId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      const widget = await db.getWidgetCatalogItem(input.widgetId);
+      if (!widget) throw new Error("Widget not found");
+      const customer = await db.getCustomerById(input.customerId);
+      await db.createUpsellOpportunity({
+        customerId: input.customerId,
+        type: "ai_widget",
+        title: widget.name,
+        description: `Customer expressed interest in ${widget.name} ($${widget.monthlyPrice}/mo)`,
+        estimatedValue: widget.monthlyPrice,
+        status: "identified",
+      });
+      notifyOwner({
+        title: `Widget Interest: ${widget.name}`,
+        content: `Customer ${customer?.businessName || "#" + input.customerId} is interested in ${widget.name} ($${widget.monthlyPrice}/mo).\nSetup fee: $${widget.setupFee || 0}\n\nReach out to close this upsell.`,
+      }).catch(() => {});
+      return { success: true, widgetName: widget.name };
     }),
 });
 
@@ -872,6 +998,359 @@ const dashboardRouter = router({
 });
 
 /* ═══════════════════════════════════════════════════════
+   AI CHAT ROUTER — Conversational agents for onboarding + portal
+   ═══════════════════════════════════════════════════════ */
+const aiRouter = router({
+  // Onboarding AI: helps customers fill out questionnaire conversationally
+  onboardingChat: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number().optional(),
+        message: z.string().min(1),
+        history: z.array(
+          z.object({
+            role: z.enum(["system", "user", "assistant"]),
+            content: z.string(),
+          })
+        ).optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { invokeLLM } = await import("./_core/llm");
+      const systemPrompt = `You are the MiniMorph Studios onboarding assistant. Your job is to help new customers describe their website vision through friendly conversation.
+
+You need to gather the following information naturally through conversation:
+1. Brand tone (professional, friendly, bold, elegant, or playful)
+2. Brand colors (or let them describe the feeling and you suggest colors)
+3. Target audience (who are their customers?)
+4. Competitors or businesses they admire
+5. Content preference (we write it, they provide it, or a mix)
+6. Must-have features (contact form, gallery, booking, menu, etc.)
+7. Inspiration websites they like
+8. Any special requests
+
+IMPORTANT RULES:
+- Be warm, encouraging, and conversational — not robotic
+- Ask ONE question at a time, don't overwhelm them
+- If they seem unsure, offer specific suggestions based on their industry
+- If they don't have a logo or brand assets, reassure them that we can create everything
+- After gathering enough info, summarize what you've learned and ask if anything is missing
+- When you have enough information, include a JSON block at the end of your message wrapped in <questionnaire_data> tags with the extracted fields:
+  <questionnaire_data>{"brandTone":"...","brandColors":[...],"targetAudience":"...","competitors":[...],"contentPreference":"...","mustHaveFeatures":[...],"inspirationUrls":[...],"specialRequests":"..."}</questionnaire_data>
+- Only include the JSON when you feel confident you have enough info
+- Keep responses concise — 2-3 sentences max per turn`;
+
+      const messages = [
+        { role: "system" as const, content: systemPrompt },
+        ...(input.history || []),
+        { role: "user" as const, content: input.message },
+      ];
+
+      const result = await invokeLLM({ messages });
+      const aiResponse = result.choices[0].message.content as string;
+
+      // Save chat logs
+      await db.createAiChatLog({
+        userId: ctx.user.id,
+        projectId: input.projectId,
+        context: "onboarding",
+        role: "user",
+        content: input.message,
+      });
+      await db.createAiChatLog({
+        userId: ctx.user.id,
+        projectId: input.projectId,
+        context: "onboarding",
+        role: "assistant",
+        content: aiResponse,
+      });
+
+      // Extract questionnaire data if present
+      let extractedData = null;
+      const match = aiResponse.match(/<questionnaire_data>([\s\S]*?)<\/questionnaire_data>/);
+      if (match) {
+        try {
+          extractedData = JSON.parse(match[1]);
+        } catch {}
+      }
+
+      return {
+        response: aiResponse.replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/, "").trim(),
+        extractedData,
+      };
+    }),
+
+  // Portal AI: concierge for existing customers
+  portalChat: protectedProcedure
+    .input(
+      z.object({
+        customerId: z.number(),
+        message: z.string().min(1),
+        history: z.array(
+          z.object({
+            role: z.enum(["system", "user", "assistant"]),
+            content: z.string(),
+          })
+        ).optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { invokeLLM } = await import("./_core/llm");
+      const customer = await db.getCustomerById(input.customerId);
+      const contracts = await db.listContractsByCustomer(input.customerId);
+      const activeContract = contracts.find((c: any) => c.status === "active" || c.status === "expiring_soon");
+      const widgets = await db.listWidgetCatalog(true);
+
+      const systemPrompt = `You are the MiniMorph Studios customer concierge AI. You help existing customers get the most out of their website.
+
+Customer Info:
+- Business: ${customer?.businessName || "Unknown"}
+- Industry: ${customer?.industry || "Unknown"}
+- Health Score: ${customer?.healthScore || 0}/100
+- Package: ${activeContract?.packageTier || "Unknown"} ($${activeContract?.monthlyPrice || 0}/mo)
+- Contract Status: ${activeContract?.status || "No active contract"}
+
+Available Add-on Widgets & Services:
+${widgets.map((w: any) => `- ${w.name} ($${w.monthlyPrice}/mo): ${w.description}`).join("\n")}
+
+Your responsibilities:
+1. Answer questions about their website, contract, or services
+2. Help them request changes or support (text changes, image swaps are free; layout redesigns are upsells)
+3. When they describe a challenge, suggest relevant widgets/add-ons from the catalog above
+4. If they want to upgrade their package tier, explain the benefits
+5. If they're unsure what they need, ask about their biggest business challenge right now
+
+IMPORTANT RULES:
+- Be helpful and consultative, not pushy
+- When recommending an upsell, explain the business value (e.g., "Adding our Booking Widget could convert 15% of your visitors into appointments")
+- If they want to make a change, ask them to describe it and you'll log it as a support request
+- When you identify an upsell opportunity, include it in <upsell_suggestion> tags:
+  <upsell_suggestion>{"widgetSlug":"...","reason":"..."}</upsell_suggestion>
+- Keep responses concise and action-oriented`;
+
+      const messages = [
+        { role: "system" as const, content: systemPrompt },
+        ...(input.history || []),
+        { role: "user" as const, content: input.message },
+      ];
+
+      const result = await invokeLLM({ messages });
+      const aiResponse = result.choices[0].message.content as string;
+
+      // Save chat logs
+      await db.createAiChatLog({
+        userId: ctx.user.id,
+        customerId: input.customerId,
+        context: "portal",
+        role: "user",
+        content: input.message,
+      });
+      await db.createAiChatLog({
+        userId: ctx.user.id,
+        customerId: input.customerId,
+        context: "portal",
+        role: "assistant",
+        content: aiResponse,
+      });
+
+      // Extract upsell suggestion if present
+      let upsellSuggestion = null;
+      const upsellMatch = aiResponse.match(/<upsell_suggestion>([\s\S]*?)<\/upsell_suggestion>/);
+      if (upsellMatch) {
+        try {
+          upsellSuggestion = JSON.parse(upsellMatch[1]);
+          // Auto-create upsell opportunity
+          if (upsellSuggestion?.widgetSlug) {
+            const widget = await db.getWidgetBySlug(upsellSuggestion.widgetSlug);
+            if (widget) {
+              await db.createUpsellOpportunity({
+                customerId: input.customerId,
+                contractId: activeContract?.id,
+                type: "ai_widget",
+                title: widget.name,
+                description: upsellSuggestion.reason || widget.description || "",
+                estimatedValue: widget.monthlyPrice,
+                status: "identified",
+              });
+            }
+          }
+        } catch {}
+      }
+
+      return {
+        response: aiResponse.replace(/<upsell_suggestion>[\s\S]*?<\/upsell_suggestion>/, "").trim(),
+        upsellSuggestion,
+      };
+    }),
+
+  // Load chat history
+  history: protectedProcedure
+    .input(
+      z.object({
+        context: z.enum(["onboarding", "portal"]),
+        projectId: z.number().optional(),
+        customerId: z.number().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      return db.listAiChatLogs({
+        context: input.context,
+        userId: ctx.user.id,
+        projectId: input.projectId,
+        customerId: input.customerId,
+      });
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
+   WIDGET CATALOG ROUTER — Post-build upsell products
+   ═══════════════════════════════════════════════════════ */
+const widgetCatalogRouter = router({
+  // Public: browse active widgets
+  list: publicProcedure.query(async () => {
+    return db.listWidgetCatalog(true);
+  }),
+  // Admin: list all widgets (including inactive)
+  listAll: adminProcedure.query(async () => {
+    return db.listWidgetCatalog(false);
+  }),
+  // Admin: create a widget
+  create: adminProcedure
+    .input(
+      z.object({
+        slug: z.string().min(1),
+        name: z.string().min(1),
+        description: z.string().optional(),
+        monthlyPrice: z.string(),
+        setupFee: z.string().optional(),
+        category: z.enum(["ai_agent", "widget", "service", "integration"]).optional(),
+        features: z.array(z.string()).optional(),
+        icon: z.string().optional(),
+        sortOrder: z.number().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return db.createWidgetCatalogItem(input as any);
+    }),
+  // Admin: update a widget
+  update: adminProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        monthlyPrice: z.string().optional(),
+        setupFee: z.string().optional(),
+        isActive: z.boolean().optional(),
+        features: z.array(z.string()).optional(),
+        icon: z.string().optional(),
+        sortOrder: z.number().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      await db.updateWidgetCatalogItem(id, data as any);
+      return { success: true };
+    }),
+  // Admin: generate AI upsell email for a customer
+  generateUpsellEmail: adminProcedure
+    .input(z.object({ customerId: z.number(), contractId: z.number().optional() }))
+    .mutation(async ({ input }) => {
+      const { invokeLLM } = await import("./_core/llm");
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer) throw new Error("Customer not found");
+      const contracts = await db.listContractsByCustomer(input.customerId);
+      const activeContract = contracts.find((c: any) => c.status === "active" || c.status === "expiring_soon");
+      const widgets = await db.listWidgetCatalog(true);
+      const existingUpsells = await db.listUpsellsByCustomer(input.customerId);
+
+      const result = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: `You are a customer success strategist for MiniMorph Studios. Generate a personalized monthly email for a customer that includes:
+1. A warm check-in about their website performance
+2. 1-2 specific upsell recommendations from our widget catalog, tailored to their industry and current package
+3. A clear value proposition for each recommendation (use specific numbers when possible)
+
+Return JSON with: subject (string), content (string - the full email body in markdown), upsellRecommendations (array of {widgetSlug, reason, projectedValue})`,
+          },
+          {
+            role: "user",
+            content: `Customer: ${customer.businessName} (${customer.industry || "General"})
+Contact: ${customer.contactName}
+Package: ${activeContract?.packageTier || "Unknown"} ($${activeContract?.monthlyPrice || 0}/mo)
+Health Score: ${customer.healthScore}/100
+Existing upsells: ${existingUpsells.map((u: any) => u.title).join(", ") || "None"}
+
+Available widgets:\n${widgets.map((w: any) => `- ${w.slug}: ${w.name} ($${w.monthlyPrice}/mo) - ${w.description}`).join("\n")}`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "upsell_email",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                subject: { type: "string" },
+                content: { type: "string" },
+                upsellRecommendations: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      widgetSlug: { type: "string" },
+                      reason: { type: "string" },
+                      projectedValue: { type: "string" },
+                    },
+                    required: ["widgetSlug", "reason", "projectedValue"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["subject", "content", "upsellRecommendations"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const email = JSON.parse(result.choices[0].message.content as string);
+
+      // Auto-create upsell opportunities from recommendations
+      for (const rec of email.upsellRecommendations) {
+        const widget = await db.getWidgetBySlug(rec.widgetSlug);
+        if (widget) {
+          await db.createUpsellOpportunity({
+            customerId: input.customerId,
+            contractId: activeContract?.id,
+            type: "ai_widget",
+            title: `${widget.name} — ${rec.reason}`,
+            description: rec.projectedValue,
+            estimatedValue: widget.monthlyPrice,
+            status: "identified",
+          });
+        }
+      }
+
+      // Create nurture log for the email
+      await db.createNurtureLog({
+        customerId: input.customerId,
+        contractId: input.contractId,
+        type: "upsell_attempt",
+        channel: "email",
+        subject: email.subject,
+        content: email.content,
+        status: "scheduled",
+      } as any);
+
+      return { success: true, subject: email.subject, content: email.content, recommendations: email.upsellRecommendations };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
    APP ROUTER
    ═══════════════════════════════════════════════════════ */
 export const appRouter = router({
@@ -896,6 +1375,13 @@ export const appRouter = router({
   orders: ordersRouter,
   onboarding: onboardingRouter,
   dashboard: dashboardRouter,
+  ai: aiRouter,
+  widgetCatalog: widgetCatalogRouter,
+  repTraining: repTrainingRouter,
+  repActivity: repActivityRouter,
+  repGamification: repGamificationRouter,
+  repComms: repCommsRouter,
+  repApplication: repApplicationRouter,
 });
 
 export type AppRouter = typeof appRouter;

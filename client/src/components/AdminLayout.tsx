@@ -39,6 +39,7 @@ import {
   Activity,
   ShoppingCart,
   ClipboardList,
+  Bot,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -60,6 +61,7 @@ const menuItems = [
   { icon: Activity, label: "Analytics", path: "/admin/analytics" },
   { icon: ShoppingCart, label: "Orders", path: "/admin/orders" },
   { icon: ClipboardList, label: "Onboarding", path: "/admin/onboarding" },
+  { icon: Bot, label: "Widget Catalog", path: "/admin/widgets" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "admin-sidebar-width";

@@ -29,6 +29,27 @@
       "when": 1776949282518,
       "tag": "0003_dry_marauders",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1776951359059,
+      "tag": "0004_wandering_ikaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1776952995481,
+      "tag": "0005_giant_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1776953799832,
+      "tag": "0006_rainy_rick_jones",
+      "breakpoints": true
     }
   ]
 }

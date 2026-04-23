@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { AIChatBox } from "@/components/AIChatBox";
+import { Bot } from "lucide-react";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   active: "bg-green-100 text-green-700",
@@ -27,6 +30,7 @@ export default function CustomerPortal() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
+  const [chatMessages, setChatMessages] = useState<Array<{role: string; content: string}>>([]);
 
   // For demo: we'll show customer data. In production, you'd look up the customer by user ID.
   // For now, list all customers and show the first one (or prompt to select).
@@ -36,6 +40,24 @@ export default function CustomerPortal() {
   );
 
   const customer = customers?.[0]; // First customer for demo
+
+  const portalChat = trpc.ai.portalChat.useMutation();
+
+  const handleConciergeMessage = useCallback(async (message: string) => {
+    const newMessages = [...chatMessages, { role: "user" as const, content: message }];
+    setChatMessages(newMessages);
+    try {
+      const result = await portalChat.mutateAsync({
+        message,
+        customerId: customer?.id ?? 0,
+        history: newMessages.slice(-10).map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+      });
+      setChatMessages(prev => [...prev, { role: "assistant", content: result.response }]);
+      return result.response;
+    } catch {
+      return "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.";
+    }
+  }, [chatMessages, portalChat, customer]);
 
   const { data: contracts } = trpc.contracts.byCustomer.useQuery(
     { customerId: customer?.id ?? 0 },
@@ -152,6 +174,9 @@ export default function CustomerPortal() {
             <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Support</TabsTrigger>
             <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Upgrades</TabsTrigger>
             <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Onboarding</TabsTrigger>
+            <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-white">
+              <Bot className="h-3 w-3 mr-1" /> AI Assistant
+            </TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
@@ -324,6 +349,21 @@ export default function CustomerPortal() {
 
           {/* SUPPORT TAB */}
           <TabsContent value="support" className="space-y-6">
+            {/* Revision Policy Card */}
+            <Card className="border-amber-200/50 bg-amber-50/30">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-medium text-forest font-sans mb-1">Revision Policy</h4>
+                    <p className="text-xs text-forest/60 font-sans leading-relaxed">
+                      Your package includes <strong>3 rounds of revisions</strong> at no extra cost. Small tweaks (text changes, image swaps) are always free.
+                      Layout redesigns or new page additions are available as add-ons. Additional revision rounds are <strong>$149 per round</strong>.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             <Card className="border-border/50">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
@@ -362,23 +402,18 @@ export default function CustomerPortal() {
 
           {/* UPGRADES TAB */}
           <TabsContent value="upgrades" className="space-y-6">
-            <Card className="border-border/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-terracotta" />
-                  Available Upgrades
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {!upsells?.length ? (
-                  <div className="text-center py-12">
-                    <TrendingUp className="h-10 w-10 text-forest/15 mx-auto mb-3" />
-                    <p className="text-sm text-forest/50 font-sans">No upgrade recommendations at this time.</p>
-                    <p className="text-xs text-forest/40 font-sans mt-1">We'll suggest improvements when we spot opportunities to grow your site.</p>
-                  </div>
-                ) : (
+            {/* Personalized Recommendations */}
+            {(upsells?.length ?? 0) > 0 && (
+              <Card className="border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-terracotta" />
+                    Recommended for You
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-3">
-                    {upsells.map((u: any) => (
+                    {(upsells ?? []).map((u: any) => (
                       <div key={u.id} className="p-5 rounded-xl border border-border/30 hover:border-terracotta/30 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                           <h3 className="text-sm font-medium text-forest font-sans">{u.title}</h3>
@@ -393,7 +428,21 @@ export default function CustomerPortal() {
                       </div>
                     ))}
                   </div>
-                )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Widget & Add-On Catalog */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-terracotta" />
+                  Grow Your Site
+                </CardTitle>
+                <p className="text-xs text-forest/50 font-sans mt-1">AI-powered widgets and add-ons to supercharge your website</p>
+              </CardHeader>
+              <CardContent>
+                <WidgetCatalogBrowser customerId={customer?.id} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -425,8 +474,114 @@ export default function CustomerPortal() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* AI ASSISTANT TAB */}
+          <TabsContent value="ai-assistant" className="space-y-6">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-terracotta" />
+                  AI Concierge
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-forest/60 font-sans mb-4">
+                  Your personal AI assistant can help you navigate your website project, suggest improvements, answer questions about your plan, and guide you through available upgrades.
+                </p>
+                <div className="h-[500px] border border-border/30 rounded-lg overflow-hidden">
+                  <AIChatBox
+                    messages={chatMessages.map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }))}
+                    onSendMessage={handleConciergeMessage}
+                    isLoading={portalChat.isPending}
+                    placeholder="Ask me anything about your website, plan, or available upgrades..."
+                    emptyStateMessage="Hi! I'm your MiniMorph AI concierge. I can help you with your website project, suggest improvements, explore upgrade options, or answer any questions about your plan."
+                    suggestedPrompts={[
+                      "What upgrades are available for my site?",
+                      "How is my website performing?",
+                      "I want to make changes to my site",
+                      "Tell me about AI widgets for my business",
+                    ]}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   WIDGET CATALOG BROWSER (for customer portal upgrades tab)
+   ═══════════════════════════════════════════════════════ */
+function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
+  const { data: widgets, isLoading } = trpc.widgetCatalog.list.useQuery();
+  const requestWidget = trpc.upsells.requestWidget.useMutation({
+    onSuccess: (data) => toast.success(`Interest registered for ${data.widgetName}! Our team will reach out with details.`),
+    onError: () => toast.error("Something went wrong. Please try again."),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-32 bg-cream-dark/20 rounded-lg animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!widgets?.length) {
+    return (
+      <div className="text-center py-8">
+        <Bot className="h-8 w-8 text-forest/15 mx-auto mb-2" />
+        <p className="text-sm text-forest/50 font-sans">No add-ons available yet. Check back soon!</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {widgets.map((widget: any) => (
+        <div
+          key={widget.id}
+          className="p-4 rounded-xl border border-border/30 hover:border-terracotta/30 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-terracotta/10 flex items-center justify-center shrink-0">
+              <Bot className="h-5 w-5 text-terracotta" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-medium text-forest font-sans">{widget.name}</h4>
+              <p className="text-xs text-forest/50 font-sans mt-0.5 line-clamp-2">{widget.description}</p>
+              <div className="flex items-center justify-between mt-3">
+                <div>
+                  <span className="text-base font-serif text-forest">${Number(widget.monthlyPrice).toLocaleString()}</span>
+                  <span className="text-[10px] text-forest/40 font-sans">/mo</span>
+                  {widget.setupFee && Number(widget.setupFee) > 0 && (
+                    <span className="text-[10px] text-forest/40 font-sans ml-2">+ ${Number(widget.setupFee)} setup</span>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-terracotta hover:bg-terracotta-light text-white text-xs font-sans rounded-full px-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                  disabled={requestWidget.isPending || !customerId}
+                  onClick={() => {
+                    if (customerId) {
+                      requestWidget.mutate({ customerId, widgetId: widget.id });
+                    } else {
+                      toast.info("Interested! We'll have your account manager reach out with details.");
+                    }
+                  }}
+                >
+                  {requestWidget.isPending ? "Sending..." : "I'm Interested"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
