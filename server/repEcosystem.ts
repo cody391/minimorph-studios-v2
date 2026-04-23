@@ -415,7 +415,7 @@ export const repCommsRouter = router({
       const rep = await db.getRepByUserId(ctx.user.id);
       if (!rep) throw new Error("Not a rep");
       // Save the sent email record
-      await db.createSentEmail({
+      const emailRecord = await db.createSentEmail({
         repId: rep.id,
         templateId: input.templateId,
         leadId: input.leadId,
@@ -425,6 +425,18 @@ export const repCommsRouter = router({
         subject: input.subject,
         body: input.body,
       });
+      // Actually send the email via Resend
+      const { sendEmail: deliverEmail } = await import("./services/email");
+      const delivery = await deliverEmail({
+        to: input.recipientEmail,
+        subject: input.subject,
+        html: input.body.replace(/\n/g, "<br/>"),
+        text: input.body,
+        replyTo: ctx.user.email || undefined,
+      });
+      if (!delivery.success) {
+        console.warn(`[Email] Delivery failed for email #${emailRecord.id}: ${delivery.error}`);
+      }
       // Log as activity
       await db.createActivityLog({
         repId: rep.id,
@@ -432,12 +444,22 @@ export const repCommsRouter = router({
         leadId: input.leadId,
         customerId: input.customerId,
         subject: `Email: ${input.subject}`,
-        notes: `Sent to ${input.recipientEmail}`,
-        outcome: "sent",
+        notes: `Sent to ${input.recipientEmail}${delivery.success ? " (delivered)" : " (delivery failed)"}`,
+        outcome: delivery.success ? "sent" : "cancelled",
         pointsEarned: POINT_VALUES.email,
       });
       await awardPoints(rep.id, POINT_VALUES.email, "email_sent");
-      return { success: true, pointsEarned: POINT_VALUES.email };
+      // Trigger AI coaching asynchronously (non-blocking)
+      import("./services/aiCoach").then(({ analyzeAndCoach }) => {
+        analyzeAndCoach({
+          repId: rep.id,
+          communicationType: "email",
+          referenceId: emailRecord.id,
+          content: `Subject: ${input.subject}\n\n${input.body}`,
+          context: `Email to ${input.recipientName || input.recipientEmail}${input.leadId ? " (lead)" : ""}${input.customerId ? " (customer)" : ""}`,
+        }).catch((err: any) => console.error("[AI Coach] Email analysis failed:", err));
+      });
+      return { success: true, delivered: delivery.success, pointsEarned: POINT_VALUES.email };
     }),
   // Generate AI personalized email
   generateEmail: protectedProcedure
@@ -525,11 +547,164 @@ Return JSON: { "subject": "...", "body": "..." }`,
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      await db.updateEmailTemplate(id, data as any);
+       await db.updateEmailTemplate(id, data as any);
       return { success: true };
     }),
+  // ═══ SMS ENDPOINTS ═══
+  sendSms: protectedProcedure
+    .input(z.object({
+      leadId: z.number().optional(),
+      customerId: z.number().optional(),
+      toNumber: z.string().min(10),
+      body: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new Error("Not a rep");
+      const { sendSms } = await import("./services/sms");
+      const result = await sendSms({ to: input.toNumber, body: input.body });
+      const smsRecord = await db.createSmsMessage({
+        repId: rep.id,
+        leadId: input.leadId,
+        customerId: input.customerId,
+        direction: "outbound",
+        fromNumber: process.env.TWILIO_PHONE_NUMBER || "",
+        toNumber: input.toNumber,
+        body: input.body,
+        twilioSid: result.twilioSid,
+        status: result.success ? "sent" : "failed",
+      });
+      await db.createActivityLog({
+        repId: rep.id,
+        type: "email", // using email type for SMS since schema doesn't have sms
+        leadId: input.leadId,
+        customerId: input.customerId,
+        subject: `SMS to ${input.toNumber}`,
+        notes: input.body.slice(0, 200),
+        outcome: result.success ? "sent" : "cancelled",
+        pointsEarned: 5,
+      });
+      await awardPoints(rep.id, 5, "sms_sent");
+      // AI coaching (async)
+      import("./services/aiCoach").then(({ analyzeAndCoach }) => {
+        analyzeAndCoach({
+          repId: rep.id,
+          communicationType: "sms",
+          referenceId: smsRecord.id,
+          content: input.body,
+          context: `SMS to ${input.toNumber}`,
+        }).catch((err: any) => console.error("[AI Coach] SMS analysis failed:", err));
+      });
+      return { success: result.success, twilioSid: result.twilioSid, error: result.error, pointsEarned: 5 };
+    }),
+  mySmsThreads: protectedProcedure
+    .query(async ({ ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) return [];
+      const allSms = await db.listRepSmsConversations(rep.id);
+      // Group by phone number into threads
+      const threads: Record<string, { phoneNumber: string; messages: typeof allSms; lastMessage: string; lastAt: Date | null }> = {};
+      for (const msg of allSms) {
+        const otherNumber = msg.direction === "outbound" ? msg.toNumber : msg.fromNumber;
+        if (!threads[otherNumber]) {
+          threads[otherNumber] = { phoneNumber: otherNumber, messages: [], lastMessage: msg.body, lastAt: msg.createdAt };
+        }
+        threads[otherNumber].messages.push(msg);
+      }
+      return Object.values(threads).sort((a, b) => (b.lastAt?.getTime() || 0) - (a.lastAt?.getTime() || 0));
+    }),
+  smsThread: protectedProcedure
+    .input(z.object({ phoneNumber: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) return [];
+      return db.listSmsThread(rep.id, input.phoneNumber);
+    }),
+  // ═══ VOICE ENDPOINTS ═══
+  getVoiceToken: protectedProcedure
+    .query(async ({ ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new Error("Not a rep");
+      try {
+        const { generateVoiceToken } = await import("./services/voice");
+        const token = generateVoiceToken(`rep-${rep.id}`);
+        return { token, identity: `rep-${rep.id}` };
+      } catch (err: any) {
+        return { token: null, identity: null, error: err.message };
+      }
+    }),
+  initiateCall: protectedProcedure
+    .input(z.object({
+      toNumber: z.string().min(10),
+      leadId: z.number().optional(),
+      customerId: z.number().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new Error("Not a rep");
+      // Create call log record
+      const callLog = await db.createCallLog({
+        repId: rep.id,
+        leadId: input.leadId,
+        customerId: input.customerId,
+        direction: "outbound",
+        fromNumber: process.env.TWILIO_PHONE_NUMBER || "",
+        toNumber: input.toNumber,
+        status: "initiated",
+        startedAt: new Date(),
+      });
+      // Initiate the call via Twilio
+      const { initiateCall } = await import("./services/voice");
+      const origin = ctx.req.headers.origin || "";
+      const result = await initiateCall({
+        to: input.toNumber,
+        statusCallback: `${origin}/api/twilio/call-status`,
+      });
+      if (result.success && result.callSid) {
+        await db.updateCallLog(callLog.id, { twilioCallSid: result.callSid });
+      }
+      await db.createActivityLog({
+        repId: rep.id,
+        type: "call",
+        leadId: input.leadId,
+        customerId: input.customerId,
+        subject: `Call to ${input.toNumber}`,
+        outcome: result.success ? "connected" : "cancelled",
+        pointsEarned: 10,
+      });
+      await awardPoints(rep.id, 10, "call_made");
+      return { success: result.success, callLogId: callLog.id, callSid: result.callSid, error: result.error, pointsEarned: 10 };
+    }),
+  myCallLogs: protectedProcedure
+    .input(z.object({ limit: z.number().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) return [];
+      return db.listRepCallLogs(rep.id, input?.limit || 50);
+    }),
+  // ═══ AI COACHING ENDPOINTS ═══
+  myCoachingFeedback: protectedProcedure
+    .input(z.object({ limit: z.number().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) return [];
+      return db.listRepCoachingFeedback(rep.id, input?.limit || 20);
+    }),
+  getCoachingForMessage: protectedProcedure
+    .input(z.object({ communicationType: z.enum(["email", "sms", "call"]), referenceId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getCoachingFeedback(input.communicationType, input.referenceId);
+    }),
+  // ═══ TRAINING INSIGHTS ═══
+  myTrainingInsights: protectedProcedure
+    .query(async () => {
+      return db.listTrainingInsights(true);
+    }),
+  adminListInsights: adminProcedure
+    .query(async () => {
+      return db.listTrainingInsights(true);
+    }),
 });
-
 /* ═══════════════════════════════════════════════════════
    REP APPLICATION ROUTER — Extended application flow
    ═══════════════════════════════════════════════════════ */

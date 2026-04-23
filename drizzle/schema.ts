@@ -599,3 +599,85 @@ export const repNotifications = mysqlTable("rep_notifications", {
 });
 export type RepNotification = typeof repNotifications.$inferSelect;
 export type InsertRepNotification = typeof repNotifications.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SMS_MESSAGES — Twilio SMS conversation threads
+   ═══════════════════════════════════════════════════════ */
+export const smsMessages = mysqlTable("sms_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  leadId: int("leadId"),
+  customerId: int("customerId"),
+  direction: mysqlEnum("direction", ["outbound", "inbound"]).notNull(),
+  fromNumber: varchar("fromNumber", { length: 20 }).notNull(),
+  toNumber: varchar("toNumber", { length: 20 }).notNull(),
+  body: text("body").notNull(),
+  twilioSid: varchar("twilioSid", { length: 64 }),
+  status: mysqlEnum("status", ["queued", "sent", "delivered", "failed", "received"]).default("queued").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SmsMessage = typeof smsMessages.$inferSelect;
+export type InsertSmsMessage = typeof smsMessages.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   CALL_LOGS — Twilio Voice call records with recording
+   ═══════════════════════════════════════════════════════ */
+export const callLogs = mysqlTable("call_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  leadId: int("leadId"),
+  customerId: int("customerId"),
+  direction: mysqlEnum("direction", ["outbound", "inbound"]).notNull(),
+  fromNumber: varchar("fromNumber", { length: 20 }).notNull(),
+  toNumber: varchar("toNumber", { length: 20 }).notNull(),
+  twilioCallSid: varchar("twilioCallSid", { length: 64 }),
+  status: mysqlEnum("status", ["initiated", "ringing", "in_progress", "completed", "busy", "no_answer", "failed", "canceled"]).default("initiated").notNull(),
+  duration: int("duration"), // seconds
+  recordingUrl: text("recordingUrl"),
+  recordingSid: varchar("recordingSid", { length: 64 }),
+  transcription: text("transcription"),
+  startedAt: timestamp("startedAt"),
+  endedAt: timestamp("endedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CallLog = typeof callLogs.$inferSelect;
+export type InsertCallLog = typeof callLogs.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   AI_COACHING_FEEDBACK — AI review of each communication
+   ═══════════════════════════════════════════════════════ */
+export const aiCoachingFeedback = mysqlTable("ai_coaching_feedback", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  communicationType: mysqlEnum("communicationType", ["email", "sms", "call"]).notNull(),
+  referenceId: int("referenceId").notNull(), // ID from rep_sent_emails, sms_messages, or call_logs
+  overallScore: int("overallScore"), // 1-100
+  strengths: json("strengths"), // string[]
+  improvements: json("improvements"), // string[]
+  detailedFeedback: text("detailedFeedback"), // markdown
+  toneAnalysis: mysqlEnum("toneAnalysis", ["professional", "friendly", "aggressive", "passive", "confident", "uncertain"]),
+  sentimentScore: int("sentimentScore"), // -100 to 100
+  keyTakeaways: json("keyTakeaways"), // string[]
+  suggestedFollowUp: text("suggestedFollowUp"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AiCoachingFeedback = typeof aiCoachingFeedback.$inferSelect;
+export type InsertAiCoachingFeedback = typeof aiCoachingFeedback.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   TRAINING_INSIGHTS — Aggregated patterns from AI coaching
+   ═══════════════════════════════════════════════════════ */
+export const trainingInsights = mysqlTable("training_insights", {
+  id: int("id").autoincrement().primaryKey(),
+  category: mysqlEnum("category", ["best_practice", "common_mistake", "technique", "objection_handling", "closing_strategy"]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(), // markdown
+  frequency: int("frequency").default(1).notNull(), // how many times this pattern was observed
+  exampleSnippets: json("exampleSnippets"), // { repId, communicationType, snippet, score }[]
+  communicationType: mysqlEnum("insightCommType", ["email", "sms", "call", "all"]).default("all").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TrainingInsight = typeof trainingInsights.$inferSelect;
+export type InsertTrainingInsight = typeof trainingInsights.$inferInsert;

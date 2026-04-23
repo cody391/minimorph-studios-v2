@@ -1,4 +1,4 @@
-import { eq, desc, and, sql, gte, lte, inArray } from "drizzle-orm";
+import { eq, desc, and, or, sql, gte, lte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -49,6 +49,14 @@ import {
   InsertRepApplication,
   repNotifications,
   InsertRepNotification,
+  smsMessages,
+  InsertSmsMessage,
+  callLogs,
+  InsertCallLog,
+  aiCoachingFeedback,
+  InsertAiCoachingFeedback,
+  trainingInsights,
+  InsertTrainingInsight,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -887,4 +895,161 @@ export async function getWidgetCatalogItem(id: number) {
   if (!db) return undefined;
   const result = await db.select().from(widgetCatalog).where(eq(widgetCatalog.id, id)).limit(1);
   return result[0];
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   SMS MESSAGES
+   ═══════════════════════════════════════════════════════ */
+export async function createSmsMessage(data: InsertSmsMessage) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(smsMessages).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function updateSmsMessage(id: number, data: Partial<InsertSmsMessage>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(smsMessages).set(data).where(eq(smsMessages.id, id));
+}
+
+export async function listSmsThread(repId: number, phoneNumber: string, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(smsMessages)
+    .where(and(
+      eq(smsMessages.repId, repId),
+      or(eq(smsMessages.toNumber, phoneNumber), eq(smsMessages.fromNumber, phoneNumber))
+    ))
+    .orderBy(desc(smsMessages.createdAt))
+    .limit(limit);
+}
+
+export async function listRepSmsConversations(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Get all SMS for this rep, ordered by most recent first
+  return db.select().from(smsMessages)
+    .where(eq(smsMessages.repId, repId))
+    .orderBy(desc(smsMessages.createdAt));
+}
+
+/* ═══════════════════════════════════════════════════════
+   CALL LOGS
+   ═══════════════════════════════════════════════════════ */
+export async function createCallLog(data: InsertCallLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(callLogs).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function updateCallLog(id: number, data: Partial<InsertCallLog>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(callLogs).set(data).where(eq(callLogs.id, id));
+}
+
+export async function updateCallLogByCallSid(callSid: string, data: Partial<InsertCallLog>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(callLogs).set(data).where(eq(callLogs.twilioCallSid, callSid));
+}
+
+export async function getCallLogByCallSid(callSid: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(callLogs).where(eq(callLogs.twilioCallSid, callSid)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function listRepCallLogs(repId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(callLogs)
+    .where(eq(callLogs.repId, repId))
+    .orderBy(desc(callLogs.createdAt))
+    .limit(limit);
+}
+
+/* ═══════════════════════════════════════════════════════
+   AI COACHING FEEDBACK
+   ═══════════════════════════════════════════════════════ */
+export async function createCoachingFeedback(data: InsertAiCoachingFeedback) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(aiCoachingFeedback).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function getCoachingFeedback(communicationType: string, referenceId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(aiCoachingFeedback)
+    .where(and(
+      eq(aiCoachingFeedback.communicationType, communicationType as any),
+      eq(aiCoachingFeedback.referenceId, referenceId)
+    ))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function listRepCoachingFeedback(repId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(aiCoachingFeedback)
+    .where(eq(aiCoachingFeedback.repId, repId))
+    .orderBy(desc(aiCoachingFeedback.createdAt))
+    .limit(limit);
+}
+
+/* ═══════════════════════════════════════════════════════
+   TRAINING INSIGHTS
+   ═══════════════════════════════════════════════════════ */
+export async function createTrainingInsight(data: InsertTrainingInsight) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(trainingInsights).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function updateTrainingInsight(id: number, data: Partial<InsertTrainingInsight>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(trainingInsights).set(data).where(eq(trainingInsights.id, id));
+}
+
+export async function listTrainingInsights(activeOnly = true) {
+  const db = await getDb();
+  if (!db) return [];
+  if (activeOnly) {
+    return db.select().from(trainingInsights)
+      .where(eq(trainingInsights.isActive, true))
+      .orderBy(desc(trainingInsights.frequency));
+  }
+  return db.select().from(trainingInsights).orderBy(desc(trainingInsights.frequency));
+}
+
+export async function getTrainingInsightByTitle(title: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(trainingInsights)
+    .where(eq(trainingInsights.title, title))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+// Update existing email to track Resend message ID
+export async function updateSentEmail(id: number, data: Partial<InsertRepSentEmail>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(repSentEmails).set(data).where(eq(repSentEmails.id, id));
+}
+
+export async function getSentEmailById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(repSentEmails).where(eq(repSentEmails.id, id)).limit(1);
+  return result[0] ?? null;
 }

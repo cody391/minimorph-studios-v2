@@ -1,0 +1,10 @@
+UI Testing Notes - CommsHub - 2026-04-23
+
+All 4 channels render correctly with zero console errors:
+1. Email tab: Shows Compose button, Quick AI Draft buttons (Intro/Follow Up/Proposal/Close/Check In), Sent (0) section
+2. SMS tab: Shows New SMS button, "No SMS conversations yet" empty state
+3. Calls tab: Shows New Call button, "Setup needed" badge (TwiML App SID not configured yet), stats cards (Total Calls: 0, Completed: 0, Avg Duration: 0m), Recent Calls empty state
+4. AI Coach tab: Shows Avg Score: 0, Emails/SMS/Calls Reviewed: 0, "No coaching feedback yet" empty state
+
+No new errors in browser console after the fix.
+The old CommsTab and ComposeEmailDialog functions in RepDashboard.tsx are now dead code (replaced by CommsHub).

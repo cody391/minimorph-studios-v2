@@ -1,0 +1,12 @@
+Training Tab UI Verification - 2026-04-23 12:39
+
+The Training tab renders correctly:
+- MiniMorph Training Academy header with 0% progress bar
+- Module list area (empty because no training modules are seeded yet)
+- Certification Quiz card with "Take Quiz" button
+- The TrainingInsightsSection component is present but hidden (returns null when no insights exist)
+  - This is correct behavior: it only shows when AI coaching has generated training insights from real interactions
+  - Once reps start communicating and the AI coach generates insights, they will appear here automatically
+
+No console errors on the Training tab.
+All 155 tests passing, zero TypeScript errors.

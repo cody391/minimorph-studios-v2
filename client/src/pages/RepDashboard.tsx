@@ -1,6 +1,7 @@
 import { useState, useMemo, lazy, Suspense } from "react";
 import NotificationsBell from "./rep/NotificationsBell";
 const PipelineTab = lazy(() => import("./rep/PipelineTab"));
+const CommsHub = lazy(() => import("./rep/CommsHub"));
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import {
   BarChart3, Briefcase, CheckCircle, AlertCircle, Flame, Trophy,
   Star, Zap, Phone, Mail, Calendar, FileText, Send, Sparkles,
   BookOpen, GraduationCap, Shield, MessageSquare, Plus, ChevronRight, Copy,
+  AlertTriangle, Lightbulb, Brain,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
@@ -281,7 +283,9 @@ export default function RepDashboard() {
 
           {/* ═══════ COMMS TAB ═══════ */}
           <TabsContent value="comms" className="space-y-6">
-            <CommsTab templates={emailTemplates} sentEmails={sentEmails} leads={myLeads} />
+            <Suspense fallback={<div className="p-8 text-center"><p className="text-sm text-forest/40">Loading communications...</p></div>}>
+              <CommsHub templates={emailTemplates ?? []} sentEmails={sentEmails ?? []} leads={myLeads} />
+            </Suspense>
           </TabsContent>
 
           {/* ═══════ EARNINGS TAB ═══════ */}
@@ -525,9 +529,65 @@ function TrainingTab({ modules, progress, quizResults, repStatus }: any) {
         </Dialog>
       )}
 
+      {/* AI Training Insights from Real Interactions */}
+      <TrainingInsightsSection />
+
       {/* Quiz Dialog */}
       {showQuiz && <QuizDialog open={showQuiz} onClose={() => setShowQuiz(false)} />}
     </>
+  );
+}
+
+function TrainingInsightsSection() {
+  const { data: insights, isLoading } = trpc.repComms.myTrainingInsights.useQuery();
+
+  if (isLoading) return <Card className="border-border/50"><CardContent className="p-6 text-center"><p className="text-xs text-forest/40 font-sans">Loading insights...</p></CardContent></Card>;
+  if (!insights?.length) return null;
+
+  const categoryConfig: Record<string, { label: string; color: string; icon: any }> = {
+    best_practice: { label: "Best Practice", color: "bg-green-50 text-green-700 border-green-200", icon: CheckCircle },
+    common_mistake: { label: "Common Mistake", color: "bg-red-50 text-red-700 border-red-200", icon: AlertTriangle },
+    technique: { label: "Technique", color: "bg-blue-50 text-blue-700 border-blue-200", icon: Lightbulb },
+    objection_handling: { label: "Objection Handling", color: "bg-purple-50 text-purple-700 border-purple-200", icon: Shield },
+    closing_strategy: { label: "Closing Strategy", color: "bg-terracotta/10 text-terracotta border-terracotta/20", icon: Target },
+  };
+
+  return (
+    <Card className="border-border/50">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Brain className="w-5 h-5 text-terracotta" />
+          <h3 className="text-base font-serif text-forest">AI-Powered Insights from Real Interactions</h3>
+        </div>
+        <p className="text-xs text-forest/50 font-sans mb-4">These patterns were identified by our AI coach from actual rep communications. Learn from what works and avoid common pitfalls.</p>
+        <div className="space-y-3">
+          {insights.map((insight: any) => {
+            const config = categoryConfig[insight.category] || { label: insight.category, color: "bg-gray-50 text-gray-700 border-gray-200", icon: Lightbulb };
+            const Icon = config.icon;
+            return (
+              <div key={insight.id} className={`p-4 rounded-lg border ${config.color}`}>
+                <div className="flex items-start gap-3">
+                  <Icon className="w-4 h-4 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-sm font-sans font-medium">{insight.title}</h4>
+                      <Badge className="text-[9px] bg-white/50">{config.label}</Badge>
+                      {insight.frequency > 1 && <span className="text-[10px] opacity-60">Seen {insight.frequency}x</span>}
+                    </div>
+                    <p className="text-xs opacity-80 font-sans whitespace-pre-wrap">{insight.description}</p>
+                    {insight.exampleSnippets?.length > 0 && (
+                      <div className="mt-2 p-2 bg-white/40 rounded text-[11px] font-mono opacity-70 truncate">
+                        "…{(insight.exampleSnippets as any[])[0]?.snippet || ""}…"
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

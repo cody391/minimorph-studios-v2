@@ -234,3 +234,29 @@
 
 ### Bug: /rep page errors
 - [x] Fix 2 errors on the /rep page that prevent user from accessing it (endpoints returning undefined → null)
+
+### Phase 25: Full Communications Platform
+- [x] Collect and configure Resend API key, Twilio Account SID, Auth Token, Phone Number
+- [x] Design communication schemas: sms_messages, call_logs tables (email uses existing rep_sent_emails) with unified query helpers
+- [x] Design ai_coaching_feedback schema (stores AI review of each interaction)
+- [x] Design training_insights schema (aggregated patterns from coaching for training academy)
+- [x] Integrate Resend: real email delivery from rep compose, proposals, nurture emails
+- [ ] Add email open/click tracking via Resend webhooks
+- [x] Integrate Twilio SMS: send/receive real text messages to leads/customers
+- [x] SMS thread view: conversation-style UI showing full SMS history per lead
+- [x] Integrate Twilio Voice: browser-based calling via Twilio Client SDK
+- [x] Call recording: auto-record all calls via Twilio + auto-transcription
+- [x] Call transcription: auto-transcribe recorded calls
+- [x] AI Communication Coach: after every email/SMS/call, AI reviews and gives feedback
+- [x] Coaching feedback UI: show AI feedback inline with each communication
+- [x] Adaptive training feed: aggregate coaching insights into patterns
+- [x] Training academy integration: surface common mistakes and best practices from real interactions (adminListInsights endpoint)
+- [x] Rebuild Communications tab: unified inbox with email/SMS/call tabs, dialer, thread views, AI Coach panel
+- [ ] PWA support: make the app installable on mobile devices
+- [x] Vitest tests for all new communication endpoints (29 tests, all passing)
+
+### Phase 25 Gap Fixes
+- [x] Wire proposal-send flow to Resend (generateProposal → actual email delivery)
+- [x] Wire nurture email flows to Resend + Twilio SMS (admin nurture → actual email/SMS delivery)
+- [x] Show AI coaching feedback inline on individual email/SMS/call records in CommsHub
+- [x] Integrate training insights into Training Academy UI (show common mistakes/best practices from real interactions)

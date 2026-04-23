@@ -593,16 +593,47 @@ const leadsRouter = router({
 
       const proposal = JSON.parse(result.choices[0].message.content as string);
 
+      // Actually send the proposal email via Resend
+      let deliveryStatus = "generated";
+      if (lead.email) {
+        try {
+          const { sendEmail: deliverEmail } = await import("./services/email");
+          const delivery = await deliverEmail({
+            to: lead.email,
+            subject: proposal.subject,
+            html: proposal.htmlContent,
+            text: proposal.plainTextContent,
+            replyTo: ctx.user.email || undefined,
+          });
+          deliveryStatus = delivery.success ? "sent" : "delivery_failed";
+          if (!delivery.success) {
+            console.warn(`[Proposal] Email delivery failed for lead ${lead.id}: ${delivery.error}`);
+          }
+          // Save as sent email record
+          await db.createSentEmail({
+            repId: rep.id,
+            leadId: lead.id,
+            recipientEmail: lead.email,
+            recipientName: lead.contactName,
+            subject: proposal.subject,
+            body: proposal.htmlContent,
+          });
+        } catch (err: any) {
+          console.warn(`[Proposal] Email delivery error: ${err.message}`);
+          deliveryStatus = "delivery_failed";
+        }
+      }
+
       // Log activity
       await db.createActivityLog({
         repId: rep.id,
         type: "proposal_generated",
         leadId: lead.id,
-        subject: `Generated ${input.packageTier} proposal for ${lead.businessName}`,
+        subject: `Generated ${input.packageTier} proposal for ${lead.businessName}${deliveryStatus === "sent" ? " (emailed)" : ""}`,
         pointsEarned: 15,
       });
 
-      return proposal;
+      return { ...proposal, deliveryStatus };
     }),
 
   // Admin: bulk transfer leads from one rep to another
@@ -869,15 +900,55 @@ const nurtureRouter = router({
       const log = logs.find((l: any) => l.id === input.id);
       if (!log) throw new Error("Nurture log not found");
 
-      // Send notification to owner about the nurture activity
+       // Send notification to owner about the nurture activity
       await notifyOwner({
         title: `Nurture: ${log.subject || log.type}`,
-        content: `Customer #${log.customerId} — ${log.type.replace(/_/g, " ")}\nChannel: ${log.channel}\n\n${log.content || "No content"}`,
+        content: `Customer #${log.customerId} — ${log.type.replace(/_/g, " ")}
+Channel: ${log.channel}\n\n${log.content || "No content"}`,
       });
+
+      // If channel is email and customer has an email, actually deliver via Resend
+      let deliveryStatus = "notified_owner";
+      if (log.channel === "email") {
+        const customer = await db.getCustomerById(log.customerId);
+        if (customer?.email) {
+          try {
+            const { sendEmail: deliverEmail } = await import("./services/email");
+            const delivery = await deliverEmail({
+              to: customer.email,
+              subject: log.subject || `Update from MiniMorph Studios`,
+              html: (log.content || "").replace(/\n/g, "<br/>"),
+              text: log.content || "",
+            });
+            deliveryStatus = delivery.success ? "delivered" : "delivery_failed";
+            if (!delivery.success) {
+              console.warn(`[Nurture] Email delivery failed for customer ${customer.id}: ${delivery.error}`);
+            }
+          } catch (err: any) {
+            console.warn(`[Nurture] Email delivery error: ${err.message}`);
+            deliveryStatus = "delivery_failed";
+          }
+        }
+      } else if (log.channel === "sms") {
+        const customer = await db.getCustomerById(log.customerId);
+        if (customer?.phone) {
+          try {
+            const { sendSms } = await import("./services/sms");
+            const smsResult = await sendSms({
+              to: customer.phone,
+              body: log.content || `Hi from MiniMorph Studios! ${log.subject || ""}`,
+            });
+            deliveryStatus = smsResult.success ? "delivered" : "delivery_failed";
+          } catch (err: any) {
+            console.warn(`[Nurture] SMS delivery error: ${err.message}`);
+            deliveryStatus = "delivery_failed";
+          }
+        }
+      }
 
       // Mark as sent
       await db.updateNurtureLog(input.id, { status: "sent", sentAt: new Date() });
-      return { success: true };
+      return { success: true, deliveryStatus };
     }),
 
   // Admin: auto-generate nurture check-in using AI
