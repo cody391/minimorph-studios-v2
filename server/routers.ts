@@ -10,6 +10,7 @@ import { storagePut } from "./storage";
 import { repTrainingRouter, repActivityRouter, repGamificationRouter, repCommsRouter, repApplicationRouter } from "./repEcosystem";
 import { repSupportTicketsRouter, repNotifPrefsRouter } from "./repEcosystem";
 import { leadGenRouter } from "./leadGenRouter";
+import { academyRouter } from "./academyRouter";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -1979,6 +1980,7 @@ export const appRouter = router({
   repTickets: repSupportTicketsRouter,
   repNotifPrefs: repNotifPrefsRouter,
   leadGen: leadGenRouter,
+  academy: academyRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))

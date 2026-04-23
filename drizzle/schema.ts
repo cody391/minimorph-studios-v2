@@ -909,3 +909,43 @@ export const emailUnsubscribes = mysqlTable("email_unsubscribes", {
   source: varchar("source", { length: 50 }).default("email_link"), // email_link, manual, complaint
 });
 export type EmailUnsubscribe = typeof emailUnsubscribes.$inferSelect;
+
+/* ═══════════════════════════════════════════════════════
+   ACADEMY — Training module progress & certifications
+   ═══════════════════════════════════════════════════════ */
+
+export const academyProgress = mysqlTable("academy_progress", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  moduleId: varchar("module_id", { length: 64 }).notNull(),
+  lessonIndex: int("lesson_index").notNull().default(0),
+  lessonsCompleted: int("lessons_completed").notNull().default(0),
+  totalLessons: int("total_lessons").notNull(),
+  quizScore: int("quiz_score"), // percentage 0-100, null if not attempted
+  quizAttempts: int("quiz_attempts").notNull().default(0),
+  quizPassed: boolean("quiz_passed").notNull().default(false),
+  timeSpentMinutes: int("time_spent_minutes").notNull().default(0),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  lastAccessedAt: timestamp("last_accessed_at").defaultNow().notNull(),
+});
+
+export const academyQuizAttempts = mysqlTable("academy_quiz_attempts", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  moduleId: varchar("module_id", { length: 64 }).notNull(),
+  answers: json("answers").notNull(), // { questionId: selectedAnswer }
+  score: int("score").notNull(), // percentage 0-100
+  passed: boolean("passed").notNull(),
+  timeSpentSeconds: int("time_spent_seconds").notNull().default(0),
+  attemptedAt: timestamp("attempted_at").defaultNow().notNull(),
+});
+
+export const academyCertifications = mysqlTable("academy_certifications", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  certificationType: mysqlEnum("certification_type", ["module", "full"]).notNull(),
+  moduleId: varchar("module_id", { length: 64 }), // null for full certification
+  certifiedAt: timestamp("certified_at").defaultNow().notNull(),
+  score: int("score").notNull(), // average score across all quizzes
+});

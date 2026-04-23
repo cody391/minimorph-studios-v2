@@ -127,6 +127,13 @@
       "when": 1776976450458,
       "tag": "0017_early_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1776977143571,
+      "tag": "0018_misty_ted_forrester",
+      "breakpoints": true
     }
   ]
 }

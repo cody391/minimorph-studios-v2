@@ -1,6 +1,7 @@
 import { useState, useMemo, lazy, Suspense } from "react";
 import NotificationsBell from "./rep/NotificationsBell";
 const PipelineTab = lazy(() => import("./rep/PipelineTab"));
+const SalesAcademy = lazy(() => import("./rep/SalesAcademy"));
 const CommsHub = lazy(() => import("./rep/CommsHub"));
 const SupportTicketsPanel = lazy(() => import("./rep/SupportTicketsPanel"));
 const RepSettingsPanel = lazy(() => import("./rep/RepSettingsPanel"));
@@ -287,7 +288,9 @@ export default function RepDashboard() {
 
           {/* ═══════ TRAINING TAB ═══════ */}
           <TabsContent value="training" className="space-y-6">
-            <TrainingTab modules={trainingModules} progress={trainingProgress} quizResults={quizResults} repStatus={repProfile.status} />
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" /></div>}>
+              <SalesAcademy />
+            </Suspense>
           </TabsContent>
 
           {/* ═══════ ACTIVITY TAB ═══════ */}
