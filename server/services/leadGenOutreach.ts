@@ -447,6 +447,19 @@ Respond in JSON:
     }).where(eq(leads.id, params.leadId));
     result.assignedToOwner = true;
 
+    // SMS the owner directly
+    const { ENV } = await import("../_core/env");
+    if (ENV.ownerPhoneNumber) {
+      try {
+        await sendSms({
+          to: ENV.ownerPhoneNumber,
+          body: `🏢 Enterprise Lead Alert!\n${lead.businessName}\n${lead.phone || lead.email || ""}\nAI: ${aiDecision.reasoning || "High-value prospect"}\n\nThis lead has been assigned to you.`,
+        });
+      } catch (smsErr) {
+        console.error("[Outreach] Failed to SMS owner:", smsErr);
+      }
+    }
+
   } else if (aiDecision.decision === "mark_not_interested") {
     await db.update(leads).set({
       stage: "closed_lost",

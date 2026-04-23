@@ -27,7 +27,6 @@ describe("Secrets Validation — All Integration Keys", () => {
       }),
     });
 
-    // 200 = valid key, 422 = valid key but bad params, 401/403 = invalid key
     expect(resp.status).not.toBe(401);
     expect(resp.status).not.toBe(403);
   });
@@ -45,7 +44,6 @@ describe("Secrets Validation — All Integration Keys", () => {
     if (!key) return;
 
     const resp = await fetch(`https://api.hunter.io/v2/account?api_key=${key}`);
-    // 200 = valid, 401 = invalid
     expect(resp.status).toBe(200);
     const data = await resp.json();
     expect(data.data).toBeDefined();
@@ -57,7 +55,7 @@ describe("Secrets Validation — All Integration Keys", () => {
     expect(sid).toBeDefined();
     expect(sid).not.toBe("");
     expect(sid!.startsWith("AP")).toBe(true);
-    expect(sid!.length).toBe(34); // Twilio SIDs are 34 chars
+    expect(sid!.length).toBe(34);
   });
 
   // ── Resend Webhook Secret ──
@@ -66,6 +64,22 @@ describe("Secrets Validation — All Integration Keys", () => {
     expect(secret).toBeDefined();
     expect(secret).not.toBe("");
     expect(secret!.length).toBeGreaterThan(5);
+  });
+
+  // ── Owner Phone Number ──
+  it("OWNER_PHONE_NUMBER is set and valid E.164 format", () => {
+    const phone = process.env.OWNER_PHONE_NUMBER;
+    expect(phone).toBeDefined();
+    expect(phone).not.toBe("");
+    expect(phone!.startsWith("+1")).toBe(true);
+    expect(phone!.length).toBe(12); // +1XXXXXXXXXX
+  });
+
+  it("Owner phone number is accessible via ENV", async () => {
+    const { ENV } = await import("./_core/env");
+    expect(ENV.ownerPhoneNumber).toBeDefined();
+    expect(ENV.ownerPhoneNumber).not.toBe("");
+    expect(ENV.ownerPhoneNumber.startsWith("+1")).toBe(true);
   });
 
   // ── Pre-existing secrets still injected ──
@@ -81,6 +95,7 @@ describe("Secrets Validation — All Integration Keys", () => {
       "BUILT_IN_FORGE_API_URL",
       "JWT_SECRET",
       "DATABASE_URL",
+      "OWNER_PHONE_NUMBER",
     ];
 
     for (const key of required) {

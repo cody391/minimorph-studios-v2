@@ -83,7 +83,7 @@ export async function analyzeForEnterprise(businessId: number): Promise<boolean>
       status: "analyzed",
     });
 
-    // Notify the owner
+    // Notify the owner via push + SMS
     await notifyOwner({
       title: `Enterprise Lead: ${biz.businessName}`,
       content: `New enterprise prospect identified!\n\n` +
@@ -95,6 +95,20 @@ export async function analyzeForEnterprise(businessId: number): Promise<boolean>
         `Est. Savings: ${analysis.estimatedSavings}\n\n` +
         `Full report available in the admin dashboard.`,
     });
+
+    // Also SMS the owner directly
+    const { ENV } = await import("../_core/env");
+    if (ENV.ownerPhoneNumber) {
+      try {
+        const { sendSms } = await import("./sms");
+        await sendSms({
+          to: ENV.ownerPhoneNumber,
+          body: `🏢 Enterprise Prospect!\n${biz.businessName}\nEst. Savings: ${analysis.estimatedSavings}\nOpportunities: ${analysis.automationOpportunities.slice(0, 2).join(", ")}\n\nCheck admin dashboard for full report.`,
+        });
+      } catch (smsErr) {
+        console.error("[Enterprise] Failed to SMS owner:", smsErr);
+      }
+    }
 
     return true;
   } catch (err) {

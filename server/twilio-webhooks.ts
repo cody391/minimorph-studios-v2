@@ -259,6 +259,15 @@ export function registerTwilioWebhooks(app: Express) {
                 title: "🏢 Enterprise Lead Reply",
                 content: `Enterprise lead "${leadGenLead.businessName}" replied via SMS: "${Body.slice(0, 200)}". AI decision: ${conversationResult.decision}`,
               });
+              // Also SMS the owner directly
+              const { ENV } = await import("./_core/env");
+              if (ENV.ownerPhoneNumber) {
+                const { sendSms } = await import("./services/sms");
+                await sendSms({
+                  to: ENV.ownerPhoneNumber,
+                  body: `🏢 Enterprise lead "${leadGenLead.businessName}" replied!\nThey said: "${Body.slice(0, 150)}"\nAI: ${conversationResult.decision}\n\nThis lead is assigned to you.`,
+                });
+              }
             } catch (notifyErr) {
               console.error("[SMS Webhook] Owner notification failed:", notifyErr);
             }

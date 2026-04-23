@@ -886,17 +886,19 @@ Description: ${input.description}`,
       try {
         const { sendSms } = await import("./services/sms");
         const { ENV } = await import("./_core/env");
-        // We need the owner's phone number — use the Twilio number as the "from" and
-        // the owner can configure their phone. For now, use notifyOwner as fallback.
-        // The owner's phone is not stored in DB, so we use the notification system
-        // and also send an SMS if we have a phone number configured.
-        const ownerUser = await db.getOwnerUser();
 
-        // Send notification via Manus notification system
+        // Send SMS directly to owner's phone
+        if (ENV.ownerPhoneNumber) {
+          const smsBody = `🎫 Ticket #${ticketId} — ${input.subject}\nRep: ${rep.fullName} | Priority: ${input.priority || "medium"}\n\nAI: ${aiAnalysis}\nSolution: ${aiSolution}\nConfidence: ${(parseFloat(aiConfidence) * 100).toFixed(0)}%\n\nReply YES to approve or NO to reject.`;
+          await sendSms({ to: ENV.ownerPhoneNumber, body: smsBody });
+          console.log(`[Support Ticket] SMS sent to owner at ${ENV.ownerPhoneNumber}`);
+        }
+
+        // Also send via Manus notification system (push/in-app)
         const { notifyOwner } = await import("./_core/notification");
         await notifyOwner({
           title: `🎫 Support Ticket #${ticketId} — Needs Approval`,
-          content: `Rep: ${rep.fullName}\nSubject: ${input.subject}\nPriority: ${input.priority || "medium"}\n\nAI Analysis: ${aiAnalysis}\n\nProposed Solution: ${aiSolution}\n\nConfidence: ${(parseFloat(aiConfidence) * 100).toFixed(0)}%\n\nReply YES to approve or NO to reject via SMS to your Twilio number.`,
+          content: `Rep: ${rep.fullName}\nSubject: ${input.subject}\nPriority: ${input.priority || "medium"}\n\nAI Analysis: ${aiAnalysis}\n\nProposed Solution: ${aiSolution}\n\nConfidence: ${(parseFloat(aiConfidence) * 100).toFixed(0)}%\n\nReply YES to approve or NO to reject.`,
         });
 
         // Update ticket to pending_approval

@@ -379,3 +379,16 @@
 - [x] Wire adaptive scaling into scheduler
 - [x] Add Phase 31 endpoints to leadGenRouter (enrichContacts, adaptiveScaling, conversationAI, businessIntelligence)
 - [x] Vitest tests for all Phase 31 features (49 tests, all passing)
+
+### Integration Secrets & Owner Phone Wiring
+- [x] Apollo.io API key configured and validated (contact enrichment)
+- [x] Hunter.io API key configured and validated (email finder fallback)
+- [x] Twilio TwiML App SID configured (browser-based calling)
+- [x] Resend webhook signing secret configured (email delivery tracking)
+- [x] Owner phone number (OWNER_PHONE_NUMBER) added to ENV and wired into all SMS notification paths
+- [x] Owner SMS alerts for: ticket escalations (repEcosystem.ts)
+- [x] Owner SMS alerts for: enterprise lead assignments (leadGenOutreach.ts)
+- [x] Owner SMS alerts for: conversation AI escalations (leadGenConversationAI.ts)
+- [x] Owner SMS alerts for: inbound enterprise lead replies (twilio-webhooks.ts)
+- [x] Owner SMS alerts for: new enterprise prospect analysis (leadGenEnterprise.ts)
+- [x] 397 tests passing across 13 test files, 0 TypeScript errors

@@ -464,6 +464,19 @@ Respond in JSON:
         lastTouchAt: new Date(),
       }).where(eq(leads.id, params.leadId));
       result.assignedToOwner = true;
+
+      // SMS the owner directly
+      const { ENV } = await import("../_core/env");
+      if (ENV.ownerPhoneNumber) {
+        try {
+          await sendSms({
+            to: ENV.ownerPhoneNumber,
+            body: `🏢 Enterprise Lead!\n${lead.businessName}\n${lead.phone || lead.email || ""}\nLast msg: "${params.content.slice(0, 100)}"\nAI: ${aiDecision.reasoning || "High-value"}\n\nAssigned to you.`,
+          });
+        } catch (smsErr) {
+          console.error("[ConversationAI] Failed to SMS owner:", smsErr);
+        }
+      }
       break;
     }
 
