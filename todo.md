@@ -108,3 +108,7 @@
 ## How It Works — Customer-Facing Rewrite
 - [x] Rewrite public "How It Works" section to show customer journey (outward-facing), not internal ops lifecycle
 - [x] Keep internal lifecycle visualization only in admin dashboard
+
+## CorePrinciple Section — Customer-Facing Rewrite
+- [x] Rewrite "Humans close. AI does everything else." section to focus on customer outcomes, not internal AI/human split
+- [x] Remove internal language about reps, AI system mechanics — replace with "dedicated team" messaging
