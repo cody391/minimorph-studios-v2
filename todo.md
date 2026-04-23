@@ -355,3 +355,27 @@
 - [x] Scrape: Parallel source scraping with sequential rate-limited execution
 - [x] Update admin dashboard with source quality endpoint and scheduler stats
 - [x] Vitest tests for all enhancements (22 tests, all passing)
+
+### Phase 31: AI-First Lead Warming System
+- [x] Contact enrichment service: integrate Apollo.io / Hunter.io for decision-maker name, email, direct phone
+- [x] Enrichment fallback chain: try Apollo → Hunter → LLM inference → manual flag
+- [x] Store enriched contacts in DB with confidence score and source
+- [x] Adaptive scaling: auto-expand search radius when leads run low
+- [x] Adaptive scaling: category rotation — track exhausted categories per area, rotate to fresh ones
+- [x] Adaptive scaling: geographic expansion — auto-scrape neighboring cities when primary is tapped
+- [x] Adaptive scaling: quality threshold relaxation — gradually lower bar when volume is needed
+- [x] Adaptive scaling: "running low" detection based on rep capacity vs available leads
+- [x] Free website audit landing page: public form where prospects request their own audit
+- [x] Audit page: auto-generate PDF report and email it to prospect
+- [x] Audit page: auto-create lead in pipeline as warm inbound (higher priority)
+- [x] AI conversation agent: deep personalization using all enrichment data
+- [x] AI conversation agent: industry-specific objection handling playbooks
+- [x] AI conversation agent: self-close logic — detect buying intent, push to checkout
+- [x] AI conversation agent: escalation logic — detect when human touch needed, hand to rep with context
+- [x] AI conversation agent: multi-turn memory — remember previous interactions across email/SMS
+- [x] Wire conversation AI into Twilio SMS webhook for autonomous inbound reply handling
+- [x] Wire enrichment into outreach pipeline (enrich before first contact)
+- [x] Wire audit page submissions into lead pipeline
+- [x] Wire adaptive scaling into scheduler
+- [x] Add Phase 31 endpoints to leadGenRouter (enrichContacts, adaptiveScaling, conversationAI, businessIntelligence)
+- [x] Vitest tests for all Phase 31 features (49 tests, all passing)

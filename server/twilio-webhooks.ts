@@ -3,6 +3,7 @@ import express from "express";
 import { generateOutboundTwiml, generateInboundTwiml } from "./services/voice";
 import * as db from "./db";
 import { analyzeAndCoach } from "./services/aiCoach";
+import { handleConversation } from "./services/leadGenConversationAI";
 import { ENV } from "./_core/env";
 
 /**
@@ -11,7 +12,7 @@ import { ENV } from "./_core/env";
  * 1. Voice webhook — TwiML instructions for outbound/inbound calls
  * 2. Call status callback — updates call status in DB
  * 3. Recording status callback — saves recording URL and triggers transcription
- * 4. Inbound SMS webhook — receives incoming SMS messages
+ * 4. Inbound SMS webhook — receives incoming SMS messages + AI conversation routing
  */
 export function registerTwilioWebhooks(app: Express) {
   // Twilio sends form-encoded data for webhooks
@@ -118,6 +119,13 @@ export function registerTwilioWebhooks(app: Express) {
   /**
    * POST /api/twilio/sms-webhook
    * Twilio hits this when an inbound SMS is received.
+   * 
+   * Routing priority:
+   * 1. Owner ticket approval (YES/NO replies)
+   * 2. STOP/opt-out compliance
+   * 3. Lead gen AI conversation (if sender is a lead gen lead with no rep)
+   * 4. Rep conversation (if sender has an active rep thread)
+   * 5. Acknowledge receipt
    */
   app.post("/api/twilio/sms-webhook", twilioParser, async (req: Request, res: Response) => {
     try {
@@ -125,14 +133,10 @@ export function registerTwilioWebhooks(app: Express) {
       console.log(`[Twilio SMS] Inbound — From: ${From}, Body: ${Body?.slice(0, 50)}`);
 
       // Find the rep who owns conversations with this number
-      // For now, try to find the most recent outbound SMS to this number
-      const allSms = await db.listRepSmsConversations(0); // We'll look up by phone number
-      // Find which rep was texting this number
       let repId: number | null = null;
       let leadId: number | null = null;
 
       // Search through recent SMS to find the rep who was texting this number
-      // This is a simplified lookup — in production you'd index by phone number
       try {
         const { getDb } = await import("./db");
         const dbConn = await getDb();
@@ -156,7 +160,6 @@ export function registerTwilioWebhooks(app: Express) {
       const ownerUser = await db.getOwnerUser();
       const bodyLower = Body?.trim().toLowerCase() || "";
       if (ownerUser) {
-        // Check if the sender might be the owner (we match by checking pending tickets)
         const approvalKeywords = ["yes", "approve", "approved", "ok", "no", "reject", "rejected", "deny", "denied"];
         if (approvalKeywords.includes(bodyLower)) {
           const pendingTicket = await db.getMostRecentPendingTicket();
@@ -197,15 +200,79 @@ export function registerTwilioWebhooks(app: Express) {
       const stopKeywords = ["stop", "unsubscribe", "cancel", "quit", "end"];
       const isStopRequest = stopKeywords.includes(bodyLower);
 
-      if (isStopRequest && leadId) {
-        await db.markLeadSmsOptedOut(leadId);
-        console.log(`[SMS Compliance] Lead ${leadId} opted out via STOP from ${From}`);
-        // Send confirmation
+      // Check if this is from a lead gen lead (not a rep conversation)
+      let leadGenLead: Awaited<ReturnType<typeof db.getLeadByPhone>> = null;
+      if (!repId) {
+        // No rep conversation found — check if it's a lead gen lead replying
+        leadGenLead = await db.getLeadByPhone(From);
+      }
+
+      if (isStopRequest) {
+        // Handle opt-out for both rep leads and lead gen leads
+        const optOutLeadId = leadId || leadGenLead?.id;
+        if (optOutLeadId) {
+          await db.markLeadSmsOptedOut(optOutLeadId);
+          console.log(`[SMS Compliance] Lead ${optOutLeadId} opted out via STOP from ${From}`);
+        }
         res.type("text/xml");
         res.send('<?xml version="1.0" encoding="UTF-8"?><Response><Message>You have been unsubscribed from MiniMorph Studios messages. You will not receive further texts.</Message></Response>');
         return;
       }
 
+      // ─── Lead Gen AI Conversation Handler ───
+      // If the inbound SMS is from a lead gen lead (no active rep conversation),
+      // route it to the AI conversation agent for autonomous handling.
+      // The AI will: answer questions, handle objections, push for close, or escalate to rep.
+      if (leadGenLead && !repId) {
+        console.log(`[SMS Webhook] Lead gen lead detected: ${leadGenLead.businessName} (ID: ${leadGenLead.id}) — routing to AI conversation agent`);
+        try {
+          const conversationResult = await handleConversation({
+            leadId: leadGenLead.id,
+            channel: "sms",
+            content: Body,
+          });
+          console.log(`[SMS Webhook] AI conversation result: decision=${conversationResult.decision}, confidence=${conversationResult.confidenceScore}`);
+
+          // If AI assigned to a rep, notify the rep
+          if (conversationResult.assignedToRepId) {
+            await db.createRepNotification({
+              repId: conversationResult.assignedToRepId,
+              type: "lead_assigned",
+              title: "🔥 Hot Lead Assigned",
+              message: `AI warmed lead "${leadGenLead.businessName}" has been assigned to you. They replied: "${Body.slice(0, 100)}"`,
+              metadata: { leadId: leadGenLead.id, fromNumber: From },
+            });
+            // Push notification
+            try {
+              const { notifyNewLead } = await import("./services/pushNotification");
+              await notifyNewLead(conversationResult.assignedToRepId, leadGenLead.businessName);
+            } catch (pushErr) {
+              console.error("[SMS Webhook] Push notification failed:", pushErr);
+            }
+          }
+
+          // If assigned to owner (enterprise lead), send owner notification
+          if (conversationResult.assignedToOwner) {
+            try {
+              const { notifyOwner } = await import("./_core/notification");
+              await notifyOwner({
+                title: "🏢 Enterprise Lead Reply",
+                content: `Enterprise lead "${leadGenLead.businessName}" replied via SMS: "${Body.slice(0, 200)}". AI decision: ${conversationResult.decision}`,
+              });
+            } catch (notifyErr) {
+              console.error("[SMS Webhook] Owner notification failed:", notifyErr);
+            }
+          }
+        } catch (aiErr) {
+          console.error("[SMS Webhook] AI conversation handler error:", aiErr);
+        }
+
+        res.type("text/xml");
+        res.send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+        return;
+      }
+
+      // ─── Rep Conversation Handler ───
       if (repId) {
         await db.createSmsMessage({
           repId,
@@ -222,10 +289,8 @@ export function registerTwilioWebhooks(app: Express) {
         await db.createRepNotification({
           repId,
           type: "general",
-          title: isStopRequest ? "Lead Opted Out of SMS" : "New SMS Reply",
-          message: isStopRequest
-            ? `${From} has opted out of SMS messages.`
-            : `Reply from ${From}: "${Body.slice(0, 100)}${Body.length > 100 ? "..." : ""}"`,
+          title: "New SMS Reply",
+          message: `Reply from ${From}: "${Body.slice(0, 100)}${Body.length > 100 ? "..." : ""}"`,
           metadata: { fromNumber: From, leadId },
         });
       }

@@ -5,7 +5,7 @@
  */
 
 import { z } from "zod";
-import { router, protectedProcedure } from "./_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { createScrapeJob, runScrapeJob, scoreUnscrapedWebsites, LOW_HANGING_FRUIT_TYPES } from "./services/leadGenScraper";
 import { enrichQualifiedBusinesses, batchConvertToLeads } from "./services/leadGenEnrichment";
@@ -17,6 +17,9 @@ import { analyzeLeadBehavior, scheduleBranchedOutreach, runReengagementCampaign,
 import { scoreLeadML, rescoreAllLeads, getScoringInsights } from "./services/leadGenScoring";
 import { runMultiSourceScrape, enrichWithCompetitors } from "./services/leadGenMultiSource";
 import { generateProposal, getRepPerformanceMetrics, findBestRepByPerformance } from "./services/leadGenProposal";
+import { batchEnrichContacts, getEnrichmentStatus, enrichBusinessContact } from "./services/contactEnrichment";
+import { runAdaptiveScaling, getAdaptiveScalingSummary, analyzeRepCapacity } from "./services/leadGenAdaptive";
+import { handleConversation, buildBusinessIntelligence } from "./services/leadGenConversationAI";
 import { getDb } from "./db";
 import { scrapeJobs, scrapedBusinesses, outreachSequences, aiConversations, repServiceAreas, enterpriseProspects, leads } from "../drizzle/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -398,4 +401,104 @@ export const leadGenRouter = router({
 
     return results;
   }),
+
+  // ═══════ Phase 31: AI-First Lead Warming ═══════
+
+  // ─── Contact Enrichment (Apollo.io / Hunter.io) ───
+  enrichContacts: adminProcedure
+    .input(z.object({ limit: z.number().min(1).max(50).default(15) }))
+    .mutation(async ({ input }) => {
+      const result = await batchEnrichContacts(input.limit);
+      return result;
+    }),
+
+  enrichSingleBusiness: adminProcedure
+    .input(z.object({ businessId: z.number() }))
+    .mutation(async ({ input }) => {
+      const result = await enrichBusinessContact(input.businessId);
+      return result;
+    }),
+
+  getEnrichmentStatus: adminProcedure.query(async () => {
+    return getEnrichmentStatus();
+  }),
+
+  // ─── Adaptive Scaling ───
+  runAdaptiveScaling: adminProcedure.mutation(async () => {
+    const report = await runAdaptiveScaling();
+    return report;
+  }),
+
+  getAdaptiveScalingSummary: adminProcedure.query(async () => {
+    return getAdaptiveScalingSummary();
+  }),
+
+  getRepCapacityDetailed: adminProcedure.query(async () => {
+    return analyzeRepCapacity();
+  }),
+
+  // ─── AI Conversation Agent ───
+  triggerConversation: adminProcedure
+    .input(z.object({
+      leadId: z.number(),
+      channel: z.enum(["email", "sms"]),
+      content: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await handleConversation(input);
+      return result;
+    }),
+
+  getBusinessIntelligence: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ input }) => {
+      const intel = await buildBusinessIntelligence(input.leadId);
+      return intel;
+    }),
+
+  getLeadConversationHistory: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      return db.select().from(aiConversations)
+        .where(eq(aiConversations.leadId, input.leadId))
+        .orderBy(aiConversations.createdAt);
+    }),
+
+  // ─── Public Endpoint: Free Website Audit ───
+
+  requestPublicAudit: publicProcedure
+    .input(z.object({
+      websiteUrl: z.string().optional(),
+      email: z.string().email(),
+      businessName: z.string().optional(),
+      contactName: z.string().optional(),
+      phone: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = (await getDb())!;
+
+      // Create a lead from this inbound audit request
+      const [newLead] = await db.insert(leads).values({
+        businessName: input.businessName || input.websiteUrl || "Unknown Business",
+        contactName: input.contactName || "Website Visitor",
+        email: input.email,
+        phone: input.phone || null,
+        website: input.websiteUrl || null,
+        source: "website_form" as const,
+        temperature: "warm" as const,
+        qualificationScore: 60, // Inbound leads start warm
+        stage: "new" as const,
+        notes: `Inbound audit request. Website: ${input.websiteUrl || "none"}. Submitted via free audit page.`,
+      });
+
+      // Trigger audit generation in background (don't await)
+      if (input.websiteUrl) {
+        generateAuditForLead(newLead.insertId).catch(err =>
+          console.error("[PublicAudit] Audit generation failed:", err)
+        );
+      }
+
+      return { success: true, message: "Your audit is being generated. Check your email shortly!" };
+    }),
 });

@@ -18,4 +18,7 @@ export const ENV = {
   // Web push VAPID keys (generated at startup if not set)
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? "",
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? "",
+  // Contact enrichment APIs
+  apolloApiKey: process.env.APOLLO_API_KEY ?? "",
+  hunterApiKey: process.env.HUNTER_API_KEY ?? "",
 };

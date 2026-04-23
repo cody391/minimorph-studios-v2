@@ -113,6 +113,13 @@
       "when": 1776966973086,
       "tag": "0015_overjoyed_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1776971334160,
+      "tag": "0016_serious_vindicator",
+      "breakpoints": true
     }
   ]
 }

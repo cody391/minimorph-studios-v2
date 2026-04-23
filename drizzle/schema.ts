@@ -834,6 +834,7 @@ export const aiConversations = mysqlTable("ai_conversations", {
     "answer_question",
     "send_info",
     "push_for_close",
+    "handle_objection",
     "schedule_call",
     "assign_to_rep",
     "assign_to_owner",

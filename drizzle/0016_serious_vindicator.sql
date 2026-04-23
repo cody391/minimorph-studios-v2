@@ -1,0 +1,1 @@
+ALTER TABLE `ai_conversations` MODIFY COLUMN `aiDecision` enum('answer_question','send_info','push_for_close','handle_objection','schedule_call','assign_to_rep','assign_to_owner','mark_not_interested','continue_nurture');

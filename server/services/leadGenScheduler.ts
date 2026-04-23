@@ -21,6 +21,8 @@ import { scanForEnterpriseLeads } from "./leadGenEnterprise";
 import { rescoreAllLeads } from "./leadGenScoring";
 import { runReengagementCampaign } from "./leadGenSmartOutreach";
 import { runMultiSourceScrape, getSourceQuality } from "./leadGenMultiSource";
+import { batchEnrichContacts } from "./contactEnrichment";
+import { runAdaptiveScaling } from "./leadGenAdaptive";
 
 let schedulerRunning = false;
 let intervals: NodeJS.Timeout[] = [];
@@ -192,13 +194,43 @@ export function startLeadGenScheduler() {
     }, 8 * 60 * 60 * 1000)
   );
 
+  // ─── Contact enrichment (Apollo/Hunter) every 2 hours ───
+  intervals.push(
+    setInterval(async () => {
+      try {
+        const result = await batchEnrichContacts(15);
+        console.log(`[LeadGen Scheduler] Contact enrichment: ${result.enriched} enriched, ${result.failed} failed`);
+        recordJobRun("contact_enrichment", `Enriched ${result.enriched} of ${result.total}`);
+      } catch (err) {
+        console.error("[LeadGen Scheduler] Contact enrichment error:", err);
+        recordJobRun("contact_enrichment", (err as Error).message, true);
+      }
+    }, 2 * 60 * 60 * 1000)
+  );
+
+  // ─── Adaptive scaling check every 4 hours ───
+  intervals.push(
+    setInterval(async () => {
+      try {
+        const result = await runAdaptiveScaling();
+        console.log(`[LeadGen Scheduler] Adaptive scaling: ${result.actionsExecuted} actions, ${result.newScrapeJobsCreated} new scrape jobs`);
+        recordJobRun("adaptive_scaling", `${result.actionsExecuted} actions, ${result.newScrapeJobsCreated} scrape jobs`);
+      } catch (err) {
+        console.error("[LeadGen Scheduler] Adaptive scaling error:", err);
+        recordJobRun("adaptive_scaling", (err as Error).message, true);
+      }
+    }, 4 * 60 * 60 * 1000)
+  );
+
   console.log("[LeadGen Scheduler] All jobs scheduled:");
   console.log("  - Outreach sending: every 15 min");
   console.log("  - Website scoring: every 30 min");
   console.log("  - Enrichment + ML rescore: every 1 hour");
   console.log("  - Lead conversion: every 2 hours");
+  console.log("  - Contact enrichment (Apollo/Hunter): every 2 hours");
   console.log("  - Re-engagement campaigns: every 3 hours");
   console.log("  - Rep auto-feed (performance-based): every 4 hours");
+  console.log("  - Adaptive scaling: every 4 hours");
   console.log("  - Enterprise scan: every 6 hours");
   console.log("  - Multi-source scrape: every 8 hours");
 }
