@@ -179,6 +179,25 @@ export const repTrainingRouter = router({
       await db.updateRep(rep.id, { trainingProgress: pct });
       // Award points
       await awardPoints(rep.id, 50, "module_complete");
+      // Notify rep about progress
+      if (pct < 100) {
+        const remaining = modules.length - completedCount;
+        await db.createRepNotification({
+          repId: rep.id,
+          type: "training_reminder",
+          title: "Training Progress Update",
+          message: `Great work! You've completed ${completedCount}/${modules.length} modules (${pct}%). ${remaining} module${remaining > 1 ? "s" : ""} remaining to unlock certification.`,
+          metadata: { moduleId: input.moduleId, progress: pct },
+        });
+      } else {
+        await db.createRepNotification({
+          repId: rep.id,
+          type: "training_reminder",
+          title: "All Modules Complete!",
+          message: `You've completed all training modules! Take the certification quiz to activate your account.`,
+          metadata: { progress: 100 },
+        });
+      }
       return { success: true, trainingProgress: pct };
     }),
   // Get quiz questions

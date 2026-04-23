@@ -207,3 +207,27 @@
 - [x] Add dedicated "referral_bonus" commission type to schema
 - [x] Add explicit Vitest cases for commission creation, type validation, auth checks, and referral code format
 - [x] Surface social media templates in admin Reps page Recruitment tab with copy-to-clipboard + posting strategy guide
+
+## Phase 24: Rep Pipeline Gaps
+- [x] Rep lead management: protectedProcedure endpoints for reps to update stage, add notes, log outcomes on their assigned leads
+- [x] Lead claiming: reps can grab unassigned leads from a pool (with claim limit to prevent hoarding)
+- [x] Pipeline Kanban view: drag-and-drop board in rep dashboard showing leads by stage
+- [x] Proposal generator: AI-generated branded proposals reps can send to prospects with package/pricing details
+- [x] Deal close → customer conversion: automated flow (close deal → create customer → create contract → create commission)
+- [x] Customer handoff: auto-trigger onboarding invite when deal closes
+- [x] Admin lead transfer/bulk reassignment tool
+- [x] In-app notifications for reps (new lead assigned, commission approved, training reminder)
+
+### Phase 24 Gap Fixes
+- [x] Add outcome field to updateMyLead endpoint (connected/voicemail/no_answer/scheduled/sent/completed)
+- [x] Build admin bulk lead reassignment UI in admin Leads page
+- [x] Wire commission-approved notification into admin commission approval workflow
+- [x] Wire training-reminder notification into training module completion flow
+- [x] Build rep notifications panel in RepDashboard (bell icon + dropdown with unread count)
+- [x] Pipeline Kanban view in rep dashboard with stage columns and drag-to-move
+- [x] Customer handoff: auto-trigger onboarding project creation when deal closes
+
+### Phase 24 Gap Fixes (Round 2)
+- [x] Add closed_lost to updateMyLead stage enum so reps can mark leads as lost
+- [x] Add loading/error states to NotificationsBell component
+- [x] Add Vitest tests for leads.closeDeal, leads.transferLeads, repNotifications.*, and pipeline endpoints (30 tests, all passing)

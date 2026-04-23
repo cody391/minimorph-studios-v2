@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2 } from "lucide-react";
+import { Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2, ArrowRightLeft } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -58,6 +58,15 @@ export default function Leads() {
     onSuccess: () => { toast.success("Lead updated"); refetch(); },
     onError: (e) => toast.error(e.message),
   });
+  const { data: reps } = trpc.reps.list.useQuery();
+  const transferLeads = trpc.leads.transferLeads.useMutation({
+    onSuccess: (data) => { toast.success(`${data.transferredCount} leads transferred`); refetch(); setShowTransfer(false); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferFrom, setTransferFrom] = useState("");
+  const [transferTo, setTransferTo] = useState("");
+
   const enrichLead = trpc.leads.enrich.useMutation({
     onSuccess: (data) => {
       toast.success("Lead enriched with AI insights");
@@ -82,9 +91,14 @@ export default function Leads() {
           <h1 className="text-2xl font-serif text-forest">Lead Pipeline</h1>
           <p className="text-sm text-forest/60 font-sans mt-1">AI-sourced and manual leads, warming pipeline, and rep assignment</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="bg-forest hover:bg-forest-light text-cream font-sans text-sm">
-          <Plus className="h-4 w-4 mr-1" /> Add Lead
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowTransfer(true)} variant="outline" className="text-forest border-forest/20 hover:bg-forest/5 font-sans text-sm">
+            <ArrowRightLeft className="h-4 w-4 mr-1" /> Transfer Leads
+          </Button>
+          <Button onClick={() => setShowCreate(true)} className="bg-forest hover:bg-forest-light text-cream font-sans text-sm">
+            <Plus className="h-4 w-4 mr-1" /> Add Lead
+          </Button>
+        </div>
       </div>
 
       {/* Temperature Summary */}
@@ -244,6 +258,50 @@ export default function Leads() {
               className="bg-forest hover:bg-forest-light text-cream font-sans text-sm"
             >
               Create Lead
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Transfer Dialog */}
+      <Dialog open={showTransfer} onOpenChange={setShowTransfer}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-forest">Transfer Leads Between Reps</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 font-sans">
+            <p className="text-sm text-forest/60">Move all active leads from one rep to another. This will notify the receiving rep.</p>
+            <div>
+              <label className="text-xs text-forest/50">From Rep</label>
+              <Select value={transferFrom} onValueChange={setTransferFrom}>
+                <SelectTrigger><SelectValue placeholder="Select source rep" /></SelectTrigger>
+                <SelectContent>
+                  {(reps || []).filter((r: any) => r.status === "active" || r.status === "certified").map((r: any) => (
+                    <SelectItem key={r.id} value={String(r.id)}>{r.fullName} ({(leads || []).filter((l: any) => l.assignedRepId === r.id && !["closed_won","closed_lost"].includes(l.stage)).length} active leads)</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs text-forest/50">To Rep</label>
+              <Select value={transferTo} onValueChange={setTransferTo}>
+                <SelectTrigger><SelectValue placeholder="Select target rep" /></SelectTrigger>
+                <SelectContent>
+                  {(reps || []).filter((r: any) => (r.status === "active" || r.status === "certified") && String(r.id) !== transferFrom).map((r: any) => (
+                    <SelectItem key={r.id} value={String(r.id)}>{r.fullName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTransfer(false)} className="font-sans text-sm">Cancel</Button>
+            <Button
+              onClick={() => transferLeads.mutate({ fromRepId: Number(transferFrom), toRepId: Number(transferTo) })}
+              disabled={!transferFrom || !transferTo || transferLeads.isPending}
+              className="bg-forest hover:bg-forest-light text-cream font-sans text-sm"
+            >
+              {transferLeads.isPending ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Transferring...</> : <><ArrowRightLeft className="h-4 w-4 mr-1" /> Transfer All Leads</>}
             </Button>
           </DialogFooter>
         </DialogContent>

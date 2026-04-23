@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
+import NotificationsBell from "./rep/NotificationsBell";
+const PipelineTab = lazy(() => import("./rep/PipelineTab"));
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -103,9 +105,12 @@ export default function RepDashboard() {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={() => setLocation("/")} className="text-white border-white/20 hover:bg-white/10 font-sans text-sm rounded-full">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Home
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationsBell />
+            <Button variant="outline" onClick={() => setLocation("/")} className="text-white border-white/20 hover:bg-white/10 font-sans text-sm rounded-full">
+              <ArrowLeft className="h-4 w-4 mr-2" /> Home
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -117,6 +122,7 @@ export default function RepDashboard() {
             <TabsTrigger value="activity" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Activity</TabsTrigger>
             <TabsTrigger value="comms" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Communications</TabsTrigger>
             <TabsTrigger value="earnings" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Earnings</TabsTrigger>
+            <TabsTrigger value="pipeline" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Pipeline</TabsTrigger>
             <TabsTrigger value="leaderboard" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Leaderboard</TabsTrigger>
           </TabsList>
 
@@ -361,6 +367,13 @@ export default function RepDashboard() {
                 <p className="text-[10px] text-forest/40 font-sans mt-3">Your commission rate increases automatically as you level up. Commissions on cancelled contracts within 30 days are subject to clawback.</p>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ═══════ PIPELINE TAB ═══════ */}
+          <TabsContent value="pipeline" className="space-y-6">
+            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+              <PipelineTab repProfile={repProfile} />
+            </Suspense>
           </TabsContent>
 
           {/* ═══════ LEADERBOARD TAB ═══════ */}

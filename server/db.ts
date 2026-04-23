@@ -47,6 +47,8 @@ import {
   InsertRepSentEmail,
   repApplications,
   InsertRepApplication,
+  repNotifications,
+  InsertRepNotification,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -784,6 +786,92 @@ export async function updateRepApplication(repId: number, data: Partial<InsertRe
   await db.update(repApplications).set(data).where(eq(repApplications.repId, repId));
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   REP NOTIFICATIONS
+   ═══════════════════════════════════════════════════════ */
+export async function createRepNotification(data: InsertRepNotification) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(repNotifications).values(data);
+  return { id: result[0].insertId };
+}
+export async function listRepNotifications(repId: number, limit = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repNotifications).where(eq(repNotifications.repId, repId)).orderBy(desc(repNotifications.createdAt)).limit(limit);
+}
+export async function countUnreadNotifications(repId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const [result] = await db.select({ count: sql<number>`count(*)` }).from(repNotifications)
+    .where(and(eq(repNotifications.repId, repId), eq(repNotifications.isRead, false)));
+  return result?.count || 0;
+}
+export async function markNotificationsRead(repId: number, ids?: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  if (ids && ids.length > 0) {
+    await db.update(repNotifications).set({ isRead: true }).where(and(eq(repNotifications.repId, repId), inArray(repNotifications.id, ids)));
+  } else {
+    await db.update(repNotifications).set({ isRead: true }).where(eq(repNotifications.repId, repId));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   LEADS — Rep-facing helpers
+   ═══════════════════════════════════════════════════════ */
+export async function listLeadsByRep(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(leads).where(eq(leads.assignedRepId, repId)).orderBy(desc(leads.updatedAt));
+}
+export async function listUnassignedLeads(limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  // Leads that have no rep assigned and are in claimable stages
+  const { isNull } = await import("drizzle-orm");
+  return db.select().from(leads)
+    .where(and(
+      isNull(leads.assignedRepId),
+      inArray(leads.stage, ["new", "enriched", "warming", "warm"])
+    ))
+    .orderBy(desc(leads.qualificationScore))
+    .limit(limit);
+}
+export async function claimLead(leadId: number, repId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Atomic claim: only succeeds if lead is currently unassigned
+  const result = await db.update(leads)
+    .set({ assignedRepId: repId, stage: "assigned", temperature: "warm" })
+    .where(and(
+      eq(leads.id, leadId),
+      sql`assignedRepId IS NULL`
+    ));
+  return (result[0] as any).affectedRows > 0;
+}
+export async function countActiveLeadsByRep(repId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const [result] = await db.select({ count: sql<number>`count(*)` }).from(leads)
+    .where(and(
+      eq(leads.assignedRepId, repId),
+      inArray(leads.stage, ["assigned", "contacted", "proposal_sent", "negotiating"])
+    ));
+  return result?.count || 0;
+}
+export async function bulkTransferLeads(fromRepId: number, toRepId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.update(leads)
+    .set({ assignedRepId: toRepId })
+    .where(and(
+      eq(leads.assignedRepId, fromRepId),
+      inArray(leads.stage, ["assigned", "contacted", "proposal_sent", "negotiating"])
+    ));
+  return (result[0] as any).affectedRows || 0;
+}
 
 // Get a single commission by ID
 export async function getCommissionById(id: number) {

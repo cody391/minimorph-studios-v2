@@ -1,0 +1,1 @@
+ALTER TABLE `rep_activity_logs` MODIFY COLUMN `type` enum('call','email','meeting','proposal','follow_up','note','deal_closed','lead_update','lead_claimed','proposal_generated') NOT NULL;

@@ -478,7 +478,7 @@ export type InsertRepQuizResult = typeof repQuizResults.$inferInsert;
 export const repActivityLogs = mysqlTable("rep_activity_logs", {
   id: int("id").autoincrement().primaryKey(),
   repId: int("repId").notNull(),
-  type: mysqlEnum("type", ["call", "email", "meeting", "proposal", "follow_up", "note", "deal_closed"]).notNull(),
+  type: mysqlEnum("type", ["call", "email", "meeting", "proposal", "follow_up", "note", "deal_closed", "lead_update", "lead_claimed", "proposal_generated"]).notNull(),
   leadId: int("leadId"),
   customerId: int("customerId"),
   subject: varchar("subject", { length: 255 }),
@@ -573,3 +573,29 @@ export const repApplications = mysqlTable("rep_applications", {
 });
 export type RepApplication = typeof repApplications.$inferSelect;
 export type InsertRepApplication = typeof repApplications.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_NOTIFICATIONS — In-app notifications for reps
+   ═══════════════════════════════════════════════════════ */
+export const repNotifications = mysqlTable("rep_notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  type: mysqlEnum("type", [
+    "lead_assigned",
+    "lead_claimed",
+    "commission_approved",
+    "commission_paid",
+    "training_reminder",
+    "deal_closed",
+    "badge_earned",
+    "level_up",
+    "general",
+  ]).default("general").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message"),
+  isRead: boolean("isRead").default(false).notNull(),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RepNotification = typeof repNotifications.$inferSelect;
+export type InsertRepNotification = typeof repNotifications.$inferInsert;

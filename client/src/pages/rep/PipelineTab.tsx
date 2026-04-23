@@ -1,0 +1,656 @@
+import { useState, useMemo } from "react";
+import { trpc } from "@/lib/trpc";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Target, Flame, Snowflake, Sun, Phone, Mail, FileText, Sparkles,
+  GripVertical, ChevronRight, CheckCircle, XCircle, Loader2, Plus,
+  ArrowRight, DollarSign, Send, Eye, Handshake,
+} from "lucide-react";
+import { toast } from "sonner";
+
+/* ─── Constants ─── */
+const PIPELINE_STAGES = [
+  { key: "assigned", label: "Assigned", color: "bg-purple-100 text-purple-700 border-purple-200", headerBg: "bg-purple-50" },
+  { key: "contacted", label: "Contacted", color: "bg-blue-100 text-blue-700 border-blue-200", headerBg: "bg-blue-50" },
+  { key: "proposal_sent", label: "Proposal Sent", color: "bg-yellow-100 text-yellow-700 border-yellow-200", headerBg: "bg-yellow-50" },
+  { key: "negotiating", label: "Negotiating", color: "bg-orange-100 text-orange-700 border-orange-200", headerBg: "bg-orange-50" },
+] as const;
+
+const CLOSED_STAGES = [
+  { key: "closed_won", label: "Won", color: "bg-green-100 text-green-700 border-green-200" },
+  { key: "closed_lost", label: "Lost", color: "bg-red-100 text-red-700 border-red-200" },
+];
+
+const tempMeta: Record<string, { icon: any; color: string; bg: string }> = {
+  cold: { icon: Snowflake, color: "text-blue-500", bg: "bg-blue-50" },
+  warm: { icon: Sun, color: "text-yellow-600", bg: "bg-yellow-50" },
+  hot: { icon: Flame, color: "text-red-500", bg: "bg-red-50" },
+};
+
+const PACKAGE_PRICES: Record<string, string> = {
+  starter: "99",
+  growth: "199",
+  premium: "499",
+};
+
+/* ─── Types ─── */
+type Lead = {
+  id: number;
+  businessName: string;
+  contactName: string;
+  email: string;
+  phone?: string | null;
+  industry?: string | null;
+  website?: string | null;
+  stage: string;
+  temperature: string;
+  notes?: string | null;
+  qualificationScore: number;
+  enrichmentData?: any;
+  lastTouchAt?: Date | string | null;
+};
+
+/* ═══════════════════════════════════════════════════════
+   PIPELINE TAB — Kanban board for rep leads
+   ═══════════════════════════════════════════════════════ */
+export default function PipelineTab({ repProfile }: { repProfile: any }) {
+  const utils = trpc.useUtils();
+  const { data: myLeads = [], isLoading } = trpc.leads.myLeads.useQuery(undefined, { enabled: !!repProfile });
+  const { data: leadPool = [] } = trpc.leads.leadPool.useQuery(undefined, { enabled: !!repProfile });
+
+  const updateLead = trpc.leads.updateMyLead.useMutation({
+    onSuccess: () => { utils.leads.myLeads.invalidate(); toast.success("Lead updated"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const claimLead = trpc.leads.claimLead.useMutation({
+    onSuccess: () => { utils.leads.myLeads.invalidate(); utils.leads.leadPool.invalidate(); toast.success("Lead claimed!"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const generateProposal = trpc.leads.generateProposal.useMutation({
+    onError: (e) => toast.error(e.message),
+  });
+  const closeDeal = trpc.leads.closeDeal.useMutation({
+    onSuccess: () => { utils.leads.myLeads.invalidate(); toast.success("Deal closed! Customer, contract, and commission created."); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  // State
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [showPool, setShowPool] = useState(false);
+  const [showProposal, setShowProposal] = useState(false);
+  const [showCloseDeal, setShowCloseDeal] = useState(false);
+  const [proposalResult, setProposalResult] = useState<any>(null);
+  const [closeForm, setCloseForm] = useState({ packageTier: "starter" as string, monthlyPrice: "99", notes: "" });
+  const [proposalTier, setProposalTier] = useState("starter");
+  const [proposalNotes, setProposalNotes] = useState("");
+  const [draggedLeadId, setDraggedLeadId] = useState<number | null>(null);
+
+  // Group leads by stage
+  const leadsByStage = useMemo(() => {
+    const grouped: Record<string, Lead[]> = {};
+    for (const s of PIPELINE_STAGES) grouped[s.key] = [];
+    grouped["closed_won"] = [];
+    grouped["closed_lost"] = [];
+    for (const lead of myLeads as Lead[]) {
+      if (grouped[lead.stage]) grouped[lead.stage].push(lead);
+    }
+    return grouped;
+  }, [myLeads]);
+
+  const activeCount = useMemo(() => PIPELINE_STAGES.reduce((sum, s) => sum + (leadsByStage[s.key]?.length || 0), 0), [leadsByStage]);
+  const wonCount = leadsByStage["closed_won"]?.length || 0;
+  const lostCount = leadsByStage["closed_lost"]?.length || 0;
+
+  /* ─── Drag handlers ─── */
+  const handleDragStart = (leadId: number) => setDraggedLeadId(leadId);
+  const handleDragEnd = () => setDraggedLeadId(null);
+  const handleDrop = (targetStage: string) => {
+    if (!draggedLeadId) return;
+    const lead = (myLeads as Lead[]).find((l) => l.id === draggedLeadId);
+    if (!lead || lead.stage === targetStage) { setDraggedLeadId(null); return; }
+    // Only allow forward movement in pipeline
+    const currentIdx = PIPELINE_STAGES.findIndex((s) => s.key === lead.stage);
+    const targetIdx = PIPELINE_STAGES.findIndex((s) => s.key === targetStage);
+    if (currentIdx === -1 || targetIdx === -1 || targetIdx <= currentIdx) {
+      toast.error("You can only move leads forward in the pipeline");
+      setDraggedLeadId(null);
+      return;
+    }
+    updateLead.mutate({ leadId: draggedLeadId, stage: targetStage as any });
+    setDraggedLeadId(null);
+  };
+
+  /* ─── Proposal generation ─── */
+  const handleGenerateProposal = () => {
+    if (!selectedLead) return;
+    setProposalResult(null);
+    generateProposal.mutate(
+      { leadId: selectedLead.id, packageTier: proposalTier as any, customNotes: proposalNotes || undefined },
+      {
+        onSuccess: (data) => {
+          setProposalResult(data);
+          toast.success("Proposal generated!");
+        },
+      }
+    );
+  };
+
+  /* ─── Close deal ─── */
+  const handleCloseDeal = () => {
+    if (!selectedLead) return;
+    closeDeal.mutate({
+      leadId: selectedLead.id,
+      packageTier: closeForm.packageTier as any,
+      monthlyPrice: closeForm.monthlyPrice,
+      notes: closeForm.notes || undefined,
+    }, {
+      onSuccess: () => {
+        setShowCloseDeal(false);
+        setShowDetail(false);
+        setSelectedLead(null);
+      },
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-8 w-48 bg-sage/20 animate-pulse rounded" />
+        <div className="grid grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-64 bg-sage/10 animate-pulse rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Pipeline Summary */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-serif text-forest">My Pipeline</h2>
+          <p className="text-xs text-forest/50 font-sans mt-0.5">
+            {activeCount} active &bull; {wonCount} won &bull; {lostCount} lost
+          </p>
+        </div>
+        <Button
+          onClick={() => setShowPool(true)}
+          variant="outline"
+          className="text-forest border-forest/20 hover:bg-forest/5 font-sans text-sm rounded-full"
+        >
+          <Plus className="h-3.5 w-3.5 mr-1.5" /> Claim Lead
+        </Button>
+      </div>
+
+      {/* Kanban Board */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {PIPELINE_STAGES.map((stage) => {
+          const leads = leadsByStage[stage.key] || [];
+          return (
+            <div
+              key={stage.key}
+              className={`rounded-xl border border-border/40 overflow-hidden transition-all ${
+                draggedLeadId ? "ring-2 ring-terracotta/20" : ""
+              }`}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("ring-2", "ring-terracotta/50"); }}
+              onDragLeave={(e) => { e.currentTarget.classList.remove("ring-2", "ring-terracotta/50"); }}
+              onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("ring-2", "ring-terracotta/50"); handleDrop(stage.key); }}
+            >
+              {/* Column header */}
+              <div className={`${stage.headerBg} px-4 py-3 border-b border-border/30`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge className={`text-[10px] font-sans ${stage.color}`}>{stage.label}</Badge>
+                    <span className="text-xs text-forest/40 font-sans">{leads.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cards */}
+              <ScrollArea className="h-[400px]">
+                <div className="p-2 space-y-2">
+                  {leads.length === 0 ? (
+                    <div className="text-center py-8 text-forest/30">
+                      <Target className="h-6 w-6 mx-auto mb-2 opacity-40" />
+                      <p className="text-xs font-sans">No leads</p>
+                    </div>
+                  ) : (
+                    leads.map((lead) => {
+                      const ti = tempMeta[lead.temperature] || tempMeta.cold;
+                      const TempIcon = ti.icon;
+                      return (
+                        <div
+                          key={lead.id}
+                          draggable
+                          onDragStart={() => handleDragStart(lead.id)}
+                          onDragEnd={handleDragEnd}
+                          className={`p-3 rounded-lg border border-border/30 bg-white hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${
+                            draggedLeadId === lead.id ? "opacity-40 scale-95" : ""
+                          }`}
+                          onClick={() => { setSelectedLead(lead); setShowDetail(true); }}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-forest font-sans truncate">{lead.businessName}</p>
+                              <p className="text-[11px] text-forest/50 font-sans truncate">{lead.contactName}</p>
+                            </div>
+                            <GripVertical className="h-4 w-4 text-forest/20 shrink-0" />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] ${ti.bg}`}>
+                              <TempIcon className={`h-2.5 w-2.5 ${ti.color}`} />
+                              <span className={ti.color}>{lead.temperature}</span>
+                            </div>
+                            <span className="text-[10px] text-forest/30 font-sans">{lead.qualificationScore}/100</span>
+                            {lead.enrichmentData && Object.keys(lead.enrichmentData).length > 0 && (
+                              <Sparkles className="h-3 w-3 text-terracotta/50" />
+                            )}
+                          </div>
+                          {lead.lastTouchAt && (
+                            <p className="text-[10px] text-forest/30 font-sans mt-1.5">
+                              Last touch: {new Date(lead.lastTouchAt).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Closed Deals Summary */}
+      {(wonCount > 0 || lostCount > 0) && (
+        <div className="grid grid-cols-2 gap-4">
+          {CLOSED_STAGES.map((cs) => (
+            <Card key={cs.key} className="border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-serif text-forest flex items-center gap-2">
+                  {cs.key === "closed_won" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
+                  {cs.label} ({leadsByStage[cs.key]?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(leadsByStage[cs.key] || []).length === 0 ? (
+                  <p className="text-xs text-forest/40 font-sans">None yet</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {(leadsByStage[cs.key] || []).slice(0, 5).map((lead) => (
+                      <div key={lead.id} className="flex items-center justify-between text-sm font-sans p-2 rounded border border-border/20">
+                        <span className="text-forest">{lead.businessName}</span>
+                        <span className="text-xs text-forest/40">{lead.contactName}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* ═══ Lead Detail Dialog ═══ */}
+      <Dialog open={showDetail} onOpenChange={(open) => { setShowDetail(open); if (!open) setSelectedLead(null); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-forest">{selectedLead?.businessName}</DialogTitle>
+          </DialogHeader>
+          {selectedLead && (
+            <div className="space-y-4 font-sans">
+              {/* Contact info */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-forest/50 text-xs">Contact</span><p className="text-forest">{selectedLead.contactName}</p></div>
+                <div><span className="text-forest/50 text-xs">Email</span><p className="text-forest">{selectedLead.email}</p></div>
+                <div><span className="text-forest/50 text-xs">Phone</span><p className="text-forest">{selectedLead.phone || "—"}</p></div>
+                <div><span className="text-forest/50 text-xs">Industry</span><p className="text-forest">{selectedLead.industry || "—"}</p></div>
+                <div><span className="text-forest/50 text-xs">Score</span><p className="text-forest">{selectedLead.qualificationScore}/100</p></div>
+                <div><span className="text-forest/50 text-xs">Website</span><p className="text-forest truncate">{selectedLead.website || "—"}</p></div>
+              </div>
+
+              <Separator />
+
+              {/* Stage & Temperature controls */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-forest/50">Stage</label>
+                  <Select
+                    value={selectedLead.stage}
+                    onValueChange={(val) => {
+                      updateLead.mutate({ leadId: selectedLead.id, stage: val as any });
+                      setSelectedLead({ ...selectedLead, stage: val });
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {PIPELINE_STAGES.map((s) => (
+                        <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-xs text-forest/50">Temperature</label>
+                  <Select
+                    value={selectedLead.temperature}
+                    onValueChange={(val) => {
+                      updateLead.mutate({ leadId: selectedLead.id, temperature: val as any });
+                      setSelectedLead({ ...selectedLead, temperature: val });
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["cold", "warm", "hot"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {selectedLead.notes && (
+                <div>
+                  <span className="text-xs text-forest/50">Notes</span>
+                  <p className="text-sm text-forest/80 mt-1">{selectedLead.notes}</p>
+                </div>
+              )}
+
+              {/* Enrichment */}
+              {selectedLead.enrichmentData && Object.keys(selectedLead.enrichmentData).length > 0 && (
+                <div className="border border-terracotta/20 rounded-lg p-3 bg-terracotta/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-3.5 w-3.5 text-terracotta" />
+                    <span className="text-xs font-medium text-forest">AI Enrichment</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="text-forest/50">Size</span><p className="text-forest">{selectedLead.enrichmentData.companySize}</p></div>
+                    <div><span className="text-forest/50">Revenue</span><p className="text-forest">{selectedLead.enrichmentData.estimatedRevenue}</p></div>
+                    <div><span className="text-forest/50">Rec. Package</span><Badge className="text-[10px] bg-forest/10 text-forest capitalize">{selectedLead.enrichmentData.recommendedPackage}</Badge></div>
+                    <div><span className="text-forest/50">Online Presence</span><p className="text-forest capitalize">{selectedLead.enrichmentData.onlinePresence}</p></div>
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Action buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-sans"
+                  onClick={() => { setProposalTier(selectedLead.enrichmentData?.recommendedPackage || "starter"); setProposalNotes(""); setProposalResult(null); setShowProposal(true); }}
+                >
+                  <FileText className="h-3.5 w-3.5 mr-1.5" /> Generate Proposal
+                </Button>
+                <Button
+                  size="sm"
+                  className="text-xs font-sans bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {
+                    const recPkg = selectedLead.enrichmentData?.recommendedPackage || "starter";
+                    setCloseForm({ packageTier: recPkg, monthlyPrice: PACKAGE_PRICES[recPkg] || "99", notes: "" });
+                    setShowCloseDeal(true);
+                  }}
+                >
+                  <Handshake className="h-3.5 w-3.5 mr-1.5" /> Close Deal
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-sans"
+                  onClick={() => { updateLead.mutate({ leadId: selectedLead.id, outcome: "no_answer" }); toast.info("Logged: no answer"); }}
+                >
+                  <Phone className="h-3.5 w-3.5 mr-1.5" /> Log Call
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-sans text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    updateLead.mutate({ leadId: selectedLead.id, stage: "closed_lost" as any, notes: "Marked as lost by rep" });
+                    toast.info("Lead marked as lost.");
+                    setShowDetail(false);
+                  }}
+                >
+                  <XCircle className="h-3.5 w-3.5 mr-1.5" /> Mark Lost
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ Lead Pool Dialog ═══ */}
+      <Dialog open={showPool} onOpenChange={setShowPool}>
+        <DialogContent className="max-w-lg max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-forest">Lead Pool — Claim a Lead</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[400px] pr-2">
+            {(leadPool as Lead[]).length === 0 ? (
+              <div className="text-center py-12">
+                <Target className="h-8 w-8 text-forest/20 mx-auto mb-3" />
+                <p className="text-sm text-forest/50 font-sans">No unassigned leads available right now.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(leadPool as Lead[]).map((lead) => {
+                  const ti = tempMeta[lead.temperature] || tempMeta.cold;
+                  const TempIcon = ti.icon;
+                  return (
+                    <div key={lead.id} className="p-4 rounded-lg border border-border/30 hover:bg-cream-dark/20 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-forest font-sans">{lead.businessName}</span>
+                            <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] ${ti.bg}`}>
+                              <TempIcon className={`h-2.5 w-2.5 ${ti.color}`} />
+                              <span className={ti.color}>{lead.temperature}</span>
+                            </div>
+                          </div>
+                          <p className="text-xs text-forest/50 font-sans">{lead.contactName} &bull; {lead.industry || "Unknown industry"}</p>
+                          <p className="text-[10px] text-forest/30 font-sans mt-1">Score: {lead.qualificationScore}/100</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="shrink-0 bg-terracotta hover:bg-terracotta/90 text-white font-sans text-xs rounded-full"
+                          onClick={() => claimLead.mutate({ leadId: lead.id })}
+                          disabled={claimLead.isPending}
+                        >
+                          {claimLead.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Plus className="h-3 w-3 mr-1" /> Claim</>}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ Proposal Generator Dialog ═══ */}
+      <Dialog open={showProposal} onOpenChange={(open) => { setShowProposal(open); if (!open) setProposalResult(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-forest flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-terracotta" /> AI Proposal Generator
+            </DialogTitle>
+          </DialogHeader>
+          {!proposalResult ? (
+            <div className="space-y-4 font-sans">
+              <p className="text-sm text-forest/60">
+                Generate a personalized proposal for <strong>{selectedLead?.businessName}</strong>.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-forest/50">Package Tier</label>
+                  <Select value={proposalTier} onValueChange={setProposalTier}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="starter">Starter ($99/mo)</SelectItem>
+                      <SelectItem value="growth">Growth ($199/mo)</SelectItem>
+                      <SelectItem value="premium">Premium ($499/mo)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-forest/50">Custom Notes (optional)</label>
+                <Textarea
+                  value={proposalNotes}
+                  onChange={(e) => setProposalNotes(e.target.value)}
+                  placeholder="Any specific points to emphasize..."
+                  className="h-20"
+                />
+              </div>
+              <Button
+                onClick={handleGenerateProposal}
+                disabled={generateProposal.isPending}
+                className="w-full bg-terracotta hover:bg-terracotta/90 text-white font-sans rounded-full"
+              >
+                {generateProposal.isPending ? (
+                  <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Generating with AI...</span>
+                ) : (
+                  <span className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Generate Proposal</span>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4 font-sans">
+              <div className="border border-terracotta/20 rounded-xl p-4 bg-terracotta/5">
+                <h3 className="text-sm font-medium text-forest mb-2">{proposalResult.subject}</h3>
+                <div className="text-sm text-forest/80 whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto">
+                  {proposalResult.plainTextContent}
+                </div>
+              </div>
+              {proposalResult.keySellingPoints?.length > 0 && (
+                <div>
+                  <span className="text-xs text-forest/50 font-medium">Key Selling Points</span>
+                  <ul className="mt-1 space-y-1">
+                    {proposalResult.keySellingPoints.map((point: string, i: number) => (
+                      <li key={i} className="text-xs text-forest/70 flex items-start gap-1.5">
+                        <CheckCircle className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 font-sans text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(proposalResult.plainTextContent);
+                    toast.success("Proposal copied to clipboard!");
+                  }}
+                >
+                  Copy Text
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 font-sans text-xs"
+                  onClick={() => {
+                    navigator.clipboard.writeText(proposalResult.htmlContent);
+                    toast.success("HTML copied to clipboard!");
+                  }}
+                >
+                  Copy HTML
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 font-sans text-xs bg-terracotta hover:bg-terracotta/90 text-white"
+                  onClick={() => { setProposalResult(null); }}
+                >
+                  Generate Another
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ Close Deal Confirmation ═══ */}
+      <AlertDialog open={showCloseDeal} onOpenChange={setShowCloseDeal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif text-forest flex items-center gap-2">
+              <Handshake className="h-5 w-5 text-green-600" /> Close Deal — {selectedLead?.businessName}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-forest/60 font-sans text-sm">
+              This will create a customer, contract, and commission record. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3 font-sans py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-forest/50">Package</label>
+                <Select value={closeForm.packageTier} onValueChange={(val) => setCloseForm({ ...closeForm, packageTier: val, monthlyPrice: PACKAGE_PRICES[val] || "99" })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="starter">Starter</SelectItem>
+                    <SelectItem value="growth">Growth</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-xs text-forest/50">Monthly Price ($)</label>
+                <Input
+                  value={closeForm.monthlyPrice}
+                  onChange={(e) => setCloseForm({ ...closeForm, monthlyPrice: e.target.value })}
+                  type="number"
+                  min="1"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-forest/50">Notes (optional)</label>
+              <Textarea
+                value={closeForm.notes}
+                onChange={(e) => setCloseForm({ ...closeForm, notes: e.target.value })}
+                placeholder="Deal notes..."
+                className="h-16"
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-sans text-sm">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCloseDeal}
+              disabled={closeDeal.isPending || !closeForm.monthlyPrice}
+              className="bg-green-600 hover:bg-green-700 text-white font-sans text-sm"
+            >
+              {closeDeal.isPending ? (
+                <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Closing...</span>
+              ) : (
+                <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Confirm Close</span>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

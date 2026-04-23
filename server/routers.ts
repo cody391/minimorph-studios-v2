@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { notifyOwner } from "./_core/notification";
 import { repTrainingRouter, repActivityRouter, repGamificationRouter, repCommsRouter, repApplicationRouter } from "./repEcosystem";
@@ -157,6 +158,14 @@ const repsRouter = router({
       const commission = await db.getCommissionById(input.commissionId);
       if (!commission) throw new Error("Commission not found");
       await db.updateCommission(commission.id, { status: "approved" });
+      // Notify the rep
+      await db.createRepNotification({
+        repId: commission.repId,
+        type: "commission_approved",
+        title: "Commission Approved!",
+        message: `Your $${parseFloat(commission.amount).toLocaleString()} ${commission.type?.replace(/_/g, " ")} commission has been approved.`,
+        metadata: { commissionId: commission.id, amount: commission.amount },
+      });
       return { success: true };
     }),
 });
@@ -287,7 +296,330 @@ const leadsRouter = router({
         stage: "assigned",
         temperature: "warm",
       });
+      // Notify the rep
+      await db.createRepNotification({
+        repId: input.repId,
+        type: "lead_assigned",
+        title: "New Lead Assigned",
+        message: `A new lead has been assigned to you.`,
+        metadata: { leadId: input.leadId },
+      });
       return { success: true };
+    }),
+
+  // ─── REP-FACING ENDPOINTS ─────────────────────────────
+
+  // Rep: list my assigned leads
+  myLeads: protectedProcedure.query(async ({ ctx }) => {
+    const rep = await db.getRepByUserId(ctx.user.id);
+    if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+    return db.listLeadsByRep(rep.id);
+  }),
+
+  // Rep: update stage/notes/temperature on their own lead
+  updateMyLead: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        stage: z.enum(["assigned", "contacted", "proposal_sent", "negotiating", "closed_lost"]).optional(),
+        temperature: z.enum(["cold", "warm", "hot"]).optional(),
+        notes: z.string().optional(),
+        outcome: z.enum(["connected", "voicemail", "no_answer", "scheduled", "sent", "completed", "cancelled"]).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      const lead = await db.getLeadById(input.leadId);
+      if (!lead || lead.assignedRepId !== rep.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "This lead is not assigned to you" });
+      }
+      const { leadId, outcome, ...data } = input;
+      const updateData: any = { ...data, lastTouchAt: new Date() };
+      await db.updateLead(leadId, updateData);
+      // Log activity with outcome
+      await db.createActivityLog({
+        repId: rep.id,
+        type: "lead_update",
+        leadId,
+        subject: `Updated lead ${lead.businessName}`,
+        notes: `Changed: ${Object.keys(data).join(", ")}`,
+        outcome: outcome || undefined,
+        pointsEarned: 5,
+      });
+      return { success: true };
+    }),
+
+  // Rep: claim an unassigned lead from the pool
+  claimLead: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      if (rep.status !== "active" && rep.status !== "certified") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You must be an active/certified rep to claim leads" });
+      }
+      // Check claim limit (max 20 active leads per rep)
+      const activeCount = await db.countActiveLeadsByRep(rep.id);
+      if (activeCount >= 20) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You have reached the maximum of 20 active leads. Close or release some leads first." });
+      }
+      const claimed = await db.claimLead(input.leadId, rep.id);
+      if (!claimed) {
+        throw new TRPCError({ code: "CONFLICT", message: "This lead has already been claimed by another rep" });
+      }
+      // Log activity and notify
+      await db.createActivityLog({
+        repId: rep.id,
+        type: "lead_claimed",
+        leadId: input.leadId,
+        subject: `Claimed lead #${input.leadId} from the pool`,
+        pointsEarned: 10,
+      });
+      await db.createRepNotification({
+        repId: rep.id,
+        type: "lead_claimed",
+        title: "Lead Claimed",
+        message: `You successfully claimed lead #${input.leadId}.`,
+        metadata: { leadId: input.leadId },
+      });
+      return { success: true };
+    }),
+
+  // Rep: list unassigned leads available for claiming
+  leadPool: protectedProcedure.query(async ({ ctx }) => {
+    const rep = await db.getRepByUserId(ctx.user.id);
+    if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+    return db.listUnassignedLeads();
+  }),
+
+  // Rep: close a deal — creates customer, contract, commission, notifies owner
+  closeDeal: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        packageTier: z.enum(["starter", "growth", "premium"]),
+        monthlyPrice: z.string(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      const lead = await db.getLeadById(input.leadId);
+      if (!lead || lead.assignedRepId !== rep.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "This lead is not assigned to you" });
+      }
+      if (lead.stage === "closed_won" || lead.stage === "closed_lost") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "This lead is already closed" });
+      }
+
+      // 1. Mark lead as closed_won
+      await db.updateLead(input.leadId, { stage: "closed_won", temperature: "hot", lastTouchAt: new Date() });
+
+      // 2. Create customer from lead data
+      const customer = await db.createCustomer({
+        leadId: lead.id,
+        businessName: lead.businessName,
+        contactName: lead.contactName,
+        email: lead.email,
+        phone: lead.phone,
+        industry: lead.industry,
+        website: lead.website,
+      });
+
+      // 3. Create 12-month contract
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setFullYear(endDate.getFullYear() + 1);
+      const contract = await db.createContract({
+        customerId: customer.id,
+        repId: rep.id,
+        packageTier: input.packageTier,
+        monthlyPrice: input.monthlyPrice,
+        startDate,
+        endDate,
+        notes: input.notes,
+      });
+
+      // 4. Calculate commission based on rep level
+      const gamification = await db.getRepGamification(rep.id);
+      const level = gamification?.level || "rookie";
+      const tierRates: Record<string, number> = {
+        rookie: 0.10, closer: 0.12, ace: 0.14, elite: 0.16, legend: 0.20,
+      };
+      const rate = tierRates[level] || 0.10;
+      const annualValue = parseFloat(input.monthlyPrice) * 12;
+      const commissionAmount = (annualValue * rate).toFixed(2);
+      const commission = await db.createCommission({
+        repId: rep.id,
+        contractId: contract.id,
+        amount: commissionAmount,
+        type: "initial_sale",
+      });
+
+      // 5. Update rep stats
+      await db.updateRep(rep.id, {
+        totalDeals: rep.totalDeals + 1,
+        totalRevenue: (parseFloat(rep.totalRevenue || "0") + annualValue).toFixed(2),
+      } as any);
+
+      // 6. Check referral bonus
+      const repApplication = await db.getRepApplication(rep.id);
+      if (repApplication?.referredBy && rep.totalDeals === 0) {
+        const allReps = await db.listReps();
+        const referrer = allReps.find(
+          (r) => r.referralCode === repApplication.referredBy
+            || r.fullName.toLowerCase() === repApplication.referredBy!.toLowerCase()
+            || r.email.toLowerCase() === repApplication.referredBy!.toLowerCase()
+        );
+        if (referrer) {
+          await db.createCommission({
+            repId: referrer.id,
+            contractId: contract.id,
+            amount: "200.00",
+            type: "referral_bonus",
+          });
+          await db.createRepNotification({
+            repId: referrer.id,
+            type: "commission_approved",
+            title: "Referral Bonus Earned!",
+            message: `Your referred rep ${rep.fullName} just closed their first deal. You earned a $200 referral bonus!`,
+            metadata: { contractId: contract.id, amount: "200.00" },
+          });
+        }
+      }
+
+      // 7. Log activity & award points
+      await db.createActivityLog({
+        repId: rep.id,
+        type: "deal_closed",
+        leadId: lead.id,
+        customerId: customer.id,
+        subject: `Closed deal with ${lead.businessName} — ${input.packageTier} at $${input.monthlyPrice}/mo`,
+        notes: `Contract #${contract.id}, Package: ${input.packageTier}`,
+        pointsEarned: 100,
+      });
+
+      // 8. Notify rep
+      await db.createRepNotification({
+        repId: rep.id,
+        type: "deal_closed",
+        title: "Deal Closed!",
+        message: `Congratulations! You closed ${lead.businessName} for $${input.monthlyPrice}/mo (${input.packageTier}). Commission: $${commissionAmount}`,
+        metadata: { contractId: contract.id, commissionAmount },
+      });
+
+      // 9. Auto-create onboarding project (customer handoff)
+      await db.createOnboardingProject({
+        customerId: customer.id,
+        contractId: contract.id,
+        businessName: lead.businessName,
+        contactName: lead.contactName,
+        contactEmail: lead.email,
+        contactPhone: lead.phone || undefined,
+        packageTier: input.packageTier,
+        assignedRepId: rep.id,
+        stage: "intake",
+      });
+
+      // 10. Notify owner
+      await notifyOwner({
+        title: `Deal Closed: ${lead.businessName}`,
+        content: `Rep ${rep.fullName} closed a ${input.packageTier} deal with ${lead.businessName} at $${input.monthlyPrice}/mo.\nAnnual value: $${annualValue}\nCommission: $${commissionAmount} (${(rate * 100).toFixed(0)}% at ${level} level)\nOnboarding project auto-created.`,
+      });
+
+      return {
+        success: true,
+        customerId: customer.id,
+        contractId: contract.id,
+        commissionId: commission.id,
+        commissionAmount,
+        annualValue,
+      };
+    }),
+
+  // Rep: generate AI proposal for a lead
+  generateProposal: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        packageTier: z.enum(["starter", "growth", "premium"]),
+        customNotes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      const lead = await db.getLeadById(input.leadId);
+      if (!lead || lead.assignedRepId !== rep.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "This lead is not assigned to you" });
+      }
+      const { invokeLLM } = await import("./_core/llm");
+      const { PACKAGES } = await import("./stripe-products");
+      const pkg = PACKAGES[input.packageTier];
+
+      const result = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: `You are a professional sales proposal writer for MiniMorph Studios, a premium web design agency. Write a compelling, personalized proposal email. Be warm but professional. Include specific package details and ROI projections. Format as HTML email with inline styles for readability.`,
+          },
+          {
+            role: "user",
+            content: `Write a proposal for:\n- Business: ${lead.businessName}\n- Contact: ${lead.contactName}\n- Industry: ${lead.industry || "General"}\n- Package: ${pkg?.name || input.packageTier} ($${pkg ? (pkg.monthlyPriceInCents / 100).toFixed(0) : "TBD"}/mo + $${pkg ? (pkg.priceInCents / 100).toFixed(0) : "TBD"} setup)\n- Features: ${pkg?.features.join(", ") || "Standard features"}\n- Enrichment data: ${lead.enrichmentData ? JSON.stringify(lead.enrichmentData) : "None"}\n- Rep name: ${rep.fullName}\n${input.customNotes ? `- Custom notes: ${input.customNotes}` : ""}\n\nReturn JSON with: subject (string), htmlContent (string with HTML email), plainTextContent (string), keySellingPoints (string[])`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "proposal_email",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                subject: { type: "string" },
+                htmlContent: { type: "string" },
+                plainTextContent: { type: "string" },
+                keySellingPoints: { type: "array", items: { type: "string" } },
+              },
+              required: ["subject", "htmlContent", "plainTextContent", "keySellingPoints"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const proposal = JSON.parse(result.choices[0].message.content as string);
+
+      // Log activity
+      await db.createActivityLog({
+        repId: rep.id,
+        type: "proposal_generated",
+        leadId: lead.id,
+        subject: `Generated ${input.packageTier} proposal for ${lead.businessName}`,
+        pointsEarned: 15,
+      });
+
+      return proposal;
+    }),
+
+  // Admin: bulk transfer leads from one rep to another
+  transferLeads: adminProcedure
+    .input(z.object({ fromRepId: z.number(), toRepId: z.number() }))
+    .mutation(async ({ input }) => {
+      const count = await db.bulkTransferLeads(input.fromRepId, input.toRepId);
+      // Notify the receiving rep
+      if (count > 0) {
+        await db.createRepNotification({
+          repId: input.toRepId,
+          type: "lead_assigned",
+          title: `${count} Leads Transferred to You`,
+          message: `${count} active leads have been transferred to your pipeline.`,
+          metadata: { fromRepId: input.fromRepId, count },
+        });
+      }
+      return { success: true, transferredCount: count };
     }),
 });
 
@@ -1399,6 +1731,38 @@ Available widgets:\n${widgets.map((w: any) => `- ${w.slug}: ${w.name} ($${w.mont
 });
 
 /* ═══════════════════════════════════════════════════════
+   REP NOTIFICATIONS ROUTER
+   ═══════════════════════════════════════════════════════ */
+const repNotificationsRouter = router({
+  // Rep: list my notifications
+  list: protectedProcedure
+    .input(z.object({ limit: z.number().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      return db.listRepNotifications(rep.id, input?.limit || 30);
+    }),
+
+  // Rep: count unread notifications
+  unreadCount: protectedProcedure.query(async ({ ctx }) => {
+    const rep = await db.getRepByUserId(ctx.user.id);
+    if (!rep) return { count: 0 };
+    const count = await db.countUnreadNotifications(rep.id);
+    return { count };
+  }),
+
+  // Rep: mark notifications as read
+  markRead: protectedProcedure
+    .input(z.object({ ids: z.array(z.number()).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      await db.markNotificationsRead(rep.id, input.ids);
+      return { success: true };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
    APP ROUTER
    ═══════════════════════════════════════════════════════ */
 export const appRouter = router({
@@ -1430,6 +1794,7 @@ export const appRouter = router({
   repGamification: repGamificationRouter,
   repComms: repCommsRouter,
   repApplication: repApplicationRouter,
+  repNotifications: repNotificationsRouter,
 });
 
 export type AppRouter = typeof appRouter;
