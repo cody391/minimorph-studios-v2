@@ -23,6 +23,7 @@ const AdminAnalytics = lazy(() => import("./pages/admin/Analytics"));
 const AdminOrders = lazy(() => import("./pages/admin/Orders"));
 const AdminOnboarding = lazy(() => import("./pages/admin/OnboardingProjects"));
 const AdminWidgetCatalog = lazy(() => import("./pages/admin/WidgetCatalog"));
+const AdminLeadGenEngine = lazy(() => import("./pages/admin/LeadGenEngine"));
 
 // Lazy-load portals
 const RepDashboard = lazy(() => import("./pages/RepDashboard"));
@@ -133,6 +134,9 @@ function Router() {
       </Route>
       <Route path="/admin/onboarding">
         <AdminPage><AdminOnboarding /></AdminPage>
+      </Route>
+      <Route path="/admin/lead-gen">
+        <AdminPage><AdminLeadGenEngine /></AdminPage>
       </Route>
       <Route path="/admin/widgets">
         <AdminPage><AdminWidgetCatalog /></AdminPage>

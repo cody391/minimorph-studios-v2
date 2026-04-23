@@ -40,6 +40,7 @@ import {
   ShoppingCart,
   ClipboardList,
   Bot,
+  Brain,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -61,6 +62,7 @@ const menuItems = [
   { icon: Activity, label: "Analytics", path: "/admin/analytics" },
   { icon: ShoppingCart, label: "Orders", path: "/admin/orders" },
   { icon: ClipboardList, label: "Onboarding", path: "/admin/onboarding" },
+  { icon: Brain, label: "Lead Gen Engine", path: "/admin/lead-gen" },
   { icon: Bot, label: "Widget Catalog", path: "/admin/widgets" },
 ];
 

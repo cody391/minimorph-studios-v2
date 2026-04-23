@@ -7,8 +7,9 @@ import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { notifyOwner } from "./_core/notification";
 import { storagePut } from "./storage";
-import { repTrainingRouter, repActivityRouter, repGamificationRouter, repCommsRouter, repApplicationRouter, repSupportTicketsRouter, repNotifPrefsRouter } from "./repEcosystem";
-
+import { repTrainingRouter, repActivityRouter, repGamificationRouter, repCommsRouter, repApplicationRouter } from "./repEcosystem";
+import { repSupportTicketsRouter, repNotifPrefsRouter } from "./repEcosystem";
+import { leadGenRouter } from "./leadGenRouter";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -1977,6 +1978,7 @@ export const appRouter = router({
   repNotifications: repNotificationsRouter,
   repTickets: repSupportTicketsRouter,
   repNotifPrefs: repNotifPrefsRouter,
+  leadGen: leadGenRouter,
 });
 
 export type AppRouter = typeof appRouter;

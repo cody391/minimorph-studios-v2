@@ -1,0 +1,249 @@
+/**
+ * Lead Generation Engine tRPC Router
+ * 
+ * Admin-facing endpoints for controlling the lead gen engine.
+ */
+
+import { z } from "zod";
+import { router, protectedProcedure } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
+import { createScrapeJob, runScrapeJob, scoreUnscrapedWebsites, LOW_HANGING_FRUIT_TYPES } from "./services/leadGenScraper";
+import { enrichQualifiedBusinesses, batchConvertToLeads } from "./services/leadGenEnrichment";
+import { sendDueOutreach, scheduleOutreachSequence } from "./services/leadGenOutreach";
+import { autoFeedReps, autoStartOutreach, getRepCapacity, getEngineStats } from "./services/leadGenRouter";
+import { scanForEnterpriseLeads, listEnterpriseProspects, updateEnterpriseProspect } from "./services/leadGenEnterprise";
+import { getDb } from "./db";
+import { scrapeJobs, scrapedBusinesses, outreachSequences, aiConversations, repServiceAreas, enterpriseProspects, leads } from "../drizzle/schema";
+import { eq, desc, sql, and } from "drizzle-orm";
+
+// Admin-only middleware
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+  }
+  return next({ ctx });
+});
+
+export const leadGenRouter = router({
+  // ─── Engine Stats ───
+  getStats: adminProcedure.query(async () => {
+    return getEngineStats();
+  }),
+
+  // ─── Rep Capacity ───
+  getRepCapacity: adminProcedure.query(async () => {
+    return getRepCapacity();
+  }),
+
+  // ─── Scrape Jobs ───
+  createScrapeJob: adminProcedure
+    .input(z.object({
+      targetArea: z.string().min(1),
+      radiusKm: z.number().min(1).max(100).optional(),
+      businessTypes: z.array(z.string()).optional(),
+      forRepId: z.number().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const jobId = await createScrapeJob(input);
+      // Run immediately in background
+      runScrapeJob(jobId).catch(err =>
+        console.error(`[LeadGen] Scrape job ${jobId} failed:`, err)
+      );
+      return { jobId, status: "started" };
+    }),
+
+  listScrapeJobs: adminProcedure.query(async () => {
+    const db = (await getDb())!;
+    return db.select().from(scrapeJobs).orderBy(desc(scrapeJobs.createdAt)).limit(50);
+  }),
+
+  // ─── Scraped Businesses ───
+  listScrapedBusinesses: adminProcedure
+    .input(z.object({
+      jobId: z.number().optional(),
+      status: z.string().optional(),
+      limit: z.number().min(1).max(100).default(50),
+    }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      const conditions = [];
+      if (input.jobId) conditions.push(eq(scrapedBusinesses.scrapeJobId, input.jobId));
+      if (input.status) conditions.push(eq(scrapedBusinesses.status, input.status as any));
+
+      return db.select().from(scrapedBusinesses)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(scrapedBusinesses.createdAt))
+        .limit(input.limit);
+    }),
+
+  // ─── Pipeline Actions ───
+  scoreWebsites: adminProcedure
+    .input(z.object({ limit: z.number().min(1).max(50).default(20) }))
+    .mutation(async ({ input }) => {
+      const scored = await scoreUnscrapedWebsites(input.limit);
+      return { scored };
+    }),
+
+  enrichBusinesses: adminProcedure
+    .input(z.object({ limit: z.number().min(1).max(20).default(10) }))
+    .mutation(async ({ input }) => {
+      const enriched = await enrichQualifiedBusinesses(input.limit);
+      return { enriched };
+    }),
+
+  convertToLeads: adminProcedure
+    .input(z.object({ limit: z.number().min(1).max(50).default(20) }))
+    .mutation(async ({ input }) => {
+      const converted = await batchConvertToLeads(input.limit);
+      return { converted };
+    }),
+
+  // ─── Outreach ───
+  startOutreachForLead: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ input }) => {
+      const steps = await scheduleOutreachSequence(input.leadId);
+      return { stepsScheduled: steps };
+    }),
+
+  sendDueOutreach: adminProcedure.mutation(async () => {
+    const sent = await sendDueOutreach();
+    return { sent };
+  }),
+
+  autoStartOutreach: adminProcedure.mutation(async () => {
+    const started = await autoStartOutreach();
+    return { started };
+  }),
+
+  listOutreachSequences: adminProcedure
+    .input(z.object({ leadId: z.number().optional(), limit: z.number().default(50) }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      const conditions = [];
+      if (input.leadId) conditions.push(eq(outreachSequences.leadId, input.leadId));
+      return db.select().from(outreachSequences)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(outreachSequences.createdAt))
+        .limit(input.limit);
+    }),
+
+  // ─── AI Conversations ───
+  listConversations: adminProcedure
+    .input(z.object({ leadId: z.number().optional(), limit: z.number().default(50) }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      const conditions = [];
+      if (input.leadId) conditions.push(eq(aiConversations.leadId, input.leadId));
+      return db.select().from(aiConversations)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(aiConversations.createdAt))
+        .limit(input.limit);
+    }),
+
+  // ─── Rep Service Areas ───
+  setRepServiceArea: adminProcedure
+    .input(z.object({
+      repId: z.number(),
+      areaName: z.string().min(1),
+      lat: z.number(),
+      lng: z.number(),
+      radiusKm: z.number().min(1).max(100).default(25),
+      isPrimary: z.boolean().default(true),
+    }))
+    .mutation(async ({ input }) => {
+      const db = (await getDb())!;
+      // Upsert: if primary exists, update it
+      if (input.isPrimary) {
+        const existing = await db.select().from(repServiceAreas)
+          .where(and(eq(repServiceAreas.repId, input.repId), eq(repServiceAreas.isPrimary, true)))
+          .limit(1);
+        if (existing.length > 0) {
+          await db.update(repServiceAreas).set({
+            areaName: input.areaName,
+            lat: input.lat.toString(),
+            lng: input.lng.toString(),
+            radiusKm: input.radiusKm,
+          }).where(eq(repServiceAreas.id, existing[0].id));
+          return { id: existing[0].id, updated: true };
+        }
+      }
+      const [result] = await db.insert(repServiceAreas).values({
+        repId: input.repId,
+        areaName: input.areaName,
+        lat: input.lat.toString(),
+        lng: input.lng.toString(),
+        radiusKm: input.radiusKm,
+        isPrimary: input.isPrimary,
+      }).$returningId();
+      return { id: result.id, updated: false };
+    }),
+
+  listRepServiceAreas: adminProcedure.query(async () => {
+    const db = (await getDb())!;
+    return db.select().from(repServiceAreas).orderBy(repServiceAreas.repId);
+  }),
+
+  // ─── Auto-Feed ───
+  autoFeedReps: adminProcedure.mutation(async () => {
+    return autoFeedReps();
+  }),
+
+  // ─── Enterprise Pipeline ───
+  listEnterpriseProspects: adminProcedure
+    .input(z.object({ status: z.string().optional() }).optional())
+    .query(async ({ input }) => {
+      return listEnterpriseProspects(input?.status);
+    }),
+
+  updateEnterpriseProspect: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      status: z.string().optional(),
+      ownerNotes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      await updateEnterpriseProspect(id, data);
+      return { success: true };
+    }),
+
+  scanForEnterprise: adminProcedure
+    .input(z.object({ limit: z.number().min(1).max(20).default(10) }))
+    .mutation(async ({ input }) => {
+      const found = await scanForEnterpriseLeads(input.limit);
+      return { found };
+    }),
+
+  // ─── Full Pipeline Run ───
+  runFullPipeline: adminProcedure.mutation(async () => {
+    const results = {
+      websitesScored: 0,
+      businessesEnriched: 0,
+      leadsConverted: 0,
+      outreachStarted: 0,
+      outreachSent: 0,
+      repsFed: { repsChecked: 0, repsFed: 0, leadsGenerated: 0, scrapeJobsCreated: 0 },
+      enterpriseFound: 0,
+    };
+
+    try {
+      results.websitesScored = await scoreUnscrapedWebsites(20);
+      results.businessesEnriched = await enrichQualifiedBusinesses(10);
+      results.leadsConverted = await batchConvertToLeads(20);
+      results.outreachStarted = await autoStartOutreach();
+      results.outreachSent = await sendDueOutreach();
+      results.repsFed = await autoFeedReps();
+      results.enterpriseFound = await scanForEnterpriseLeads(5);
+    } catch (err) {
+      console.error("[LeadGen] Pipeline run error:", err);
+    }
+
+    return results;
+  }),
+
+  // ─── Config ───
+  getBusinessTypes: adminProcedure.query(() => {
+    return LOW_HANGING_FRUIT_TYPES;
+  }),
+});

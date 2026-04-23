@@ -749,3 +749,151 @@ export const pushSubscriptions = mysqlTable("push_subscriptions", {
 });
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   LEAD GEN ENGINE — Scrape Jobs
+   ═══════════════════════════════════════════════════════ */
+export const scrapeJobs = mysqlTable("scrape_jobs", {
+  id: int("id").autoincrement().primaryKey(),
+  targetArea: varchar("targetArea", { length: 255 }).notNull(), // e.g. "Austin, TX"
+  targetLat: decimal("targetLat", { precision: 10, scale: 7 }),
+  targetLng: decimal("targetLng", { precision: 10, scale: 7 }),
+  radiusKm: int("radiusKm").default(25).notNull(),
+  businessTypes: json("businessTypes").$type<string[]>(), // e.g. ["restaurant", "salon", "contractor"]
+  status: mysqlEnum("status", ["pending", "running", "completed", "failed"])
+    .default("pending")
+    .notNull(),
+  totalFound: int("totalFound").default(0).notNull(),
+  totalQualified: int("totalQualified").default(0).notNull(),
+  forRepId: int("forRepId"), // null = general pool, set = targeted for specific rep
+  errorMessage: text("errorMessage"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* ═══════════════════════════════════════════════════════
+   LEAD GEN ENGINE — Scraped Businesses (raw, before becoming leads)
+   ═══════════════════════════════════════════════════════ */
+export const scrapedBusinesses = mysqlTable("scraped_businesses", {
+  id: int("id").autoincrement().primaryKey(),
+  scrapeJobId: int("scrapeJobId").notNull(),
+  googlePlaceId: varchar("googlePlaceId", { length: 255 }).notNull(),
+  businessName: varchar("businessName", { length: 255 }).notNull(),
+  address: varchar("address", { length: 512 }),
+  phone: varchar("phone", { length: 32 }),
+  website: varchar("website", { length: 512 }),
+  rating: decimal("rating", { precision: 3, scale: 1 }),
+  reviewCount: int("reviewCount").default(0),
+  businessTypes: json("businessTypes").$type<string[]>(),
+  lat: decimal("lat", { precision: 10, scale: 7 }),
+  lng: decimal("lng", { precision: 10, scale: 7 }),
+  hasWebsite: boolean("hasWebsite").default(false).notNull(),
+  websiteScore: int("websiteScore"), // 0-100, null = not scored yet
+  websiteIssues: json("websiteIssues").$type<string[]>(), // ["slow", "not_mobile_friendly", "no_ssl"]
+  qualified: boolean("qualified").default(false).notNull(), // passed our filter
+  convertedToLeadId: int("convertedToLeadId"), // null = not yet converted
+  status: mysqlEnum("status", ["scraped", "scoring", "scored", "enriching", "enriched", "qualified", "disqualified", "converted"])
+    .default("scraped")
+    .notNull(),
+  enrichmentData: json("enrichmentData"), // owner info, social profiles, etc.
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* ═══════════════════════════════════════════════════════
+   LEAD GEN ENGINE — Outreach Sequences
+   ═══════════════════════════════════════════════════════ */
+export const outreachSequences = mysqlTable("outreach_sequences", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  sequenceType: mysqlEnum("sequenceType", ["cold_email", "cold_sms", "warm_email", "warm_sms", "follow_up"])
+    .default("cold_email")
+    .notNull(),
+  stepNumber: int("stepNumber").default(1).notNull(),
+  scheduledAt: timestamp("scheduledAt").notNull(),
+  sentAt: timestamp("sentAt"),
+  status: mysqlEnum("status", ["scheduled", "sent", "delivered", "opened", "replied", "bounced", "cancelled"])
+    .default("scheduled")
+    .notNull(),
+  subject: varchar("subject", { length: 255 }),
+  body: text("body"),
+  channel: mysqlEnum("channel", ["email", "sms"]).default("email").notNull(),
+  aiGenerated: boolean("aiGenerated").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* ═══════════════════════════════════════════════════════
+   LEAD GEN ENGINE — AI Conversations (autonomous reply handling)
+   ═══════════════════════════════════════════════════════ */
+export const aiConversations = mysqlTable("ai_conversations", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  channel: mysqlEnum("channel", ["email", "sms"]).default("email").notNull(),
+  direction: mysqlEnum("direction", ["inbound", "outbound"]).default("inbound").notNull(),
+  content: text("content").notNull(),
+  aiDecision: mysqlEnum("aiDecision", [
+    "answer_question",
+    "send_info",
+    "push_for_close",
+    "schedule_call",
+    "assign_to_rep",
+    "assign_to_owner",
+    "mark_not_interested",
+    "continue_nurture",
+  ]),
+  aiConfidence: decimal("aiConfidence", { precision: 5, scale: 2 }), // 0-100
+  aiReasoning: text("aiReasoning"),
+  handedOffToRepId: int("handedOffToRepId"),
+  handedOffToOwner: boolean("handedOffToOwner").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* ═══════════════════════════════════════════════════════
+   LEAD GEN ENGINE — Rep Service Areas (where reps operate)
+   ═══════════════════════════════════════════════════════ */
+export const repServiceAreas = mysqlTable("rep_service_areas", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  areaName: varchar("areaName", { length: 255 }).notNull(), // e.g. "Austin, TX"
+  lat: decimal("lat", { precision: 10, scale: 7 }).notNull(),
+  lng: decimal("lng", { precision: 10, scale: 7 }).notNull(),
+  radiusKm: int("radiusKm").default(25).notNull(),
+  isPrimary: boolean("isPrimary").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* ═══════════════════════════════════════════════════════
+   LEAD GEN ENGINE — Engine Config (admin settings)
+   ═══════════════════════════════════════════════════════ */
+export const leadGenConfig = mysqlTable("lead_gen_config", {
+  id: int("id").autoincrement().primaryKey(),
+  configKey: varchar("configKey", { length: 128 }).notNull().unique(),
+  configValue: text("configValue").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/* ═══════════════════════════════════════════════════════
+   LEAD GEN ENGINE — Enterprise Prospects (owner's big-ticket pipeline)
+   ═══════════════════════════════════════════════════════ */
+export const enterpriseProspects = mysqlTable("enterprise_prospects", {
+  id: int("id").autoincrement().primaryKey(),
+  businessName: varchar("businessName", { length: 255 }).notNull(),
+  contactName: varchar("contactName", { length: 255 }),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 32 }),
+  website: varchar("website", { length: 512 }),
+  industry: varchar("industry", { length: 128 }),
+  estimatedEmployees: int("estimatedEmployees"),
+  estimatedRevenue: varchar("estimatedRevenue", { length: 64 }),
+  linkedinUrl: varchar("linkedinUrl", { length: 512 }),
+  googlePlaceId: varchar("googlePlaceId", { length: 255 }),
+  automationOpportunities: json("automationOpportunities").$type<string[]>(),
+  aiAnalysisReport: text("aiAnalysisReport"), // full AI-generated report for owner
+  estimatedSavings: varchar("estimatedSavings", { length: 64 }),
+  status: mysqlEnum("status", ["identified", "analyzed", "report_sent", "onboarding", "in_progress", "closed_won", "closed_lost"])
+    .default("identified")
+    .notNull(),
+  ownerNotes: text("ownerNotes"),
+  onboardingResponses: json("onboardingResponses"), // questionnaire answers
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});

@@ -67,6 +67,12 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    // Start the lead gen scheduler after server is ready
+    import("../services/leadGenScheduler").then(({ startLeadGenScheduler }) => {
+      startLeadGenScheduler();
+    }).catch((err) => {
+      console.error("[LeadGen Scheduler] Failed to start:", err);
+    });
   });
 }
 

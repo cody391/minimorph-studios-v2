@@ -299,3 +299,26 @@
 - [x] Frontend: discount input in deal close flow
 - [x] Frontend: instant payout indicator and earnings breakdown in rep dashboard
 - [x] Vitest tests for all Phase 27 features (17 tests, all passing)
+
+### Phase 28: Autonomous Lead Generation Engine
+- [x] DB schema: scrape_jobs, scraped_businesses, outreach_sequences, outreach_messages, enterprise_prospects
+- [x] Scraper service: Google Maps Places API to find businesses by category + location
+- [x] Website scorer: check if business has a website, score it with PageSpeed/Lighthouse logic
+- [x] Filter low-hanging fruit: no website, bad website score, no online presence
+- [x] Enrichment service: pull all available info on scraped business (reviews, hours, photos, social)
+- [x] Decision-maker finder: identify owner/manager contact info from enrichment data
+- [x] AI dossier generation: full company brief with pain points, opportunities, recommended approach
+- [x] AI outreach agent: generate personalized first-touch email/SMS per lead
+- [x] Outreach sequence engine: Day 0 intro, Day 2 follow-up SMS, Day 5 value-add email, Day 8 check-in SMS, Day 14 final
+- [x] Inbound reply handler: AI reads replies, decides next action (answer questions, push for close, escalate)
+- [x] Auto-close logic: if lead shows buying intent and is simple sale, AI tries to close directly
+- [x] Rep routing: if lead needs human touch, assign to nearest rep with capacity
+- [x] Rep capacity manager: track active leads per rep, auto-generate more when reps need them
+- [x] Rep location matching: scrape leads near each rep's service area
+- [x] Enterprise lead filter: identify big-ticket companies that could benefit from full AI automation
+- [x] Owner pipeline: enterprise leads go directly to owner with full AI analysis report
+- [x] Owner onboarding flow: questionnaire for enterprise prospects to describe their operations
+- [x] Admin dashboard: lead gen engine control panel (start/stop, target areas, industry filters, stats)
+- [x] Admin dashboard: real-time metrics (leads scraped, enriched, contacted, responding, converted)
+- [x] Scheduled background jobs: cron-based continuous scraping, enrichment, outreach, routing, enterprise scan
+- [x] Vitest tests for all lead gen engine features (26 tests, all passing)
