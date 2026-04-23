@@ -120,7 +120,7 @@
 - [x] Build asset upload system (logo, photos, brand guidelines, written content, documents — stored in S3)
 - [x] Build domain handling (I have a domain / I need a new domain / Not sure yet — with domain input and registrar fields)
 - [x] Build project tracker page (Intake → Design → Review → Revisions → Launch → Live status)
-- [ ] Build review & feedback system (customer views mockups, leaves comments, approves for launch)
+- [x] Build review & feedback system (customer views mockups, leaves comments, approves for launch — includes mockup display, feedback textarea, Request Changes button, Approve for Launch button, revision counter, and live URL display)
 - [x] Wire onboarding into customer portal (/onboarding)
 - [x] Add onboarding management to admin dashboard (/admin/onboarding)
 - [x] Write tests for onboarding API routes (42 tests total passing)
