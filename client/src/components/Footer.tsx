@@ -2,6 +2,7 @@
  * Design: Warm Machine — Humanized AI Aesthetic
  * Footer: Clean, warm, minimal. Forest green background.
  */
+import { useLocation } from "wouter";
 
 const footerLinks = {
   Services: [
@@ -16,18 +17,24 @@ const footerLinks = {
     { label: "Testimonials", href: "#testimonials" },
     { label: "Contact", href: "#contact" },
   ],
-  Resources: [
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "FAQ", href: "#" },
-    { label: "Blog", href: "#" },
+  Portals: [
+    { label: "Get Started", href: "/get-started", route: true },
+    { label: "Rep Dashboard", href: "/rep", route: true },
+    { label: "Customer Portal", href: "/portal", route: true },
+    { label: "Admin", href: "/admin", route: true },
   ],
 };
 
 export default function Footer() {
-  const scrollTo = (href: string) => {
-    if (href === "#") return;
-    const el = document.querySelector(href);
+  const [, setLocation] = useLocation();
+
+  const handleClick = (link: { href: string; route?: boolean }) => {
+    if (link.route) {
+      setLocation(link.href);
+      return;
+    }
+    if (link.href === "#") return;
+    const el = document.querySelector(link.href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -63,7 +70,7 @@ export default function Footer() {
                 {links.map((link) => (
                   <li key={link.label}>
                     <button
-                      onClick={() => scrollTo(link.href)}
+                      onClick={() => handleClick(link)}
                       className="text-sm font-sans text-cream/50 hover:text-cream transition-colors duration-300"
                     >
                       {link.label}

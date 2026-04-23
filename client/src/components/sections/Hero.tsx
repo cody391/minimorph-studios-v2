@@ -6,10 +6,12 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useLocation } from "wouter";
 
 const HERO_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663588302560/i4ip8JQRqo7cEvPbPwFp5A/hero-abstract-gKLaKnCcj8qXeREqMTaxCB.webp";
 
 export default function Hero() {
+  const [, setLocation] = useLocation();
   const scrollTo = (href: string) => {
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -74,7 +76,7 @@ export default function Hero() {
             <Button
               size="lg"
               className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-base px-8 py-6 rounded-full shadow-none hover:shadow-lg transition-all duration-300 group"
-              onClick={() => scrollTo("#pricing")}
+              onClick={() => setLocation("/get-started")}
             >
               See Our Plans
               <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />

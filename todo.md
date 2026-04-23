@@ -74,13 +74,24 @@
 - [x] 3-tier Pricing cards (Starter/Growth/Premium)
 - [x] Testimonials carousel
 - [x] FAQ accordion
-- [x] Footer with navigation
+- [x] Footer with portal links (Get Started, Rep Dashboard, Customer Portal, Admin)
+
+## Phase 15: Portals & Wizards
+- [x] Rep-facing dashboard (rep sees their own leads, commissions, performance)
+- [x] Customer-facing portal (contract overview, reports, support history, upgrade recommendations)
+- [x] Multi-step guided buying wizard (4 steps: business info → package → style → review & submit)
+
+## Phase 16: CTA Integration
+- [x] Hero CTA → /get-started
+- [x] Navbar CTA → /get-started
+- [x] Pricing CTAs → /get-started
+- [x] Footer portal links wired
 
 ## Remaining / Future Enhancements
+- [ ] Rep application form (public-facing "Become a Rep" page)
+- [ ] Email notification on contact form submission (using notifyOwner)
+- [ ] Seed demo data for development/demo purposes
 - [ ] Analytics integration placeholder (Google Analytics)
-- [ ] Rep-facing dashboard (separate from admin — rep sees their own leads, commissions, performance)
-- [ ] Customer-facing portal (customer sees their contract, reports, request support)
-- [ ] Multi-step guided buying wizard (beyond simple contact form)
 - [ ] Automated email notifications for nurture sequences
 - [ ] AI-powered lead enrichment integration
 - [ ] Stripe payment integration for online purchases

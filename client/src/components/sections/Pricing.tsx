@@ -6,7 +6,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, ArrowRight } from "lucide-react";
-import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 const plans = [
   {
@@ -68,6 +68,7 @@ const plans = [
 ];
 
 export default function Pricing() {
+  const [, setLocation] = useLocation();
   return (
     <section id="pricing" className="py-24 lg:py-32 bg-cream">
       <div className="container">
@@ -162,7 +163,7 @@ export default function Pricing() {
                     ? "bg-terracotta hover:bg-terracotta-light text-white hover:shadow-md"
                     : "bg-forest/8 hover:bg-forest/15 text-forest"
                 }`}
-                onClick={() => toast.success(`Great choice! A representative will reach out about the ${plan.name} plan.`)}
+                onClick={() => setLocation("/get-started")}
               >
                 {plan.cta}
                 <ArrowRight

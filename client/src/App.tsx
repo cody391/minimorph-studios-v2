@@ -20,6 +20,11 @@ const AdminUpsells = lazy(() => import("./pages/admin/Upsells"));
 const AdminRenewals = lazy(() => import("./pages/admin/Renewals"));
 const AdminSubmissions = lazy(() => import("./pages/admin/Submissions"));
 
+// Lazy-load portals
+const RepDashboard = lazy(() => import("./pages/RepDashboard"));
+const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
+const GetStarted = lazy(() => import("./pages/GetStarted"));
+
 // Admin layout wrapper
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
 
@@ -31,10 +36,34 @@ function AdminPage({ children }: { children: React.ReactNode }) {
   );
 }
 
+function LazyPage({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-cream flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" /></div>}>
+      {children}
+    </Suspense>
+  );
+}
+
 function Router() {
   return (
     <Switch>
+      {/* Public pages */}
       <Route path={"/"} component={Home} />
+      <Route path="/get-started">
+        <LazyPage><GetStarted /></LazyPage>
+      </Route>
+
+      {/* Rep portal */}
+      <Route path="/rep">
+        <LazyPage><RepDashboard /></LazyPage>
+      </Route>
+
+      {/* Customer portal */}
+      <Route path="/portal">
+        <LazyPage><CustomerPortal /></LazyPage>
+      </Route>
+
+      {/* Admin dashboard */}
       <Route path="/admin">
         <AdminPage><AdminOverview /></AdminPage>
       </Route>
@@ -68,6 +97,7 @@ function Router() {
       <Route path="/admin/submissions">
         <AdminPage><AdminSubmissions /></AdminPage>
       </Route>
+
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

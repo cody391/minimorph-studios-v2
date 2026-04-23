@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "wouter";
 
 const navLinks = [
   { label: "Services", href: "#services" },
@@ -19,6 +20,7 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -82,7 +84,7 @@ export default function Navbar() {
           </Button>
           <Button
             className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-sm px-6 rounded-full shadow-none hover:shadow-md transition-all duration-300"
-            onClick={() => scrollTo("#pricing")}
+            onClick={() => setLocation("/get-started")}
           >
             Get Started
           </Button>
@@ -128,7 +130,7 @@ export default function Navbar() {
                 </Button>
                 <Button
                   className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full"
-                  onClick={() => scrollTo("#pricing")}
+                  onClick={() => { setMobileOpen(false); setLocation("/get-started"); }}
                 >
                   Get Started
                 </Button>
