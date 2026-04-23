@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { notifyOwner } from "./_core/notification";
 
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
@@ -443,7 +444,12 @@ const contactRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      return db.createContactSubmission(input);
+      const result = await db.createContactSubmission(input);
+      notifyOwner({
+        title: `New Contact: ${input.name}`,
+        content: `Name: ${input.name}\nEmail: ${input.email}\nBusiness: ${input.businessName || "N/A"}\nMessage: ${input.message || "No message"}`,
+      }).catch(() => {});
+      return result;
     }),
 
   // Admin: list submissions

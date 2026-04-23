@@ -24,6 +24,7 @@ const AdminSubmissions = lazy(() => import("./pages/admin/Submissions"));
 const RepDashboard = lazy(() => import("./pages/RepDashboard"));
 const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
 const GetStarted = lazy(() => import("./pages/GetStarted"));
+const BecomeRep = lazy(() => import("./pages/BecomeRep"));
 
 // Admin layout wrapper
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -51,6 +52,11 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path="/get-started">
         <LazyPage><GetStarted /></LazyPage>
+      </Route>
+
+      {/* Become a rep */}
+      <Route path="/become-rep">
+        <LazyPage><BecomeRep /></LazyPage>
       </Route>
 
       {/* Rep portal */}

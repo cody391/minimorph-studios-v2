@@ -63,6 +63,7 @@
 - [x] Public contact form wired to backend (stores in contact_submissions table)
 - [x] Admin submissions page with status tracking (new/reviewed/converted/archived)
 - [x] Submission detail dialog
+- [x] Owner notification on contact form submission (using notifyOwner)
 
 ## Phase 14: Public Sales Website
 - [x] Hero section with warm machine design
@@ -80,6 +81,7 @@
 - [x] Rep-facing dashboard (rep sees their own leads, commissions, performance)
 - [x] Customer-facing portal (contract overview, reports, support history, upgrade recommendations)
 - [x] Multi-step guided buying wizard (4 steps: business info → package → style → review & submit)
+- [x] Become a Rep application page (/become-rep)
 
 ## Phase 16: CTA Integration
 - [x] Hero CTA → /get-started
@@ -87,10 +89,11 @@
 - [x] Pricing CTAs → /get-started
 - [x] Footer portal links wired
 
-## Remaining / Future Enhancements
-- [ ] Rep application form (public-facing "Become a Rep" page)
-- [ ] Email notification on contact form submission (using notifyOwner)
-- [ ] Seed demo data for development/demo purposes
+## Phase 17: Data & Quality
+- [x] Idempotent seed script (seed-demo.mjs) — clears and re-seeds cleanly
+- [x] Demo data: 4 reps, 6 leads, 3 customers, 3 contracts, 4 commissions, 5 nurture logs, 4 reports, 3 upsells, 3 contact submissions
+
+## Future Enhancements
 - [ ] Analytics integration placeholder (Google Analytics)
 - [ ] Automated email notifications for nurture sequences
 - [ ] AI-powered lead enrichment integration
