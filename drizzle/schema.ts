@@ -994,3 +994,193 @@ export const dailyCheckIns = mysqlTable("daily_check_ins", {
 });
 export type DailyCheckIn = typeof dailyCheckIns.$inferSelect;
 export type InsertDailyCheckIn = typeof dailyCheckIns.$inferInsert;
+
+
+/* ═══════════════════════════════════════════════════════
+   SOCIAL ACCOUNTS — Connected social media platforms
+   ═══════════════════════════════════════════════════════ */
+export const socialAccounts = mysqlTable("social_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  platform: mysqlEnum("platform", [
+    "instagram", "facebook", "linkedin", "tiktok", "x", "youtube", "pinterest", "threads"
+  ]).notNull(),
+  accountName: varchar("account_name", { length: 255 }).notNull(),
+  accountId: varchar("account_id", { length: 255 }), // platform-specific ID
+  accessToken: text("access_token"), // encrypted, null until connected
+  refreshToken: text("refresh_token"),
+  tokenExpiresAt: timestamp("token_expires_at"),
+  profileUrl: varchar("profile_url", { length: 512 }),
+  profileImageUrl: varchar("profile_image_url", { length: 512 }),
+  followerCount: int("follower_count").default(0),
+  status: mysqlEnum("account_status", ["connected", "disconnected", "expired", "pending"])
+    .default("pending")
+    .notNull(),
+  connectedAt: timestamp("connected_at"),
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("sa_created_at").defaultNow().notNull(),
+  updatedAt: timestamp("sa_updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type SocialAccount = typeof socialAccounts.$inferSelect;
+export type InsertSocialAccount = typeof socialAccounts.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SOCIAL CAMPAIGNS — Marketing campaigns across platforms
+   ═══════════════════════════════════════════════════════ */
+export const socialCampaigns = mysqlTable("social_campaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("campaign_name", { length: 255 }).notNull(),
+  description: text("campaign_description"),
+  goal: mysqlEnum("campaign_goal", [
+    "brand_awareness", "lead_generation", "engagement", "traffic",
+    "recruitment", "product_launch", "event_promotion", "customer_retention"
+  ]).default("brand_awareness").notNull(),
+  platforms: json("campaign_platforms"), // ["instagram", "facebook", "linkedin"]
+  startDate: timestamp("campaign_start_date"),
+  endDate: timestamp("campaign_end_date"),
+  budget: decimal("campaign_budget", { precision: 10, scale: 2 }),
+  status: mysqlEnum("campaign_status", ["draft", "active", "paused", "completed", "archived"])
+    .default("draft")
+    .notNull(),
+  targetAudience: text("target_audience"),
+  totalPosts: int("total_posts").default(0),
+  totalEngagement: int("total_engagement").default(0),
+  createdAt: timestamp("sc_created_at").defaultNow().notNull(),
+  updatedAt: timestamp("sc_updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type SocialCampaign = typeof socialCampaigns.$inferSelect;
+export type InsertSocialCampaign = typeof socialCampaigns.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SOCIAL POSTS — Individual social media posts
+   ═══════════════════════════════════════════════════════ */
+export const socialPosts = mysqlTable("social_posts", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("sp_campaign_id"), // optional campaign association
+  platform: mysqlEnum("sp_platform", [
+    "instagram", "facebook", "linkedin", "tiktok", "x", "youtube", "pinterest", "threads"
+  ]).notNull(),
+  accountId: int("sp_account_id"), // references social_accounts.id
+  content: text("post_content").notNull(),
+  mediaUrls: json("media_urls"), // ["url1", "url2"] — images/videos
+  mediaType: mysqlEnum("media_type", ["none", "image", "video", "carousel", "story", "reel"]).default("none"),
+  hashtags: json("post_hashtags"), // ["#webdesign", "#smallbusiness"]
+  scheduledAt: timestamp("sp_scheduled_at"),
+  publishedAt: timestamp("sp_published_at"),
+  postUrl: varchar("post_url", { length: 512 }), // URL of published post
+  status: mysqlEnum("post_status", ["draft", "scheduled", "publishing", "published", "failed", "archived"])
+    .default("draft")
+    .notNull(),
+  failureReason: text("failure_reason"),
+  // Engagement metrics (updated via API sync)
+  likes: int("post_likes").default(0),
+  comments: int("post_comments").default(0),
+  shares: int("post_shares").default(0),
+  impressions: int("post_impressions").default(0),
+  reach: int("post_reach").default(0),
+  clicks: int("post_clicks").default(0),
+  saves: int("post_saves").default(0),
+  // AI generation metadata
+  aiGenerated: boolean("ai_generated").default(false),
+  aiPrompt: text("ai_prompt"), // the prompt used to generate this post
+  createdBy: int("sp_created_by"), // user who created it
+  createdAt: timestamp("sp_created_at").defaultNow().notNull(),
+  updatedAt: timestamp("sp_updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type SocialPost = typeof socialPosts.$inferSelect;
+export type InsertSocialPost = typeof socialPosts.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   CONTENT CALENDAR — Planned content slots
+   ═══════════════════════════════════════════════════════ */
+export const contentCalendar = mysqlTable("content_calendar", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("cal_title", { length: 255 }).notNull(),
+  description: text("cal_description"),
+  postId: int("cal_post_id"), // linked social post (once created)
+  campaignId: int("cal_campaign_id"),
+  platforms: json("cal_platforms"), // ["instagram", "facebook"]
+  scheduledDate: varchar("scheduled_date", { length: 10 }).notNull(), // YYYY-MM-DD
+  scheduledTime: varchar("scheduled_time", { length: 5 }), // HH:MM
+  contentType: mysqlEnum("content_type", [
+    "post", "story", "reel", "video", "carousel", "article", "poll", "event"
+  ]).default("post").notNull(),
+  status: mysqlEnum("cal_status", ["idea", "planned", "in_progress", "ready", "published", "skipped"])
+    .default("planned")
+    .notNull(),
+  notes: text("cal_notes"),
+  color: varchar("cal_color", { length: 7 }), // hex color for calendar display
+  createdBy: int("cal_created_by"),
+  createdAt: timestamp("cal_created_at").defaultNow().notNull(),
+  updatedAt: timestamp("cal_updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ContentCalendarEntry = typeof contentCalendar.$inferSelect;
+export type InsertContentCalendarEntry = typeof contentCalendar.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   BRAND ASSETS — Brand kit (colors, fonts, logos, voice)
+   ═══════════════════════════════════════════════════════ */
+export const brandAssets = mysqlTable("brand_assets", {
+  id: int("id").autoincrement().primaryKey(),
+  category: mysqlEnum("asset_category", [
+    "color", "font", "logo", "voice", "template", "image", "guideline"
+  ]).notNull(),
+  name: varchar("asset_name", { length: 255 }).notNull(),
+  value: text("asset_value"), // hex for color, font name, URL for logo, text for voice
+  description: text("asset_description"),
+  url: varchar("asset_url", { length: 512 }), // S3 URL for uploaded assets
+  sortOrder: int("sort_order").default(0),
+  isActive: boolean("asset_is_active").default(true),
+  createdAt: timestamp("ba_created_at").defaultNow().notNull(),
+  updatedAt: timestamp("ba_updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type BrandAsset = typeof brandAssets.$inferSelect;
+export type InsertBrandAsset = typeof brandAssets.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SOCIAL ANALYTICS — Daily platform metrics snapshots
+   ═══════════════════════════════════════════════════════ */
+export const socialAnalytics = mysqlTable("social_analytics", {
+  id: int("id").autoincrement().primaryKey(),
+  accountId: int("analytics_account_id").notNull(), // references social_accounts.id
+  platform: mysqlEnum("analytics_platform", [
+    "instagram", "facebook", "linkedin", "tiktok", "x", "youtube", "pinterest", "threads"
+  ]).notNull(),
+  date: varchar("analytics_date", { length: 10 }).notNull(), // YYYY-MM-DD
+  followers: int("analytics_followers").default(0),
+  followersGained: int("followers_gained").default(0),
+  impressions: int("analytics_impressions").default(0),
+  reach: int("analytics_reach").default(0),
+  engagement: int("analytics_engagement").default(0),
+  engagementRate: decimal("engagement_rate", { precision: 5, scale: 2 }),
+  clicks: int("analytics_clicks").default(0),
+  shares: int("analytics_shares").default(0),
+  profileViews: int("profile_views").default(0),
+  websiteClicks: int("website_clicks").default(0),
+  createdAt: timestamp("san_created_at").defaultNow().notNull(),
+});
+export type SocialAnalyticsEntry = typeof socialAnalytics.$inferSelect;
+export type InsertSocialAnalyticsEntry = typeof socialAnalytics.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SOCIAL CONTENT LIBRARY — Pre-approved posts for reps
+   ═══════════════════════════════════════════════════════ */
+export const socialContentLibrary = mysqlTable("social_content_library", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("lib_title", { length: 255 }).notNull(),
+  content: text("lib_content").notNull(),
+  platform: mysqlEnum("lib_platform", [
+    "instagram", "facebook", "linkedin", "tiktok", "x", "all"
+  ]).default("all").notNull(),
+  category: mysqlEnum("lib_category", [
+    "brand_awareness", "testimonial", "service_highlight", "industry_tip",
+    "behind_the_scenes", "recruitment", "promotion", "educational"
+  ]).default("brand_awareness").notNull(),
+  mediaUrls: json("lib_media_urls"),
+  hashtags: json("lib_hashtags"),
+  isApproved: boolean("lib_is_approved").default(false),
+  timesShared: int("times_shared").default(0),
+  createdAt: timestamp("scl_created_at").defaultNow().notNull(),
+  updatedAt: timestamp("scl_updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type SocialContentLibraryEntry = typeof socialContentLibrary.$inferSelect;
+export type InsertSocialContentLibraryEntry = typeof socialContentLibrary.$inferInsert;

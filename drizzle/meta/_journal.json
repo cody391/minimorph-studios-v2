@@ -141,6 +141,13 @@
       "when": 1776978292915,
       "tag": "0019_true_ender_wiggin",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1776980552609,
+      "tag": "0020_military_freak",
+      "breakpoints": true
     }
   ]
 }

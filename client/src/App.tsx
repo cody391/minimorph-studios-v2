@@ -24,6 +24,10 @@ const AdminOrders = lazy(() => import("./pages/admin/Orders"));
 const AdminOnboarding = lazy(() => import("./pages/admin/OnboardingProjects"));
 const AdminWidgetCatalog = lazy(() => import("./pages/admin/WidgetCatalog"));
 const AdminLeadGenEngine = lazy(() => import("./pages/admin/LeadGenEngine"));
+const AdminSocialMedia = lazy(() => import("./pages/admin/SocialMedia"));
+const AdminContentCalendar = lazy(() => import("./pages/admin/ContentCalendar"));
+const AdminBrandKit = lazy(() => import("./pages/admin/BrandKit"));
+const AdminAIContentStudio = lazy(() => import("./pages/admin/AIContentStudio"));
 
 // Lazy-load portals
 const RepDashboard = lazy(() => import("./pages/RepDashboard"));
@@ -160,6 +164,18 @@ function Router() {
       </Route>
       <Route path="/admin/widgets">
         <AdminPage><AdminWidgetCatalog /></AdminPage>
+      </Route>
+      <Route path="/admin/social/calendar">
+        <AdminPage><AdminContentCalendar /></AdminPage>
+      </Route>
+      <Route path="/admin/social/brand">
+        <AdminPage><AdminBrandKit /></AdminPage>
+      </Route>
+      <Route path="/admin/social/ai">
+        <AdminPage><AdminAIContentStudio /></AdminPage>
+      </Route>
+      <Route path="/admin/social">
+        <AdminPage><AdminSocialMedia /></AdminPage>
       </Route>
 
       <Route path={"/404"} component={NotFound} />

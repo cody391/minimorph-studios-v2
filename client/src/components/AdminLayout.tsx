@@ -41,6 +41,10 @@ import {
   ClipboardList,
   Bot,
   Brain,
+  Share2,
+  Calendar,
+  Palette,
+  Sparkles,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -64,6 +68,10 @@ const menuItems = [
   { icon: ClipboardList, label: "Onboarding", path: "/admin/onboarding" },
   { icon: Brain, label: "Lead Gen Engine", path: "/admin/lead-gen" },
   { icon: Bot, label: "Widget Catalog", path: "/admin/widgets" },
+  { icon: Share2, label: "Social Media", path: "/admin/social" },
+  { icon: Calendar, label: "Content Calendar", path: "/admin/social/calendar" },
+  { icon: Palette, label: "Brand Kit", path: "/admin/social/brand" },
+  { icon: Sparkles, label: "AI Content Studio", path: "/admin/social/ai" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "admin-sidebar-width";

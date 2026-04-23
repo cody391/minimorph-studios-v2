@@ -492,3 +492,58 @@
 - [x] Update SW to network-first for JS modules and exclude Vite internal files from caching
 - [x] Add resolve.dedupe and React aliases in vite.config.ts as safeguard
 - [x] Fix Vite websocket connection error (resolved with SW cache fix)
+
+## Phase 34: Social Media Management Ecosystem
+
+### Database Schema
+- [x] Create social_accounts table (platform, account_name, account_id, access_token, refresh_token, status, connected_at)
+- [x] Create social_posts table (content, platform, media_urls, scheduled_at, published_at, status: draft/scheduled/published/failed, post_url, engagement_metrics)
+- [x] Create content_calendar table (title, content, platforms, scheduled_date, campaign_id, status, created_by)
+- [x] Create social_campaigns table (name, description, start_date, end_date, platforms, status, goal)
+- [x] Create brand_assets table (type: logo/color/font/template/image, name, value, url, category)
+- [x] Create social_analytics table (platform, date, followers, impressions, engagement, clicks, shares)
+- [x] Push migrations
+
+### Backend API
+- [x] Social accounts CRUD (connect/disconnect/list platforms — ready for API keys later)
+- [x] Social posts CRUD (create/edit/schedule/publish/delete)
+- [x] AI content generator endpoint (LLM generates platform-specific posts from prompts, brand voice, campaign context)
+- [x] AI image caption generator (generates captions for uploaded images)
+- [x] AI hashtag recommender (suggests relevant hashtags by platform)
+- [x] Content calendar endpoints (list by date range, create/update/delete entries)
+- [x] Campaign management endpoints (CRUD + associate posts)
+- [x] Brand kit endpoints (manage brand colors, fonts, logos, tone of voice, templates)
+- [x] Analytics aggregation endpoints (mock data now, real API data later)
+- [x] Bulk post generator (AI creates a week/month of content from a single brief)
+
+### Admin Social Media Command Center
+- [x] Social Media dashboard page (/admin/social) with overview metrics, tabs for accounts/posts/campaigns
+- [x] Connected accounts panel (shows which platforms are connected, status, connect buttons)
+- [x] Content calendar view (month/week views with scheduled posts)
+- [x] Post composer (content editor with platform selection, hashtags, scheduling)
+- [x] Campaign manager (create campaigns, assign posts, track progress)
+- [ ] Analytics dashboard (engagement charts, follower growth, top posts, platform comparison) — placeholder, needs real API data
+
+### AI Content Studio
+- [x] AI post generator (input topic/brief → generates posts for all platforms with proper formatting)
+- [x] Brand voice trainer (define tone, style, do's/don'ts — AI follows these rules via brand kit)
+- [ ] Content repurposer (turn blog post/email/description into social posts) — endpoint exists, UI pending
+- [x] Hashtag research tool (AI suggests trending + niche hashtags)
+- [ ] Caption generator for images — endpoint exists, UI pending
+- [x] Bulk content planner (generate a week/month of posts from a strategy brief)
+
+### Brand Kit Manager
+- [x] Brand colors palette manager (primary, secondary, accent with hex/preview + color picker)
+- [x] Logo library (upload/manage logos for different platforms/sizes)
+- [x] Font selections (heading, body, accent fonts)
+- [x] Brand voice guidelines (tone descriptors, example phrases, words to avoid)
+- [x] Social media templates (post templates per platform with brand styling)
+- [ ] Downloadable brand guide PDF generation — future enhancement
+
+### Rep Social Tools
+- [x] Rep-facing social content library (pre-approved posts reps can share — via socialLibrary.listApproved)
+- [ ] Rep personal branding tools (customize templates with their info) — future enhancement
+- [x] Social sharing tracker (which reps shared what — via socialLibrary.trackShare)
+
+### Domain Connection
+- [ ] Connect minimorphstudios.net custom domain
