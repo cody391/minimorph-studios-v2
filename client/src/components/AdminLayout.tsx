@@ -37,6 +37,7 @@ import {
   MessageSquare,
   ArrowLeft,
   Activity,
+  ShoppingCart,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -56,6 +57,7 @@ const menuItems = [
   { icon: RefreshCw, label: "Renewals", path: "/admin/renewals" },
   { icon: MessageSquare, label: "Submissions", path: "/admin/submissions" },
   { icon: Activity, label: "Analytics", path: "/admin/analytics" },
+  { icon: ShoppingCart, label: "Orders", path: "/admin/orders" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "admin-sidebar-width";

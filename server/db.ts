@@ -21,6 +21,8 @@ import {
   InsertUpsellOpportunity,
   contactSubmissions,
   InsertContactSubmission,
+  orders,
+  InsertOrder,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -390,4 +392,57 @@ export async function getDashboardStats() {
     monthlyRevenue: totalRevenue.total,
     pendingCommissions: pendingCommissions.total,
   };
+}
+
+/* ═══════════════════════════════════════════════════════
+   ORDERS — Stripe payment tracking
+   ═══════════════════════════════════════════════════════ */
+export async function createOrder(data: {
+  userId: number;
+  stripeCheckoutSessionId?: string;
+  packageTier: "starter" | "growth" | "premium";
+  amount: number;
+  customerEmail?: string;
+  customerName?: string;
+  businessName?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(orders).values({
+    userId: data.userId,
+    stripeCheckoutSessionId: data.stripeCheckoutSessionId || null,
+    packageTier: data.packageTier,
+    amount: data.amount,
+    status: "pending",
+    currency: "usd",
+    customerEmail: data.customerEmail || null,
+    customerName: data.customerName || null,
+    businessName: data.businessName || null,
+  });
+  return { id: result[0].insertId };
+}
+
+export async function listOrdersByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orders).where(eq(orders.userId, userId)).orderBy(desc(orders.createdAt));
+}
+
+export async function listAllOrders() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(orders).orderBy(desc(orders.createdAt));
+}
+
+export async function getOrderBySessionId(sessionId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(orders).where(eq(orders.stripeCheckoutSessionId, sessionId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateOrderBySessionId(sessionId: string, data: Partial<InsertOrder>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(orders).set(data as any).where(eq(orders.stripeCheckoutSessionId, sessionId));
 }

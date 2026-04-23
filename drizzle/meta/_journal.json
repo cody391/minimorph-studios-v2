@@ -15,6 +15,13 @@
       "when": 1776916693461,
       "tag": "0001_majestic_jamie_braddock",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1776919837746,
+      "tag": "0002_omniscient_sharon_carter",
+      "breakpoints": true
     }
   ]
 }

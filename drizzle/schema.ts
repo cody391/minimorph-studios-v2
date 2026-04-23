@@ -23,6 +23,7 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  stripeCustomerId: varchar("stripeCustomerId", { length: 128 }),
 });
 
 export type User = typeof users.$inferSelect;
@@ -259,3 +260,26 @@ export const contactSubmissions = mysqlTable("contact_submissions", {
 
 export type ContactSubmission = typeof contactSubmissions.$inferSelect;
 export type InsertContactSubmission = typeof contactSubmissions.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   ORDERS — Stripe payment records
+   ═══════════════════════════════════════════════════════ */
+export const orders = mysqlTable("orders", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  stripeCheckoutSessionId: varchar("stripeCheckoutSessionId", { length: 255 }),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium"]).notNull(),
+  status: mysqlEnum("status", ["pending", "paid", "failed", "refunded"]).default("pending").notNull(),
+  amount: int("amount").notNull(), // in cents
+  currency: varchar("currency", { length: 3 }).default("usd").notNull(),
+  customerEmail: varchar("customerEmail", { length: 320 }),
+  customerName: varchar("customerName", { length: 255 }),
+  businessName: varchar("businessName", { length: 255 }),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = typeof orders.$inferInsert;

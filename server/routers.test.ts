@@ -304,3 +304,64 @@ describe("protected routes", () => {
     await expect(caller.reps.getById({ id: 1 })).rejects.toThrow();
   });
 });
+
+describe("orders.createCheckout", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.orders.createCheckout({ packageTier: "starter" })
+    ).rejects.toThrow();
+  });
+
+  it("is accessible to authenticated users (fails at Stripe level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.orders.createCheckout({ packageTier: "growth", businessName: "Test Co" });
+    } catch (e: any) {
+      // Should fail at Stripe/DB level, not auth
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+
+  it("validates package tier input", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.orders.createCheckout({ packageTier: "invalid" as any })
+    ).rejects.toThrow();
+  });
+});
+
+describe("orders.myOrders", () => {
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.orders.myOrders()).rejects.toThrow();
+  });
+
+  it("is accessible to authenticated users (fails at DB level, not auth)", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.orders.myOrders();
+    } catch (e: any) {
+      expect(e.code).not.toBe("UNAUTHORIZED");
+    }
+  });
+});
+
+describe("orders.list", () => {
+  it("rejects non-admin users", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.orders.list()).rejects.toThrow();
+  });
+
+  it("rejects unauthenticated users", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.orders.list()).rejects.toThrow();
+  });
+});

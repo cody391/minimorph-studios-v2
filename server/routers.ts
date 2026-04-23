@@ -605,6 +605,89 @@ const contactRouter = router({
 });
 
 /* ═══════════════════════════════════════════════════════
+   ORDERS / CHECKOUT ROUTER
+   ═══════════════════════════════════════════════════════ */
+const ordersRouter = router({
+  // Protected: create a Stripe checkout session
+  createCheckout: protectedProcedure
+    .input(
+      z.object({
+        packageTier: z.enum(["starter", "growth", "premium"]),
+        businessName: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const Stripe = (await import("stripe")).default;
+      const { getPackage } = await import("./stripe-products");
+
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeKey) throw new Error("Stripe not configured");
+
+      const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
+      const pkg = getPackage(input.packageTier);
+      if (!pkg) throw new Error("Invalid package tier");
+
+      const origin = ctx.req.headers.origin || ctx.req.headers.referer || "http://localhost:3000";
+
+      // Create the checkout session
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        customer_email: ctx.user.email || undefined,
+        client_reference_id: ctx.user.id.toString(),
+        allow_promotion_codes: true,
+        metadata: {
+          user_id: ctx.user.id.toString(),
+          customer_email: ctx.user.email || "",
+          customer_name: ctx.user.name || "",
+          package_tier: input.packageTier,
+          business_name: input.businessName || "",
+        },
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: pkg.name,
+                description: pkg.description,
+              },
+              unit_amount: pkg.priceInCents,
+            },
+            quantity: 1,
+          },
+        ],
+        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/get-started?cancelled=true`,
+      });
+
+      // Create a pending order in the database
+      const dbModule = await import("./db");
+      await dbModule.createOrder({
+        userId: ctx.user.id,
+        stripeCheckoutSessionId: session.id,
+        packageTier: input.packageTier,
+        amount: pkg.priceInCents,
+        customerEmail: ctx.user.email || undefined,
+        customerName: ctx.user.name || undefined,
+        businessName: input.businessName || undefined,
+      });
+
+      return { checkoutUrl: session.url };
+    }),
+
+  // Protected: list current user's orders
+  myOrders: protectedProcedure.query(async ({ ctx }) => {
+    const dbModule = await import("./db");
+    return dbModule.listOrdersByUser(ctx.user.id);
+  }),
+
+  // Admin: list all orders
+  list: adminProcedure.query(async () => {
+    const dbModule = await import("./db");
+    return dbModule.listAllOrders();
+  }),
+});
+
+/* ═══════════════════════════════════════════════════════
    DASHBOARD ROUTER
    ═══════════════════════════════════════════════════════ */
 const dashboardRouter = router({
@@ -635,6 +718,7 @@ export const appRouter = router({
   reports: reportsRouter,
   upsells: upsellsRouter,
   contact: contactRouter,
+  orders: ordersRouter,
   dashboard: dashboardRouter,
 });
 

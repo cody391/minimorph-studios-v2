@@ -97,4 +97,10 @@
 - [x] Analytics dashboard page with placeholder data and GA4 connect prompt
 - [x] Automated nurture notifications (send via notifyOwner, AI-generated check-ins via LLM)
 - [x] AI-powered lead enrichment (LLM analyzes business and returns company size, revenue, online presence, recommended package, website needs)
-- [ ] Stripe payment integration for online purchases (available via webdev_add_feature)
+- [x] Stripe payment integration fully implemented:
+  - [x] Stripe checkout session creation (Starter $1,499 / Growth $2,999 / Premium $5,999)
+  - [x] Stripe webhook handler (checkout.session.completed, payment_intent.succeeded/failed)
+  - [x] Orders table in database with payment tracking
+  - [x] Admin Orders page with revenue metrics and order table
+  - [x] Checkout success page (/checkout/success)
+  - [x] 31 unit tests passing (7 new Stripe/orders tests)
