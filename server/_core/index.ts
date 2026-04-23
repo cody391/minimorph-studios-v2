@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
@@ -34,6 +36,26 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // ── Security headers ──
+  app.use(helmet({
+    contentSecurityPolicy: false, // Vite dev server needs inline scripts
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  // ── Rate limiting on public-facing endpoints ──
+  const publicFormLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 30, // 30 requests per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." },
+  });
+  app.use("/api/trpc/repApplication.submitApplication", publicFormLimiter);
+  app.use("/api/trpc/contactSubmissions.submit", publicFormLimiter);
+  app.use("/api/trpc/leadGen.requestPublicAudit", publicFormLimiter);
+  app.use("/api/trpc/orders.create", publicFormLimiter);
+
   // CRITICAL: Stripe webhook needs raw body BEFORE json parser
   registerStripeWebhook(app);
   // Configure body parser with larger size limit for file uploads

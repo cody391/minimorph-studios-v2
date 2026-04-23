@@ -34,6 +34,9 @@ const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Careers = lazy(() => import("./pages/Careers"));
 const FreeAudit = lazy(() => import("./pages/FreeAudit"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 
 // Admin layout wrapper
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -76,6 +79,17 @@ function Router() {
       {/* Free website audit (lead magnet) */}
       <Route path="/free-audit">
         <LazyPage><FreeAudit /></LazyPage>
+      </Route>
+
+      {/* Legal pages */}
+      <Route path="/privacy">
+        <LazyPage><Privacy /></LazyPage>
+      </Route>
+      <Route path="/terms">
+        <LazyPage><Terms /></LazyPage>
+      </Route>
+      <Route path="/unsubscribe">
+        <LazyPage><Unsubscribe /></LazyPage>
       </Route>
 
       {/* Rep portal */}

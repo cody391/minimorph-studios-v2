@@ -1979,6 +1979,24 @@ export const appRouter = router({
   repTickets: repSupportTicketsRouter,
   repNotifPrefs: repNotifPrefsRouter,
   leadGen: leadGenRouter,
+  email: router({
+    unsubscribe: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { emailUnsubscribes } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+        // Check if already unsubscribed
+        const existing = await database.select().from(emailUnsubscribes)
+          .where(eq(emailUnsubscribes.email, input.email)).limit(1);
+        if (existing.length === 0) {
+          await database.insert(emailUnsubscribes).values({ email: input.email, source: "email_link" });
+        }
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

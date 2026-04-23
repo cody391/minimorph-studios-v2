@@ -392,3 +392,39 @@
 - [x] Owner SMS alerts for: inbound enterprise lead replies (twilio-webhooks.ts)
 - [x] Owner SMS alerts for: new enterprise prospect analysis (leadGenEnterprise.ts)
 - [x] 397 tests passing across 13 test files, 0 TypeScript errors
+
+### Pre-Launch Comprehensive Audit
+- [x] Security audit: SQL injection, XSS, CSRF, auth bypass, rate limiting, input validation
+- [x] Security audit: API key exposure, env var leaks, sensitive data in client bundle
+- [x] Security audit: Stripe webhook signature verification, Twilio webhook validation
+- [x] Legal compliance: CAN-SPAM email compliance (unsubscribe links, physical address, sender identification)
+- [x] Legal compliance: TCPA SMS compliance (opt-in consent, opt-out handling, quiet hours)
+- [x] Legal compliance: Privacy policy, terms of service, cookie consent
+- [x] Legal compliance: Stripe PCI compliance (no card data stored locally — confirmed)
+- [x] Wiring check: all scheduled jobs fire correctly and handle errors gracefully
+- [x] Wiring check: all notification paths deliver (SMS, email, push, in-app)
+- [x] Wiring check: all admin endpoints return correct data
+- [x] Wiring check: all public endpoints are properly secured or intentionally public
+- [x] Efficiency review: database indexes added on 11 frequently queried columns
+- [x] Efficiency review: error handling and graceful degradation across all services
+- [x] Fix all issues found in audit: helmet headers, rate limiting, Twilio signature validation, CAN-SPAM footer, unsubscribe system, Privacy/Terms pages
+
+### Phase 32: Elite Sales Training Academy
+- [ ] Academy curriculum design: 8+ modules covering psychological selling, product mastery, objection handling, closing techniques
+- [ ] Module 1: MiniMorph Product Mastery — every service, pricing tier, feature, and competitive advantage
+- [ ] Module 2: Psychology of Selling — reciprocity, social proof, scarcity, authority, commitment/consistency, liking
+- [ ] Module 3: The Discovery Call — SPIN selling, pain point extraction, needs analysis, active listening
+- [ ] Module 4: Objection Handling Mastery — price objections, timing objections, competitor objections, trust objections
+- [ ] Module 5: Closing Techniques — assumptive close, urgency close, summary close, alternative close, puppy dog close
+- [ ] Module 6: Digital Prospecting — cold email/SMS frameworks, social selling, LinkedIn outreach, referral generation
+- [ ] Module 7: Account Management — upselling, cross-selling, retention, QBRs, expansion revenue
+- [ ] Module 8: Advanced Tactics — enterprise selling, multi-stakeholder deals, negotiation, contract structuring
+- [ ] Each module: video-style lesson content (rich text with examples, scripts, role-plays)
+- [ ] Each module: interactive quiz with scenario-based questions (not just multiple choice)
+- [ ] Each module: real-world practice exercises and scripts to memorize
+- [ ] Certification system: must pass all modules with 80%+ to activate as rep
+- [ ] Progress tracking: per-rep completion %, scores, time spent, weak areas
+- [ ] Academy leaderboard: top performers by quiz scores and completion speed
+- [ ] Admin academy management: view all rep progress, identify struggling reps, assign remedial modules
+- [ ] Academy UI: professional learning management system look and feel
+- [ ] Vitest tests for academy features

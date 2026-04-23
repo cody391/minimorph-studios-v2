@@ -5,6 +5,39 @@ import * as db from "./db";
 import { analyzeAndCoach } from "./services/aiCoach";
 import { handleConversation } from "./services/leadGenConversationAI";
 import { ENV } from "./_core/env";
+import twilio from "twilio";
+
+/**
+ * Twilio webhook signature validation middleware.
+ * Verifies that incoming requests are genuinely from Twilio.
+ * In development mode, logs a warning but allows requests through.
+ */
+function validateTwilioSignature(req: Request, res: Response, next: Function) {
+  const authToken = ENV.twilioAuthToken;
+  if (!authToken) {
+    console.warn("[Twilio Security] No auth token configured — skipping signature validation");
+    return next();
+  }
+
+  const signature = req.headers["x-twilio-signature"] as string;
+  if (!signature) {
+    console.warn("[Twilio Security] Missing X-Twilio-Signature header");
+    return res.status(403).send("Forbidden: Missing Twilio signature");
+  }
+
+  // Build the full URL Twilio used to sign the request
+  const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+  const host = req.headers["host"];
+  const url = `${protocol}://${host}${req.originalUrl}`;
+
+  const isValid = twilio.validateRequest(authToken, signature, url, req.body || {});
+  if (!isValid) {
+    console.warn(`[Twilio Security] Invalid signature for ${req.originalUrl}`);
+    return res.status(403).send("Forbidden: Invalid Twilio signature");
+  }
+
+  next();
+}
 
 /**
  * Register Twilio webhook routes on the Express app.
@@ -23,7 +56,7 @@ export function registerTwilioWebhooks(app: Express) {
    * Twilio hits this when a call is initiated from the browser (TwiML App).
    * Returns TwiML instructions to connect the call.
    */
-  app.post("/api/twilio/voice-webhook", twilioParser, (req: Request, res: Response) => {
+  app.post("/api/twilio/voice-webhook", twilioParser, validateTwilioSignature, (req: Request, res: Response) => {
     try {
       const to = req.body.To || req.query.To;
       const from = req.body.From;
@@ -60,7 +93,7 @@ export function registerTwilioWebhooks(app: Express) {
    * POST /api/twilio/call-status
    * Twilio hits this with call status updates (initiated, ringing, answered, completed).
    */
-  app.post("/api/twilio/call-status", twilioParser, async (req: Request, res: Response) => {
+  app.post("/api/twilio/call-status", twilioParser, validateTwilioSignature, async (req: Request, res: Response) => {
     try {
       const { CallSid, CallStatus, CallDuration, RecordingSid, RecordingUrl } = req.body;
       console.log(`[Twilio Voice] Status update — CallSid: ${CallSid}, Status: ${CallStatus}, Duration: ${CallDuration}`);
@@ -89,7 +122,7 @@ export function registerTwilioWebhooks(app: Express) {
    * Twilio hits this when a recording is ready.
    * Saves the recording URL and triggers AI transcription + coaching.
    */
-  app.post("/api/twilio/recording-status", twilioParser, async (req: Request, res: Response) => {
+  app.post("/api/twilio/recording-status", twilioParser, validateTwilioSignature, async (req: Request, res: Response) => {
     try {
       const { CallSid, RecordingSid, RecordingUrl, RecordingStatus, RecordingDuration } = req.body;
       console.log(`[Twilio Recording] Status: ${RecordingStatus}, CallSid: ${CallSid}, RecordingSid: ${RecordingSid}`);
@@ -127,7 +160,7 @@ export function registerTwilioWebhooks(app: Express) {
    * 4. Rep conversation (if sender has an active rep thread)
    * 5. Acknowledge receipt
    */
-  app.post("/api/twilio/sms-webhook", twilioParser, async (req: Request, res: Response) => {
+  app.post("/api/twilio/sms-webhook", twilioParser, validateTwilioSignature, async (req: Request, res: Response) => {
     try {
       const { From, To, Body, MessageSid } = req.body;
       console.log(`[Twilio SMS] Inbound — From: ${From}, Body: ${Body?.slice(0, 50)}`);

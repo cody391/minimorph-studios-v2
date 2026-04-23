@@ -1,5 +1,25 @@
 import { Resend } from "resend";
 import { ENV } from "../_core/env";
+import { eq } from "drizzle-orm";
+
+/**
+ * Check if an email address has been unsubscribed.
+ * Returns true if the email is on the unsubscribe list.
+ */
+export async function isEmailUnsubscribed(email: string): Promise<boolean> {
+  try {
+    const { getDb } = await import("../db");
+    const { emailUnsubscribes } = await import("../../drizzle/schema");
+    const db = await getDb();
+    if (!db) return false;
+    const result = await db.select().from(emailUnsubscribes)
+      .where(eq(emailUnsubscribes.email, email.toLowerCase())).limit(1);
+    return result.length > 0;
+  } catch {
+    // If DB check fails, don't block email sending
+    return false;
+  }
+}
 
 let _resend: Resend | null = null;
 
@@ -11,6 +31,38 @@ function getResend(): Resend {
   return _resend;
 }
 
+/* ═══════════════════════════════════════════════════════
+   CAN-SPAM COMPLIANCE FOOTER
+   Federal law requires: physical address, sender identification,
+   and a working unsubscribe mechanism in all commercial emails.
+   ═══════════════════════════════════════════════════════ */
+const CAN_SPAM_FOOTER = `
+<div style="background:#f1ede7;padding:16px 32px;border-top:1px solid #e0d9cf;text-align:center;">
+  <p style="margin:0 0 8px;font-size:11px;color:#8a8a8a;line-height:1.5;">
+    MiniMorph Studios &bull; Sarasota, FL 34236<br/>
+    You received this email because you inquired about our services or were contacted by a MiniMorph representative.
+  </p>
+  <p style="margin:0;font-size:11px;color:#8a8a8a;">
+    <a href="{{unsubscribe_url}}" style="color:#6b7c6e;text-decoration:underline;">Unsubscribe</a> &bull;
+    <a href="{{privacy_url}}" style="color:#6b7c6e;text-decoration:underline;">Privacy Policy</a>
+  </p>
+</div>`;
+
+/**
+ * Build the CAN-SPAM footer with proper URLs.
+ * Uses the app's origin for unsubscribe and privacy links.
+ */
+function buildCanSpamFooter(recipientEmail: string): string {
+  // Encode the email for the unsubscribe link
+  const encoded = encodeURIComponent(recipientEmail);
+  // Use a generic unsubscribe endpoint — the frontend will handle the confirmation
+  const unsubUrl = `/unsubscribe?email=${encoded}`;
+  const privacyUrl = `/privacy`;
+  return CAN_SPAM_FOOTER
+    .replace("{{unsubscribe_url}}", unsubUrl)
+    .replace("{{privacy_url}}", privacyUrl);
+}
+
 export interface SendEmailParams {
   to: string;
   subject: string;
@@ -18,6 +70,8 @@ export interface SendEmailParams {
   text?: string;
   replyTo?: string;
   from?: string;
+  /** Set to true to skip CAN-SPAM footer (for transactional emails like password resets) */
+  transactional?: boolean;
 }
 
 export interface SendEmailResult {
@@ -30,19 +84,48 @@ export interface SendEmailResult {
  * Send a real email via Resend.
  * Uses the default "from" address based on the configured domain,
  * or falls back to Resend's onboarding address for testing.
+ * Automatically appends CAN-SPAM compliance footer to commercial emails.
  */
 export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
+  // CAN-SPAM: Check unsubscribe list before sending commercial emails
+  if (!params.transactional) {
+    const unsubscribed = await isEmailUnsubscribed(params.to);
+    if (unsubscribed) {
+      console.log(`[Email] Blocked — ${params.to} is unsubscribed`);
+      return { success: false, error: "Recipient has unsubscribed" };
+    }
+  }
+
   const resend = getResend();
 
   try {
     const fromAddress = params.from || "MiniMorph Studios <onboarding@resend.dev>";
 
+    // Append CAN-SPAM footer to HTML emails unless marked transactional
+    let htmlContent = params.html;
+    if (htmlContent && !params.transactional) {
+      // Insert footer before closing </body> or </html> tags, or append
+      const footer = buildCanSpamFooter(params.to);
+      if (htmlContent.includes("</body>")) {
+        htmlContent = htmlContent.replace("</body>", `${footer}</body>`);
+      } else if (htmlContent.includes("</html>")) {
+        htmlContent = htmlContent.replace("</html>", `${footer}</html>`);
+      } else {
+        htmlContent += footer;
+      }
+    }
+
     const options: Record<string, any> = {
       from: fromAddress,
       to: [params.to],
       subject: params.subject,
+      headers: {
+        // List-Unsubscribe header for email clients (one-click unsubscribe)
+        "List-Unsubscribe": `<mailto:unsubscribe@minimorphstudios.com?subject=unsubscribe-${encodeURIComponent(params.to)}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
     };
-    if (params.html) options.html = params.html;
+    if (htmlContent) options.html = htmlContent;
     if (params.text) options.text = params.text;
     if (params.replyTo) options.replyTo = params.replyTo;
 

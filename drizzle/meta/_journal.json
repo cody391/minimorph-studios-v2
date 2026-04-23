@@ -120,6 +120,13 @@
       "when": 1776971334160,
       "tag": "0016_serious_vindicator",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1776976450458,
+      "tag": "0017_early_omega_sentinel",
+      "breakpoints": true
     }
   ]
 }

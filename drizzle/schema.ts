@@ -898,3 +898,14 @@ export const enterpriseProspects = mysqlTable("enterprise_prospects", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+/* ═══════════════════════════════════════════════════════
+   EMAIL UNSUBSCRIBES (CAN-SPAM Compliance)
+   ═══════════════════════════════════════════════════════ */
+export const emailUnsubscribes = mysqlTable("email_unsubscribes", {
+  id: int("id").primaryKey().autoincrement(),
+  email: varchar("email", { length: 255 }).notNull(),
+  unsubscribedAt: timestamp("unsubscribed_at").defaultNow(),
+  source: varchar("source", { length: 50 }).default("email_link"), // email_link, manual, complaint
+});
+export type EmailUnsubscribe = typeof emailUnsubscribes.$inferSelect;
