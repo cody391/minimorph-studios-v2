@@ -15,6 +15,7 @@ const footerLinks = {
     { label: "About Us", href: "#" },
     { label: "Portfolio", href: "#portfolio" },
     { label: "Testimonials", href: "#testimonials" },
+    { label: "Careers", href: "/careers", route: true },
     { label: "Contact", href: "#contact" },
   ],
   Portals: [

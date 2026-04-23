@@ -23,7 +23,18 @@ const repsRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const userId = ctx.user?.id ?? 0;
-      return db.createRep({ ...input, userId, status: "applied" });
+      // Generate collision-safe referral code with retry
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const generateCode = () => "MM-" + Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+      let code = generateCode();
+      let attempts = 0;
+      const allReps = await db.listReps();
+      const existingCodes = new Set(allReps.map((r) => r.referralCode).filter(Boolean));
+      while (existingCodes.has(code) && attempts < 10) {
+        code = generateCode();
+        attempts++;
+      }
+      return db.createRep({ ...input, userId, status: "applied", referralCode: code });
     }),
 
   // Protected: get current user's rep profile
@@ -415,12 +426,49 @@ const commissionsRouter = router({
       const rate = tierRates[level] || 0.10;
       const contractValue = parseFloat(input.contractValue) || 0;
       const commissionAmount = (contractValue * rate).toFixed(2);
-      return db.createCommission({
+      const commission = await db.createCommission({
         repId: input.repId,
         contractId: input.contractId,
         amount: commissionAmount,
         type: input.type,
       });
+
+      // Check if this is the rep's first sale and they were referred — award $200 referral bonus
+      if (input.type === "initial_sale") {
+        const repApplication = await db.getRepApplication(input.repId);
+        if (repApplication?.referredBy) {
+          // Find the referring rep by referral code (stable ID-based lookup)
+          const allReps = await db.listReps();
+          const referrer = allReps.find(
+            (r) => r.referralCode === repApplication.referredBy
+              || r.fullName.toLowerCase() === repApplication.referredBy!.toLowerCase()
+              || r.email.toLowerCase() === repApplication.referredBy!.toLowerCase()
+          );
+          if (referrer) {
+            // Check if this is the new rep's FIRST commission (prevent duplicate bonuses)
+            const existingCommissions = await db.listCommissionsByRep(input.repId);
+            const existingReferralBonus = await db.listCommissionsByRep(referrer.id);
+            const alreadyBonused = existingReferralBonus.some(
+              (c) => c.type === "referral_bonus" && c.contractId === input.contractId
+            );
+            if (existingCommissions.length <= 1 && !alreadyBonused) {
+              // Award $200 referral bonus to the referring rep
+              await db.createCommission({
+                repId: referrer.id,
+                contractId: input.contractId,
+                amount: "200.00",
+                type: "referral_bonus",
+              });
+              await notifyOwner({
+                title: "Referral Bonus Triggered",
+                content: `${referrer.fullName} earned a $200 referral bonus because their referred rep (ID: ${input.repId}) just closed their first deal.`,
+              });
+            }
+          }
+        }
+      }
+
+      return commission;
     }),
 
   list: adminProcedure.query(async () => {

@@ -1,0 +1,2 @@
+ALTER TABLE `commissions` MODIFY COLUMN `type` enum('initial_sale','renewal','upsell','referral_bonus') NOT NULL DEFAULT 'initial_sale';--> statement-breakpoint
+ALTER TABLE `reps` ADD `referralCode` varchar(32);

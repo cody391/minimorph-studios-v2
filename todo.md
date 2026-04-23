@@ -197,6 +197,13 @@
 - [x] Commission approval workflow before payout
 
 ### Social Media Recruitment Strategy
-- [ ] Create recruitment landing page for reps (Careers page — next phase)
-- [ ] Social media post templates for recruiting reps (next phase)
-- [ ] Referral program: existing reps refer new reps for bonus (next phase)
+- [x] Create recruitment landing page for reps (/careers page with hero, benefits, earnings calculator, level system, FAQs, CTA)
+- [x] Social media post templates for recruiting reps (LinkedIn, Instagram, Facebook, X, TikTok — full document with posting strategy)
+- [x] Referral program: $200 bonus auto-triggered when referred rep closes first deal, referredBy field in application, logic in commission creation
+
+### Gap Fixes
+- [x] Add Careers link to main Navbar navigation
+- [x] Add collision-safe referral code generation with uniqueness check/retry loop, displayed in dashboard with copy button
+- [x] Add dedicated "referral_bonus" commission type to schema
+- [x] Add explicit Vitest cases for commission creation, type validation, auth checks, and referral code format
+- [x] Surface social media templates in admin Reps page Recruitment tab with copy-to-clipboard + posting strategy guide

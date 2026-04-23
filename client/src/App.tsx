@@ -31,6 +31,7 @@ const GetStarted = lazy(() => import("./pages/GetStarted"));
 const BecomeRep = lazy(() => import("./pages/BecomeRep"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Careers = lazy(() => import("./pages/Careers"));
 
 // Admin layout wrapper
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -63,6 +64,11 @@ function Router() {
       {/* Become a rep */}
       <Route path="/become-rep">
         <LazyPage><BecomeRep /></LazyPage>
+      </Route>
+
+      {/* Careers / recruitment */}
+      <Route path="/careers">
+        <LazyPage><Careers /></LazyPage>
       </Route>
 
       {/* Rep portal */}

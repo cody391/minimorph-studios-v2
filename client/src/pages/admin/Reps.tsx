@@ -137,6 +137,7 @@ export default function Reps() {
             Payouts {(pendingCommissions.length + approvedCommissions.length) > 0 && <Badge className="ml-1 bg-forest text-white text-[9px] px-1">{pendingCommissions.length + approvedCommissions.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="performance" className="font-sans text-xs">Performance</TabsTrigger>
+          <TabsTrigger value="recruitment" className="font-sans text-xs">Recruitment</TabsTrigger>
         </TabsList>
 
         {/* ALL REPS TAB */}
@@ -451,6 +452,53 @@ export default function Reps() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* RECRUITMENT TAB */}
+        <TabsContent value="recruitment">
+          <div className="space-y-4">
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-serif text-forest">Social Media Recruitment Templates</CardTitle>
+                <p className="text-xs text-forest/50 font-sans">Ready-to-post templates for recruiting quality sales reps across platforms.</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[
+                  { platform: "LinkedIn", icon: "in", color: "bg-blue-600", post: `🚀 We're looking for ambitious sales professionals to join MiniMorph Studios as Sales Representatives.\n\nWhat we offer:\n• 10% commission on every sale (uncapped)\n• Flexible schedule — work from anywhere\n• Level up to 15% commission as you grow\n• Full training & certification program\n• Branded tools, templates & AI-powered sales assistant\n\nWe build premium websites for small businesses. You bring the relationships, we handle the rest.\n\nApply now: [Your Careers URL]\n\n#SalesJobs #RemoteWork #WebDesign #Commission` },
+                  { platform: "Instagram", icon: "📸", color: "bg-gradient-to-r from-purple-500 to-pink-500", post: `💰 Turn conversations into commissions.\n\nMiniMorph Studios is hiring Sales Reps.\n\n✅ 10-15% commission (uncapped)\n✅ Work from anywhere\n✅ Full training provided\n✅ AI tools to help you close\n✅ No cold calling required\n\nWe build beautiful websites for small businesses. You connect us with business owners who need one.\n\nLink in bio to apply 👆\n\n#SalesRep #RemoteJobs #CommissionBased #WebDesign #Hiring` },
+                  { platform: "Facebook", icon: "f", color: "bg-blue-500", post: `🔥 NOW HIRING: Sales Representatives\n\nMiniMorph Studios builds premium websites for small businesses, and we need great people to help us grow.\n\nWhat you get:\n💵 10% commission on every sale (top performers earn 15%)\n🏠 Work from home, set your own hours\n📚 Complete training program (get certified in 1 week)\n🤖 AI-powered tools to help you sell\n💳 Monthly payouts via direct deposit\n\nIdeal for: Real estate agents, insurance reps, freelancers, or anyone with a network of small business owners.\n\nApply here: [Your Careers URL]` },
+                  { platform: "X (Twitter)", icon: "𝕏", color: "bg-black", post: `We're hiring sales reps at @MiniMorphStudios\n\n• 10-15% commission (uncapped)\n• Remote, flexible hours\n• Full training + AI tools\n• Help small businesses get online\n\nKnow business owners who need a website? Turn those conversations into income.\n\nApply: [link]` },
+                  { platform: "TikTok", icon: "♪", color: "bg-black", post: `POV: You just found a side hustle that actually pays well 💰\n\nMiniMorph Studios is hiring remote sales reps.\n\n10-15% commission on every website you sell. No cap.\nFull training. AI tools. Work from your couch.\n\nAvg deal = $1,499-$4,999\nYour cut = $150-$750 per sale\n\nLink in bio to apply 🔗\n\n#sidehustle #remotework #salesjobs #makemoneyonline #hiring` },
+                ].map((t) => (
+                  <div key={t.platform} className="border border-border/30 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className={`${t.color} text-white text-xs font-bold w-7 h-7 rounded flex items-center justify-center`}>{t.icon}</span>
+                        <span className="font-sans font-medium text-forest text-sm">{t.platform}</span>
+                      </div>
+                      <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { navigator.clipboard.writeText(t.post); toast.success(`${t.platform} post copied!`); }}>Copy Post</Button>
+                    </div>
+                    <pre className="text-xs text-forest/70 font-sans whitespace-pre-wrap bg-cream-dark/20 rounded p-3 max-h-40 overflow-y-auto">{t.post}</pre>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-serif text-forest">Posting Strategy</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm font-sans text-forest/70">
+                  <p><strong className="text-forest">Frequency:</strong> Post 2-3x per week across platforms. Rotate between recruitment posts and success stories.</p>
+                  <p><strong className="text-forest">Best Times:</strong> LinkedIn (Tue-Thu 8-10am), Instagram (Mon-Fri 11am-1pm), Facebook (Wed-Fri 1-4pm), X (Mon-Fri 12-3pm).</p>
+                  <p><strong className="text-forest">Hashtags:</strong> Always include #RemoteWork #SalesJobs #Hiring #WebDesign #CommissionBased</p>
+                  <p><strong className="text-forest">Visuals:</strong> Use branded graphics showing earnings potential, team photos, or testimonial screenshots.</p>
+                  <p><strong className="text-forest">Engagement:</strong> Reply to every comment within 2 hours. DM interested candidates with the application link.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

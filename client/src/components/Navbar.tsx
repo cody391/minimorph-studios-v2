@@ -15,6 +15,7 @@ const navLinks = [
   { label: "How It Works", href: "#how-it-works" },
   { label: "Pricing", href: "#pricing" },
   { label: "Testimonials", href: "#testimonials" },
+  { label: "Careers", href: "/careers", route: true },
 ];
 
 export default function Navbar() {
@@ -65,7 +66,13 @@ export default function Navbar() {
           {navLinks.map((link) => (
             <button
               key={link.href}
-              onClick={() => scrollTo(link.href)}
+              onClick={() => {
+                if ((link as any).route) {
+                  setLocation(link.href);
+                } else {
+                  scrollTo(link.href);
+                }
+              }}
               className="text-sm font-medium text-forest/70 hover:text-forest transition-colors duration-300 font-sans"
             >
               {link.label}
@@ -114,7 +121,14 @@ export default function Navbar() {
               {navLinks.map((link) => (
                 <button
                   key={link.href}
-                  onClick={() => scrollTo(link.href)}
+                  onClick={() => {
+                    if ((link as any).route) {
+                      setMobileOpen(false);
+                      setLocation(link.href);
+                    } else {
+                      scrollTo(link.href);
+                    }
+                  }}
                   className="text-left text-base font-medium text-forest/80 hover:text-forest py-2 font-sans transition-colors"
                 >
                   {link.label}

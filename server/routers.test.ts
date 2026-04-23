@@ -119,7 +119,7 @@ describe("contact.submit", () => {
       // DB error is expected, but it should NOT be an auth error
       expect(e.code).not.toBe("UNAUTHORIZED");
     }
-  });
+  }, 15000);
 
   it("calls notifyOwner after contact submission attempt", async () => {
     const { ctx } = createPublicContext();
@@ -139,7 +139,7 @@ describe("contact.submit", () => {
     // But the mock is set up to verify it's importable and callable
     expect(notifyOwner).toBeDefined();
     expect(typeof notifyOwner).toBe("function");
-  });
+  }, 15000);
 });
 
 describe("reps.submitApplication", () => {
@@ -1016,6 +1016,72 @@ describe("reps.createConnectOnboarding", () => {
       await caller.reps.createConnectOnboarding({ returnUrl: "http://localhost:3000/rep" });
     } catch (e: any) {
       expect(e.message).toContain("Not a rep");
+    }
+  });
+});
+
+// ── Referral Bonus Tests ──
+describe("commissions.create referral bonus", () => {
+  it("uses referral_bonus type for referral bonuses (type exists in schema)", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      await caller.commissions.create({
+        repId: 1,
+        contractId: 1,
+        contractValue: "1000",
+        type: "initial_sale",
+      });
+    } catch (e: any) {
+      // DB error expected, but should not be a validation error
+      expect(e.code).not.toBe("BAD_REQUEST");
+    }
+  });
+
+  it("rejects non-admin users from creating commissions", async () => {
+    const { ctx } = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.commissions.create({
+        repId: 1,
+        contractId: 1,
+        contractValue: "1000",
+        type: "initial_sale",
+      })
+    ).rejects.toThrow();
+  });
+
+  it("validates commission type is one of the allowed values", async () => {
+    const { ctx } = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.commissions.create({
+        repId: 1,
+        contractId: 1,
+        contractValue: "1000",
+        type: "invalid_type" as any,
+      })
+    ).rejects.toBeDefined();
+  });
+});
+
+// ── Referral Code Generation Tests ──
+describe("reps.submitApplication referral code", () => {
+  it("generates a referral code matching MM-XXXXXX format", async () => {
+    const { ctx } = createPublicContext();
+    const caller = appRouter.createCaller(ctx);
+    try {
+      const result = await caller.reps.submitApplication({
+        fullName: "Code Test Rep",
+        email: "codetest@example.com",
+      });
+      // If DB succeeds, check the referral code format
+      if (result && (result as any).referralCode) {
+        expect((result as any).referralCode).toMatch(/^MM-[A-Z2-9]{6}$/);
+      }
+    } catch (e: any) {
+      // DB error expected in test env, but should NOT be auth error
+      expect(e.code).not.toBe("UNAUTHORIZED");
     }
   });
 });

@@ -16,7 +16,7 @@ import {
   Users, DollarSign, Target, TrendingUp, Award, Clock, ArrowLeft,
   BarChart3, Briefcase, CheckCircle, AlertCircle, Flame, Trophy,
   Star, Zap, Phone, Mail, Calendar, FileText, Send, Sparkles,
-  BookOpen, GraduationCap, Shield, MessageSquare, Plus, ChevronRight,
+  BookOpen, GraduationCap, Shield, MessageSquare, Plus, ChevronRight, Copy,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
@@ -198,6 +198,32 @@ export default function RepDashboard() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Referral Code */}
+            {repProfile?.referralCode && (
+              <Card className="border-border/50 bg-gradient-to-r from-amber-50/50 to-cream">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-sans text-forest/60 mb-1">Your Referral Code</p>
+                      <p className="text-2xl font-mono font-bold text-forest tracking-wider">{repProfile.referralCode}</p>
+                      <p className="text-xs text-forest/40 font-sans mt-1">Share this code with potential reps. Earn $200 when they close their first deal.</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 text-forest border-forest/20 hover:bg-forest/5"
+                      onClick={() => {
+                        navigator.clipboard.writeText(repProfile.referralCode!);
+                        toast.success("Referral code copied to clipboard!");
+                      }}
+                    >
+                      <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* My Leads */}
             <Card className="border-border/50">
