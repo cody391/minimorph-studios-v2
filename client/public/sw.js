@@ -1,5 +1,5 @@
 // MiniMorph Studios Service Worker — PWA offline support + Push Notifications
-const CACHE_NAME = "minimorph-v2";
+const CACHE_NAME = "minimorph-v3";
 const STATIC_ASSETS = ["/", "/manifest.json"];
 
 // Install: cache shell assets
@@ -20,13 +20,25 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static
+// Fetch: network-first strategy to avoid stale module caching
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // Always go to network for API calls
   if (url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  // Never cache Vite internal files, HMR, or node_modules
+  if (
+    url.pathname.includes("node_modules") ||
+    url.pathname.includes(".vite") ||
+    url.pathname.includes("@vite") ||
+    url.pathname.includes("@fs/") ||
+    url.pathname.includes("__vite") ||
+    url.pathname.includes("@react-refresh")
+  ) {
     return;
   }
 
@@ -44,7 +56,30 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Network-first for JS/TS module files to avoid stale bundles
+  if (
+    url.pathname.endsWith(".js") ||
+    url.pathname.endsWith(".mjs") ||
+    url.pathname.endsWith(".ts") ||
+    url.pathname.endsWith(".tsx") ||
+    url.pathname.endsWith(".jsx") ||
+    request.destination === "script"
+  ) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok && url.origin === self.location.origin) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Cache-first for truly static assets (images, fonts, CSS)
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;

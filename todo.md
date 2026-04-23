@@ -486,3 +486,9 @@
 - [x] Vitest tests for mobile responsiveness (tab triggers, overflow, viewport)
 - [x] Vitest tests for DB schema (coachingReviews, dailyCheckIns tables)
 - [x] 455 tests passing across 15 test files, 0 TypeScript errors
+
+### Bug Fix: Duplicate React Instance / Invalid Hook Call
+- [x] Fix "Invalid hook call" error in TRPCProvider — root cause: Service Worker cache-first strategy serving stale Vite pre-bundled deps
+- [x] Update SW to network-first for JS modules and exclude Vite internal files from caching
+- [x] Add resolve.dedupe and React aliases in vite.config.ts as safeguard
+- [x] Fix Vite websocket connection error (resolved with SW cache fix)
