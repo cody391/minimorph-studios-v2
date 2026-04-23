@@ -12,6 +12,11 @@ import { enrichQualifiedBusinesses, batchConvertToLeads } from "./services/leadG
 import { sendDueOutreach, scheduleOutreachSequence } from "./services/leadGenOutreach";
 import { autoFeedReps, autoStartOutreach, getRepCapacity, getEngineStats } from "./services/leadGenRouter";
 import { scanForEnterpriseLeads, listEnterpriseProspects, updateEnterpriseProspect } from "./services/leadGenEnterprise";
+import { generateAuditReport, generateAuditForLead } from "./services/leadGenAudit";
+import { analyzeLeadBehavior, scheduleBranchedOutreach, runReengagementCampaign, recordIntentSignal } from "./services/leadGenSmartOutreach";
+import { scoreLeadML, rescoreAllLeads, getScoringInsights } from "./services/leadGenScoring";
+import { runMultiSourceScrape, enrichWithCompetitors } from "./services/leadGenMultiSource";
+import { generateProposal, getRepPerformanceMetrics, findBestRepByPerformance } from "./services/leadGenProposal";
 import { getDb } from "./db";
 import { scrapeJobs, scrapedBusinesses, outreachSequences, aiConversations, repServiceAreas, enterpriseProspects, leads } from "../drizzle/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
@@ -245,5 +250,144 @@ export const leadGenRouter = router({
   // ─── Config ───
   getBusinessTypes: adminProcedure.query(() => {
     return LOW_HANGING_FRUIT_TYPES;
+  }),
+
+  // ═══════ Phase 29: Enhanced Features ═══════
+
+  // ─── Website Audit ───
+  generateAudit: adminProcedure
+    .input(z.object({ businessId: z.number() }))
+    .mutation(async ({ input }) => {
+      const report = await generateAuditReport(input.businessId);
+      return { score: report.overallScore, grade: report.overallGrade, storageUrl: report.storageUrl, sections: report.sections.length };
+    }),
+
+  generateAuditForLead: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ input }) => {
+      const report = await generateAuditForLead(input.leadId);
+      if (!report) return null;
+      return { score: report.overallScore, grade: report.overallGrade, storageUrl: report.storageUrl };
+    }),
+
+  // ─── Smart Outreach ───
+  analyzeLeadBehavior: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ input }) => {
+      return analyzeLeadBehavior(input.leadId);
+    }),
+
+  scheduleBranchedOutreach: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ input }) => {
+      const scheduled = await scheduleBranchedOutreach(input.leadId);
+      return { scheduled };
+    }),
+
+  runReengagement: adminProcedure.mutation(async () => {
+    const reengaged = await runReengagementCampaign();
+    return { reengaged };
+  }),
+
+  recordIntentSignal: adminProcedure
+    .input(z.object({
+      leadId: z.number(),
+      type: z.enum(["email_open", "link_click", "website_visit", "multi_open", "audit_view"]),
+    }))
+    .mutation(async ({ input }) => {
+      await recordIntentSignal(input.leadId, { type: input.type });
+      return { success: true };
+    }),
+
+  // ─── ML Scoring ───
+  scoreLeadML: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ input }) => {
+      return scoreLeadML(input.leadId);
+    }),
+
+  rescoreAllLeads: adminProcedure.mutation(async () => {
+    const rescored = await rescoreAllLeads();
+    return { rescored };
+  }),
+
+  getScoringInsights: adminProcedure.query(async () => {
+    return getScoringInsights();
+  }),
+
+  // ─── Multi-Source Scraping ───
+  runMultiSourceScrape: adminProcedure
+    .input(z.object({
+      location: z.string().min(1),
+      lat: z.number().optional(),
+      lng: z.number().optional(),
+      radius: z.number().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      return runMultiSourceScrape(input);
+    }),
+
+  // ─── Competitor Intelligence ───
+  enrichWithCompetitors: adminProcedure
+    .input(z.object({ businessId: z.number() }))
+    .mutation(async ({ input }) => {
+      const competitors = await enrichWithCompetitors(input.businessId);
+      return { competitorsFound: competitors.length, competitors };
+    }),
+
+  // ─── Proposal Generation ───
+  generateProposal: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ input }) => {
+      const proposal = await generateProposal(input.leadId);
+      return {
+        businessName: proposal.businessName,
+        recommendedPackage: proposal.recommendedPackage,
+        packagePrice: proposal.packagePrice,
+        roiEstimate: proposal.roiEstimate,
+        storageUrl: proposal.storageUrl,
+      };
+    }),
+
+  // ─── Performance-Based Routing ───
+  getRepPerformance: adminProcedure.query(async () => {
+    return getRepPerformanceMetrics();
+  }),
+
+  findBestRep: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ input }) => {
+      return findBestRepByPerformance(input.leadId);
+    }),
+
+  // ─── Enhanced Full Pipeline ───
+  runEnhancedPipeline: adminProcedure.mutation(async () => {
+    const results = {
+      websitesScored: 0,
+      businessesEnriched: 0,
+      leadsConverted: 0,
+      outreachStarted: 0,
+      outreachSent: 0,
+      repsFed: { repsChecked: 0, repsFed: 0, leadsGenerated: 0, scrapeJobsCreated: 0 },
+      enterpriseFound: 0,
+      leadsRescored: 0,
+      reengaged: 0,
+    };
+
+    try {
+      results.websitesScored = await scoreUnscrapedWebsites(20);
+      results.businessesEnriched = await enrichQualifiedBusinesses(10);
+      results.leadsConverted = await batchConvertToLeads(20);
+      results.leadsRescored = await rescoreAllLeads();
+      results.outreachStarted = await autoStartOutreach();
+      results.outreachSent = await sendDueOutreach();
+      results.repsFed = await autoFeedReps();
+      results.enterpriseFound = await scanForEnterpriseLeads(5);
+      results.reengaged = await runReengagementCampaign();
+    } catch (err) {
+      console.error("[LeadGen] Enhanced pipeline run error:", err);
+    }
+
+    return results;
   }),
 });

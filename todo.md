@@ -322,3 +322,18 @@
 - [x] Admin dashboard: real-time metrics (leads scraped, enriched, contacted, responding, converted)
 - [x] Scheduled background jobs: cron-based continuous scraping, enrichment, outreach, routing, enterprise scan
 - [x] Vitest tests for all lead gen engine features (26 tests, all passing)
+
+### Phase 29: Lead Gen Engine Improvements (10 Enhancements)
+- [x] Website Audit PDF: generate visual PDF report per lead showing issues, score, and recommendations
+- [x] Website Audit as lead magnet: attach PDF to first outreach email for immediate value
+- [x] Smart outreach timing: send emails Tue-Thu 9-11am local, SMS during business hours only
+- [x] Drip campaign branching: branch sequences based on behavior (opened, clicked, replied, no engagement)
+- [x] ML feedback loop scoring: track which leads convert, feed conversion data back into scoring model
+- [x] Intent signal detection: track email opens, link clicks, website visits via UTM, multi-opens
+- [x] Multi-source scraping: add Yelp, Facebook Business, BBB, industry directories beyond Google Maps
+- [x] Competitor intelligence: find local competitors with great websites, include in dossier
+- [x] Automated proposal generation: custom proposal with mockup, pricing, ROI calculator for hot leads
+- [x] Re-engagement campaigns: 30-day drip for cold leads with new value propositions
+- [x] Performance-based rep routing: route leads to reps with highest close rate for that lead type
+- [x] Update admin dashboard with ML Scoring tab, Rep Performance tab, enhanced outreach panel
+- [x] Vitest tests for all improvements (16 tests, all passing)

@@ -18,7 +18,7 @@ export default function LeadGenEngine() {
   const [showScrapeJobs, setShowScrapeJobs] = useState(false);
   const [showBusinesses, setShowBusinesses] = useState(false);
   const [showEnterprise, setShowEnterprise] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<"overview" | "scrape" | "outreach" | "enterprise" | "capacity">("overview");
+  const [selectedTab, setSelectedTab] = useState<"overview" | "scrape" | "outreach" | "enterprise" | "capacity" | "scoring" | "performance">("overview");
 
   // Queries
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = trpc.leadGen.getStats.useQuery();
@@ -85,6 +85,20 @@ export default function LeadGenEngine() {
     },
   });
 
+  const runReengagement = trpc.leadGen.runReengagement.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.reengaged} cold leads re-engaged`);
+      refetchStats();
+    },
+  });
+
+  const runEnhancedPipeline = trpc.leadGen.runEnhancedPipeline.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Enhanced pipeline: ${data.websitesScored} scored, ${data.leadsRescored} rescored, ${data.reengaged} re-engaged`);
+      refetchStats();
+    },
+  });
+
   const handleStartScrape = () => {
     if (!scrapeArea.trim()) {
       toast.error("Enter a target area (e.g., 'Austin, TX')");
@@ -96,7 +110,8 @@ export default function LeadGenEngine() {
 
   const isAnyMutationLoading = createScrapeJob.isPending || scoreWebsites.isPending ||
     enrichBusinesses.isPending || convertToLeads.isPending || autoFeedReps.isPending ||
-    runFullPipeline.isPending || sendDueOutreach.isPending || scanEnterprise.isPending;
+    runFullPipeline.isPending || sendDueOutreach.isPending || scanEnterprise.isPending ||
+    runReengagement.isPending || runEnhancedPipeline.isPending;
 
   return (
     <div className="space-y-6">
@@ -123,16 +138,16 @@ export default function LeadGenEngine() {
           </Button>
           <Button
             size="sm"
-            onClick={() => runFullPipeline.mutate()}
+            onClick={() => runEnhancedPipeline.mutate()}
             disabled={isAnyMutationLoading}
             className="bg-terracotta hover:bg-terracotta/90 text-white"
           >
-            {runFullPipeline.isPending ? (
+            {runEnhancedPipeline.isPending ? (
               <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
             ) : (
               <Rocket className="w-4 h-4 mr-1" />
             )}
-            Run Full Pipeline
+            Run Enhanced Pipeline
           </Button>
         </div>
       </div>
@@ -158,12 +173,12 @@ export default function LeadGenEngine() {
       ) : null}
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-forest/10 pb-2">
-        {(["overview", "scrape", "outreach", "enterprise", "capacity"] as const).map((tab) => (
+      <div className="flex gap-2 border-b border-forest/10 pb-2 overflow-x-auto">
+        {(["overview", "scrape", "outreach", "enterprise", "capacity", "scoring", "performance"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setSelectedTab(tab)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
               selectedTab === tab
                 ? "bg-forest text-white"
                 : "text-forest/60 hover:text-forest hover:bg-forest/5"
@@ -173,7 +188,9 @@ export default function LeadGenEngine() {
              tab === "scrape" ? "Scraping" :
              tab === "outreach" ? "Outreach" :
              tab === "enterprise" ? "Enterprise" :
-             "Rep Capacity"}
+             tab === "capacity" ? "Rep Capacity" :
+             tab === "scoring" ? "ML Scoring" :
+             "Rep Performance"}
           </button>
         ))}
       </div>
@@ -418,15 +435,36 @@ export default function LeadGenEngine() {
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Refresh Sequences
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => runReengagement.mutate()}
+                  disabled={isAnyMutationLoading}
+                  className="border-forest/10"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Re-engage Cold Leads
+                </Button>
               </div>
               <div className="p-4 rounded-lg bg-forest/5">
-                <h4 className="font-medium text-forest mb-2">Outreach Schedule</h4>
+                <h4 className="font-medium text-forest mb-2">Smart Outreach Schedule</h4>
                 <div className="space-y-1 text-sm text-forest/70">
-                  <p>Day 0: Introduction email</p>
-                  <p>Day 2: Follow-up SMS</p>
-                  <p>Day 5: Value-add email (website audit)</p>
-                  <p>Day 8: Check-in SMS</p>
-                  <p>Day 14: Final follow-up email</p>
+                  <p>Day 0: Introduction email (with website audit PDF)</p>
+                  <p>Day 2: Follow-up SMS (sent at optimal time)</p>
+                  <p>Day 5: Value-add email (competitor comparison)</p>
+                  <p>Day 8: Check-in SMS (branched based on behavior)</p>
+                  <p>Day 14: Final follow-up or auto-proposal</p>
+                  <p className="text-terracotta font-medium mt-2">Day 30+: Re-engagement campaign for cold leads</p>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-sage/10 border border-sage/20">
+                <h4 className="font-medium text-forest mb-2">Smart Features</h4>
+                <div className="space-y-1 text-sm text-forest/70">
+                  <p>• Website Audit PDF attached to first email as lead magnet</p>
+                  <p>• Optimal send timing based on industry patterns</p>
+                  <p>• Drip branches based on lead behavior (opened, clicked, replied)</p>
+                  <p>• Auto-proposal generation when buying intent detected</p>
+                  <p>• Competitor intelligence included in outreach</p>
+                  <p>• Re-engagement campaigns for leads that went cold after 30 days</p>
                 </div>
               </div>
               <div className="p-4 rounded-lg bg-terracotta/5 border border-terracotta/10">
@@ -603,6 +641,214 @@ export default function LeadGenEngine() {
           </Card>
         </div>
       )}
+      {selectedTab === "scoring" && <ScoringTab isAnyMutationLoading={isAnyMutationLoading} refetchStats={refetchStats} />}
+
+      {selectedTab === "performance" && <PerformanceTab />}
+    </div>
+  );
+}
+
+function ScoringTab({ isAnyMutationLoading, refetchStats }: { isAnyMutationLoading: boolean; refetchStats: () => void }) {
+  const { data: insights, isLoading } = trpc.leadGen.getScoringInsights.useQuery();
+  const rescoreAll = trpc.leadGen.rescoreAllLeads.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.rescored} leads rescored with ML model`);
+      refetchStats();
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-forest/10">
+        <CardHeader>
+          <CardTitle className="text-forest font-serif text-lg flex items-center gap-2">
+            <Brain className="w-5 h-5 text-terracotta" />
+            ML Scoring Model
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => rescoreAll.mutate()}
+              disabled={isAnyMutationLoading || rescoreAll.isPending}
+              className="border-forest/10"
+            >
+              <RefreshCw className={`w-4 h-4 mr-1 ${rescoreAll.isPending ? "animate-spin" : ""}`} />
+              Re-score All Active Leads
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
+            </div>
+          ) : insights ? (
+            <>
+              {/* Model Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-3 rounded-lg bg-forest/5 text-center">
+                  <p className="text-2xl font-bold text-forest">{insights.modelConfidence}%</p>
+                  <p className="text-xs text-forest/50">Model Confidence</p>
+                </div>
+                <div className="p-3 rounded-lg bg-forest/5 text-center">
+                  <p className="text-2xl font-bold text-forest">{insights.totalClosedLeads}</p>
+                  <p className="text-xs text-forest/50">Training Samples</p>
+                </div>
+                <div className="p-3 rounded-lg bg-forest/5 text-center">
+                  <p className="text-2xl font-bold text-terracotta">{insights.overallWinRate}%</p>
+                  <p className="text-xs text-forest/50">Win Rate</p>
+                </div>
+                <div className="p-3 rounded-lg bg-forest/5 text-center">
+                  <p className="text-2xl font-bold text-forest">{Object.keys(insights.weights.industryMultiplier).length}</p>
+                  <p className="text-xs text-forest/50">Industry Patterns</p>
+                </div>
+              </div>
+
+              {/* Scoring Weights */}
+              <div className="p-4 rounded-lg bg-forest/5">
+                <h4 className="font-medium text-forest mb-3">Learned Scoring Weights</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {[
+                    { label: "No Website", value: insights.weights.noWebsite },
+                    { label: "Bad Website", value: insights.weights.badWebsiteScore },
+                    { label: "High Rating", value: insights.weights.highGoogleRating },
+                    { label: "Many Reviews", value: insights.weights.manyReviews },
+                    { label: "Has Phone", value: insights.weights.hasPhone },
+                    { label: "Has Email", value: insights.weights.hasEmail },
+                    { label: "Self-Sourced", value: insights.weights.selfSourcedBonus },
+                    { label: "Intent Signal", value: insights.weights.intentSignalBonus },
+                  ].map((w) => (
+                    <div key={w.label} className="flex items-center justify-between p-2 rounded bg-white">
+                      <span className="text-xs text-forest/70">{w.label}</span>
+                      <span className="text-sm font-bold text-terracotta">+{w.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Industries */}
+              {insights.topIndustries.length > 0 && (
+                <div className="p-4 rounded-lg bg-sage/10 border border-sage/20">
+                  <h4 className="font-medium text-forest mb-3">Top Converting Industries</h4>
+                  <div className="space-y-2">
+                    {insights.topIndustries.map((ind) => (
+                      <div key={ind.industry} className="flex items-center justify-between">
+                        <span className="text-sm text-forest">{ind.industry}</span>
+                        <Badge variant={ind.multiplier > 1.2 ? "default" : ind.multiplier > 0.8 ? "secondary" : "destructive"}>
+                          {ind.multiplier > 1 ? "+" : ""}{Math.round((ind.multiplier - 1) * 100)}% vs avg
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-forest/40 text-center">
+                Model last updated: {new Date(insights.weights.updatedAt).toLocaleString()} · Based on {insights.weights.sampleSize} closed leads
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-forest/50 text-center py-8">No scoring data available yet. Close some deals to train the model.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function PerformanceTab() {
+  const { data: performance, isLoading } = trpc.leadGen.getRepPerformance.useQuery();
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-forest/10">
+        <CardHeader>
+          <CardTitle className="text-forest font-serif text-lg flex items-center gap-2">
+            <Target className="w-5 h-5 text-terracotta" />
+            Rep Performance Analytics
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+            </div>
+          ) : performance && performance.length > 0 ? (
+            <div className="space-y-3">
+              {performance.sort((a, b) => b.overallCloseRate - a.overallCloseRate).map((rep, i) => (
+                <div key={rep.repId} className="p-4 rounded-xl border border-forest/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                        i === 0 ? "bg-terracotta" : i === 1 ? "bg-forest" : "bg-sage"
+                      }`}>
+                        #{i + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-forest">{rep.repName}</h4>
+                        <p className="text-xs text-forest/50">{rep.activeLeads} active leads · {rep.totalDeals} deals closed</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-terracotta">{rep.overallCloseRate}%</p>
+                      <p className="text-xs text-forest/50">close rate</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-2 rounded-lg bg-forest/5 text-center">
+                      <p className="text-lg font-bold text-forest">${rep.avgDealSize.toLocaleString()}</p>
+                      <p className="text-xs text-forest/50">Avg Deal</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-forest/5 text-center">
+                      <p className="text-lg font-bold text-forest">{rep.avgTimeToClose}d</p>
+                      <p className="text-xs text-forest/50">Avg Close Time</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-forest/5 text-center">
+                      <p className="text-lg font-bold text-forest">${rep.totalRevenue.toLocaleString()}</p>
+                      <p className="text-xs text-forest/50">Total Revenue</p>
+                    </div>
+                  </div>
+
+                  {/* Industry breakdown */}
+                  {Object.keys(rep.industryCloseRates).length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(rep.industryCloseRates)
+                        .sort(([,a], [,b]) => b.rate - a.rate)
+                        .slice(0, 5)
+                        .map(([industry, stats]) => (
+                          <Badge key={industry} variant={stats.rate > 0.5 ? "default" : stats.rate > 0.25 ? "secondary" : "outline"} className="text-xs">
+                            {industry}: {Math.round(stats.rate * 100)}% ({stats.won}/{stats.total})
+                          </Badge>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-forest/50 text-center py-8">
+              No rep performance data yet. Reps need to close deals to generate analytics.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-forest/10">
+        <CardContent className="p-4">
+          <div className="p-4 rounded-lg bg-terracotta/5 border border-terracotta/10">
+            <h4 className="font-medium text-terracotta mb-2">Performance-Based Routing</h4>
+            <div className="space-y-1 text-sm text-forest/70">
+              <p>• Leads are routed to reps based on their close rate per industry, not just capacity</p>
+              <p>• Restaurant lead? Goes to the rep who closes restaurants best</p>
+              <p>• New reps get a mix of industries to build their profile</p>
+              <p>• The system learns and adapts as more deals close</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
