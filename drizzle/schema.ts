@@ -949,3 +949,48 @@ export const academyCertifications = mysqlTable("academy_certifications", {
   certifiedAt: timestamp("certified_at").defaultNow().notNull(),
   score: int("score").notNull(), // average score across all quizzes
 });
+
+
+/* ═══════════════════════════════════════════════════════
+   COACHING REVIEWS — AI-generated micro-lessons from conversation analysis
+   ═══════════════════════════════════════════════════════ */
+export const coachingReviews = mysqlTable("coaching_reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  feedbackId: int("feedback_id").notNull(), // references ai_coaching_feedback.id
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(), // markdown micro-lesson
+  category: mysqlEnum("review_category", [
+    "objection_handling", "closing", "rapport", "discovery", "product_knowledge",
+    "tone", "follow_up", "listening", "urgency", "personalization"
+  ]).notNull(),
+  relatedModuleId: varchar("related_module_id", { length: 64 }), // links to academy module
+  priority: mysqlEnum("review_priority", ["critical", "important", "suggested"]).notNull().default("important"),
+  status: mysqlEnum("review_status", ["pending", "completed", "skipped"]).notNull().default("pending"),
+  quizQuestion: json("quiz_question"), // { question, options, correctAnswer, explanation }
+  quizAnswer: int("quiz_answer"), // rep's answer
+  quizPassed: boolean("quiz_passed"),
+  completedAt: timestamp("review_completed_at"),
+  expiresAt: timestamp("expires_at"), // senior reps can let reviews expire
+  createdAt: timestamp("review_created_at").defaultNow().notNull(),
+});
+export type CoachingReview = typeof coachingReviews.$inferSelect;
+export type InsertCoachingReview = typeof coachingReviews.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   DAILY CHECK-INS — Rep must complete required training before accessing leads
+   ═══════════════════════════════════════════════════════ */
+export const dailyCheckIns = mysqlTable("daily_check_ins", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  checkInDate: varchar("check_in_date", { length: 10 }).notNull(), // YYYY-MM-DD
+  reviewsRequired: int("reviews_required").notNull().default(0),
+  reviewsCompleted: int("reviews_completed").notNull().default(0),
+  quizzesRequired: int("quizzes_required").notNull().default(0),
+  quizzesCompleted: int("quizzes_completed").notNull().default(0),
+  isCleared: boolean("is_cleared").notNull().default(false), // true = rep can access leads/comms
+  clearedAt: timestamp("cleared_at"),
+  createdAt: timestamp("checkin_created_at").defaultNow().notNull(),
+});
+export type DailyCheckIn = typeof dailyCheckIns.$inferSelect;
+export type InsertDailyCheckIn = typeof dailyCheckIns.$inferInsert;

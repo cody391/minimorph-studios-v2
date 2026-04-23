@@ -1,4 +1,5 @@
 import * as db from "../db";
+import { eq } from "drizzle-orm";
 
 /**
  * AI Communication Coach — reviews every email, SMS, and call
@@ -102,6 +103,27 @@ For ${channelLabel}s, consider: response time expectations, appropriate length, 
 
     // Feed insights into the training system
     await extractTrainingInsights(input.repId, input.communicationType, feedback);
+
+    // Generate personalized coaching reviews (micro-lessons) for the rep's daily queue
+    try {
+      const { generateCoachingReview } = await import("./academyGatekeeper");
+      // Get the last inserted feedback ID
+      const { getDb: getDbFn } = await import("../db");
+      const dbConn = await getDbFn();
+      if (dbConn) {
+        const { aiCoachingFeedback: fbTable } = await import("../../drizzle/schema");
+        const { desc: descFn, eq: eqFn } = await import("drizzle-orm");
+        const lastFb = await dbConn.select().from(fbTable)
+          .where(eqFn(fbTable.repId, input.repId))
+          .orderBy(descFn(fbTable.id)).limit(1);
+        if (lastFb.length > 0) {
+          const result = await generateCoachingReview(lastFb[0].id, input.repId);
+          console.log(`[AI Coach] Generated ${result.reviewsCreated} coaching reviews for rep #${input.repId}`);
+        }
+      }
+    } catch (reviewErr) {
+      console.error("[AI Coach] Failed to generate coaching reviews:", reviewErr);
+    }
 
     console.log(`[AI Coach] Analyzed ${input.communicationType} #${input.referenceId} for rep #${input.repId}: score ${feedback.overallScore}`);
 

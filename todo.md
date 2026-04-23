@@ -431,3 +431,58 @@
 - [x] DB schema: academyProgress + academyCertifications tables with indexes
 - [x] Backend: full academyRouter with listModules, getModule, getQuiz, completeLesson, submitQuiz, leaderboard endpoints
 - [x] 426 tests passing across 14 test files, 0 TypeScript errors
+
+### Phase 33: Academy Gatekeeper, AI Coaching Loop, Mobile Rep Dashboard & App Guide
+
+#### Academy as Gatekeeper
+- [x] Enforce: reps MUST pass all 8 academy modules (80%+) before receiving any leads
+- [x] Enforce: reps MUST be certified before phone numbers go live (can't make/receive calls)
+- [x] Lock lead pipeline tab until certification complete — show "Complete Training First" message
+- [x] Lock CommsHub (call/SMS) until certification complete
+- [x] Show certification progress bar prominently on locked screens
+- [x] Backend: isRepCertified + canRepAccessLeads checks in lead routing and academy router
+
+#### AI Coaching Feedback Loop
+- [x] After every rep conversation (call/SMS/email), AI analyzes what went well and what went poorly
+- [x] AI generates personalized micro-lessons via LLM based on specific mistakes
+- [x] Coaching reviews stored in coachingReviews table with rep ID, feedback ID, category, priority, quiz
+- [x] New coaching material appears in rep's "Required Review" queue via getPendingReviews
+- [x] Rep MUST complete required reviews before starting their next work session (daily check-in)
+- [x] Coaching reviews wired into AI Coach: generateCoachingReview auto-called after feedback
+
+#### Rank-Based Training Requirements
+- [x] Rookie: all reviews required (10/day max), all quizzes mandatory, no skipping, no expiry
+- [x] Closer: 7/day max, suggested quiz not required, still can't skip or expire
+- [x] Ace: 5/day max, can skip suggested reviews, critical/important quizzes required
+- [x] Elite: 3/day max, reviews can expire after 48h, only critical quizzes required
+- [x] Legend: 2/day max, reviews expire after 24h, all quizzes optional
+- [x] Daily check-in system: getDailyCheckIn creates/returns daily record with pending reviews filtered by rank
+- [x] Gamification: completing coaching reviews earns bonus points (wired into completeCoachingReview)
+
+#### Mobile-Responsive Rep Dashboard
+- [x] Full mobile-responsive design for rep dashboard (all tabs)
+- [x] Tab triggers: text-[11px] on mobile, overflow-x-auto for horizontal scroll
+- [x] Grid layouts: grid-cols-2 on mobile, expanding to 3-4 on desktop
+- [x] Mobile-optimized stat cards, lead cards, and action buttons
+- [x] Academy lessons and quizzes readable on phone
+- [x] Viewport meta tag configured for mobile
+
+#### App Walkthrough & Function Guide
+- [x] Comprehensive AppGuide component with 10 sections covering entire platform
+- [x] Guide accessible from rep dashboard as "Guide" tab
+- [x] Covers: Getting Started, Academy, Daily Check-In, Leads & Pipeline, CommsHub, Earnings, Gamification, AI Coaching, Support, Settings
+- [x] Each section has description, steps, and pro tips
+- [x] Search/filter functionality and expandable sections
+- [x] Mobile-responsive layout
+
+#### Tests
+- [x] Vitest tests for gatekeeper functions (isRepCertified, getCertificationStatus, canRepAccessLeads)
+- [x] Vitest tests for rank-based training config (all 5 ranks + unknown default)
+- [x] Vitest tests for daily check-in system (getDailyCheckIn, getRepLevel)
+- [x] Vitest tests for academy router gatekeeper endpoints
+- [x] Vitest tests for lead routing certification check
+- [x] Vitest tests for AI coach → coaching review pipeline wiring
+- [x] Vitest tests for AppGuide content (10 sections, pro tips, mobile responsiveness)
+- [x] Vitest tests for mobile responsiveness (tab triggers, overflow, viewport)
+- [x] Vitest tests for DB schema (coachingReviews, dailyCheckIns tables)
+- [x] 455 tests passing across 15 test files, 0 TypeScript errors

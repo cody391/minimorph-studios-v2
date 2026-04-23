@@ -5,6 +5,7 @@ const SalesAcademy = lazy(() => import("./rep/SalesAcademy"));
 const CommsHub = lazy(() => import("./rep/CommsHub"));
 const SupportTicketsPanel = lazy(() => import("./rep/SupportTicketsPanel"));
 const RepSettingsPanel = lazy(() => import("./rep/RepSettingsPanel"));
+const AppGuide = lazy(() => import("./rep/AppGuide"));
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -77,7 +78,7 @@ export default function RepDashboard() {
       </CardContent></Card>
     </div>
   );
-  if (repLoading) return <div className="min-h-screen bg-cream p-6"><div className="max-w-6xl mx-auto space-y-6"><Skeleton className="h-10 w-64" /><div className="grid grid-cols-4 gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div><Skeleton className="h-64" /></div></div>;
+  if (repLoading) return <div className="min-h-screen bg-cream p-4 sm:p-6"><div className="max-w-6xl mx-auto space-y-6"><Skeleton className="h-10 w-64" /><div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div><Skeleton className="h-64" /></div></div>;
   if (!repProfile) return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4">
       <Card className="max-w-md w-full border-border/50"><CardContent className="p-8 text-center">
@@ -96,57 +97,62 @@ export default function RepDashboard() {
     <div className="min-h-screen bg-cream">
       {/* Header */}
       <div className="bg-forest text-white">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {/* Rep Avatar */}
-            {repProfile.profilePhotoUrl ? (
-              <img src={repProfile.profilePhotoUrl} alt={repProfile.fullName} className="w-12 h-12 rounded-full object-cover border-2 border-white/30" />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-terracotta flex items-center justify-center text-white font-bold text-lg border-2 border-white/30">
-                {repProfile.fullName?.charAt(0) || "?"}
-              </div>
-            )}
-            <div>
-              <div className="flex items-center gap-3 mb-0.5">
-                <h1 className="text-lg font-serif">Welcome back, {repProfile.fullName}</h1>
-                <Badge className={`text-[10px] font-sans ${repProfile.status === "active" || repProfile.status === "certified" ? "bg-green-500/20 text-green-200" : "bg-yellow-500/20 text-yellow-200"}`}>
-                  {repProfile.status}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-white/60 font-sans">
-                <span className="flex items-center gap-1"><LevelIcon className="w-3.5 h-3.5 text-terracotta" /> {gamification?.level || "Rookie"}</span>
-                <span className="flex items-center gap-1"><Flame className="w-3.5 h-3.5 text-orange-400" /> {gamification?.currentStreak || 0} day streak</span>
-                <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-400" /> {gamification?.totalPoints?.toLocaleString() || 0} pts</span>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              {/* Rep Avatar */}
+              {repProfile.profilePhotoUrl ? (
+                <img src={repProfile.profilePhotoUrl} alt={repProfile.fullName} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white/30 shrink-0" />
+              ) : (
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-terracotta flex items-center justify-center text-white font-bold text-base sm:text-lg border-2 border-white/30 shrink-0">
+                  {repProfile.fullName?.charAt(0) || "?"}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 mb-0.5">
+                  <h1 className="text-sm sm:text-lg font-serif truncate">Welcome back, {repProfile.fullName}</h1>
+                  <Badge className={`text-[10px] font-sans shrink-0 ${repProfile.status === "active" || repProfile.status === "certified" ? "bg-green-500/20 text-green-200" : "bg-yellow-500/20 text-yellow-200"}`}>
+                    {repProfile.status}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/60 font-sans flex-wrap">
+                  <span className="flex items-center gap-1"><LevelIcon className="w-3.5 h-3.5 text-terracotta" /> {gamification?.level || "Rookie"}</span>
+                  <span className="flex items-center gap-1"><Flame className="w-3.5 h-3.5 text-orange-400" /> {gamification?.currentStreak || 0}d</span>
+                  <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-400" /> {gamification?.totalPoints?.toLocaleString() || 0} pts</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <NotificationsBell />
-            <Button variant="outline" onClick={() => setLocation("/")} className="text-white border-white/20 hover:bg-white/10 font-sans text-sm rounded-full">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Home
-            </Button>
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              <NotificationsBell />
+              <Button variant="outline" onClick={() => setLocation("/")} className="text-white border-white/20 hover:bg-white/10 font-sans text-xs sm:text-sm rounded-full px-2 sm:px-3">
+                <ArrowLeft className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Home</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white border border-sage/20 mb-6 flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="overview" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Overview</TabsTrigger>
-            <TabsTrigger value="training" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Training</TabsTrigger>
-            <TabsTrigger value="activity" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Activity</TabsTrigger>
-            <TabsTrigger value="comms" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Communications</TabsTrigger>
-            <TabsTrigger value="earnings" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Earnings</TabsTrigger>
-            <TabsTrigger value="pipeline" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Pipeline</TabsTrigger>
-            <TabsTrigger value="leaderboard" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Leaderboard</TabsTrigger>
-            <TabsTrigger value="support" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Support</TabsTrigger>
-            <TabsTrigger value="settings" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">Settings</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-4 sm:mb-6">
+            <TabsList className="bg-white border border-sage/20 flex-wrap h-auto gap-0.5 sm:gap-1 p-1 w-max sm:w-auto">
+              <TabsTrigger value="overview" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Overview</TabsTrigger>
+              <TabsTrigger value="training" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Training</TabsTrigger>
+              <TabsTrigger value="activity" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Activity</TabsTrigger>
+              <TabsTrigger value="comms" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Comms</TabsTrigger>
+              <TabsTrigger value="earnings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Earnings</TabsTrigger>
+              <TabsTrigger value="pipeline" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Pipeline</TabsTrigger>
+              <TabsTrigger value="leaderboard" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Board</TabsTrigger>
+              <TabsTrigger value="support" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Support</TabsTrigger>
+              <TabsTrigger value="settings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Settings</TabsTrigger>
+              <TabsTrigger value="guide" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Guide</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ═══════ OVERVIEW TAB ═══════ */}
           <TabsContent value="overview" className="space-y-6">
             {/* Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {[
                 { label: "Active Leads", value: activeLeads.length, icon: Target, color: "text-blue-600" },
                 { label: "Deals Won", value: wonLeads.length, icon: CheckCircle, color: "text-green-600" },
@@ -486,6 +492,13 @@ export default function RepDashboard() {
               <RepSettingsPanel repProfile={repProfile} />
             </Suspense>
           </TabsContent>
+
+          {/* ═══════ GUIDE TAB ═══════ */}
+          <TabsContent value="guide" className="space-y-6">
+            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+              <AppGuide />
+            </Suspense>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
@@ -725,7 +738,7 @@ function ActivityTab({ activities, stats, leads }: any) {
   return (
     <>
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <Card className="border-border/50"><CardContent className="p-5 text-center">
           <p className="text-2xl font-serif text-forest">{stats?.todayActivities || 0}</p>
           <p className="text-xs text-forest/50 font-sans">Today</p>
@@ -855,7 +868,7 @@ function CommsTab({ templates, sentEmails, leads }: any) {
   return (
     <>
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
         {[
           { label: "Compose Email", icon: Mail, action: () => setShowCompose(true) },
           { label: "AI Draft", icon: Sparkles, action: () => { setShowCompose(true); toast.info("Use the AI Generate button in the compose dialog"); } },
@@ -970,7 +983,7 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
               </Select>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <div><Label className="text-forest/80 text-sm">Recipient Email *</Label><Input value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="email@example.com" className="mt-1" /></div>
             <div><Label className="text-forest/80 text-sm">Recipient Name</Label><Input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="John Smith" className="mt-1" /></div>
           </div>

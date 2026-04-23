@@ -11,9 +11,18 @@ import {
   academyProgress,
   academyQuizAttempts,
   academyCertifications,
+  coachingReviews,
+  dailyCheckIns,
   reps,
 } from "../drizzle/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
+import {
+  getCertificationStatus,
+  getDailyCheckIn,
+  completeCoachingReview,
+  canRepAccessLeads,
+  getAllRankConfigs,
+} from "./services/academyGatekeeper";
 import { ACADEMY_MODULES, getTotalQuizQuestions, getTotalEstimatedMinutes } from "./academy-curriculum";
 
 /* ─── Helper: get or create progress row ─── */
@@ -410,6 +419,77 @@ export const academyRouter = router({
       };
     });
   }),
+
+  /* ─── Certification status (gatekeeper) ─── */
+  certificationStatus: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+    if (rep.length === 0) return { isFullyCertified: false, modulesCompleted: 0, totalModules: ACADEMY_MODULES.length, moduleStatuses: [], canAccessLeads: false, canMakeCalls: false, blockedReason: "Not a rep" };
+    return getCertificationStatus(rep[0].id);
+  }),
+
+  /* ─── Daily check-in (training gate before work) ─── */
+  dailyCheckIn: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+    if (rep.length === 0) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
+    return getDailyCheckIn(rep[0].id);
+  }),
+
+  /* ─── Get pending coaching reviews ─── */
+  pendingReviews: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return [];
+    const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+    if (rep.length === 0) return [];
+    return db.select().from(coachingReviews)
+      .where(and(eq(coachingReviews.repId, rep[0].id), eq(coachingReviews.status, "pending")))
+      .orderBy(sql`FIELD(${coachingReviews.priority}, 'critical', 'important', 'suggested')`, desc(coachingReviews.createdAt));
+  }),
+
+  /* ─── Complete a coaching review (with quiz answer) ─── */
+  completeReview: protectedProcedure
+    .input(z.object({
+      reviewId: z.number(),
+      quizAnswer: z.number().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+      if (rep.length === 0) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
+      return completeCoachingReview(rep[0].id, input.reviewId, input.quizAnswer);
+    }),
+
+  /* ─── Check if rep can access leads ─── */
+  canAccessLeads: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return { allowed: false, reason: "System error" };
+    const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+    if (rep.length === 0) return { allowed: false, reason: "Not a rep" };
+    return canRepAccessLeads(rep[0].id);
+  }),
+
+  /* ─── Get rank training configs (for UI display) ─── */
+  rankConfigs: protectedProcedure.query(() => {
+    return getAllRankConfigs();
+  }),
+
+  /* ─── Get coaching review history ─── */
+  reviewHistory: protectedProcedure
+    .input(z.object({ limit: z.number().min(1).max(100).default(20) }))
+    .query(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+      if (rep.length === 0) return [];
+      return db.select().from(coachingReviews)
+        .where(eq(coachingReviews.repId, rep[0].id))
+        .orderBy(desc(coachingReviews.createdAt))
+        .limit(input.limit);
+    }),
 
   /* ─── Admin: get academy leaderboard ─── */
   leaderboard: protectedProcedure.query(async () => {

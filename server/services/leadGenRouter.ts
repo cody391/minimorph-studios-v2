@@ -9,9 +9,12 @@
  * Also manages rep capacity — ensures each rep has enough leads
  * and triggers new scrape jobs when reps need more.
  */
-
 import { getDb } from "../db";
-import { leads, reps, repServiceAreas, scrapeJobs, scrapedBusinesses } from "../../drizzle/schema";
+import {
+  reps, leads, repServiceAreas, scrapedBusinesses, scrapeJobs,
+  academyCertifications,
+} from "../../drizzle/schema";
+import { isRepCertified } from "./academyGatekeeper";
 import { eq, and, sql, isNull, ne } from "drizzle-orm";
 import { createScrapeJob, runScrapeJob } from "./leadGenScraper";
 import { enrichQualifiedBusinesses, batchConvertToLeads } from "./leadGenEnrichment";
@@ -39,6 +42,15 @@ export async function getRepCapacity(): Promise<RepCapacityInfo[]> {
 
   const activeReps = await db.select().from(reps).where(eq(reps.status, "active"));
 
+  // Only certified reps can receive leads
+  const certifiedRepIds = new Set<number>();
+  for (const rep of activeReps) {
+    if (await isRepCertified(rep.id)) {
+      certifiedRepIds.add(rep.id);
+    }
+  }
+  const certifiedReps = activeReps.filter(r => certifiedRepIds.has(r.id));
+
   const repLeadCounts = await db.select({
     repId: leads.assignedRepId,
     count: sql<number>`count(*)`,
@@ -63,7 +75,7 @@ export async function getRepCapacity(): Promise<RepCapacityInfo[]> {
     }
   }
 
-  return activeReps.map(rep => {
+  return certifiedReps.map(rep => {
     const activeLeads = loadMap.get(rep.id) || 0;
     return {
       repId: rep.id,
