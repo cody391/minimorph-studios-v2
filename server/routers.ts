@@ -609,8 +609,8 @@ const leadsRouter = router({
           if (!delivery.success) {
             console.warn(`[Proposal] Email delivery failed for lead ${lead.id}: ${delivery.error}`);
           }
-          // Save as sent email record
-          await db.createSentEmail({
+          // Save as sent email record with resendMessageId for tracking
+          const emailRecord = await db.createSentEmail({
             repId: rep.id,
             leadId: lead.id,
             recipientEmail: lead.email,
@@ -618,6 +618,9 @@ const leadsRouter = router({
             subject: proposal.subject,
             body: proposal.htmlContent,
           });
+          if (delivery.success && delivery.resendId) {
+            await db.updateEmailResendId(emailRecord.id, delivery.resendId);
+          }
         } catch (err: any) {
           console.warn(`[Proposal] Email delivery error: ${err.message}`);
           deliveryStatus = "delivery_failed";

@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerTwilioWebhooks } from "../twilio-webhooks";
+import { registerResendWebhooks } from "../resend-webhooks";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -41,6 +42,7 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerTwilioWebhooks(app);
+  registerResendWebhooks(app);
   // tRPC API
   app.use(
     "/api/trpc",

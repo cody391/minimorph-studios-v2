@@ -326,3 +326,120 @@ describe("repComms.sendEmail", () => {
     ).rejects.toThrow();
   });
 });
+
+/* ═══════════════════════════════════════════════════════
+   RESEND WEBHOOK PROCESSING
+   ═══════════════════════════════════════════════════════ */
+describe("Resend webhook handler", () => {
+  it("exports registerResendWebhooks function", async () => {
+    const mod = await import("./resend-webhooks");
+    expect(typeof mod.registerResendWebhooks).toBe("function");
+  });
+
+  it("exports processResendEvent function", async () => {
+    const mod = await import("./resend-webhooks");
+    expect(typeof mod.processResendEvent).toBe("function");
+  });
+
+  it("exports EVENT_STATUS_MAP with all tracked event types", async () => {
+    const { EVENT_STATUS_MAP } = await import("./resend-webhooks");
+    expect(EVENT_STATUS_MAP["email.delivered"]).toBe("delivered");
+    expect(EVENT_STATUS_MAP["email.opened"]).toBe("opened");
+    expect(EVENT_STATUS_MAP["email.clicked"]).toBe("clicked");
+    expect(EVENT_STATUS_MAP["email.bounced"]).toBe("bounced");
+    expect(EVENT_STATUS_MAP["email.complained"]).toBe("bounced");
+    expect(EVENT_STATUS_MAP["email.delivery_delayed"]).toBe("sent");
+  });
+
+  it("processResendEvent returns processed:false for unknown event types", async () => {
+    const { processResendEvent } = await import("./resend-webhooks");
+    const result = await processResendEvent({ type: "email.unknown_event" });
+    expect(result.processed).toBe(false);
+    expect(result.reason).toBe("unknown_event_type");
+  });
+
+  it("processResendEvent returns processed:false when no email_id in data", async () => {
+    const { processResendEvent } = await import("./resend-webhooks");
+    const result = await processResendEvent({ type: "email.delivered", data: {} });
+    expect(result.processed).toBe(false);
+    expect(result.reason).toBe("no_email_id");
+  });
+
+  it("processResendEvent returns processed:false when data is missing", async () => {
+    const { processResendEvent } = await import("./resend-webhooks");
+    const result = await processResendEvent({ type: "email.opened" });
+    expect(result.processed).toBe(false);
+    expect(result.reason).toBe("no_email_id");
+  });
+
+  it("processResendEvent processes delivered event and returns correct status", async () => {
+    const { processResendEvent } = await import("./resend-webhooks");
+    const result = await processResendEvent({
+      type: "email.delivered",
+      data: { email_id: "test_delivered_123" },
+      created_at: "2026-04-23T12:00:00Z",
+    });
+    expect(result.processed).toBe(true);
+    expect(result.status).toBe("delivered");
+    expect(result.resendMessageId).toBe("test_delivered_123");
+  });
+
+  it("processResendEvent processes opened event and returns correct status", async () => {
+    const { processResendEvent } = await import("./resend-webhooks");
+    const result = await processResendEvent({
+      type: "email.opened",
+      data: { email_id: "test_opened_456" },
+      created_at: "2026-04-23T12:00:00Z",
+    });
+    expect(result.processed).toBe(true);
+    expect(result.status).toBe("opened");
+    expect(result.resendMessageId).toBe("test_opened_456");
+  });
+
+  it("processResendEvent processes clicked event and returns correct status", async () => {
+    const { processResendEvent } = await import("./resend-webhooks");
+    const result = await processResendEvent({
+      type: "email.clicked",
+      data: { email_id: "test_clicked_789" },
+    });
+    expect(result.processed).toBe(true);
+    expect(result.status).toBe("clicked");
+    expect(result.resendMessageId).toBe("test_clicked_789");
+  });
+
+  it("processResendEvent processes bounced event and returns correct status", async () => {
+    const { processResendEvent } = await import("./resend-webhooks");
+    const result = await processResendEvent({
+      type: "email.bounced",
+      data: { email_id: "test_bounced_abc" },
+    });
+    expect(result.processed).toBe(true);
+    expect(result.status).toBe("bounced");
+    expect(result.resendMessageId).toBe("test_bounced_abc");
+  });
+
+  it("processResendEvent handles complained event as bounced", async () => {
+    const { processResendEvent } = await import("./resend-webhooks");
+    const result = await processResendEvent({
+      type: "email.complained",
+      data: { email_id: "test_complained_def" },
+    });
+    expect(result.processed).toBe(true);
+    expect(result.status).toBe("bounced");
+  });
+
+  it("db tracking helpers exist and are callable", async () => {
+    const db = await import("./db");
+    expect(typeof db.updateEmailResendId).toBe("function");
+    expect(typeof db.updateEmailTrackingStatus).toBe("function");
+    expect(typeof db.getEmailByResendId).toBe("function");
+    expect(typeof db.updateSentEmail).toBe("function");
+    expect(typeof db.getSentEmailById).toBe("function");
+  });
+
+  it("getEmailByResendId returns falsy for non-existent resendId", async () => {
+    const db = await import("./db");
+    const result = await db.getEmailByResendId("non_existent_id_12345");
+    expect(result).toBeFalsy();
+  });
+});

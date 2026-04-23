@@ -13,4 +13,5 @@ export const ENV = {
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? "",
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER ?? "",
   twilioTwimlAppSid: process.env.TWILIO_TWIML_APP_SID ?? "",
+  resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET ?? "",
 };

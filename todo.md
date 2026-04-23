@@ -241,7 +241,7 @@
 - [x] Design ai_coaching_feedback schema (stores AI review of each interaction)
 - [x] Design training_insights schema (aggregated patterns from coaching for training academy)
 - [x] Integrate Resend: real email delivery from rep compose, proposals, nurture emails
-- [ ] Add email open/click tracking via Resend webhooks
+- [x] Add email open/click tracking via Resend webhooks (/api/resend/webhook)
 - [x] Integrate Twilio SMS: send/receive real text messages to leads/customers
 - [x] SMS thread view: conversation-style UI showing full SMS history per lead
 - [x] Integrate Twilio Voice: browser-based calling via Twilio Client SDK
@@ -252,7 +252,7 @@
 - [x] Adaptive training feed: aggregate coaching insights into patterns
 - [x] Training academy integration: surface common mistakes and best practices from real interactions (adminListInsights endpoint)
 - [x] Rebuild Communications tab: unified inbox with email/SMS/call tabs, dialer, thread views, AI Coach panel
-- [ ] PWA support: make the app installable on mobile devices
+- [x] PWA support: make the app installable on mobile devices (manifest.json, service worker, app icons)
 - [x] Vitest tests for all new communication endpoints (29 tests, all passing)
 
 ### Phase 25 Gap Fixes
@@ -260,3 +260,8 @@
 - [x] Wire nurture email flows to Resend + Twilio SMS (admin nurture → actual email/SMS delivery)
 - [x] Show AI coaching feedback inline on individual email/SMS/call records in CommsHub
 - [x] Integrate training insights into Training Academy UI (show common mistakes/best practices from real interactions)
+
+### Phase 25 Gap Fixes (Round 2)
+- [x] Persist resendMessageId for proposal email records (nurture emails are admin-sent, not tracked per-rep)
+- [x] Add Vitest test for Resend webhook processing (7 tests for webhook handler and db helpers)
+- [x] PWA manifest, service worker, icons, and registration all in place (manifest.json, sw.js, main.tsx registration)

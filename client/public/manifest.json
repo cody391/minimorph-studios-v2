@@ -1,0 +1,27 @@
+{
+  "name": "MiniMorph Studios",
+  "short_name": "MiniMorph",
+  "description": "AI-powered websites that grow your business. Rep dashboard, communications, and pipeline management.",
+  "start_url": "/rep",
+  "display": "standalone",
+  "background_color": "#f8f6f3",
+  "theme_color": "#2d4a3e",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663588302560/i4ip8JQRqo7cEvPbPwFp5A/icon-192-oULWJqTGWmFGxZo25aNpxs.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://d2xsxph8kpxj0f.cloudfront.net/310519663588302560/i4ip8JQRqo7cEvPbPwFp5A/icon-512-UYbHV6o7CgV5ZbWmVa27bd.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

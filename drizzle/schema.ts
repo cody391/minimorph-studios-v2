@@ -542,6 +542,11 @@ export const repSentEmails = mysqlTable("rep_sent_emails", {
   subject: varchar("subject", { length: 500 }).notNull(),
   body: text("body").notNull(),
   status: mysqlEnum("status", ["sent", "delivered", "opened", "clicked", "bounced"]).default("sent").notNull(),
+  resendMessageId: varchar("resendMessageId", { length: 255 }),
+  openedAt: timestamp("openedAt"),
+  clickedAt: timestamp("clickedAt"),
+  deliveredAt: timestamp("deliveredAt"),
+  bouncedAt: timestamp("bouncedAt"),
   sentAt: timestamp("sentAt").defaultNow().notNull(),
 });
 export type RepSentEmail = typeof repSentEmails.$inferSelect;

@@ -773,6 +773,27 @@ export async function listRepSentEmails(repId: number, limit = 50) {
   if (!db) return [];
   return db.select().from(repSentEmails).where(eq(repSentEmails.repId, repId)).orderBy(desc(repSentEmails.sentAt)).limit(limit);
 }
+export async function updateEmailResendId(emailId: number, resendMessageId: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(repSentEmails).set({ resendMessageId }).where(eq(repSentEmails.id, emailId));
+}
+export async function updateEmailTrackingStatus(resendMessageId: string, status: string, timestamp: Date) {
+  const db = await getDb();
+  if (!db) return;
+  const updates: Record<string, any> = { status };
+  if (status === "delivered") updates.deliveredAt = timestamp;
+  if (status === "opened") updates.openedAt = timestamp;
+  if (status === "clicked") updates.clickedAt = timestamp;
+  if (status === "bounced") updates.bouncedAt = timestamp;
+  await db.update(repSentEmails).set(updates).where(eq(repSentEmails.resendMessageId, resendMessageId));
+}
+export async function getEmailByResendId(resendMessageId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(repSentEmails).where(eq(repSentEmails.resendMessageId, resendMessageId)).limit(1);
+  return result[0] ?? null;
+}
 /* ═══════════════════════════════════════════════════════
    REP APPLICATIONS
    ═══════════════════════════════════════════════════════ */

@@ -434,7 +434,10 @@ export const repCommsRouter = router({
         text: input.body,
         replyTo: ctx.user.email || undefined,
       });
-      if (!delivery.success) {
+      if (delivery.success && delivery.resendId) {
+        // Save the Resend message ID for webhook tracking
+        await db.updateEmailResendId(emailRecord.id, delivery.resendId);
+      } else if (!delivery.success) {
         console.warn(`[Email] Delivery failed for email #${emailRecord.id}: ${delivery.error}`);
       }
       // Log as activity
