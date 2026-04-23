@@ -439,6 +439,42 @@ const leadsRouter = router({
     return db.listUnassignedLeads();
   }),
 
+  // Rep: create a self-sourced lead (someone they personally know)
+  createMyLead: protectedProcedure
+    .input(
+      z.object({
+        businessName: z.string().min(1),
+        contactName: z.string().min(1),
+        email: z.string().email(),
+        phone: z.string().optional(),
+        industry: z.string().optional(),
+        website: z.string().optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      const lead = await db.createLead({
+        ...input,
+        source: "referral" as const,
+        selfSourced: true,
+        assignedRepId: rep.id,
+        stage: "assigned" as const,
+        temperature: "warm" as const,
+      });
+      // Log activity
+      await db.createActivityLog({
+        repId: rep.id,
+        type: "lead_added",
+        leadId: lead.id,
+        subject: `Self-sourced lead: ${input.businessName}`,
+        notes: `Added personal contact ${input.contactName}`,
+        pointsEarned: 25,
+      });
+      return lead;
+    }),
+
   // Rep: close a deal — creates customer, contract, commission, notifies owner
   closeDeal: protectedProcedure
     .input(
@@ -446,6 +482,7 @@ const leadsRouter = router({
         leadId: z.number(),
         packageTier: z.enum(["starter", "growth", "premium"]),
         monthlyPrice: z.string(),
+        discountPercent: z.number().min(0).max(5).default(0),
         notes: z.string().optional(),
       })
     )
@@ -458,6 +495,17 @@ const leadsRouter = router({
       }
       if (lead.stage === "closed_won" || lead.stage === "closed_lost") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "This lead is already closed" });
+      }
+
+      // 0. Apply discount if any
+      const discountPct = input.discountPercent || 0;
+      const originalPrice = parseFloat(input.monthlyPrice);
+      const discountedPrice = discountPct > 0 ? originalPrice * (1 - discountPct / 100) : originalPrice;
+      const finalMonthlyPrice = discountedPrice.toFixed(2);
+
+      // Save discount on lead
+      if (discountPct > 0) {
+        await db.updateLead(input.leadId, { discountPercent: discountPct } as any);
       }
 
       // 1. Mark lead as closed_won
@@ -474,7 +522,7 @@ const leadsRouter = router({
         website: lead.website,
       });
 
-      // 3. Create 12-month contract
+      // 3. Create 12-month contract (with discounted price)
       const startDate = new Date();
       const endDate = new Date();
       endDate.setFullYear(endDate.getFullYear() + 1);
@@ -482,26 +530,32 @@ const leadsRouter = router({
         customerId: customer.id,
         repId: rep.id,
         packageTier: input.packageTier,
-        monthlyPrice: input.monthlyPrice,
+        monthlyPrice: finalMonthlyPrice,
         startDate,
         endDate,
-        notes: input.notes,
+        notes: input.notes ? `${input.notes}${discountPct > 0 ? ` | ${discountPct}% rep discount applied (was $${originalPrice}/mo)` : ""}` : (discountPct > 0 ? `${discountPct}% rep discount applied (was $${originalPrice}/mo)` : undefined),
       });
 
-      // 4. Calculate commission based on rep level
+      // 4. Calculate commission — DOUBLE for self-sourced leads
+      const isSelfSourced = lead.selfSourced;
       const gamification = await db.getRepGamification(rep.id);
       const level = gamification?.level || "rookie";
       const tierRates: Record<string, number> = {
         rookie: 0.10, closer: 0.12, ace: 0.14, elite: 0.16, legend: 0.20,
       };
-      const rate = tierRates[level] || 0.10;
-      const annualValue = parseFloat(input.monthlyPrice) * 12;
+      let rate = tierRates[level] || 0.10;
+      // Double commission for self-sourced leads
+      if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
+      const annualValue = discountedPrice * 12;
       const commissionAmount = (annualValue * rate).toFixed(2);
+      // Commission auto-approved (instant payout model)
       const commission = await db.createCommission({
         repId: rep.id,
         contractId: contract.id,
         amount: commissionAmount,
         type: "initial_sale",
+        status: "approved",
+        selfSourced: isSelfSourced,
       });
 
       // 5. Update rep stats
@@ -551,9 +605,9 @@ const leadsRouter = router({
       await db.createRepNotification({
         repId: rep.id,
         type: "deal_closed",
-        title: "Deal Closed!",
-        message: `Congratulations! You closed ${lead.businessName} for $${input.monthlyPrice}/mo (${input.packageTier}). Commission: $${commissionAmount}`,
-        metadata: { contractId: contract.id, commissionAmount },
+        title: isSelfSourced ? "🌟 Self-Sourced Deal Closed!" : "Deal Closed!",
+        message: `Congratulations! You closed ${lead.businessName} for $${finalMonthlyPrice}/mo (${input.packageTier}).${discountPct > 0 ? ` ${discountPct}% discount applied.` : ""} Commission: $${commissionAmount}${isSelfSourced ? " (2x bonus!)" : ""} — approved for instant payout!`,
+        metadata: { contractId: contract.id, commissionAmount, selfSourced: isSelfSourced, discountPercent: discountPct },
       });
 
       // 9. Auto-create onboarding project (customer handoff)
@@ -570,9 +624,11 @@ const leadsRouter = router({
       });
 
       // 10. Notify owner
+      const discountNote = discountPct > 0 ? `\nDiscount: ${discountPct}% (was $${originalPrice}/mo)` : "";
+      const selfSourcedNote = isSelfSourced ? "\n⭐ Self-sourced lead (double commission)" : "";
       await notifyOwner({
         title: `Deal Closed: ${lead.businessName}`,
-        content: `Rep ${rep.fullName} closed a ${input.packageTier} deal with ${lead.businessName} at $${input.monthlyPrice}/mo.\nAnnual value: $${annualValue}\nCommission: $${commissionAmount} (${(rate * 100).toFixed(0)}% at ${level} level)\nOnboarding project auto-created.`,
+        content: `Rep ${rep.fullName} closed a ${input.packageTier} deal with ${lead.businessName} at $${finalMonthlyPrice}/mo.${discountNote}${selfSourcedNote}\nAnnual value: $${annualValue.toFixed(2)}\nCommission: $${commissionAmount} (${(rate * 100).toFixed(0)}% at ${level} level) — auto-approved for instant payout\nOnboarding project auto-created.`,
       });
 
       return {

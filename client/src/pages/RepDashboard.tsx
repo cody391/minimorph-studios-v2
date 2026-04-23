@@ -22,7 +22,7 @@ import {
   BarChart3, Briefcase, CheckCircle, AlertCircle, Flame, Trophy,
   Star, Zap, Phone, Mail, Calendar, FileText, Send, Sparkles,
   BookOpen, GraduationCap, Shield, MessageSquare, Plus, ChevronRight, Copy,
-  AlertTriangle, Lightbulb, Brain,
+  AlertTriangle, Lightbulb, Brain, RefreshCw,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
@@ -34,7 +34,7 @@ const stageColors: Record<string, string> = {
   proposal_sent: "bg-yellow-100 text-yellow-700", negotiating: "bg-orange-100 text-orange-700",
   closed_won: "bg-green-100 text-green-700", closed_lost: "bg-red-100 text-red-700",
 };
-const commissionStatusColors: Record<string, string> = { pending: "bg-yellow-100 text-yellow-700", approved: "bg-blue-100 text-blue-700", paid: "bg-green-100 text-green-700" };
+const commissionStatusColors: Record<string, string> = { pending: "bg-yellow-100 text-yellow-700", approved: "bg-blue-100 text-blue-700", paid: "bg-green-100 text-green-700", cancelled: "bg-red-100 text-red-700" };
 const levelColors: Record<string, string> = { rookie: "bg-gray-100 text-gray-700", closer: "bg-blue-100 text-blue-700", ace: "bg-purple-100 text-purple-700", elite: "bg-amber-100 text-amber-700", legend: "bg-gradient-to-r from-amber-200 to-yellow-200 text-amber-800" };
 const levelIcons: Record<string, any> = { rookie: Shield, closer: Target, ace: Star, elite: Trophy, legend: Flame };
 
@@ -60,8 +60,10 @@ export default function RepDashboard() {
   const myLeads = useMemo(() => allLeads?.filter((l: any) => l.assignedRepId === repProfile?.id) ?? [], [allLeads, repProfile]);
   const activeLeads = useMemo(() => myLeads.filter((l: any) => !["closed_won", "closed_lost"].includes(l.stage)), [myLeads]);
   const wonLeads = useMemo(() => myLeads.filter((l: any) => l.stage === "closed_won"), [myLeads]);
-  const totalEarnings = useMemo(() => commissions?.reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
+  const totalEarnings = useMemo(() => commissions?.filter((c: any) => c.status !== "cancelled").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
   const pendingPayouts = useMemo(() => commissions?.filter((c: any) => c.status === "pending").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
+  const approvedPayouts = useMemo(() => commissions?.filter((c: any) => c.status === "approved").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
+  const recurringCount = useMemo(() => commissions?.filter((c: any) => c.type === "recurring_monthly" && c.status !== "cancelled").length ?? 0, [commissions]);
 
   if (authLoading) return <div className="min-h-screen bg-cream flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" /></div>;
   if (!isAuthenticated) return (
@@ -305,8 +307,8 @@ export default function RepDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { label: "Total Earned", value: `$${totalEarnings.toLocaleString()}`, icon: DollarSign, color: "text-green-600" },
-                { label: "Pending Payouts", value: `$${pendingPayouts.toLocaleString()}`, icon: Clock, color: "text-yellow-600" },
-                { label: "Paid Out", value: `$${(totalEarnings - pendingPayouts).toLocaleString()}`, icon: CheckCircle, color: "text-forest" },
+                { label: "Ready for Payout", value: `$${approvedPayouts.toLocaleString()}`, icon: Zap, color: "text-terracotta" },
+                { label: "Recurring", value: `${recurringCount} active`, icon: RefreshCw, color: "text-blue-600" },
               ].map((m) => (
                 <Card key={m.label} className="border-border/50"><CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2"><span className="text-xs text-forest/50 font-sans uppercase tracking-wide">{m.label}</span><m.icon className={`h-4 w-4 ${m.color}`} /></div>
@@ -328,7 +330,10 @@ export default function RepDashboard() {
                             <span className="text-sm font-medium text-forest font-sans">${parseFloat(c.amount).toLocaleString()}</span>
                             <Badge className={`text-[10px] font-sans ${commissionStatusColors[c.status] ?? ""}`}>{c.status}</Badge>
                           </div>
-                          <p className="text-xs text-forest/50 font-sans capitalize">{c.type?.replace(/_/g, " ")} &bull; Contract #{c.contractId}</p>
+                          <p className="text-xs text-forest/50 font-sans capitalize">
+                            {c.type?.replace(/_/g, " ")} &bull; Contract #{c.contractId}
+                            {c.selfSourced && <span className="ml-1 text-amber-600">⭐ 2x</span>}
+                          </p>
                         </div>
                         <div className="text-xs text-forest/40 font-sans">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ""}</div>
                       </div>
@@ -380,7 +385,19 @@ export default function RepDashboard() {
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] text-forest/40 font-sans mt-3">Your commission rate increases automatically as you level up. Commissions on cancelled contracts within 30 days are subject to clawback.</p>
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs text-amber-800 font-medium flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" /> Self-sourced leads earn 2x your commission rate!
+                  </p>
+                  <p className="text-[10px] text-amber-700/70 mt-1">Know someone who needs a website? Add them as your own lead in the Pipeline tab and earn double commission when the deal closes.</p>
+                </div>
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-800 font-medium flex items-center gap-1.5">
+                    <Zap className="h-3.5 w-3.5" /> Instant Payouts — Get Paid When They Pay
+                  </p>
+                  <p className="text-[10px] text-blue-700/70 mt-1">Commissions are auto-approved when the customer pays. You earn recurring commissions every month the customer stays active. If they stop paying, commissions stop too.</p>
+                </div>
+                <p className="text-[10px] text-forest/40 font-sans mt-3">Your commission rate increases automatically as you level up. You can also apply up to 5% discount on deals to help close faster.</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -410,8 +427,17 @@ export default function RepDashboard() {
                       return (
                         <div key={entry.repId} className={`flex items-center justify-between p-4 rounded-lg border ${isMe ? "border-terracotta/30 bg-terracotta/5" : "border-border/30"}`}>
                           <div className="flex items-center gap-4">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${i === 0 ? "bg-yellow-100 text-yellow-700" : i === 1 ? "bg-gray-100 text-gray-600" : i === 2 ? "bg-amber-100 text-amber-700" : "bg-sage/10 text-forest/50"}`}>
-                              {i + 1}
+                            <div className="relative">
+                              <div className={`absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold z-10 ${i === 0 ? "bg-yellow-400 text-yellow-900" : i === 1 ? "bg-gray-300 text-gray-700" : i === 2 ? "bg-amber-400 text-amber-900" : "bg-sage/30 text-forest/50"}`}>
+                                {i + 1}
+                              </div>
+                              {entry.profilePhotoUrl ? (
+                                <img src={entry.profilePhotoUrl} alt={entry.repName} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-sage/20 flex items-center justify-center text-forest/40 text-sm font-bold">
+                                  {(entry.repName || "?").charAt(0).toUpperCase()}
+                                </div>
+                              )}
                             </div>
                             <div>
                               <p className="text-sm font-sans text-forest font-medium">{entry.repName || "Unknown"} {isMe && <span className="text-terracotta text-xs">(You)</span>}</p>
@@ -421,9 +447,19 @@ export default function RepDashboard() {
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-lg font-serif text-forest">{entry.totalPoints?.toLocaleString()}</p>
-                            <p className="text-[10px] text-forest/40 font-sans">points</p>
+                          <div className="flex items-center gap-6">
+                            <div className="text-center">
+                              <p className="text-sm font-serif text-forest font-medium">{entry.totalDeals || 0}</p>
+                              <p className="text-[10px] text-forest/40 font-sans">deals</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-serif text-green-700 font-medium">${parseFloat(entry.totalRevenue || "0").toLocaleString()}</p>
+                              <p className="text-[10px] text-forest/40 font-sans">revenue</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-serif text-forest">{entry.totalPoints?.toLocaleString()}</p>
+                              <p className="text-[10px] text-forest/40 font-sans">points</p>
+                            </div>
                           </div>
                         </div>
                       );

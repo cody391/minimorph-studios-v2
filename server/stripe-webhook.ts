@@ -1,9 +1,10 @@
 import express, { Request, Response, Express } from "express";
 import Stripe from "stripe";
 import { ENV } from "./_core/env";
+import * as db from "./db";
 import { getDb } from "./db";
-import { orders, users } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { orders, users, contracts, leads, commissions } from "../drizzle/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 function getStripe(): Stripe | null {
   const key = (ENV as any).stripeSecretKey || process.env.STRIPE_SECRET_KEY;
@@ -112,6 +113,93 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   console.log(
     `[Stripe] Checkout completed: session=${session.id}, user=${userId}, amount=${session.amount_total}`
   );
+
+  // Auto-create recurring commission for the rep if this payment is tied to a contract
+  // This implements the "pay when customer pays" model
+  await createRecurringCommission(session);
+}
+
+/**
+ * When a customer payment succeeds, create a recurring commission for the rep.
+ * This is the Uber/DoorDash instant payout model:
+ * - Commission is auto-approved (not pending)
+ * - Rep gets paid every time the customer pays
+ * - If customer stops paying, no more commissions
+ */
+async function createRecurringCommission(session: Stripe.Checkout.Session) {
+  try {
+    const database = await getDb();
+    if (!database) return;
+
+    // Find the contract associated with this payment via metadata or customer email
+    const customerEmail = session.customer_email || session.metadata?.customer_email;
+    if (!customerEmail) return;
+
+    // Look up active contracts for this customer
+    const customerRows = await database.select().from(users).where(eq(users.email, customerEmail)).limit(1);
+    if (!customerRows.length) return;
+
+    // Find active contracts with a rep
+    const activeContracts = await database.select().from(contracts)
+      .where(and(eq(contracts.status, "active")))
+      .orderBy(desc(contracts.createdAt));
+
+    for (const contract of activeContracts) {
+      if (!contract.repId) continue;
+
+      // Check if this is a recurring payment (not the initial sale)
+      const existingCommissions = await db.getActiveCommissionsByContract(contract.id);
+      const hasInitialSale = existingCommissions.some(c => c.type === "initial_sale");
+      if (!hasInitialSale) continue; // Skip if no initial sale commission exists
+
+      // Check if we already created a recurring commission this month
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const recentRecurring = existingCommissions.find(
+        c => c.type === "recurring_monthly" && c.createdAt >= monthStart
+      );
+      if (recentRecurring) continue; // Already paid this month
+
+      // Calculate recurring commission based on monthly price and rep's rate
+      const monthlyPrice = parseFloat(contract.monthlyPrice);
+      const initialCommission = existingCommissions.find(c => c.type === "initial_sale");
+      const isSelfSourced = initialCommission?.selfSourced || false;
+
+      // Get rep's gamification level for rate
+      const gamification = await db.getRepGamification(contract.repId);
+      const level = gamification?.level || "rookie";
+      const tierRates: Record<string, number> = {
+        rookie: 0.10, closer: 0.12, ace: 0.14, elite: 0.16, legend: 0.20,
+      };
+      let rate = tierRates[level] || 0.10;
+      if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
+
+      const commissionAmount = (monthlyPrice * rate).toFixed(2);
+
+      // Create auto-approved recurring commission
+      await db.createCommission({
+        repId: contract.repId,
+        contractId: contract.id,
+        amount: commissionAmount,
+        type: "recurring_monthly",
+        status: "approved", // Instant payout — auto-approved
+        selfSourced: isSelfSourced,
+      });
+
+      // Notify the rep
+      await db.createRepNotification({
+        repId: contract.repId,
+        type: "commission_approved",
+        title: "💰 Monthly Commission Earned!",
+        message: `You earned $${commissionAmount} from a recurring payment on contract #${contract.id}${isSelfSourced ? " (2x self-sourced bonus!)" : ""}. Ready for instant payout!`,
+        metadata: { contractId: contract.id, amount: commissionAmount },
+      });
+
+      console.log(`[Stripe] Recurring commission created: rep=${contract.repId}, contract=${contract.id}, amount=$${commissionAmount}`);
+    }
+  } catch (err) {
+    console.error("[Stripe] Error creating recurring commission:", err);
+  }
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {

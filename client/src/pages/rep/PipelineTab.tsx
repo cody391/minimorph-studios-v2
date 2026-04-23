@@ -87,6 +87,15 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
     onSuccess: () => { utils.leads.myLeads.invalidate(); toast.success("Deal closed! Customer, contract, and commission created."); },
     onError: (e) => toast.error(e.message),
   });
+  const createMyLead = trpc.leads.createMyLead.useMutation({
+    onSuccess: () => {
+      utils.leads.myLeads.invalidate();
+      setShowAddLead(false);
+      setNewLeadForm({ businessName: "", contactName: "", email: "", phone: "", industry: "", website: "", notes: "" });
+      toast.success("Self-sourced lead added! It's auto-assigned to you with double commission.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   // State
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -95,7 +104,9 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
   const [showProposal, setShowProposal] = useState(false);
   const [showCloseDeal, setShowCloseDeal] = useState(false);
   const [proposalResult, setProposalResult] = useState<any>(null);
-  const [closeForm, setCloseForm] = useState({ packageTier: "starter" as string, monthlyPrice: "99", notes: "" });
+  const [closeForm, setCloseForm] = useState({ packageTier: "starter" as string, monthlyPrice: "99", notes: "", discountPercent: 0 });
+  const [showAddLead, setShowAddLead] = useState(false);
+  const [newLeadForm, setNewLeadForm] = useState({ businessName: "", contactName: "", email: "", phone: "", industry: "", website: "", notes: "" });
   const [proposalTier, setProposalTier] = useState("starter");
   const [proposalNotes, setProposalNotes] = useState("");
   const [draggedLeadId, setDraggedLeadId] = useState<number | null>(null);
@@ -157,6 +168,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
       leadId: selectedLead.id,
       packageTier: closeForm.packageTier as any,
       monthlyPrice: closeForm.monthlyPrice,
+      discountPercent: closeForm.discountPercent,
       notes: closeForm.notes || undefined,
     }, {
       onSuccess: () => {
@@ -164,6 +176,23 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
         setShowDetail(false);
         setSelectedLead(null);
       },
+    });
+  };
+
+  /* ─── Add self-sourced lead ─── */
+  const handleAddMyLead = () => {
+    if (!newLeadForm.businessName || !newLeadForm.contactName || !newLeadForm.email) {
+      toast.error("Business name, contact name, and email are required");
+      return;
+    }
+    createMyLead.mutate({
+      businessName: newLeadForm.businessName,
+      contactName: newLeadForm.contactName,
+      email: newLeadForm.email,
+      phone: newLeadForm.phone || undefined,
+      industry: newLeadForm.industry || undefined,
+      website: newLeadForm.website || undefined,
+      notes: newLeadForm.notes || undefined,
     });
   };
 
@@ -190,13 +219,21 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
             {activeCount} active &bull; {wonCount} won &bull; {lostCount} lost
           </p>
         </div>
-        <Button
-          onClick={() => setShowPool(true)}
-          variant="outline"
-          className="text-forest border-forest/20 hover:bg-forest/5 font-sans text-sm rounded-full"
-        >
-          <Plus className="h-3.5 w-3.5 mr-1.5" /> Claim Lead
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowAddLead(true)}
+            className="bg-terracotta hover:bg-terracotta/90 text-white font-sans text-sm rounded-full"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add My Lead
+          </Button>
+          <Button
+            onClick={() => setShowPool(true)}
+            variant="outline"
+            className="text-forest border-forest/20 hover:bg-forest/5 font-sans text-sm rounded-full"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Claim Lead
+          </Button>
+        </div>
       </div>
 
       {/* Kanban Board */}
@@ -406,7 +443,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                   className="text-xs font-sans bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => {
                     const recPkg = selectedLead.enrichmentData?.recommendedPackage || "starter";
-                    setCloseForm({ packageTier: recPkg, monthlyPrice: PACKAGE_PRICES[recPkg] || "99", notes: "" });
+                    setCloseForm({ packageTier: recPkg, monthlyPrice: PACKAGE_PRICES[recPkg] || "99", notes: "", discountPercent: 0 });
                     setShowCloseDeal(true);
                   }}
                 >
@@ -606,7 +643,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-forest/50">Package</label>
-                <Select value={closeForm.packageTier} onValueChange={(val) => setCloseForm({ ...closeForm, packageTier: val, monthlyPrice: PACKAGE_PRICES[val] || "99" })}>
+                <Select value={closeForm.packageTier} onValueChange={(val) => setCloseForm({ ...closeForm, packageTier: val, monthlyPrice: PACKAGE_PRICES[val] || "99", discountPercent: closeForm.discountPercent })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="starter">Starter</SelectItem>
@@ -625,6 +662,34 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                 />
               </div>
             </div>
+            <div>
+              <label className="text-xs text-forest/50">Discount (0-5%)</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={5}
+                  step={1}
+                  value={closeForm.discountPercent}
+                  onChange={(e) => setCloseForm({ ...closeForm, discountPercent: parseInt(e.target.value) })}
+                  className="flex-1 accent-terracotta"
+                />
+                <span className="text-sm font-medium text-forest min-w-[40px] text-right">
+                  {closeForm.discountPercent}%
+                </span>
+              </div>
+              {closeForm.discountPercent > 0 && (
+                <p className="text-xs text-terracotta mt-1">
+                  Final price: ${(parseFloat(closeForm.monthlyPrice) * (1 - closeForm.discountPercent / 100)).toFixed(2)}/mo
+                </p>
+              )}
+            </div>
+            {(selectedLead as any)?.selfSourced && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-600" />
+                <span className="text-xs text-amber-800 font-medium">Self-sourced lead — you'll earn 2x commission!</span>
+              </div>
+            )}
             <div>
               <label className="text-xs text-forest/50">Notes (optional)</label>
               <Textarea
@@ -651,6 +716,71 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ═══ Add Self-Sourced Lead Dialog ═══ */}
+      <Dialog open={showAddLead} onOpenChange={setShowAddLead}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-forest flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-terracotta" /> Add Your Own Lead
+            </DialogTitle>
+            <p className="text-xs text-forest/60 font-sans">Know someone who needs a website? Add them here for double commission!</p>
+          </DialogHeader>
+          <div className="space-y-3 font-sans">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-xs text-amber-800 font-medium flex items-center gap-1.5">
+                <DollarSign className="h-3.5 w-3.5" /> Self-sourced leads earn 2x commission rate
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-forest/50">Business Name *</label>
+                <Input value={newLeadForm.businessName} onChange={(e) => setNewLeadForm({ ...newLeadForm, businessName: e.target.value })} placeholder="Acme Corp" />
+              </div>
+              <div>
+                <label className="text-xs text-forest/50">Contact Name *</label>
+                <Input value={newLeadForm.contactName} onChange={(e) => setNewLeadForm({ ...newLeadForm, contactName: e.target.value })} placeholder="John Smith" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-forest/50">Email *</label>
+              <Input value={newLeadForm.email} onChange={(e) => setNewLeadForm({ ...newLeadForm, email: e.target.value })} placeholder="john@acme.com" type="email" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-forest/50">Phone</label>
+                <Input value={newLeadForm.phone} onChange={(e) => setNewLeadForm({ ...newLeadForm, phone: e.target.value })} placeholder="(555) 123-4567" />
+              </div>
+              <div>
+                <label className="text-xs text-forest/50">Industry</label>
+                <Input value={newLeadForm.industry} onChange={(e) => setNewLeadForm({ ...newLeadForm, industry: e.target.value })} placeholder="Restaurant" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-forest/50">Website (if any)</label>
+              <Input value={newLeadForm.website} onChange={(e) => setNewLeadForm({ ...newLeadForm, website: e.target.value })} placeholder="https://acme.com" />
+            </div>
+            <div>
+              <label className="text-xs text-forest/50">Notes</label>
+              <Textarea value={newLeadForm.notes} onChange={(e) => setNewLeadForm({ ...newLeadForm, notes: e.target.value })} placeholder="How do you know them? What do they need?" className="h-16" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddLead(false)} className="font-sans text-sm">Cancel</Button>
+            <Button
+              onClick={handleAddMyLead}
+              disabled={createMyLead.isPending || !newLeadForm.businessName || !newLeadForm.contactName || !newLeadForm.email}
+              className="bg-terracotta hover:bg-terracotta/90 text-white font-sans text-sm"
+            >
+              {createMyLead.isPending ? (
+                <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Adding...</span>
+              ) : (
+                <span className="flex items-center gap-2"><Plus className="h-4 w-4" /> Add Lead</span>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

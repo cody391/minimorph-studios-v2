@@ -93,6 +93,8 @@ export const leads = mysqlTable("leads", {
   notes: text("notes"),
   enrichmentData: json("enrichmentData"),
   lastTouchAt: timestamp("lastTouchAt"),
+  selfSourced: boolean("selfSourced").default(false).notNull(),
+  discountPercent: int("discountPercent").default(0).notNull(), // 0-5% rep discount
   smsOptedOut: boolean("smsOptedOut").default(false).notNull(),
   smsOptOutAt: timestamp("smsOptOutAt"),
   smsFirstMessageSent: boolean("smsFirstMessageSent").default(false).notNull(),
@@ -161,8 +163,9 @@ export const commissions = mysqlTable("commissions", {
   repId: int("repId").notNull(),
   contractId: int("contractId").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  type: mysqlEnum("type", ["initial_sale", "renewal", "upsell", "referral_bonus"]).default("initial_sale").notNull(),
-  status: mysqlEnum("status", ["pending", "approved", "paid"]).default("pending").notNull(),
+  type: mysqlEnum("type", ["initial_sale", "renewal", "upsell", "referral_bonus", "recurring_monthly"]).default("initial_sale").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "paid", "cancelled"]).default("pending").notNull(),
+  selfSourced: boolean("selfSourced").default(false).notNull(),
   paidAt: timestamp("paidAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -481,7 +484,7 @@ export type InsertRepQuizResult = typeof repQuizResults.$inferInsert;
 export const repActivityLogs = mysqlTable("rep_activity_logs", {
   id: int("id").autoincrement().primaryKey(),
   repId: int("repId").notNull(),
-  type: mysqlEnum("type", ["call", "email", "meeting", "proposal", "follow_up", "note", "deal_closed", "lead_update", "lead_claimed", "proposal_generated"]).notNull(),
+  type: mysqlEnum("type", ["call", "email", "meeting", "proposal", "follow_up", "note", "deal_closed", "lead_update", "lead_claimed", "proposal_generated", "lead_added"]).notNull(),
   leadId: int("leadId"),
   customerId: int("customerId"),
   subject: varchar("subject", { length: 255 }),

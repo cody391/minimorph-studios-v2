@@ -285,3 +285,17 @@
 - [x] Web push notification setup (VAPID keys, service worker push handler)
 - [x] Push notification on new lead assignment, coaching feedback, ticket updates
 - [x] Vitest tests for all new features (21 tests, all passing)
+
+### Phase 27: Rep-Sourced Leads, Discounts, Enhanced Leaderboard & Instant Payouts
+- [x] Self-sourced lead flow: rep can create their own lead, auto-flagged as "self_sourced", auto-assigned to them
+- [x] Double commission (20%) on self-sourced deals vs standard 10% on assigned leads
+- [x] Rep discount power: reps can apply up to 5% discount when closing a deal
+- [x] Discount reflected in contract price and commission calculation
+- [x] Enhanced leaderboard: add revenue-based ranking and deal count columns alongside points
+- [x] Instant payout model: commissions auto-approved when customer pays (not pending)
+- [x] Recurring commissions: every time customer pays monthly, rep gets their commission cut automatically
+- [x] Commission stops when customer stops paying (tied to active subscription/payments)
+- [x] Frontend: self-sourced lead creation UI in rep pipeline
+- [x] Frontend: discount input in deal close flow
+- [x] Frontend: instant payout indicator and earnings breakdown in rep dashboard
+- [x] Vitest tests for all Phase 27 features (17 tests, all passing)

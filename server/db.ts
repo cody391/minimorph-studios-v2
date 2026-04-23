@@ -1,4 +1,4 @@
-import { eq, desc, and, or, sql, gte, lte, inArray } from "drizzle-orm";
+import { eq, desc, and, or, sql, gte, lte, inArray, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -294,6 +294,28 @@ export async function updateCommission(id: number, data: Partial<InsertCommissio
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(commissions).set(data).where(eq(commissions.id, id));
+}
+
+// Get active commissions by contract (for recurring payouts)
+export async function getActiveCommissionsByContract(contractId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(commissions)
+    .where(and(eq(commissions.contractId, contractId), ne(commissions.status, "cancelled")))
+    .orderBy(desc(commissions.createdAt));
+}
+
+// Cancel all pending/approved commissions for a contract (when customer stops paying)
+export async function cancelCommissionsByContract(contractId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(commissions)
+    .set({ status: "cancelled" })
+    .where(and(
+      eq(commissions.contractId, contractId),
+      ne(commissions.status, "paid"),
+      ne(commissions.status, "cancelled"),
+    ));
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -732,6 +754,9 @@ export async function getLeaderboard(limit = 10) {
     currentStreak: repGamification.currentStreak,
     monthlyDeals: repGamification.monthlyDeals,
     repName: reps.fullName,
+    profilePhotoUrl: reps.profilePhotoUrl,
+    totalDeals: reps.totalDeals,
+    totalRevenue: reps.totalRevenue,
   }).from(repGamification)
     .leftJoin(reps, eq(repGamification.repId, reps.id))
     .orderBy(desc(repGamification.totalPoints))
