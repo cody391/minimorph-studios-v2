@@ -1,12 +1,14 @@
 /*
  * Design: Warm Machine — Humanized AI Aesthetic
  * Contact/CTA: Final conversion section with form and warm messaging.
+ * Now wired to the backend via tRPC contact.submit
  */
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Mail, Phone, MapPin } from "lucide-react";
+import { ArrowRight, Mail, Phone, MapPin, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -16,10 +18,24 @@ export default function Contact() {
     message: "",
   });
 
+  const submitContact = trpc.contact.submit.useMutation({
+    onSuccess: () => {
+      toast.success("Thank you! A representative will be in touch within 24 hours.");
+      setFormData({ name: "", email: "", business: "", message: "" });
+    },
+    onError: (err) => {
+      toast.error(err.message || "Something went wrong. Please try again.");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Thank you! A representative will be in touch within 24 hours.");
-    setFormData({ name: "", email: "", business: "", message: "" });
+    submitContact.mutate({
+      name: formData.name,
+      email: formData.email,
+      businessName: formData.business || undefined,
+      message: formData.message || undefined,
+    });
   };
 
   return (
@@ -159,13 +175,23 @@ export default function Contact() {
               </div>
               <Button
                 type="submit"
+                disabled={submitContact.isPending}
                 className="w-full bg-terracotta hover:bg-terracotta-light text-white font-sans text-sm py-6 rounded-full shadow-none hover:shadow-md transition-all duration-300 group"
               >
-                Send Message
-                <ArrowRight
-                  size={16}
-                  className="ml-2 group-hover:translate-x-1 transition-transform"
-                />
+                {submitContact.isPending ? (
+                  <>
+                    <Loader2 size={16} className="mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    Send Message
+                    <ArrowRight
+                      size={16}
+                      className="ml-2 group-hover:translate-x-1 transition-transform"
+                    />
+                  </>
+                )}
               </Button>
               <p className="text-xs text-forest/40 font-sans text-center">
                 We'll respond within 24 hours. No spam, ever.

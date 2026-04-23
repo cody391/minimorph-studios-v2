@@ -3,6 +3,7 @@
  * Home: Single-page layout assembling all sections in narrative order.
  * Flow: Hero → Stats → Services → Portfolio → How It Works → Core Principle → Pricing → Testimonials → FAQ → Contact → Footer
  */
+import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/sections/Hero";
 import Stats from "@/components/sections/Stats";
@@ -17,6 +18,8 @@ import Contact from "@/components/sections/Contact";
 import Footer from "@/components/Footer";
 
 export default function Home() {
+  const { user, loading, isAuthenticated } = useAuth();
+
   return (
     <div className="min-h-screen">
       <Navbar />
