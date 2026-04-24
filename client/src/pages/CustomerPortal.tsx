@@ -10,6 +10,7 @@ import {
   FileText, BarChart3, HeadphonesIcon, ArrowLeft,
   Calendar, TrendingUp, Eye, Users as UsersIcon,
   Clock, CheckCircle, AlertCircle, Shield, Rocket,
+  Gift, Send, Mail, MessageSquare,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -78,7 +79,7 @@ export default function CustomerPortal() {
 
   const activeContract = contracts?.find((c: any) => c.status === "active" || c.status === "expiring_soon");
   const latestReport = reportsData?.length ? [...reportsData].sort((a: any, b: any) => b.id - a.id)[0] : undefined;
-  const supportLogs = nurtureLogs?.filter((l: any) => l.type === "support_request" || l.type === "update_request") ?? [];
+  // Support logs are now fetched inside SupportTab via nurture.mySupportLogs
 
   if (authLoading) {
     return (
@@ -348,55 +349,7 @@ export default function CustomerPortal() {
 
           {/* SUPPORT TAB */}
           <TabsContent value="support" className="space-y-6">
-            {/* Revision Policy Card */}
-            <Card className="border-amber-200/50 bg-amber-50/30">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-medium text-forest font-sans mb-1">Revision Policy</h4>
-                    <p className="text-xs text-forest/60 font-sans leading-relaxed">
-                      Your package includes <strong>3 rounds of revisions</strong> at no extra cost. Small tweaks (text changes, image swaps) are always free.
-                      Layout redesigns or new page additions are available as add-ons. Additional revision rounds are <strong>$149 per round</strong>.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <HeadphonesIcon className="h-4 w-4 text-terracotta" />
-                  Support History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {supportLogs.length === 0 ? (
-                  <div className="text-center py-12">
-                    <HeadphonesIcon className="h-10 w-10 text-forest/15 mx-auto mb-3" />
-                    <p className="text-sm text-forest/50 font-sans mb-4">No support requests yet.</p>
-                    <p className="text-xs text-forest/40 font-sans">Need help? Your AI support team is always ready. Contact us through the main site.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {supportLogs.map((log: any) => (
-                      <div key={log.id} className="p-4 rounded-lg border border-border/30">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-forest font-sans">{log.subject || "Support Request"}</span>
-                          <Badge className={`text-[10px] font-sans ${log.status === "resolved" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
-                            {log.status}
-                          </Badge>
-                        </div>
-                        {log.content && <p className="text-xs text-forest/60 font-sans">{log.content}</p>}
-                        <p className="text-[10px] text-forest/40 font-sans mt-2">
-                          {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : ""} via {log.channel}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <SupportTab customerId={customer.id} />
           </TabsContent>
 
           {/* UPGRADES TAB */}
@@ -477,6 +430,11 @@ export default function CustomerPortal() {
           {/* BILLING TAB */}
           <TabsContent value="billing" className="space-y-6">
             <BillingTab />
+          </TabsContent>
+
+          {/* REFERRALS TAB */}
+          <TabsContent value="referrals" className="space-y-6">
+            <ReferralsTab />
           </TabsContent>
 
           {/* AI ASSISTANT TAB */}
@@ -681,6 +639,358 @@ function BillingTab() {
               All payments are processed securely through Stripe. To update your payment method, manage your subscription, or download invoices, please contact your account manager through the Support tab.
             </p>
           </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   SUPPORT TAB — Request form + support history
+   ═══════════════════════════════════════════════════════ */
+function SupportTab({ customerId }: { customerId: number }) {
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [requestType, setRequestType] = useState<"support_request" | "update_request">("support_request");
+  const [submitted, setSubmitted] = useState(false);
+
+  const utils = trpc.useUtils();
+  const { data: supportLogs, isLoading } = trpc.nurture.mySupportLogs.useQuery();
+  const createRequest = trpc.nurture.createSupportRequest.useMutation({
+    onSuccess: () => {
+      toast.success("Support request submitted. We'll get back to you soon.");
+      setSubject("");
+      setMessage("");
+      setSubmitted(true);
+      utils.nurture.mySupportLogs.invalidate();
+      setTimeout(() => setSubmitted(false), 3000);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Something went wrong. Please try again.");
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subject.trim() || !message.trim()) {
+      toast.error("Please fill in both subject and message.");
+      return;
+    }
+    createRequest.mutate({
+      subject: subject.trim(),
+      message: message.trim(),
+      type: requestType,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Revision Policy Card */}
+      <Card className="border-amber-200/50 bg-amber-50/30">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-sm font-medium text-forest font-sans mb-1">Revision Policy</h4>
+              <p className="text-xs text-forest/60 font-sans leading-relaxed">
+                Your package includes <strong>3 rounds of revisions</strong> at no extra cost. Small tweaks (text changes, image swaps) are always free.
+                Layout redesigns or new page additions are available as add-ons. Additional revision rounds are <strong>$149 per round</strong>.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Support Request Form */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-terracotta" />
+            Submit a Request
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setRequestType("support_request")}
+                className={`px-3 py-1.5 text-xs font-sans rounded-full border transition-colors ${
+                  requestType === "support_request"
+                    ? "bg-terracotta text-white border-terracotta"
+                    : "bg-white text-forest/60 border-border/40 hover:border-border/60"
+                }`}
+              >
+                Support Request
+              </button>
+              <button
+                type="button"
+                onClick={() => setRequestType("update_request")}
+                className={`px-3 py-1.5 text-xs font-sans rounded-full border transition-colors ${
+                  requestType === "update_request"
+                    ? "bg-terracotta text-white border-terracotta"
+                    : "bg-white text-forest/60 border-border/40 hover:border-border/60"
+                }`}
+              >
+                Website Update
+              </button>
+            </div>
+            <div>
+              <label className="text-xs text-forest/60 font-sans block mb-1.5">Subject <span className="text-terracotta">*</span></label>
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder={requestType === "support_request" ? "Describe your issue briefly" : "What would you like changed?"}
+                required
+                className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-white text-forest placeholder:text-forest/30 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-forest/60 font-sans block mb-1.5">Message <span className="text-terracotta">*</span></label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Provide details about your request..."
+                required
+                rows={4}
+                className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-white text-forest placeholder:text-forest/30 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta/50 resize-none"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                type="submit"
+                disabled={createRequest.isPending || !subject.trim() || !message.trim()}
+                className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-6 text-sm"
+              >
+                {createRequest.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+                    Submitting...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Send className="h-3.5 w-3.5" />
+                    Submit Request
+                  </span>
+                )}
+              </Button>
+              {submitted && (
+                <span className="text-xs text-green-600 font-sans flex items-center gap-1">
+                  <CheckCircle className="h-3.5 w-3.5" /> Submitted!
+                </span>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Support History */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+            <HeadphonesIcon className="h-4 w-4 text-terracotta" />
+            Support History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => <Skeleton key={i} className="h-16 w-full rounded-lg" />)}
+            </div>
+          ) : !supportLogs?.length ? (
+            <div className="text-center py-12">
+              <HeadphonesIcon className="h-10 w-10 text-forest/15 mx-auto mb-3" />
+              <p className="text-sm text-forest/50 font-sans">No support requests yet.</p>
+              <p className="text-xs text-forest/30 font-sans mt-1">Submit a request above and track its status here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {supportLogs.map((log: any) => (
+                <div key={log.id} className="p-4 rounded-lg border border-border/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-forest font-sans">{log.subject || "Support Request"}</span>
+                    <Badge className={`text-[10px] font-sans ${
+                      log.status === "resolved" ? "bg-green-100 text-green-700" :
+                      log.status === "responded" ? "bg-blue-100 text-blue-700" :
+                      "bg-yellow-100 text-yellow-700"
+                    }`}>
+                      {log.status}
+                    </Badge>
+                  </div>
+                  {log.content && <p className="text-xs text-forest/60 font-sans">{log.content}</p>}
+                  <p className="text-[10px] text-forest/40 font-sans mt-2">
+                    {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : ""}
+                    {" · "}
+                    {log.type === "update_request" ? "Website Update" : "Support"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   REFERRALS TAB — Invite form + referral list
+   ═══════════════════════════════════════════════════════ */
+function ReferralsTab() {
+  const [referredName, setReferredName] = useState("");
+  const [referredEmail, setReferredEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const utils = trpc.useUtils();
+  const { data: referrals, isLoading } = trpc.retention.myReferrals.useQuery();
+  const submitReferral = trpc.retention.submitReferral.useMutation({
+    onSuccess: () => {
+      toast.success("Referral sent! We'll reach out to them with an invitation.");
+      setReferredName("");
+      setReferredEmail("");
+      setSubmitted(true);
+      utils.retention.myReferrals.invalidate();
+      setTimeout(() => setSubmitted(false), 3000);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Something went wrong. Please try again.");
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!referredEmail.trim()) {
+      toast.error("Please enter an email address.");
+      return;
+    }
+    submitReferral.mutate({
+      referredEmail: referredEmail.trim(),
+      referredName: referredName.trim() || undefined,
+    });
+  };
+
+  const statusColors: Record<string, string> = {
+    invited: "bg-blue-100 text-blue-700",
+    signed_up: "bg-yellow-100 text-yellow-700",
+    converted: "bg-green-100 text-green-700",
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Referral Invite Form */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+            <Gift className="h-4 w-4 text-terracotta" />
+            Refer a Business
+          </CardTitle>
+          <p className="text-xs text-forest/50 font-sans mt-1">
+            Know someone who needs a great website? Refer them and earn rewards when they sign up.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-forest/60 font-sans block mb-1.5">Their Name <span className="text-forest/30">(optional)</span></label>
+                <input
+                  type="text"
+                  value={referredName}
+                  onChange={(e) => setReferredName(e.target.value)}
+                  placeholder="Jane Smith"
+                  className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-white text-forest placeholder:text-forest/30 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta/50"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-forest/60 font-sans block mb-1.5">Their Email <span className="text-terracotta">*</span></label>
+                <input
+                  type="email"
+                  value={referredEmail}
+                  onChange={(e) => setReferredEmail(e.target.value)}
+                  placeholder="jane@theirbusiness.com"
+                  required
+                  className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-white text-forest placeholder:text-forest/30 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta/50"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                type="submit"
+                disabled={submitReferral.isPending || !referredEmail.trim()}
+                className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-6 text-sm"
+              >
+                {submitReferral.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full" />
+                    Sending...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Send className="h-3.5 w-3.5" />
+                    Send Referral
+                  </span>
+                )}
+              </Button>
+              {submitted && (
+                <span className="text-xs text-green-600 font-sans flex items-center gap-1">
+                  <CheckCircle className="h-3.5 w-3.5" /> Sent!
+                </span>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Referrals List */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+            <UsersIcon className="h-4 w-4 text-terracotta" />
+            Your Referrals
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map(i => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+            </div>
+          ) : !referrals?.length ? (
+            <div className="text-center py-12">
+              <Gift className="h-10 w-10 text-forest/15 mx-auto mb-3" />
+              <p className="text-sm text-forest/50 font-sans">No referrals yet.</p>
+              <p className="text-xs text-forest/30 font-sans mt-1">Refer another business using the form above and track their status here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {referrals.map((ref: any) => (
+                <div key={ref.id} className="flex items-center justify-between p-4 rounded-xl border border-border/30 hover:border-border/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-terracotta/10 flex items-center justify-center">
+                      <Mail className="h-4 w-4 text-terracotta" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-forest font-sans">{ref.referredName || ref.referredEmail}</p>
+                      {ref.referredName && <p className="text-xs text-forest/40 font-sans">{ref.referredEmail}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {ref.rewardGiven && (
+                      <span className="text-xs text-green-600 font-sans flex items-center gap-1">
+                        <Gift className="h-3 w-3" /> Reward earned
+                      </span>
+                    )}
+                    <Badge className={`text-[10px] font-sans ${statusColors[ref.status] || "bg-gray-100 text-gray-700"}`}>
+                      {ref.status.replace(/_/g, " ")}
+                    </Badge>
+                    <span className="text-[10px] text-forest/40 font-sans">
+                      {new Date(ref.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -937,7 +937,18 @@ const contractsRouter = router({
 
   byCustomer: protectedProcedure
     .input(z.object({ customerId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      // Ownership check: admins can access any, customers only their own
+      if (ctx.user.role !== "admin") {
+        const { customers } = await import("../drizzle/schema");
+        const database = await getDb();
+        if (database) {
+          const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+          if (!custs.length || custs[0].id !== input.customerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       return db.listContractsByCustomer(input.customerId);
     }),
 
@@ -1083,7 +1094,18 @@ const nurtureRouter = router({
 
   byCustomer: protectedProcedure
     .input(z.object({ customerId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      // Ownership check: admins can access any, customers only their own
+      if (ctx.user.role !== "admin") {
+        const { customers } = await import("../drizzle/schema");
+        const database = await getDb();
+        if (database) {
+          const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+          if (!custs.length || custs[0].id !== input.customerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       return db.listNurtureLogsByCustomer(input.customerId);
     }),
 
@@ -1212,6 +1234,45 @@ Channel: ${log.channel}\n\n${log.content || "No content"}`,
       await db.updateNurtureLog(id, data);
       return { success: true };
     }),
+
+  // Customer-safe: submit a support request (derives customerId from ctx.user)
+  createSupportRequest: protectedProcedure
+    .input(z.object({
+      subject: z.string().min(1, "Subject is required").max(255),
+      message: z.string().min(1, "Message is required").max(5000),
+      type: z.enum(["support_request", "update_request"]).default("support_request"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { customers } = await import("../drizzle/schema");
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+      if (!custs.length) throw new TRPCError({ code: "NOT_FOUND", message: "Customer account not found" });
+      const cust = custs[0];
+      const activeContracts = await db.listContractsByCustomer(cust.id);
+      const activeContract = activeContracts?.find((c: any) => c.status === "active" || c.status === "expiring_soon");
+      return db.createNurtureLog({
+        customerId: cust.id,
+        contractId: activeContract?.id ?? null,
+        type: input.type,
+        channel: "in_app",
+        subject: input.subject,
+        content: input.message,
+        status: "sent",
+        sentAt: new Date(),
+      });
+    }),
+
+  // Customer-safe: list own support requests (derives customerId from ctx.user)
+  mySupportLogs: protectedProcedure.query(async ({ ctx }) => {
+    const { customers } = await import("../drizzle/schema");
+    const database = await getDb();
+    if (!database) return [];
+    const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+    if (!custs.length) return [];
+    const allLogs = await db.listNurtureLogsByCustomer(custs[0].id);
+    return allLogs.filter((l: any) => l.type === "support_request" || l.type === "update_request");
+  }),
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -1242,7 +1303,18 @@ const reportsRouter = router({
 
   byCustomer: protectedProcedure
     .input(z.object({ customerId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      // Ownership check: admins can access any, customers only their own
+      if (ctx.user.role !== "admin") {
+        const { customers } = await import("../drizzle/schema");
+        const database = await getDb();
+        if (database) {
+          const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+          if (!custs.length || custs[0].id !== input.customerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       return db.listReportsByCustomer(input.customerId);
     }),
 
@@ -1289,7 +1361,18 @@ const upsellsRouter = router({
 
   byCustomer: protectedProcedure
     .input(z.object({ customerId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      // Ownership check: admins can access any, customers only their own
+      if (ctx.user.role !== "admin") {
+        const { customers } = await import("../drizzle/schema");
+        const database = await getDb();
+        if (database) {
+          const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+          if (!custs.length || custs[0].id !== input.customerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       return db.listUpsellsByCustomer(input.customerId);
     }),
 
@@ -1313,7 +1396,18 @@ const upsellsRouter = router({
       customerId: z.number(),
       widgetId: z.number(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      // Ownership check: customers can only request widgets for their own account
+      if (ctx.user.role !== "admin") {
+        const { customers } = await import("../drizzle/schema");
+        const database = await getDb();
+        if (database) {
+          const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+          if (!custs.length || custs[0].id !== input.customerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
       const widget = await db.getWidgetCatalogItem(input.widgetId);
       if (!widget) throw new Error("Widget not found");
       const customer = await db.getCustomerById(input.customerId);
@@ -1498,9 +1592,21 @@ const onboardingRouter = router({
   // Protected: get my onboarding project
   myProject: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const project = await db.getOnboardingProjectById(input.id);
-      return project ?? null;
+      if (!project) return null;
+      // Ownership check: verify the project belongs to the user's customer
+      if (ctx.user.role !== "admin") {
+        const { customers } = await import("../drizzle/schema");
+        const database = await getDb();
+        if (database) {
+          const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+          if (!custs.length || custs[0].id !== project.customerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+          }
+        }
+      }
+      return project;
     }),
 
   // Protected: submit questionnaire

@@ -1035,3 +1035,10 @@
 - [x] B5: Add recurring commission creation on invoice.paid (idempotent, linked to rep)
 - [x] B6: Write vitest tests for Phase B handlers
 - [x] B7: Typecheck 0 errors, all tests passing
+
+### Phase C — Customer Portal Completion
+- [x] C1: Add Referrals tab content (invite form + referrals list + empty state)
+- [x] C2: Add Support Request form (customer-safe, uses customers.me)
+- [x] C3: Portal empty/loading/error states for all tabs
+- [x] C4: Query safety audit (no admin calls, no arbitrary IDs, no in-place sort)
+- [x] C5: Typecheck 0 errors, all tests passing, build succeeds
