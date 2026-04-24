@@ -71,23 +71,63 @@ export default function RepDashboard() {
   if (authLoading) return <div className="min-h-screen bg-cream flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" /></div>;
   if (!isAuthenticated) return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-      <Card className="max-w-md w-full border-border/50"><CardContent className="p-8 text-center">
-        <Briefcase className="h-12 w-12 text-forest/30 mx-auto mb-4" />
-        <h2 className="text-xl font-serif text-forest mb-2">Rep Portal</h2>
-        <p className="text-sm text-forest/60 font-sans mb-6">Sign in to access your dashboard.</p>
-        <Button onClick={() => { setLocation("/login"); }} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8">Sign In</Button>
-      </CardContent></Card>
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-forest/60 hover:text-forest text-sm font-sans transition-colors">
+            <ArrowLeft size={16} /> Back to MiniMorph Studios
+          </button>
+        </div>
+        <Card className="max-w-md w-full border-border/50 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-5">
+              <Briefcase className="h-8 w-8 text-forest" />
+            </div>
+            <h2 className="text-2xl font-serif text-forest mb-2">Rep Portal</h2>
+            <p className="text-sm text-forest/60 font-sans mb-6">Sign in to access your sales dashboard, leads, training, and earnings.</p>
+            <Button onClick={() => { setLocation("/login"); }} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8 py-5 w-full" size="lg">Sign In</Button>
+            <div className="relative my-5">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-sage/20" /></div>
+              <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-forest/40 font-sans">New to MiniMorph?</span></div>
+            </div>
+            <Button variant="outline" onClick={() => setLocation("/become-rep/values")} className="w-full rounded-full border-sage/30 text-forest font-sans">
+              Apply to Become a Rep
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
   if (repLoading) return <div className="min-h-screen bg-cream p-4 sm:p-6"><div className="max-w-6xl mx-auto space-y-6"><Skeleton className="h-10 w-64" /><div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div><Skeleton className="h-64" /></div></div>;
   if (!repProfile) return (
     <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-      <Card className="max-w-md w-full border-border/50"><CardContent className="p-8 text-center">
-        <AlertCircle className="h-12 w-12 text-terracotta/50 mx-auto mb-4" />
-        <h2 className="text-xl font-serif text-forest mb-2">No Rep Profile Found</h2>
-        <p className="text-sm text-forest/60 font-sans mb-6">Apply to become a MiniMorph representative.</p>
-        <Button onClick={() => setLocation("/become-rep")} className="bg-forest hover:bg-forest/90 text-white font-sans rounded-full px-8">Apply Now</Button>
-      </CardContent></Card>
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-forest/60 hover:text-forest text-sm font-sans transition-colors">
+            <ArrowLeft size={16} /> Back to MiniMorph Studios
+          </button>
+        </div>
+        <Card className="max-w-md w-full border-border/50 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-terracotta/10 rounded-full flex items-center justify-center mx-auto mb-5">
+              <Briefcase className="h-8 w-8 text-terracotta" />
+            </div>
+            <h2 className="text-2xl font-serif text-forest mb-2">Welcome, {user?.name?.split(' ')[0] || 'there'}!</h2>
+            <p className="text-sm text-forest/60 font-sans mb-6">
+              You're signed in but don't have a rep profile yet. Start your application to join our sales team and begin earning commissions.
+            </p>
+            <Button onClick={() => setLocation("/become-rep/values")} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8 py-5 w-full" size="lg">
+              <Sparkles className="w-4 h-4 mr-2" /> Start Your Application
+            </Button>
+            <div className="relative my-5">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-sage/20" /></div>
+              <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-forest/40 font-sans">Wrong account?</span></div>
+            </div>
+            <Button variant="outline" onClick={() => setLocation("/login")} className="w-full rounded-full border-sage/30 text-forest font-sans">
+              Sign In with a Different Account
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 

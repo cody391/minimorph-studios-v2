@@ -850,3 +850,10 @@
 - [x] Auto-advance rep status from applied → onboarding → training → certified flow without admin intervention
 - [x] Add Rep Sign In button/link on the main website (visible to returning reps)
 - [x] Vitest tests for autonomous onboarding flow
+
+### Phase 49b: Improve Rep Sign In Experience
+- [x] Create dedicated Rep Sign In page at /rep-login with proper state handling
+- [x] If not logged in → show sign in button that triggers OAuth login
+- [x] If logged in as rep → redirect to /rep dashboard
+- [x] If logged in but NOT a rep → show option to apply or sign in with different account
+- [x] Navbar "Rep Sign In" points to /rep which handles all states gracefully
