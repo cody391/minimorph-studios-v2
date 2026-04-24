@@ -22,4 +22,10 @@ export const ENV = {
   // Contact enrichment APIs
   apolloApiKey: process.env.APOLLO_API_KEY ?? "",
   hunterApiKey: process.env.HUNTER_API_KEY ?? "",
+  // X (Twitter) API
+  xApiKey: process.env.X_API_KEY ?? "",
+  xApiSecret: process.env.X_API_SECRET ?? "",
+  xAccessToken: process.env.X_ACCESS_TOKEN ?? "",
+  xAccessTokenSecret: process.env.X_ACCESS_TOKEN_SECRET ?? "",
+  xBearerToken: process.env.X_BEARER_TOKEN ?? "",
 };

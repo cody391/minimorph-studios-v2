@@ -546,4 +546,14 @@
 - [x] Social sharing tracker (which reps shared what — via socialLibrary.trackShare)
 
 ### Domain Connection
-- [ ] Connect minimorphstudios.net custom domain
+- [x] Connect minimorphstudios.net custom domain (live at minimorphstudios.net + www.minimorphstudios.net)
+
+## Phase 35: X (Twitter) Auto-Posting Integration
+- [x] Store X API keys (API Key, API Secret, Access Token, Access Token Secret, Bearer Token)
+- [x] Install twitter-api-v2 package
+- [x] Build X posting service (server/xService.ts)
+- [ ] Wire X posting into social media routers (publish post action)
+- [ ] Add auto-publish to content calendar scheduled posts
+- [ ] Write validation test for X API credentials
+- [ ] Test posting a tweet from the admin UI
+- [x] Add View/Preview button to PostCard with dialog showing full post content and tweet preview

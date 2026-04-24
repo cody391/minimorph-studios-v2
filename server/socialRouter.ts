@@ -291,6 +291,99 @@ export const socialPostsRouter = router({
       return { ids, count: ids.length };
     }),
 
+  // ── Publish a post to X (Twitter) NOW ──────────────────────────
+  publishToX: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = (await getDb())!;
+      const [post] = await db.select().from(socialPosts).where(eq(socialPosts.id, input.id));
+      if (!post) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+
+      const { postTweet, postTweetWithMedia, isXConfigured } = await import("./xService");
+      if (!isXConfigured()) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "X API credentials not configured" });
+      }
+
+      // Build the tweet text: content + hashtags
+      let tweetText = post.content;
+      if (post.hashtags && Array.isArray(post.hashtags) && (post.hashtags as string[]).length > 0) {
+        const tags = (post.hashtags as string[]).map(t => t.startsWith("#") ? t : `#${t}`).join(" ");
+        tweetText = `${tweetText}\n\n${tags}`;
+      }
+
+      // Truncate to 280 chars if needed
+      if (tweetText.length > 280) {
+        tweetText = tweetText.substring(0, 277) + "...";
+      }
+
+      // Update status to publishing
+      await db.update(socialPosts).set({ status: "publishing" }).where(eq(socialPosts.id, input.id));
+
+      let result;
+      if (post.mediaUrls && Array.isArray(post.mediaUrls) && (post.mediaUrls as string[]).length > 0) {
+        result = await postTweetWithMedia(tweetText, (post.mediaUrls as string[])[0]);
+      } else {
+        result = await postTweet(tweetText);
+      }
+
+      if (result.success) {
+        await db.update(socialPosts).set({
+          status: "published",
+          publishedAt: new Date(),
+          postUrl: result.tweetUrl || null,
+        }).where(eq(socialPosts.id, input.id));
+        return { success: true, tweetId: result.tweetId, tweetUrl: result.tweetUrl };
+      } else {
+        await db.update(socialPosts).set({ status: "failed", failureReason: result.error || "Unknown error" }).where(eq(socialPosts.id, input.id));
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error || "Failed to post to X" });
+      }
+    }),
+  // ── Publish any draft/scheduled post to its platform ──────────
+  publishNow: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = (await getDb())!;
+      const [post] = await db.select().from(socialPosts).where(eq(socialPosts.id, input.id));
+      if (!post) throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+
+      if (post.platform === "x") {
+        // Delegate to publishToX logic
+        const { postTweet, postTweetWithMedia, isXConfigured } = await import("./xService");
+        if (!isXConfigured()) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "X API not configured. Add API keys in Settings." });
+        }
+        let tweetText = post.content;
+        if (post.hashtags && Array.isArray(post.hashtags) && (post.hashtags as string[]).length > 0) {
+          const tags = (post.hashtags as string[]).map(t => t.startsWith("#") ? t : `#${t}`).join(" ");
+          tweetText = `${tweetText}\n\n${tags}`;
+        }
+        if (tweetText.length > 280) tweetText = tweetText.substring(0, 277) + "...";
+        await db.update(socialPosts).set({ status: "publishing" }).where(eq(socialPosts.id, input.id));
+        let result;
+        if (post.mediaUrls && Array.isArray(post.mediaUrls) && (post.mediaUrls as string[]).length > 0) {
+          result = await postTweetWithMedia(tweetText, (post.mediaUrls as string[])[0]);
+        } else {
+          result = await postTweet(tweetText);
+        }
+        if (result.success) {
+          await db.update(socialPosts).set({ status: "published", publishedAt: new Date(), postUrl: result.tweetUrl || null }).where(eq(socialPosts.id, input.id));
+          return { success: true, platform: "x", externalUrl: result.tweetUrl };
+        } else {
+          await db.update(socialPosts).set({ status: "failed", failureReason: result.error || "Unknown error" }).where(eq(socialPosts.id, input.id));
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error || "Failed to post to X" });
+        }
+      } else {
+        // Other platforms not yet connected — mark as failed with message
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: `${post.platform} API not connected yet. Only X (Twitter) is currently available.` });
+      }
+    }),
+  // ── Verify X credentials ──────────────────────────────────────
+  verifyXConnection: adminProcedure.query(async () => {
+    const { verifyCredentials, isXConfigured } = await import("./xService");
+    if (!isXConfigured()) return { configured: false, connected: false, username: null };
+    const result = await verifyCredentials();
+    return { configured: true, connected: result.success, username: result.username || null, error: result.error };
+  }),
   getStats: adminProcedure.query(async ({ ctx }) => {
     const db = (await getDb())!;
     const posts = await db.select().from(socialPosts);

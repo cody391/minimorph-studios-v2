@@ -398,8 +398,37 @@ function StatCard({ title, value, icon, loading, subtitle }: {
 function PostCard({ post, detailed }: { post: any; detailed?: boolean }) {
   const meta = PLATFORM_META[post.platform];
   const statusBadge = STATUS_BADGES[post.status] || { variant: "secondary" as const, label: post.status };
+  const utils = trpc.useUtils();
+  const [showPreview, setShowPreview] = useState(false);
+  const publishNow = trpc.socialPosts.publishNow.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Published to ${post.platform}!`, {
+        action: data.externalUrl ? { label: "View", onClick: () => window.open(data.externalUrl, "_blank") } : undefined,
+      });
+      utils.socialPosts.list.invalidate();
+      utils.socialPosts.getStats.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const deletePost = trpc.socialPosts.delete.useMutation({
+    onSuccess: () => { toast.success("Post deleted"); utils.socialPosts.list.invalidate(); utils.socialPosts.getStats.invalidate(); },
+    onError: (err) => toast.error(err.message),
+  });
+  const canPublish = post.status === "draft" || post.status === "scheduled" || post.status === "failed";
+  const isPublishing = publishNow.isPending || post.status === "publishing";
+
+  // Build the full tweet text preview (content + hashtags)
+  const buildTweetPreview = () => {
+    let text = post.content || "";
+    if (post.hashtags && Array.isArray(post.hashtags) && (post.hashtags as string[]).length > 0) {
+      const tags = (post.hashtags as string[]).map((t: string) => t.startsWith("#") ? t : `#${t}`).join(" ");
+      text = `${text}\n\n${tags}`;
+    }
+    return text;
+  };
 
   return (
+    <>
     <div className="p-4 rounded-lg border bg-white hover:shadow-sm transition-shadow">
       <div className="flex items-start gap-3">
         <div className={`w-8 h-8 rounded-lg ${meta?.bg || "bg-gray-500"} flex items-center justify-center text-white shrink-0`}>
@@ -428,16 +457,172 @@ function PostCard({ post, detailed }: { post: any; detailed?: boolean }) {
               <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {post.impressions || 0}</span>
             </div>
           )}
-        </div>
-        <div className="text-xs text-gray-400 shrink-0">
-          {post.scheduledAt ? (
-            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(post.scheduledAt).toLocaleDateString()}</span>
-          ) : (
-            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+          {post.postUrl && (
+            <a href={post.postUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-flex items-center gap-1">
+              <ArrowUpRight className="w-3 h-3" /> View on {post.platform}
+            </a>
           )}
+          {post.failureReason && post.status === "failed" && (
+            <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {post.failureReason}</p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <div className="text-xs text-gray-400">
+            {post.scheduledAt ? (
+              <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(post.scheduledAt).toLocaleDateString()}</span>
+            ) : (
+              <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+            )}
+          </div>
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={() => setShowPreview(true)}
+            >
+              <Eye className="w-3 h-3 mr-1" /> View
+            </Button>
+            {canPublish && post.platform === "x" && (
+              <Button
+                size="sm"
+                variant="default"
+                className="h-7 text-xs"
+                disabled={isPublishing}
+                onClick={() => publishNow.mutate({ id: post.id })}
+              >
+                {isPublishing ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                {isPublishing ? "Posting..." : "Post to X"}
+              </Button>
+            )}
+            {canPublish && post.platform !== "x" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => toast.info(`${post.platform} API not connected yet. Only X (Twitter) is available.`)}
+              >
+                <Send className="w-3 h-3 mr-1" /> Publish
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
+              onClick={() => { if (confirm("Delete this post?")) deletePost.mutate({ id: post.id }); }}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
+
+    {/* Post Preview Dialog */}
+    <Dialog open={showPreview} onOpenChange={setShowPreview}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <div className={`w-6 h-6 rounded ${meta?.bg || "bg-gray-500"} flex items-center justify-center text-white`}>
+              {meta?.icon || <Globe className="w-3 h-3" />}
+            </div>
+            <span className="capitalize">{post.platform}</span> Post Preview
+            <Badge variant={statusBadge.variant} className="text-xs ml-auto">{statusBadge.label}</Badge>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Tweet-style preview card */}
+        <div className="border rounded-xl p-4 bg-gray-50">
+          <div className="flex items-start gap-3">
+            <div className={`w-10 h-10 rounded-full ${meta?.bg || "bg-gray-500"} flex items-center justify-center text-white shrink-0`}>
+              {meta?.icon || <Globe className="w-4 h-4" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-sm">MiniMorph Studios</span>
+                <span className="text-gray-400 text-xs">@minimorph</span>
+              </div>
+              <div className="mt-2 text-sm text-gray-800 whitespace-pre-wrap">{buildTweetPreview()}</div>
+              {post.mediaUrls && Array.isArray(post.mediaUrls) && (post.mediaUrls as string[]).length > 0 && (
+                <div className="mt-3 rounded-xl overflow-hidden border">
+                  <img src={(post.mediaUrls as string[])[0]} alt="Post media" className="w-full max-h-64 object-cover" />
+                </div>
+              )}
+              <div className="flex gap-6 mt-3 text-xs text-gray-400">
+                <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {post.likes || 0}</span>
+                <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> {post.comments || 0}</span>
+                <span className="flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5" /> {post.shares || 0}</span>
+                <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {post.impressions || 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Post details */}
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500">Character count</span>
+            <span className={`font-mono text-xs ${buildTweetPreview().length > 280 ? "text-red-500 font-bold" : "text-gray-600"}`}>
+              {buildTweetPreview().length} / 280
+            </span>
+          </div>
+          {post.hashtags && Array.isArray(post.hashtags) && (post.hashtags as string[]).length > 0 && (
+            <div>
+              <span className="text-gray-500 block mb-1">Hashtags</span>
+              <div className="flex flex-wrap gap-1">
+                {(post.hashtags as string[]).map((tag: string, i: number) => (
+                  <span key={i} className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">#{tag}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {post.scheduledAt && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Scheduled for</span>
+              <span className="text-gray-700">{new Date(post.scheduledAt).toLocaleString()}</span>
+            </div>
+          )}
+          {post.publishedAt && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Published at</span>
+              <span className="text-gray-700">{new Date(post.publishedAt).toLocaleString()}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500">Created</span>
+            <span className="text-gray-700">{new Date(post.createdAt).toLocaleString()}</span>
+          </div>
+          {post.postUrl && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">Live URL</span>
+              <a href={post.postUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                <ArrowUpRight className="w-3 h-3" /> View on {post.platform}
+              </a>
+            </div>
+          )}
+          {post.failureReason && post.status === "failed" && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-xs text-red-600 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" /> {post.failureReason}</p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          {canPublish && post.platform === "x" && (
+            <Button
+              size="sm"
+              disabled={isPublishing}
+              onClick={() => { publishNow.mutate({ id: post.id }); setShowPreview(false); }}
+            >
+              {isPublishing ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+              {isPublishing ? "Posting..." : "Post to X"}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setShowPreview(false)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
