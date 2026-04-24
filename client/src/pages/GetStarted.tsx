@@ -27,7 +27,7 @@ const PACKAGES = [
     name: "Starter",
     price: 149,
     pages: 5,
-    features: ["5-page responsive website", "Mobile-optimized design", "Contact form", "Basic SEO setup", "Monthly performance report", "12-month support"],
+    features: ["Custom 5-page website", "Mobile-responsive design", "Basic SEO setup", "Contact form integration", "Monthly performance report", "AI-managed support", "12-month contract"],
     popular: false,
   },
   {
@@ -35,7 +35,7 @@ const PACKAGES = [
     name: "Growth",
     price: 299,
     pages: 10,
-    features: ["10-page responsive website", "Advanced animations", "Blog/news section", "Google Analytics integration", "Social media integration", "Priority support", "Monthly strategy reports"],
+    features: ["Custom 10-page website", "Advanced responsive design", "Full SEO optimization", "Monthly analytics reports", "AI-managed nurture & support", "Quarterly strategy reviews", "Priority update requests", "12-month contract"],
     popular: true,
   },
   {
@@ -43,7 +43,7 @@ const PACKAGES = [
     name: "Premium",
     price: 499,
     pages: 20,
-    features: ["20-page responsive website", "E-commerce ready", "Custom illustrations", "Advanced SEO & content strategy", "CRM integration", "Dedicated account manager", "Weekly performance reports", "A/B testing"],
+    features: ["Custom 20+ page website", "Premium design & animations", "Advanced SEO & content strategy", "Weekly analytics reports", "Dedicated AI account manager", "Monthly strategy sessions", "Unlimited update requests", "E-commerce integration", "12-month contract"],
     popular: false,
   },
 ];

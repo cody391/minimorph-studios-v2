@@ -6,7 +6,7 @@
 import { protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { getDb } from "./db";
+import { getDb, createRepNotification } from "./db";
 import {
   academyProgress,
   academyQuizAttempts,
@@ -14,7 +14,9 @@ import {
   coachingReviews,
   dailyCheckIns,
   reps,
+  rolePlaySessions,
 } from "../drizzle/schema";
+import { invokeLLM } from "./_core/llm";
 import { eq, and, desc, sql } from "drizzle-orm";
 import {
   getCertificationStatus,
@@ -338,6 +340,15 @@ export const academyRouter = router({
             await db.update(reps)
               .set({ status: "active", certifiedAt: new Date(), trainingProgress: 100 })
               .where(eq(reps.id, repId));
+
+            // Send automated welcome message
+            await createRepNotification({
+              repId,
+              type: "general",
+              title: "🎉 Welcome to the Team — You're Officially Active!",
+              message: `Congratulations! You've completed all 9 Academy modules and earned your full MiniMorph certification. Your account is now active — you can access leads, make calls, and start closing deals immediately.\n\nHere's what to do next:\n1. Check your Pipeline for available leads\n2. Review your daily check-in each morning\n3. Start reaching out — your first commission is waiting!\n\nWe're excited to have you on the team. Go make it happen! 🚀`,
+              metadata: { event: "full_certification_welcome", avgScore: avgScore },
+            });
           }
         }
       }
@@ -536,4 +547,299 @@ export const academyRouter = router({
 
     return leaderboard;
   }),
+
+  /* ═══════════════════════════════════════════════════════
+     AI ROLE-PLAY — Interactive sales practice with AI prospects
+     ═══════════════════════════════════════════════════════ */
+
+  /* ─── List rep's role-play sessions ─── */
+  rolePlaySessions: protectedProcedure
+    .input(z.object({ limit: z.number().min(1).max(50).default(20) }).optional())
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+      if (rep.length === 0) return [];
+      return db.select().from(rolePlaySessions)
+        .where(eq(rolePlaySessions.repId, rep[0].id))
+        .orderBy(desc(rolePlaySessions.createdAt))
+        .limit(input?.limit ?? 20);
+    }),
+
+  /* ─── Start a new role-play session ─── */
+  startRolePlay: protectedProcedure
+    .input(z.object({
+      scenarioType: z.enum([
+        "cold_call", "discovery_call", "objection_handling", "closing",
+        "follow_up", "upsell", "angry_customer", "price_negotiation"
+      ]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+      if (rep.length === 0) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
+
+      // Generate a unique prospect persona using LLM
+      const personaResult = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: `You are a scenario generator for sales training. Create a realistic prospect persona for a ${input.scenarioType.replace(/_/g, " ")} scenario.
+
+The rep sells MiniMorph Studios services — a premium digital marketing agency offering three tiers:
+- Starter ($149/mo): Social media management, basic SEO, monthly reporting
+- Growth ($299/mo): Everything in Starter + content creation, email marketing, paid ads management
+- Premium ($499/mo): Everything in Growth + dedicated strategist, video production, advanced analytics
+
+Return a JSON object with these fields:
+- name: Full name of the prospect
+- company: Company name
+- industry: Their industry
+- companySize: Number of employees
+- painPoints: Array of 2-3 specific pain points
+- personality: One of "analytical", "expressive", "driver", "amiable"
+- budget: Their approximate monthly marketing budget
+- objections: Array of 1-2 likely objections they'll raise
+- backstory: 2-3 sentences of context about their situation`,
+          },
+          { role: "user", content: `Generate a prospect persona for a ${input.scenarioType.replace(/_/g, " ")} scenario.` },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "prospect_persona",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                company: { type: "string" },
+                industry: { type: "string" },
+                companySize: { type: "number" },
+                painPoints: { type: "array", items: { type: "string" } },
+                personality: { type: "string", enum: ["analytical", "expressive", "driver", "amiable"] },
+                budget: { type: "string" },
+                objections: { type: "array", items: { type: "string" } },
+                backstory: { type: "string" },
+              },
+              required: ["name", "company", "industry", "companySize", "painPoints", "personality", "budget", "objections", "backstory"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const persona = JSON.parse(personaResult.choices[0].message.content as string);
+
+      // Generate the prospect's opening message
+      const openingResult = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: `You are ${persona.name}, ${persona.backstory}
+
+You are a ${persona.personality} personality type. Your pain points are: ${persona.painPoints.join(", ")}.
+Your objections are: ${persona.objections.join(", ")}.
+
+This is a ${input.scenarioType.replace(/_/g, " ")} scenario. Respond naturally as this prospect would.
+Keep your response to 1-3 sentences. Be realistic — don't be too eager or too hostile.`,
+          },
+          {
+            role: "user",
+            content: input.scenarioType === "cold_call"
+              ? "*Phone rings* Hello?"
+              : input.scenarioType === "discovery_call"
+              ? "Hi, thanks for taking the time to chat today. I'm with MiniMorph Studios."
+              : input.scenarioType === "angry_customer"
+              ? "*You receive a call from an existing client who sounds upset*"
+              : input.scenarioType === "follow_up"
+              ? "*You're following up with a prospect who showed interest last week*"
+              : "Hi, I'm calling from MiniMorph Studios.",
+          },
+        ],
+      });
+
+      const openingMessage = openingResult.choices[0].message.content as string;
+
+      const initialMessages = [
+        { role: "assistant", content: openingMessage, timestamp: Date.now() },
+      ];
+
+      const [inserted] = await db.insert(rolePlaySessions).values({
+        repId: rep[0].id,
+        scenarioType: input.scenarioType,
+        prospectPersona: JSON.stringify(persona),
+        messages: initialMessages,
+        status: "active",
+        messageCount: 1,
+      });
+
+      return {
+        sessionId: inserted.insertId,
+        persona,
+        messages: initialMessages,
+        scenarioType: input.scenarioType,
+      };
+    }),
+
+  /* ─── Send a message in a role-play session ─── */
+  rolePlayMessage: protectedProcedure
+    .input(z.object({
+      sessionId: z.number(),
+      message: z.string().min(1).max(2000),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+      if (rep.length === 0) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const [session] = await db.select().from(rolePlaySessions)
+        .where(and(eq(rolePlaySessions.id, input.sessionId), eq(rolePlaySessions.repId, rep[0].id)))
+        .limit(1);
+
+      if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
+      if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Session is not active" });
+
+      const persona = JSON.parse(session.prospectPersona);
+      const existingMessages = (session.messages as any[]) || [];
+
+      // Build conversation history for LLM
+      const llmMessages = [
+        {
+          role: "system" as const,
+          content: `You are ${persona.name}, the ${persona.personality} ${persona.industry} business owner of ${persona.company} (${persona.companySize} employees).
+
+${persona.backstory}
+
+Your pain points: ${persona.painPoints.join(", ")}
+Your objections: ${persona.objections.join(", ")}
+Your budget: ${persona.budget}
+
+This is a ${session.scenarioType.replace(/_/g, " ")} scenario. Stay in character at all times.
+Respond naturally as this prospect would. Be realistic — push back on things that don't make sense, ask questions, raise objections when appropriate.
+Keep responses to 1-4 sentences. Never break character or mention that you're an AI.
+If the rep does a great job addressing your concerns, gradually warm up. If they're pushy or miss the mark, become more resistant.`,
+        },
+        ...existingMessages.map((m: any) => ({
+          role: (m.role === "assistant" ? "assistant" : "user") as "system" | "user" | "assistant",
+          content: m.content,
+        })),
+        { role: "user" as const, content: input.message },
+      ];
+
+      const response = await invokeLLM({ messages: llmMessages });
+      const aiReply = response.choices[0].message.content as string;
+
+      const updatedMessages = [
+        ...existingMessages,
+        { role: "user", content: input.message, timestamp: Date.now() },
+        { role: "assistant", content: aiReply, timestamp: Date.now() },
+      ];
+
+      await db.update(rolePlaySessions)
+        .set({
+          messages: updatedMessages,
+          messageCount: updatedMessages.length,
+        })
+        .where(eq(rolePlaySessions.id, input.sessionId));
+
+      return {
+        reply: aiReply,
+        messages: updatedMessages,
+      };
+    }),
+
+  /* ─── End and score a role-play session ─── */
+  scoreRolePlay: protectedProcedure
+    .input(z.object({ sessionId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
+      if (rep.length === 0) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const [session] = await db.select().from(rolePlaySessions)
+        .where(and(eq(rolePlaySessions.id, input.sessionId), eq(rolePlaySessions.repId, rep[0].id)))
+        .limit(1);
+
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const persona = JSON.parse(session.prospectPersona);
+      const messages = (session.messages as any[]) || [];
+
+      const conversationText = messages.map((m: any) =>
+        `${m.role === "user" ? "REP" : "PROSPECT"}: ${m.content}`
+      ).join("\n");
+
+      const scoreResult = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert sales coach evaluating a role-play practice session.
+
+The rep was practicing a ${session.scenarioType.replace(/_/g, " ")} scenario with this prospect:
+- Name: ${persona.name}
+- Company: ${persona.company} (${persona.industry})
+- Personality: ${persona.personality}
+- Pain points: ${persona.painPoints.join(", ")}
+- Objections: ${persona.objections.join(", ")}
+
+Evaluate the rep's performance and return a JSON object.`,
+          },
+          {
+            role: "user",
+            content: `Here is the conversation:\n\n${conversationText}\n\nScore this role-play session.`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "roleplay_score",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                score: { type: "number", description: "Overall score 0-100" },
+                feedback: { type: "string", description: "Detailed markdown feedback with specific examples from the conversation" },
+                strengths: { type: "array", items: { type: "string" }, description: "3-5 specific things the rep did well" },
+                improvements: { type: "array", items: { type: "string" }, description: "3-5 specific areas for improvement" },
+                wouldProspectBuy: { type: "boolean", description: "Based on the conversation, would this prospect likely buy?" },
+                keyMoment: { type: "string", description: "The most impactful moment in the conversation (good or bad)" },
+              },
+              required: ["score", "feedback", "strengths", "improvements", "wouldProspectBuy", "keyMoment"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const evaluation = JSON.parse(scoreResult.choices[0].message.content as string);
+
+      const durationSeconds = messages.length > 0
+        ? Math.round((messages[messages.length - 1].timestamp - messages[0].timestamp) / 1000)
+        : 0;
+
+      await db.update(rolePlaySessions)
+        .set({
+          status: "scored",
+          score: evaluation.score,
+          feedback: evaluation.feedback,
+          strengths: evaluation.strengths,
+          improvements: evaluation.improvements,
+          durationSeconds,
+          completedAt: new Date(),
+        })
+        .where(eq(rolePlaySessions.id, input.sessionId));
+
+      return {
+        score: evaluation.score,
+        feedback: evaluation.feedback,
+        strengths: evaluation.strengths,
+        improvements: evaluation.improvements,
+        wouldProspectBuy: evaluation.wouldProspectBuy,
+        keyMoment: evaluation.keyMoment,
+      };
+    }),
 });

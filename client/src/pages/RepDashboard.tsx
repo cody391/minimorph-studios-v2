@@ -38,8 +38,8 @@ const stageColors: Record<string, string> = {
   closed_won: "bg-green-100 text-green-700", closed_lost: "bg-red-100 text-red-700",
 };
 const commissionStatusColors: Record<string, string> = { pending: "bg-yellow-100 text-yellow-700", approved: "bg-blue-100 text-blue-700", paid: "bg-green-100 text-green-700", cancelled: "bg-red-100 text-red-700" };
-const levelColors: Record<string, string> = { rookie: "bg-gray-100 text-gray-700", closer: "bg-blue-100 text-blue-700", ace: "bg-purple-100 text-purple-700", elite: "bg-amber-100 text-amber-700", legend: "bg-gradient-to-r from-amber-200 to-yellow-200 text-amber-800" };
-const levelIcons: Record<string, any> = { rookie: Shield, closer: Target, ace: Star, elite: Trophy, legend: Flame };
+const tierColors: Record<string, string> = { bronze: "bg-amber-100 text-amber-700", silver: "bg-slate-100 text-slate-700", gold: "bg-yellow-100 text-yellow-700", platinum: "bg-violet-100 text-violet-700" };
+const tierIcons: Record<string, any> = { bronze: Shield, silver: Award, gold: Trophy, platinum: Sparkles };
 
 export default function RepDashboard() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -55,6 +55,8 @@ export default function RepDashboard() {
   const { data: commissions } = trpc.commissions.byRep.useQuery({ repId: repProfile?.id ?? 0 }, { enabled: isAuthenticated && !!repProfile });
   const { data: gamification } = trpc.repGamification.myStats.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: leaderboard } = trpc.repGamification.leaderboard.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
+  const { data: accountabilityTier } = trpc.accountability.getMyTier.useQuery(undefined, { enabled: isAuthenticated && !!repProfile, retry: false });
+  const { data: accountabilityScore } = trpc.accountability.getMyScore.useQuery(undefined, { enabled: isAuthenticated && !!repProfile, retry: false });
   const { data: activities } = trpc.repActivity.myActivities.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: activityStats } = trpc.repActivity.myStats.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: followUps } = trpc.repActivity.myFollowUps.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
@@ -177,8 +179,8 @@ export default function RepDashboard() {
     );
   }
 
-  const LevelIcon = levelIcons[gamification?.level || "rookie"] || Shield;
-  const levelProgress = gamification ? Math.min(100, Math.round((gamification.totalPoints / (gamification.level === "rookie" ? 500 : gamification.level === "closer" ? 2000 : gamification.level === "ace" ? 5000 : gamification.level === "elite" ? 15000 : 99999)) * 100)) : 0;
+  const currentTier = (accountabilityTier?.tier || "bronze") as string;
+  const TierIcon = tierIcons[currentTier] || Shield;
 
   return (
     <div className="min-h-screen bg-cream">
@@ -203,8 +205,8 @@ export default function RepDashboard() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/60 font-sans flex-wrap">
-                  <span className="flex items-center gap-1"><LevelIcon className="w-3.5 h-3.5 text-terracotta" /> {gamification?.level || "Rookie"}</span>
-                  <span className="flex items-center gap-1"><Flame className="w-3.5 h-3.5 text-orange-400" /> {gamification?.currentStreak || 0}d</span>
+                  <span className="flex items-center gap-1"><TierIcon className="w-3.5 h-3.5 text-terracotta" /> {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} Tier</span>
+                  <span className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5 text-orange-400" /> Score: {accountabilityScore?.latestScore ? parseFloat(accountabilityScore.latestScore.overallScore).toFixed(0) : "--"}</span>
                   <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-400" /> {gamification?.totalPoints?.toLocaleString() || 0} pts</span>
                 </div>
               </div>
@@ -271,21 +273,23 @@ export default function RepDashboard() {
               <Card className="border-border/50">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-terracotta" /> Level Progress
+                    <Trophy className="h-4 w-4 text-terracotta" /> Tier Progress
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4 mb-4">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center ${levelColors[gamification?.level || "rookie"]}`}>
-                      <LevelIcon className="w-7 h-7" />
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center ${tierColors[currentTier] || "bg-amber-100 text-amber-700"}`}>
+                      <TierIcon className="w-7 h-7" />
                     </div>
                     <div>
-                      <p className="text-lg font-serif text-forest capitalize">{gamification?.level || "Rookie"}</p>
-                      <p className="text-xs text-forest/50 font-sans">{gamification?.totalPoints?.toLocaleString() || 0} total points</p>
+                      <p className="text-lg font-serif text-forest capitalize">{currentTier} Tier</p>
+                      <p className="text-xs text-forest/50 font-sans">Performance Score: {accountabilityScore?.latestScore ? parseFloat(accountabilityScore.latestScore.overallScore).toFixed(0) : "--"}/100</p>
                     </div>
                   </div>
-                  <Progress value={levelProgress} className="h-2 mb-2" />
-                  <p className="text-[11px] text-forest/40 font-sans">Progress to next level</p>
+                  <Progress value={accountabilityScore?.latestScore ? parseFloat(accountabilityScore.latestScore.overallScore) : 0} className="h-2 mb-2" />
+                  <p className="text-[11px] text-forest/40 font-sans">
+                    {currentTier === "platinum" ? "Highest tier achieved!" : `Keep improving to reach ${currentTier === "bronze" ? "Silver" : currentTier === "silver" ? "Gold" : "Platinum"}`}
+                  </p>
                   {(() => {
                     const badges = gamification?.badges;
                     if (!badges || !Array.isArray(badges) || badges.length === 0) return null;
@@ -469,11 +473,10 @@ export default function RepDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {[
-                    { level: "Rookie", rate: "10%", requirement: "Starting rate", color: "bg-gray-100" },
-                    { level: "Closer", rate: "12%", requirement: "500+ points", color: "bg-blue-100" },
-                    { level: "Ace", rate: "14%", requirement: "2,000+ points", color: "bg-purple-100" },
-                    { level: "Elite", rate: "16%", requirement: "5,000+ points", color: "bg-amber-100" },
-                    { level: "Legend", rate: "20%", requirement: "10,000+ points", color: "bg-yellow-100" },
+                    { level: "Bronze", rate: "10%", requirement: "Starting tier", color: "bg-amber-100" },
+                    { level: "Silver", rate: "12%", requirement: "3+ months, $3K+/mo revenue", color: "bg-slate-100" },
+                    { level: "Gold", rate: "14%", requirement: "6+ months, $7K+/mo revenue", color: "bg-yellow-100" },
+                    { level: "Platinum", rate: "15%", requirement: "12+ months, $12K+/mo revenue", color: "bg-violet-100" },
                   ].map((tier) => (
                     <div key={tier.level} className="flex items-center justify-between p-3 rounded-lg border border-border/20">
                       <div className="flex items-center gap-3">
@@ -546,7 +549,7 @@ export default function RepDashboard() {
                             <div>
                               <p className="text-sm font-sans text-forest font-medium">{entry.repName || "Unknown"} {isMe && <span className="text-terracotta text-xs">(You)</span>}</p>
                               <div className="flex items-center gap-2">
-                                <Badge className={`text-[10px] ${levelColors[entry.level] || ""}`}>{entry.level}</Badge>
+                                <Badge className={`text-[10px] ${tierColors[entry.level] || ""}`}>{entry.level}</Badge>
                                 <span className="text-[10px] text-forest/40 font-sans">{entry.currentStreak} day streak</span>
                               </div>
                             </div>

@@ -879,3 +879,42 @@
 - [x] Clean up admin Applications tab: removed manual approve/reject, now read-only audit log
 - [x] Fix Stripe payout skip link: also uses ?tab=academy instead of ?tab=training
 - [x] Update all lead gen services to include certified reps alongside active (6 files updated)
+
+### Pipeline Assessment Fixes
+#### Issue 1: Unify Tier Systems
+- [x] Remove gamification tier system (Rookie/Closer/Ace/Elite/Legend) — replace with accountability tiers (Bronze/Silver/Gold/Platinum)
+- [x] Update Careers page commission tiers to Bronze/Silver/Gold/Platinum with correct rates
+- [x] Update Rep Dashboard Overview tab to show accountability tier instead of gamification level
+- [x] Update Rep Dashboard level colors/icons to use accountability tier names
+- [x] Keep gamification points as XP for engagement but decouple from commission rates
+- [x] Single source of truth: accountability tier determines commission rate everywhere
+
+#### Issue 2: Fix Pricing Consistency
+- [x] Align all pricing to single source of truth: $149/$299/$499 per month
+- [x] Update Stripe products to match website pricing
+- [x] Set up recurring monthly billing in Stripe checkout (subscription mode)
+
+#### Issue 3: Fix Careers Page Module Count
+- [x] Change "5-module certification" to "9-module certification" on Careers page
+
+#### Issue 4: Automated Welcome Message
+- [x] Send automated welcome notification when rep completes all 9 Academy modules and is auto-activated
+
+#### Issue 5: Daily Quiz System
+- [x] Build daily quiz requirement — reps must complete before accessing leads each day
+- [x] Quiz content from Academy material + AI-generated (coaching reviews from AI Coach)
+- [x] Requirement diminishes as rep advances through tiers (Platinum exempt)
+- [x] Track daily quiz completion in database
+- [x] Build Daily Training tab UI in SalesAcademy with pending review cards, quiz, and cleared status
+
+#### Issue 6: AI Role-Play Scenarios
+- [x] Build interactive role-play module in the Academy
+- [x] AI plays customer (8 scenario types: cold call, discovery, objection handling, closing, follow-up, upsell, angry customer, price negotiation)
+- [x] AI generates unique prospect personas with personality, pain points, objections
+- [x] AI provides detailed feedback on performance (strengths, improvements, key moment)
+- [x] Score role-play performance (0-100) and track session history
+- [x] Role Play tab in SalesAcademy with AIChatBox-powered conversation UI
+
+#### Issue 7: Manus Branding Audit
+- [x] Check all rep-facing and customer-facing pages for Manus branding
+- [x] Remove or replace any Manus references (ManusDialog login text, code comments in repEcosystem, storage, localAuth)

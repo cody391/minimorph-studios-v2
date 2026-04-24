@@ -1,7 +1,7 @@
 /**
  * Local Email/Password Authentication
- * For reps and customers — no Manus OAuth branding.
- * Admin continues to use Manus OAuth.
+ * For reps and customers — email/password based.
+ * Admin continues to use platform OAuth.
  */
 import { z } from "zod";
 import bcrypt from "bcryptjs";

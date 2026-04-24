@@ -742,7 +742,7 @@ const leadsRouter = router({
           },
           {
             role: "user",
-            content: `Write a proposal for:\n- Business: ${lead.businessName}\n- Contact: ${lead.contactName}\n- Industry: ${lead.industry || "General"}\n- Package: ${pkg?.name || input.packageTier} ($${pkg ? (pkg.monthlyPriceInCents / 100).toFixed(0) : "TBD"}/mo + $${pkg ? (pkg.priceInCents / 100).toFixed(0) : "TBD"} setup)\n- Features: ${pkg?.features.join(", ") || "Standard features"}\n- Enrichment data: ${lead.enrichmentData ? JSON.stringify(lead.enrichmentData) : "None"}\n- Rep name: ${rep.fullName}\n${input.customNotes ? `- Custom notes: ${input.customNotes}` : ""}\n\nReturn JSON with: subject (string), htmlContent (string with HTML email), plainTextContent (string), keySellingPoints (string[])`,
+            content: `Write a proposal for:\n- Business: ${lead.businessName}\n- Contact: ${lead.contactName}\n- Industry: ${lead.industry || "General"}\n- Package: ${pkg?.name || input.packageTier} ($${pkg ? (pkg.monthlyPriceInCents / 100).toFixed(0) : "TBD"}/mo, 12-month contract)\n- Features: ${pkg?.features.join(", ") || "Standard features"}\n- Enrichment data: ${lead.enrichmentData ? JSON.stringify(lead.enrichmentData) : "None"}\n- Rep name: ${rep.fullName}\n${input.customNotes ? `- Custom notes: ${input.customNotes}` : ""}\n\nReturn JSON with: subject (string), htmlContent (string with HTML email), plainTextContent (string), keySellingPoints (string[])`,
           },
         ],
         response_format: {
@@ -1387,12 +1387,19 @@ const ordersRouter = router({
 
       const origin = ctx.req.headers.origin || ctx.req.headers.referer || "http://localhost:3000";
 
-      // Create the checkout session
+      // Create the checkout session — monthly subscription
       const session = await stripe.checkout.sessions.create({
-        mode: "payment",
+        mode: "subscription",
         customer_email: ctx.user.email || undefined,
         client_reference_id: ctx.user.id.toString(),
         allow_promotion_codes: true,
+        subscription_data: {
+          metadata: {
+            user_id: ctx.user.id.toString(),
+            package_tier: input.packageTier,
+            business_name: input.businessName || "",
+          },
+        },
         metadata: {
           user_id: ctx.user.id.toString(),
           customer_email: ctx.user.email || "",
@@ -1408,7 +1415,8 @@ const ordersRouter = router({
                 name: pkg.name,
                 description: pkg.description,
               },
-              unit_amount: pkg.priceInCents,
+              unit_amount: pkg.monthlyPriceInCents,
+              recurring: { interval: "month" },
             },
             quantity: 1,
           },
@@ -1423,7 +1431,7 @@ const ordersRouter = router({
         userId: ctx.user.id,
         stripeCheckoutSessionId: session.id,
         packageTier: input.packageTier,
-        amount: pkg.priceInCents,
+        amount: pkg.monthlyPriceInCents,
         customerEmail: ctx.user.email || undefined,
         customerName: ctx.user.name || undefined,
         businessName: input.businessName || undefined,

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   DollarSign, TrendingUp, Clock, Users, Award, Zap, Target,
   CheckCircle, ArrowRight, Star, Briefcase, GraduationCap,
-  Shield, Trophy, Flame, ChevronDown, ChevronUp,
+  Shield, Trophy, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -13,15 +13,15 @@ const EARNINGS_EXAMPLES = [
   { deals: 5, avgDeal: 1499, monthly: "$749", annual: "$8,993", level: "Part-Time Closer" },
   { deals: 10, avgDeal: 1999, monthly: "$1,999", annual: "$23,988", level: "Full-Time Rep" },
   { deals: 20, avgDeal: 2499, monthly: "$4,998", annual: "$59,976", level: "Top Performer" },
-  { deals: 30, avgDeal: 3499, monthly: "$10,497", annual: "$125,964", level: "Elite Legend" },
+  { deals: 30, avgDeal: 3499, monthly: "$10,497", annual: "$125,964", level: "Platinum Rep" },
 ];
 
 const BENEFITS = [
-  { icon: DollarSign, title: "10-20% Commission", desc: "Earn on every sale. Your rate increases as you level up — Legends earn 20%." },
+  { icon: DollarSign, title: "10-15% Commission", desc: "Earn on every sale. Your rate increases as you tier up — Platinum reps earn 15%." },
   { icon: Clock, title: "Flexible Schedule", desc: "Work when you want, where you want. Full-time or part-time — you set the pace." },
-  { icon: GraduationCap, title: "Full Training", desc: "5-module certification program covers product, sales, tools, and brand standards." },
+  { icon: GraduationCap, title: "Full Training", desc: "9-module certification program covers values, product mastery, sales psychology, objection handling, and more." },
   { icon: Zap, title: "AI-Powered Tools", desc: "AI drafts emails, generates proposals, and qualifies leads for you." },
-  { icon: Trophy, title: "Gamification", desc: "Earn points, unlock badges, climb the leaderboard, and compete for bonuses." },
+  { icon: Trophy, title: "Performance Tiers", desc: "Advance from Bronze to Platinum based on performance. Higher tiers earn more commission and priority leads." },
   { icon: Shield, title: "Stripe Payouts", desc: "Direct deposit to your bank account. Transparent commission tracking." },
   { icon: Target, title: "Hot Leads Provided", desc: "We generate leads through marketing. You close them. No cold calling required." },
   { icon: Users, title: "Referral Bonuses", desc: "Refer a rep who closes their first deal? Earn a $200 bonus." },
@@ -50,16 +50,15 @@ const FAQS = [
   },
   {
     q: "How does the commission tier system work?",
-    a: "You start at 10% (Rookie). As you earn points through activities and closed deals, you level up: Closer (12%), Ace (14%), Elite (16%), Legend (20%). Points come from calls, emails, meetings, and closed deals.",
+    a: "You start at 10% (Bronze). As you build tenure and revenue, you advance: Silver (12% at 3+ months, $3K+/mo), Gold (14% at 6+ months, $7K+/mo), Platinum (15% at 12+ months, $12K+/mo). Performance scores factor in activity, close rate, client satisfaction, and values compliance.",
   },
 ];
 
 const LEVELS = [
-  { name: "Rookie", rate: "10%", points: "0+", icon: Shield, color: "bg-gray-100 text-gray-700" },
-  { name: "Closer", rate: "12%", points: "500+", icon: Target, color: "bg-blue-100 text-blue-700" },
-  { name: "Ace", rate: "14%", points: "2,000+", icon: Star, color: "bg-purple-100 text-purple-700" },
-  { name: "Elite", rate: "16%", points: "5,000+", icon: Trophy, color: "bg-amber-100 text-amber-700" },
-  { name: "Legend", rate: "20%", points: "10,000+", icon: Flame, color: "bg-yellow-100 text-yellow-700" },
+  { name: "Bronze", rate: "10%", requirement: "Starting tier", icon: Shield, color: "bg-amber-100 text-amber-700" },
+  { name: "Silver", rate: "12%", requirement: "3+ months, $3K+/mo", icon: Award, color: "bg-slate-100 text-slate-700" },
+  { name: "Gold", rate: "14%", requirement: "6+ months, $7K+/mo", icon: Trophy, color: "bg-yellow-100 text-yellow-700" },
+  { name: "Platinum", rate: "15%", requirement: "12+ months, $12K+/mo", icon: Star, color: "bg-violet-100 text-violet-700" },
 ];
 
 export default function Careers() {
@@ -87,7 +86,7 @@ export default function Careers() {
             </h1>
             <p className="text-lg text-white/70 font-sans max-w-xl mb-8">
               Join MiniMorph Studios as a sales rep. We provide the leads, the tools, and the training.
-              You bring the hustle. Earn 10-20% commission on every deal you close.
+              You bring the hustle. Earn 10-15% commission on every deal you close.
             </p>
             <div className="flex flex-wrap gap-4">
               <Button
@@ -113,7 +112,7 @@ export default function Careers() {
         <div className="container max-w-6xl mx-auto px-6 py-6">
           <div className="flex flex-wrap justify-center gap-8 md:gap-16 text-center">
             {[
-              { value: "10-20%", label: "Commission Rate" },
+              { value: "10-15%", label: "Commission Rate" },
               { value: "100%", label: "Remote" },
               { value: "AI-Powered", label: "Sales Tools" },
               { value: "Flexible", label: "Schedule" },
@@ -184,7 +183,7 @@ export default function Careers() {
             ))}
           </div>
           <p className="text-[10px] text-forest/40 font-sans text-center mt-4">
-            Based on 10% base commission rate. Top performers at Legend tier earn 20%, doubling these figures.
+            Based on 10% base commission rate. Top performers at Platinum tier earn 15% with priority lead access.
           </p>
         </div>
       </section>
@@ -194,7 +193,7 @@ export default function Careers() {
         <div className="container max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-serif text-forest mb-3">Level up, earn more</h2>
-            <p className="text-forest/60 font-sans max-w-xl mx-auto">Your commission rate grows as you prove yourself. Every activity earns points toward the next level.</p>
+            <p className="text-forest/60 font-sans max-w-xl mx-auto">Your commission rate grows as you build tenure and revenue. Performance scores determine your tier advancement.</p>
           </div>
           <div className="max-w-2xl mx-auto space-y-3">
             {LEVELS.map((l, i) => (
@@ -205,7 +204,7 @@ export default function Careers() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-medium text-forest font-sans">{l.name}</h3>
-                    <Badge variant="outline" className="text-[10px] font-sans">{l.points} points</Badge>
+                    <Badge variant="outline" className="text-[10px] font-sans">{l.requirement}</Badge>
                   </div>
                 </div>
                 <div className="text-right">
@@ -233,7 +232,7 @@ export default function Careers() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
               { step: "01", title: "Apply", desc: "Fill out our 4-step application. Tell us about yourself, your experience, and why you want to join.", icon: Briefcase },
-              { step: "02", title: "Train", desc: "Complete 5 training modules covering product, sales, tools, and brand standards. Pass the certification quiz.", icon: GraduationCap },
+              { step: "02", title: "Train", desc: "Complete 9 training modules covering values, product mastery, sales psychology, discovery calls, objection handling, closing, prospecting, account management, and advanced tactics.", icon: GraduationCap },
               { step: "03", title: "Sell", desc: "Get assigned hot leads, use AI tools to draft emails and proposals, log activities, and close deals.", icon: Target },
               { step: "04", title: "Earn", desc: "Commissions are tracked automatically. Get paid directly to your bank via Stripe Connect.", icon: DollarSign },
             ].map((s) => (

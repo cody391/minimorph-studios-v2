@@ -9,11 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Streamdown } from "streamdown";
+import { AIChatBox } from "@/components/AIChatBox";
 import {
   Package, Brain, Phone, Shield, Target, Search, TrendingUp, Crown,
   BookOpen, GraduationCap, CheckCircle, ChevronRight, ChevronLeft,
   Clock, Award, Star, Flame, Trophy, Lock, Play, RotateCcw,
   Lightbulb, MessageSquare, Zap, ArrowRight, AlertCircle,
+  CalendarCheck, ShieldCheck, AlertTriangle, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,11 +52,21 @@ export default function SalesAcademy() {
     { enabled: !!selectedModuleId && activeView === "quiz" }
   );
   const { data: leaderboard } = trpc.academy.leaderboard.useQuery();
+  const { data: dailyCheckIn, isLoading: checkInLoading } = trpc.academy.dailyCheckIn.useQuery();
+  const { data: rankConfigs } = trpc.academy.rankConfigs.useQuery();
 
   const utils = trpc.useUtils();
   const completeLessonMut = trpc.academy.completeLesson.useMutation({
     onSuccess: () => utils.academy.listModules.invalidate(),
   });
+  const completeReviewMut = trpc.academy.completeReview.useMutation({
+    onSuccess: () => {
+      utils.academy.dailyCheckIn.invalidate();
+      utils.academy.pendingReviews.invalidate();
+    },
+  });
+  const [reviewQuizAnswer, setReviewQuizAnswer] = useState<Record<number, number>>({});
+  const [expandedReview, setExpandedReview] = useState<number | null>(null);
   const submitQuizMut = trpc.academy.submitQuiz.useMutation({
     onSuccess: () => {
       utils.academy.listModules.invalidate();
@@ -507,9 +519,60 @@ export default function SalesAcademy() {
         <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-white/5 rounded-full translate-y-1/2" />
       </Card>
 
-      {/* Tabs: Modules / Leaderboard */}
+      {/* Daily Training Gate Banner */}
+      {dailyCheckIn && !dailyCheckIn.isCleared && dailyCheckIn.pendingReviews.length > 0 && (
+        <Card className="border-2 border-amber-300 bg-amber-50/80">
+          <CardContent className="p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-serif text-forest font-medium mb-1">Daily Training Required</h3>
+                <p className="text-xs text-forest/60 font-sans mb-3">
+                  Complete your daily coaching reviews before accessing leads and making calls.
+                  You have <span className="font-bold text-amber-700">{dailyCheckIn.pendingReviews.length}</span> review{dailyCheckIn.pendingReviews.length > 1 ? "s" : ""} to complete today.
+                  {dailyCheckIn.config && (
+                    <span className="text-forest/40 ml-1">
+                      ({dailyCheckIn.level.charAt(0).toUpperCase() + dailyCheckIn.level.slice(1)} rank: max {dailyCheckIn.config.maxDailyReviews}/day)
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center gap-3">
+                  <Progress
+                    value={dailyCheckIn.checkIn ? (dailyCheckIn.checkIn.reviewsCompleted / Math.max(dailyCheckIn.checkIn.reviewsRequired, 1)) * 100 : 0}
+                    className="h-2 flex-1"
+                  />
+                  <span className="text-xs font-sans text-forest/50">
+                    {dailyCheckIn.checkIn?.reviewsCompleted || 0}/{dailyCheckIn.checkIn?.reviewsRequired || 0} done
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {dailyCheckIn?.isCleared && dailyCheckIn.checkIn && dailyCheckIn.checkIn.reviewsRequired > 0 && (
+        <Card className="border border-green-200 bg-green-50/50">
+          <CardContent className="p-4 flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-green-600" />
+            <span className="text-sm font-sans text-green-700">Daily training complete! You're cleared to work.</span>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tabs: Modules / Leaderboard / Daily Training */}
       <Tabs defaultValue="modules">
         <TabsList className="bg-forest/5">
+          <TabsTrigger value="daily" className="font-sans text-xs data-[state=active]:bg-terracotta data-[state=active]:text-white relative">
+            <CalendarCheck className="w-3.5 h-3.5 mr-1" /> Daily Training
+            {dailyCheckIn && !dailyCheckIn.isCleared && dailyCheckIn.pendingReviews.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center">
+                {dailyCheckIn.pendingReviews.length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="modules" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">
             <BookOpen className="w-3.5 h-3.5 mr-1" /> Training Modules
           </TabsTrigger>
@@ -519,7 +582,187 @@ export default function SalesAcademy() {
           <TabsTrigger value="certifications" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">
             <Award className="w-3.5 h-3.5 mr-1" /> My Certifications
           </TabsTrigger>
+          <TabsTrigger value="roleplay" className="font-sans text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+            <MessageSquare className="w-3.5 h-3.5 mr-1" /> Role Play
+          </TabsTrigger>
         </TabsList>
+
+        {/* ─── DAILY TRAINING TAB ─── */}
+        <TabsContent value="daily" className="space-y-4 mt-4">
+          {checkInLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-forest/40" />
+            </div>
+          ) : dailyCheckIn?.pendingReviews.length === 0 ? (
+            <Card className="border-border/50">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                  <ShieldCheck className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-serif text-forest mb-2">All Clear!</h3>
+                <p className="text-sm text-forest/60 font-sans mb-4">
+                  No pending coaching reviews today. You're free to work your pipeline.
+                </p>
+                <div className="flex items-center justify-center gap-4 text-xs text-forest/40 font-sans">
+                  <span className="flex items-center gap-1"><Star className="w-3 h-3" /> Rank: {dailyCheckIn?.level?.charAt(0).toUpperCase()}{dailyCheckIn?.level?.slice(1)}</span>
+                  <span className="flex items-center gap-1"><CalendarCheck className="w-3 h-3" /> Max daily: {dailyCheckIn?.config?.maxDailyReviews || 0}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-serif text-forest">Today's Coaching Reviews</h3>
+                  <p className="text-xs text-forest/50 font-sans mt-0.5">
+                    Complete these reviews to unlock your pipeline. Reviews are generated from AI analysis of your sales conversations.
+                  </p>
+                </div>
+                <Badge className="bg-forest/10 text-forest text-xs">
+                  {dailyCheckIn?.checkIn?.reviewsCompleted || 0}/{dailyCheckIn?.checkIn?.reviewsRequired || 0} done
+                </Badge>
+              </div>
+
+              {dailyCheckIn?.pendingReviews.map((review: any) => {
+                const isExpanded = expandedReview === review.id;
+                const quiz = review.quizQuestion as { question: string; options: string[]; correctAnswer: number; explanation: string } | null;
+                const needsQuiz = quiz !== null;
+                const hasAnswered = reviewQuizAnswer[review.id] !== undefined;
+
+                return (
+                  <Card key={review.id} className={`border transition-all ${
+                    review.priority === "critical" ? "border-red-200 bg-red-50/30" :
+                    review.priority === "important" ? "border-amber-200 bg-amber-50/30" :
+                    "border-border/50"
+                  }`}>
+                    <CardContent className="p-5">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          review.priority === "critical" ? "bg-red-100" :
+                          review.priority === "important" ? "bg-amber-100" :
+                          "bg-forest/10"
+                        }`}>
+                          <Brain className={`w-4 h-4 ${
+                            review.priority === "critical" ? "text-red-600" :
+                            review.priority === "important" ? "text-amber-600" :
+                            "text-forest/60"
+                          }`} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-sm font-sans text-forest font-medium">{review.title}</h4>
+                            <Badge variant="outline" className={`text-[10px] ${
+                              review.priority === "critical" ? "border-red-300 text-red-600" :
+                              review.priority === "important" ? "border-amber-300 text-amber-600" :
+                              "border-forest/30 text-forest/50"
+                            }`}>
+                              {review.priority}
+                            </Badge>
+                            {review.category && (
+                              <Badge variant="outline" className="text-[10px] border-forest/20 text-forest/40">
+                                {review.category.replace(/_/g, " ")}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {!isExpanded ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setExpandedReview(review.id)}
+                              className="text-xs text-terracotta hover:text-terracotta/80 font-sans p-0 h-auto mt-1"
+                            >
+                              <Play className="w-3 h-3 mr-1" /> Start Review
+                            </Button>
+                          ) : (
+                            <div className="mt-3 space-y-4">
+                              {/* Lesson content */}
+                              <div className="prose prose-sm max-w-none text-forest/80 font-sans bg-white/50 rounded-lg p-4 border border-border/30">
+                                <Streamdown>{review.content}</Streamdown>
+                              </div>
+
+                              {/* Quiz section */}
+                              {needsQuiz && quiz && (
+                                <div className="p-4 bg-forest/5 rounded-lg border border-forest/10">
+                                  <h5 className="text-xs font-sans font-medium text-forest mb-3 flex items-center gap-1">
+                                    <GraduationCap className="w-3.5 h-3.5 text-terracotta" /> Quick Quiz
+                                  </h5>
+                                  <p className="text-sm font-sans text-forest mb-3">{quiz.question}</p>
+                                  <div className="space-y-2">
+                                    {quiz.options.map((opt: string, i: number) => (
+                                      <button
+                                        key={i}
+                                        onClick={() => setReviewQuizAnswer(prev => ({ ...prev, [review.id]: i }))}
+                                        className={`w-full text-left p-3 rounded-lg border text-sm font-sans transition-all ${
+                                          reviewQuizAnswer[review.id] === i
+                                            ? "border-forest bg-forest/10 text-forest font-medium"
+                                            : "border-border/30 hover:border-forest/30 hover:bg-forest/5 text-forest/70"
+                                        }`}
+                                      >
+                                        <span className="inline-flex items-center gap-2">
+                                          <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                            reviewQuizAnswer[review.id] === i ? "border-forest bg-forest" : "border-forest/30"
+                                          }`}>
+                                            {reviewQuizAnswer[review.id] === i && <CheckCircle className="w-3 h-3 text-white" />}
+                                          </span>
+                                          {opt}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Submit button */}
+                              <div className="flex items-center gap-3">
+                                <Button
+                                  onClick={() => {
+                                    completeReviewMut.mutate(
+                                      { reviewId: review.id, quizAnswer: reviewQuizAnswer[review.id] },
+                                      {
+                                        onSuccess: (result) => {
+                                          if (result.quizPassed === false) {
+                                            toast.error(`Incorrect. ${result.explanation || "Review the material and try again."}`);
+                                          } else {
+                                            toast.success("Review completed!");
+                                          }
+                                          setExpandedReview(null);
+                                          setReviewQuizAnswer(prev => { const n = { ...prev }; delete n[review.id]; return n; });
+                                        },
+                                      }
+                                    );
+                                  }}
+                                  disabled={completeReviewMut.isPending || (needsQuiz && !hasAnswered)}
+                                  className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans text-xs px-4"
+                                  size="sm"
+                                >
+                                  {completeReviewMut.isPending ? (
+                                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                  ) : (
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                  )}
+                                  {needsQuiz ? "Submit Answer" : "Mark Complete"}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setExpandedReview(null)}
+                                  className="text-xs text-forest/50 font-sans"
+                                >
+                                  Collapse
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
 
         {/* ─── MODULES TAB ─── */}
         <TabsContent value="modules" className="space-y-4 mt-4">
@@ -723,7 +966,349 @@ export default function SalesAcademy() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ─── ROLE PLAY TAB ─── */}
+        <TabsContent value="roleplay" className="mt-4">
+          <RolePlayTab />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   ROLE PLAY TAB — AI-powered sales practice
+   ═══════════════════════════════════════════════════════ */
+const SCENARIO_TYPES = [
+  { value: "cold_call", label: "Cold Call", icon: Phone, description: "Practice calling a prospect who doesn't know you", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  { value: "discovery_call", label: "Discovery Call", icon: Search, description: "Uncover pain points and qualify the prospect", color: "bg-green-100 text-green-700 border-green-200" },
+  { value: "objection_handling", label: "Objection Handling", icon: Shield, description: "Handle tough pushback and turn objections into opportunities", color: "bg-amber-100 text-amber-700 border-amber-200" },
+  { value: "closing", label: "Closing", icon: Target, description: "Practice closing techniques to seal the deal", color: "bg-red-100 text-red-700 border-red-200" },
+  { value: "follow_up", label: "Follow Up", icon: ArrowRight, description: "Re-engage a prospect who went cold", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  { value: "upsell", label: "Upsell", icon: TrendingUp, description: "Upgrade an existing client to a higher tier", color: "bg-teal-100 text-teal-700 border-teal-200" },
+  { value: "angry_customer", label: "Angry Customer", icon: AlertCircle, description: "De-escalate and retain an unhappy client", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  { value: "price_negotiation", label: "Price Negotiation", icon: Crown, description: "Defend your pricing and demonstrate value", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+] as const;
+
+function RolePlayTab() {
+  const [activeSession, setActiveSession] = useState<number | null>(null);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string; timestamp?: number }>>([]);
+  const [persona, setPersona] = useState<any>(null);
+  const [scenarioType, setScenarioType] = useState<string>("");
+  const [showScorecard, setShowScorecard] = useState(false);
+
+  const { data: sessions, isLoading: sessionsLoading } = trpc.academy.rolePlaySessions.useQuery();
+  const utils = trpc.useUtils();
+
+  const startMut = trpc.academy.startRolePlay.useMutation({
+    onSuccess: (data) => {
+      setActiveSession(Number(data.sessionId));
+      setChatMessages(data.messages);
+      setPersona(data.persona);
+      setScenarioType(data.scenarioType);
+      utils.academy.rolePlaySessions.invalidate();
+    },
+  });
+
+  const messageMut = trpc.academy.rolePlayMessage.useMutation({
+    onSuccess: (data) => {
+      setChatMessages(data.messages);
+    },
+  });
+
+  const scoreMut = trpc.academy.scoreRolePlay.useMutation({
+    onSuccess: () => {
+      setShowScorecard(true);
+      utils.academy.rolePlaySessions.invalidate();
+    },
+  });
+
+  const handleSendMessage = (content: string) => {
+    if (!activeSession) return;
+    // Optimistically add user message
+    setChatMessages(prev => [...prev, { role: "user", content, timestamp: Date.now() }]);
+    messageMut.mutate({ sessionId: activeSession, message: content });
+  };
+
+  const handleEndSession = () => {
+    if (!activeSession) return;
+    scoreMut.mutate({ sessionId: activeSession });
+  };
+
+  const handleBackToScenarios = () => {
+    setActiveSession(null);
+    setChatMessages([]);
+    setPersona(null);
+    setScenarioType("");
+    setShowScorecard(false);
+  };
+
+  // Resume an existing session
+  const handleResumeSession = (session: any) => {
+    setActiveSession(session.id);
+    setChatMessages((session.messages as any[]) || []);
+    setPersona(JSON.parse(session.prospectPersona));
+    setScenarioType(session.scenarioType);
+    if (session.status === "scored") {
+      setShowScorecard(true);
+    }
+  };
+
+  /* ─── SCORECARD VIEW ─── */
+  if (showScorecard && scoreMut.data) {
+    const result = scoreMut.data;
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={handleBackToScenarios} className="text-forest/60 hover:text-forest">
+          <ChevronLeft className="w-4 h-4 mr-1" /> Back to Scenarios
+        </Button>
+
+        <Card className={`border-2 ${result.score >= 70 ? "border-green-300 bg-green-50/50" : result.score >= 50 ? "border-amber-300 bg-amber-50/50" : "border-red-300 bg-red-50/50"}`}>
+          <CardContent className="p-8 text-center">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+              result.score >= 70 ? "bg-green-100" : result.score >= 50 ? "bg-amber-100" : "bg-red-100"
+            }`}>
+              <span className={`text-3xl font-serif font-bold ${
+                result.score >= 70 ? "text-green-600" : result.score >= 50 ? "text-amber-600" : "text-red-600"
+              }`}>{result.score}</span>
+            </div>
+            <h2 className="text-2xl font-serif text-forest mb-2">
+              {result.score >= 80 ? "Excellent!" : result.score >= 70 ? "Good Job!" : result.score >= 50 ? "Getting There" : "Keep Practicing"}
+            </h2>
+            <p className="text-sm text-forest/60 font-sans mb-2">
+              {result.wouldProspectBuy ? "The prospect would likely buy!" : "The prospect wasn't convinced yet."}
+            </p>
+            <Badge className={result.wouldProspectBuy ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+              {result.wouldProspectBuy ? "Deal Likely" : "No Deal"}
+            </Badge>
+          </CardContent>
+        </Card>
+
+        {/* Key Moment */}
+        <Card className="border-border/50 bg-purple-50/30">
+          <CardContent className="p-5">
+            <h3 className="text-sm font-serif text-forest mb-2 flex items-center gap-2">
+              <Lightbulb className="w-4 h-4 text-purple-600" /> Key Moment
+            </h3>
+            <p className="text-sm text-forest/70 font-sans">{result.keyMoment}</p>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Strengths */}
+          <Card className="border-green-200 bg-green-50/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-serif text-forest flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-600" /> Strengths
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {result.strengths.map((s: string, i: number) => (
+                <div key={i} className="flex items-start gap-2">
+                  <Star className="w-3 h-3 text-green-500 shrink-0 mt-1" />
+                  <span className="text-xs text-forest/70 font-sans">{s}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Improvements */}
+          <Card className="border-amber-200 bg-amber-50/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-serif text-forest flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600" /> Areas to Improve
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {result.improvements.map((s: string, i: number) => (
+                <div key={i} className="flex items-start gap-2">
+                  <ArrowRight className="w-3 h-3 text-amber-500 shrink-0 mt-1" />
+                  <span className="text-xs text-forest/70 font-sans">{s}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detailed Feedback */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-serif text-forest">Detailed Feedback</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose prose-sm max-w-none text-forest/80 font-sans">
+              <Streamdown>{result.feedback}</Streamdown>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-center gap-3">
+          <Button onClick={handleBackToScenarios} className="bg-forest hover:bg-forest-light text-white rounded-full font-sans">
+            Try Another Scenario
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ─── ACTIVE SESSION VIEW ─── */
+  if (activeSession && persona) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={handleBackToScenarios} className="text-forest/60 hover:text-forest">
+            <ChevronLeft className="w-4 h-4 mr-1" /> Back
+          </Button>
+          <Button
+            onClick={handleEndSession}
+            disabled={scoreMut.isPending || chatMessages.filter(m => m.role === "user").length < 2}
+            variant="outline"
+            className="rounded-full font-sans text-xs border-red-300 text-red-600 hover:bg-red-50"
+          >
+            {scoreMut.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Target className="w-3 h-3 mr-1" />}
+            End & Score Session
+          </Button>
+        </div>
+
+        {/* Prospect info card */}
+        <Card className="border-purple-200 bg-purple-50/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                <span className="text-lg font-serif text-purple-700">{persona.name?.charAt(0)}</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-sans font-medium text-forest">{persona.name}</h3>
+                <p className="text-xs text-forest/50 font-sans">{persona.company} • {persona.industry} • {persona.companySize} employees</p>
+              </div>
+              <Badge variant="outline" className="text-[10px] border-purple-300 text-purple-600">
+                {scenarioType.replace(/_/g, " ")}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Chat interface */}
+        <Card className="border-border/50">
+          <CardContent className="p-0">
+            <AIChatBox
+              messages={chatMessages.map(m => ({
+                role: m.role as "user" | "assistant" | "system",
+                content: m.content,
+              }))}
+              onSendMessage={handleSendMessage}
+              isLoading={messageMut.isPending}
+              placeholder={`Respond to ${persona.name}...`}
+              height={400}
+              emptyStateMessage="Start the conversation!"
+            />
+          </CardContent>
+        </Card>
+
+        <p className="text-[10px] text-forest/40 font-sans text-center">
+          Send at least 2 messages before ending the session. The AI will score your performance.
+        </p>
+      </div>
+    );
+  }
+
+  /* ─── SCENARIO SELECTION VIEW ─── */
+  return (
+    <div className="space-y-6">
+      <Card className="border-0 bg-gradient-to-br from-purple-600 to-purple-800 text-white overflow-hidden relative">
+        <CardContent className="p-6 relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-serif">AI Role Play</h2>
+              <p className="text-xs text-white/70 font-sans">Practice sales conversations with AI-generated prospects</p>
+            </div>
+          </div>
+          <p className="text-xs text-white/60 font-sans mt-3">
+            Choose a scenario, and our AI will generate a unique prospect with realistic pain points, personality, and objections.
+            Practice your pitch, handle objections, and get scored on your performance.
+          </p>
+        </CardContent>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+      </Card>
+
+      <h3 className="text-sm font-serif text-forest">Choose a Scenario</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {SCENARIO_TYPES.map((scenario) => {
+          const Icon = scenario.icon;
+          return (
+            <Card
+              key={scenario.value}
+              className="border-border/50 hover:shadow-lg cursor-pointer transition-all group"
+              onClick={() => startMut.mutate({ scenarioType: scenario.value as any })}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${scenario.color}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-sans font-medium text-forest">{scenario.label}</h4>
+                    <p className="text-xs text-forest/50 font-sans mt-0.5">{scenario.description}</p>
+                  </div>
+                  {startMut.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-forest/40" />
+                  ) : (
+                    <Play className="w-4 h-4 text-forest/20 group-hover:text-forest/50 transition-colors" />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Past Sessions */}
+      {sessions && sessions.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-serif text-forest">Past Sessions</h3>
+          {sessions.slice(0, 10).map((session: any) => {
+            const persona = JSON.parse(session.prospectPersona);
+            const scenarioLabel = SCENARIO_TYPES.find(s => s.value === session.scenarioType)?.label || session.scenarioType;
+            return (
+              <Card
+                key={session.id}
+                className="border-border/30 hover:border-border/50 cursor-pointer transition-all"
+                onClick={() => handleResumeSession(session)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                        <span className="text-sm font-serif text-purple-700">{persona.name?.charAt(0)}</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-sans text-forest">{persona.name}</span>
+                          <Badge variant="outline" className="text-[10px]">{scenarioLabel}</Badge>
+                          <Badge className={`text-[10px] ${
+                            session.status === "scored" ? "bg-green-100 text-green-700" :
+                            session.status === "active" ? "bg-blue-100 text-blue-700" :
+                            "bg-gray-100 text-gray-700"
+                          }`}>
+                            {session.status === "scored" ? `Score: ${session.score}` : session.status}
+                          </Badge>
+                        </div>
+                        <span className="text-[10px] text-forest/40 font-sans">
+                          {new Date(session.createdAt).toLocaleDateString()} • {session.messageCount || 0} messages
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-forest/20" />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

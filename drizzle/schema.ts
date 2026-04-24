@@ -1001,6 +1001,31 @@ export const dailyCheckIns = mysqlTable("daily_check_ins", {
 export type DailyCheckIn = typeof dailyCheckIns.$inferSelect;
 export type InsertDailyCheckIn = typeof dailyCheckIns.$inferInsert;
 
+/* ═══════════════════════════════════════════════════════
+   ROLE-PLAY SESSIONS — AI-powered sales practice conversations
+   ═══════════════════════════════════════════════════════ */
+export const rolePlaySessions = mysqlTable("role_play_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rp_rep_id").notNull(),
+  scenarioType: mysqlEnum("scenario_type", [
+    "cold_call", "discovery_call", "objection_handling", "closing",
+    "follow_up", "upsell", "angry_customer", "price_negotiation"
+  ]).notNull(),
+  prospectPersona: text("prospect_persona").notNull(), // JSON: name, company, pain points, personality
+  messages: json("rp_messages"), // Array of { role, content, timestamp }
+  status: mysqlEnum("rp_status", ["active", "completed", "scored"]).default("active").notNull(),
+  score: int("rp_score"), // 0-100
+  feedback: text("rp_feedback"), // AI-generated markdown feedback
+  strengths: json("rp_strengths"), // string[]
+  improvements: json("rp_improvements"), // string[]
+  relatedModuleId: varchar("rp_related_module_id", { length: 64 }),
+  messageCount: int("message_count").default(0),
+  durationSeconds: int("duration_seconds"),
+  createdAt: timestamp("rp_created_at").defaultNow().notNull(),
+  completedAt: timestamp("rp_completed_at"),
+});
+export type RolePlaySession = typeof rolePlaySessions.$inferSelect;
+export type InsertRolePlaySession = typeof rolePlaySessions.$inferInsert;
 
 /* ═══════════════════════════════════════════════════════
    SOCIAL ACCOUNTS — Connected social media platforms

@@ -991,7 +991,7 @@ Description: ${input.description}`,
           console.log(`[Support Ticket] SMS sent to owner at ${ENV.ownerPhoneNumber}`);
         }
 
-        // Also send via Manus notification system (push/in-app)
+        // Also send via notification system (push/in-app)
         const { notifyOwner } = await import("./_core/notification");
         await notifyOwner({
           title: `🎫 Support Ticket #${ticketId} — Needs Approval`,

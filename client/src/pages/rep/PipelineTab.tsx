@@ -543,8 +543,8 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                   <Select value={proposalTier} onValueChange={setProposalTier}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="starter">Starter ($99/mo)</SelectItem>
-                      <SelectItem value="growth">Growth ($199/mo)</SelectItem>
+                      <SelectItem value="starter">Starter ($149/mo)</SelectItem>
+                      <SelectItem value="growth">Growth ($299/mo)</SelectItem>
                       <SelectItem value="premium">Premium ($499/mo)</SelectItem>
                     </SelectContent>
                   </Select>
