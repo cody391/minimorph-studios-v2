@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { getLoginUrl } from "@/const";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -107,7 +107,7 @@ export default function Onboarding() {
             <CardDescription>Sign in to access your onboarding portal and track your website project.</CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <a href={getLoginUrl()}>
+            <a href="/login">
               <Button className="bg-[#2D5A3D] hover:bg-[#234A31] text-white">
                 Sign In to Continue
               </Button>

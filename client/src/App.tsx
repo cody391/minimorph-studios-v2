@@ -35,6 +35,7 @@ const RepDashboard = lazy(() => import("./pages/RepDashboard"));
 const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
 const GetStarted = lazy(() => import("./pages/GetStarted"));
 const BecomeRep = lazy(() => import("./pages/BecomeRep"));
+const Login = lazy(() => import("./pages/Login"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Careers = lazy(() => import("./pages/Careers"));
@@ -69,6 +70,11 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path="/get-started">
         <LazyPage><GetStarted /></LazyPage>
+      </Route>
+
+      {/* Login */}
+      <Route path="/login">
+        <LazyPage><Login /></LazyPage>
       </Route>
 
       {/* Become a rep */}

@@ -1,6 +1,5 @@
 import { useState, useMemo, useRef } from "react";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,7 @@ import { toast } from "sonner";
 import {
   CheckCircle, ArrowLeft, ArrowRight, DollarSign, Users, TrendingUp,
   Zap, User, Briefcase, Heart, FileCheck, Sparkles, Trophy, Star, Camera,
+  Eye, EyeOff, Lock,
 } from "lucide-react";
 
 const STEPS = [
@@ -31,14 +31,17 @@ const INDUSTRIES = [
 
 export default function BecomeRep() {
   const [, setLocation] = useLocation();
-  const { isAuthenticated } = useAuth();
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
 
-  // Step 1: Personal Info
+  // Step 1: Personal Info + Account Creation
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -58,16 +61,24 @@ export default function BecomeRep() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToTaxInfo, setAgreedToTaxInfo] = useState(false);
 
-  const uploadPhoto = trpc.reps.uploadPhoto.useMutation({
+  // Mutations
+  const registerMutation = trpc.localAuth.register.useMutation({
     onSuccess: () => {
-      toast.success("Photo uploaded!");
+      toast.success("Account created! Let's continue your application.");
+      // After account creation, create the rep profile
+      submitRepProfile.mutate({ fullName, email, phone, bio: "" });
     },
-    onError: (err: any) => console.error("Photo upload failed:", err.message),
+    onError: (err: any) => {
+      if (err.message.includes("already exists")) {
+        toast.error("An account with this email already exists. Please log in at /login instead.");
+      } else {
+        toast.error(err.message);
+      }
+    },
   });
 
-  const submitApp = trpc.reps.submitApplication.useMutation({
+  const submitRepProfile = trpc.reps.submitApplication.useMutation({
     onSuccess: () => {
-      toast.success("Profile created! Let's continue your application.");
       // Upload photo after profile creation if one was selected
       if (photoFile) {
         const reader = new FileReader();
@@ -82,17 +93,27 @@ export default function BecomeRep() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const uploadPhoto = trpc.reps.uploadPhoto.useMutation({
+    onSuccess: () => toast.success("Photo uploaded!"),
+    onError: (err: any) => console.error("Photo upload failed:", err.message),
+  });
+
   const submitExtended = trpc.repApplication.submit.useMutation({
     onSuccess: () => {
       setSubmitted(true);
-      toast.success("Application submitted!");
+      toast.success("Application submitted! Welcome to MiniMorph.");
     },
     onError: (err: any) => toast.error(err.message),
   });
 
   const handleStep1 = () => {
-    if (!fullName || !email) { toast.error("Name and email are required"); return; }
-    submitApp.mutate({ fullName, email, phone, bio: "" });
+    if (!fullName.trim()) { toast.error("Name is required"); return; }
+    if (!email.trim()) { toast.error("Email is required"); return; }
+    if (!password) { toast.error("Password is required"); return; }
+    if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+    if (password !== confirmPassword) { toast.error("Passwords don't match"); return; }
+    // Register account first, which will trigger rep profile creation on success
+    registerMutation.mutate({ email, password, name: fullName });
   };
 
   const handleStep2 = () => {
@@ -128,6 +149,8 @@ export default function BecomeRep() {
     return Math.round(dealsPerMonth * avgDealValue * 0.1);
   }, [availability]);
 
+  const isStep1Loading = registerMutation.isPending || submitRepProfile.isPending;
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center px-4">
@@ -136,9 +159,9 @@ export default function BecomeRep() {
             <div className="w-20 h-20 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <Sparkles className="w-10 h-10 text-forest" />
             </div>
-            <h2 className="text-2xl font-serif text-forest mb-3">You're Almost In!</h2>
+            <h2 className="text-2xl font-serif text-forest mb-3">Welcome to MiniMorph!</h2>
             <p className="text-forest/60 font-sans mb-4 leading-relaxed max-w-md mx-auto">
-              Your application has been submitted. Our team will review it within 24-48 hours. Once approved, you'll get access to:
+              Your account has been created and your application submitted. Our team will review it within 24-48 hours. Once approved, you'll get access to:
             </p>
             <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto mb-8">
               {[
@@ -153,15 +176,9 @@ export default function BecomeRep() {
                 </div>
               ))}
             </div>
-            {isAuthenticated ? (
-              <Button onClick={() => setLocation("/rep")} className="bg-forest text-white hover:bg-forest/90 rounded-full px-8">
-                Go to Rep Dashboard
-              </Button>
-            ) : (
-              <Button onClick={() => setLocation("/")} className="bg-forest text-white hover:bg-forest/90 rounded-full px-8">
-                Back to Home
-              </Button>
-            )}
+            <Button onClick={() => setLocation("/rep")} className="bg-forest text-white hover:bg-forest/90 rounded-full px-8">
+              Go to Rep Dashboard
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -224,6 +241,18 @@ export default function BecomeRep() {
         </div>
       </div>
 
+      {/* Already have an account? */}
+      {step === 1 && (
+        <div className="max-w-lg mx-auto px-4 mb-4">
+          <p className="text-center text-sm text-forest/50 font-sans">
+            Already have an account?{" "}
+            <button onClick={() => setLocation("/login")} className="text-terracotta hover:underline font-medium">
+              Log in here
+            </button>
+          </p>
+        </div>
+      )}
+
       {/* Form Card */}
       <div className="max-w-lg mx-auto px-4 pb-12">
         <Card className="border-sage/20 shadow-lg">
@@ -231,9 +260,9 @@ export default function BecomeRep() {
             <>
               <CardHeader>
                 <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
-                  <User className="w-5 h-5 text-terracotta" /> Personal Information
+                  <User className="w-5 h-5 text-terracotta" /> Create Your Account
                 </CardTitle>
-                <CardDescription className="text-forest/60">Tell us about yourself.</CardDescription>
+                <CardDescription className="text-forest/60">Set up your account and tell us about yourself.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -243,6 +272,54 @@ export default function BecomeRep() {
                 <div>
                   <Label className="text-forest/80 text-sm">Email *</Label>
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="mt-1 border-sage/30 focus:border-forest" />
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5" /> Password *
+                  </Label>
+                  <div className="relative mt-1">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="At least 8 characters"
+                      className="border-sage/30 focus:border-forest pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 hover:text-forest/70"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {password && password.length < 8 && (
+                    <p className="text-[11px] text-red-500 mt-1 font-sans">Must be at least 8 characters</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-forest/80 text-sm flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5" /> Confirm Password *
+                  </Label>
+                  <div className="relative mt-1">
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your password"
+                      className="border-sage/30 focus:border-forest pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 hover:text-forest/70"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {confirmPassword && password !== confirmPassword && (
+                    <p className="text-[11px] text-red-500 mt-1 font-sans">Passwords don't match</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-forest/80 text-sm">Phone</Label>
@@ -302,8 +379,8 @@ export default function BecomeRep() {
                     />
                   </div>
                 </div>
-                <Button onClick={handleStep1} disabled={submitApp.isPending} className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans">
-                  {submitApp.isPending ? "Creating Profile..." : "Continue"} <ArrowRight className="w-4 h-4 ml-2" />
+                <Button onClick={handleStep1} disabled={isStep1Loading} className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans">
+                  {isStep1Loading ? "Creating Account..." : "Create Account & Continue"} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </CardContent>
             </>

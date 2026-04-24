@@ -13,6 +13,7 @@ import { leadGenRouter } from "./leadGenRouter";
 import { academyRouter } from "./academyRouter";
 import { socialAccountsRouter, socialCampaignsRouter, socialPostsRouter, contentCalendarRouter, brandAssetsRouter, socialAnalyticsRouter, aiContentRouter, socialLibraryRouter } from "./socialRouter";
 import { xGrowthDashboardRouter, xEngagementRouter, xGrowthTargetsRouter, xFollowTrackerRouter } from "./xGrowthRouter";
+import { localAuthRouter } from "./localAuth";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -1995,6 +1996,7 @@ export const appRouter = router({
   xEngagement: xEngagementRouter,
   xGrowthTargets: xGrowthTargetsRouter,
   xFollowTracker: xFollowTrackerRouter,
+  localAuth: localAuthRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))

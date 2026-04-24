@@ -155,6 +155,13 @@
       "when": 1776999520488,
       "tag": "0021_classy_lord_tyger",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1777002335177,
+      "tag": "0022_empty_mac_gargan",
+      "breakpoints": true
     }
   ]
 }

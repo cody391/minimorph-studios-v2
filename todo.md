@@ -611,3 +611,24 @@
 - [x] Configure Lead Gen Engine targets for businesses without good websites
 - [x] Create rep recruitment pipeline targeting sales communities on X
 - [x] Balance 60% rep recruitment / 40% lead gen initially — targets configured with both categories
+
+### Phase 40: Fix /become-rep Flow — End-to-End Rep Signup
+- [x] Fix multi-step wizard (Personal Info → Experience → Why MiniMorph? → Agreement) so all steps work
+- [x] Add password creation field to the signup flow
+- [x] Create rep account with password on form submission
+- [x] Auto-login the new rep after account creation
+- [x] Redirect to rep dashboard after successful signup/login
+- [x] Test full flow end-to-end in browser
+
+### Phase 40: Custom Email/Password Auth for Reps & Customers
+- [x] Add passwordHash field to users table
+- [x] Create register endpoint (email + password → hashed, creates user, returns session)
+- [x] Create login endpoint (email + password → verify hash, returns session)
+- [x] Rewrite /become-rep flow: Step 1 includes password, creates user+rep, auto-login, Steps 2-4 work seamlessly
+- [x] After Step 4 submission, redirect to rep dashboard
+- [ ] Add customer email/password signup to buying wizard flow — NEXT
+- [x] Remove all Manus OAuth/branding from customer and rep-facing pages
+- [x] Create /login page for reps and customers (email + password)
+- [x] Keep Manus OAuth only for admin access
+- [x] Test full rep signup flow end-to-end
+- [ ] Test full customer signup flow end-to-end — NEXT

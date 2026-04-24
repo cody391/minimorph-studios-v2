@@ -27,7 +27,7 @@ import {
   AlertTriangle, Lightbulb, Brain, RefreshCw,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { getLoginUrl } from "@/const";
+
 import { toast } from "sonner";
 
 const tempColors: Record<string, string> = { cold: "bg-blue-100 text-blue-700", warm: "bg-yellow-100 text-yellow-700", hot: "bg-red-100 text-red-700" };
@@ -74,7 +74,7 @@ export default function RepDashboard() {
         <Briefcase className="h-12 w-12 text-forest/30 mx-auto mb-4" />
         <h2 className="text-xl font-serif text-forest mb-2">Rep Portal</h2>
         <p className="text-sm text-forest/60 font-sans mb-6">Sign in to access your dashboard.</p>
-        <Button onClick={() => { window.location.href = getLoginUrl(); }} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8">Sign In</Button>
+        <Button onClick={() => { setLocation("/login"); }} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8">Sign In</Button>
       </CardContent></Card>
     </div>
   );

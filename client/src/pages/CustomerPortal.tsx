@@ -12,7 +12,7 @@ import {
   Clock, CheckCircle, AlertCircle, Shield, Rocket,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { getLoginUrl } from "@/const";
+
 import { useState, useCallback } from "react";
 import { AIChatBox } from "@/components/AIChatBox";
 import { Bot } from "lucide-react";
@@ -100,7 +100,7 @@ export default function CustomerPortal() {
             <h2 className="text-xl font-serif text-forest mb-2">Customer Portal</h2>
             <p className="text-sm text-forest/60 font-sans mb-6">Sign in to view your website contract, performance reports, and manage your account.</p>
             <Button
-              onClick={() => { window.location.href = getLoginUrl(); }}
+              onClick={() => { setLocation("/login"); }}
               className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8"
             >
               Sign In
