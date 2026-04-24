@@ -857,3 +857,9 @@
 - [x] If logged in as rep → redirect to /rep dashboard
 - [x] If logged in but NOT a rep → show option to apply or sign in with different account
 - [x] Navbar "Rep Sign In" points to /rep which handles all states gracefully
+
+### Nav/Footer Link Reorganization
+- [x] Remove Careers from Navbar desktop links and mobile hamburger
+- [x] Remove Contact from Navbar desktop CTA area and mobile hamburger
+- [x] Remove Rep Sign In from Navbar desktop CTA area and mobile hamburger
+- [x] Ensure Careers, Contact, and Rep Sign In are in the Footer

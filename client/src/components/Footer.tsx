@@ -20,9 +20,8 @@ const footerLinks = {
   ],
   Portals: [
     { label: "Get Started", href: "/get-started", route: true },
-    { label: "Rep Dashboard", href: "/rep", route: true },
+    { label: "Rep Sign In", href: "/rep", route: true },
     { label: "Customer Portal", href: "/portal", route: true },
-    { label: "Admin", href: "/admin", route: true },
   ],
 };
 

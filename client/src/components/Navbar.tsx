@@ -15,7 +15,6 @@ const navLinks = [
   { label: "How It Works", href: "#how-it-works" },
   { label: "Pricing", href: "#pricing" },
   { label: "Testimonials", href: "#testimonials" },
-  { label: "Careers", href: "/careers", route: true },
 ];
 
 export default function Navbar() {
@@ -66,13 +65,7 @@ export default function Navbar() {
           {navLinks.map((link) => (
             <button
               key={link.href}
-              onClick={() => {
-                if ((link as any).route) {
-                  setLocation(link.href);
-                } else {
-                  scrollTo(link.href);
-                }
-              }}
+              onClick={() => scrollTo(link.href)}
               className="text-sm font-medium text-forest/70 hover:text-forest transition-colors duration-300 font-sans"
             >
               {link.label}
@@ -82,20 +75,6 @@ export default function Navbar() {
 
         {/* Desktop CTA */}
         <div className="hidden lg:flex items-center gap-3">
-          <Button
-            variant="ghost"
-            className="text-forest/70 hover:text-forest hover:bg-forest/5 font-sans text-sm"
-            onClick={() => scrollTo("#contact")}
-          >
-            Contact
-          </Button>
-          <Button
-            variant="ghost"
-            className="text-forest/70 hover:text-forest hover:bg-forest/5 font-sans text-sm"
-            onClick={() => setLocation("/rep")}
-          >
-            Rep Sign In
-          </Button>
           <Button
             className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-sm px-6 rounded-full shadow-none hover:shadow-md transition-all duration-300"
             onClick={() => setLocation("/get-started")}
@@ -128,34 +107,13 @@ export default function Navbar() {
               {navLinks.map((link) => (
                 <button
                   key={link.href}
-                  onClick={() => {
-                    if ((link as any).route) {
-                      setMobileOpen(false);
-                      setLocation(link.href);
-                    } else {
-                      scrollTo(link.href);
-                    }
-                  }}
+                  onClick={() => scrollTo(link.href)}
                   className="text-left text-base font-medium text-forest/80 hover:text-forest py-2 font-sans transition-colors"
                 >
                   {link.label}
                 </button>
               ))}
               <div className="pt-4 border-t border-border flex flex-col gap-3">
-                <Button
-                  variant="ghost"
-                  className="justify-start text-forest/70 hover:text-forest font-sans"
-                  onClick={() => scrollTo("#contact")}
-                >
-                  Contact
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="justify-start text-forest/70 hover:text-forest font-sans"
-                  onClick={() => { setMobileOpen(false); setLocation("/rep"); }}
-                >
-                  Rep Sign In
-                </Button>
                 <Button
                   className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full"
                   onClick={() => { setMobileOpen(false); setLocation("/get-started"); }}
