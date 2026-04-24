@@ -377,6 +377,13 @@ export const SCORING = {
   // Individual gate minimums (must pass BOTH)
   gate1MinPercent: 55, // Character minimum — non-negotiable
   gate2MinPercent: 40, // Sales aptitude minimum — can be trained
+
+  // Timer
+  timeLimitSeconds: 1200, // 20 minutes
+  gracePeriodSeconds: 30, // 30 seconds grace after timer expires (network latency)
+
+  // Retake cooldown
+  retakeCooldownDays: 30, // Failed candidates can retake after 30 days
 };
 
 export const ALL_QUESTIONS = [...GATE_1_QUESTIONS, ...GATE_2_QUESTIONS];

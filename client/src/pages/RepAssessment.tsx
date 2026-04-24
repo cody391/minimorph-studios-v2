@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
@@ -18,6 +18,9 @@ import {
   Target,
   AlertTriangle,
   Loader2,
+  Timer,
+  CalendarClock,
+  Lock,
 } from "lucide-react";
 
 type Question = {
@@ -29,6 +32,12 @@ type Question = {
   options: { id: string; text: string }[];
 };
 
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export default function RepAssessment() {
   const { user, loading: authLoading } = useAuth();
   const [, navigate] = useLocation();
@@ -36,6 +45,10 @@ export default function RepAssessment() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [freeTextAnswer, setFreeTextAnswer] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [assessmentStarted, setAssessmentStarted] = useState(false);
+  const [startedAtIso, setStartedAtIso] = useState<string | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Fetch questions
   const { data: questionsData, isLoading: questionsLoading } =
@@ -49,15 +62,65 @@ export default function RepAssessment() {
       enabled: !!user,
     });
 
+  // Check eligibility (retake cooldown, NDA status)
+  const { data: eligibility, isLoading: eligibilityLoading } =
+    trpc.assessment.checkEligibility.useQuery(undefined, {
+      enabled: !!user,
+    });
+
+  // Start assessment mutation
+  const startMutation = trpc.assessment.startAssessment.useMutation({
+    onSuccess: (data) => {
+      setAssessmentStarted(true);
+      setStartedAtIso(data.startedAt);
+      setTimeRemaining(data.timeLimitSeconds);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Cannot start assessment");
+    },
+  });
+
   // Submit mutation
   const submitMutation = trpc.assessment.submit.useMutation({
     onSuccess: () => {
       setShowResults(true);
+      if (timerRef.current) clearInterval(timerRef.current);
     },
     onError: (err) => {
       toast.error(err.message || "Failed to submit assessment");
     },
   });
+
+  // Timer countdown
+  useEffect(() => {
+    if (!assessmentStarted || timeRemaining === null) return;
+
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev === null || prev <= 0) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [assessmentStarted]);
+
+  // Auto-submit when timer hits zero
+  useEffect(() => {
+    if (timeRemaining === 0 && assessmentStarted && startedAtIso && !submitMutation.isPending && !showResults) {
+      toast.warning("Time's up! Auto-submitting your assessment...");
+      submitMutation.mutate({
+        answers,
+        freeTextAnswer,
+        startedAt: startedAtIso,
+      });
+    }
+  }, [timeRemaining, assessmentStarted, startedAtIso]);
 
   // Combine all questions in order
   const allQuestions = useMemo(() => {
@@ -100,6 +163,7 @@ export default function RepAssessment() {
   }, [currentIndex]);
 
   const handleSubmit = useCallback(() => {
+    if (!startedAtIso) return;
     // Validate all MC questions answered
     const mcQuestions = allQuestions.filter((q) => !q.freeText);
     const unanswered = mcQuestions.filter((q) => !answers[q.id]);
@@ -107,15 +171,14 @@ export default function RepAssessment() {
       toast.error(
         `Please answer all questions. ${unanswered.length} remaining.`
       );
-      // Navigate to first unanswered
       const firstIdx = allQuestions.findIndex(
         (q) => q.id === unanswered[0].id
       );
       if (firstIdx >= 0) setCurrentIndex(firstIdx);
       return;
     }
-    submitMutation.mutate({ answers, freeTextAnswer });
-  }, [allQuestions, answers, freeTextAnswer, submitMutation]);
+    submitMutation.mutate({ answers, freeTextAnswer, startedAt: startedAtIso });
+  }, [allQuestions, answers, freeTextAnswer, submitMutation, startedAtIso]);
 
   // Count answered questions
   const answeredCount = useMemo(() => {
@@ -124,8 +187,16 @@ export default function RepAssessment() {
     ).length;
   }, [allQuestions, answers, freeTextAnswer]);
 
+  // Timer urgency color
+  const timerColor = useMemo(() => {
+    if (timeRemaining === null) return "text-white/80";
+    if (timeRemaining <= 60) return "text-red-400 animate-pulse";
+    if (timeRemaining <= 300) return "text-amber-400";
+    return "text-white/80";
+  }, [timeRemaining]);
+
   // Loading states
-  if (authLoading || questionsLoading || resultLoading) {
+  if (authLoading || questionsLoading || resultLoading || eligibilityLoading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" />
@@ -170,6 +241,10 @@ export default function RepAssessment() {
       result.status === "failed" ||
       adminOverride === "rejected";
 
+    // Retake info
+    const retakeAvailableAt = "retakeAvailableAt" in result ? (result as any).retakeAvailableAt : null;
+    const canRetake = isFailed && !retakeAvailableAt;
+
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center p-4">
         <Card className="max-w-lg w-full">
@@ -189,25 +264,19 @@ export default function RepAssessment() {
                 </p>
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="bg-green-50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground">
-                      Character
-                    </div>
+                    <div className="text-sm text-muted-foreground">Character</div>
                     <div className="text-xl font-bold text-green-700">
                       {typeof result.gate1Score === "number"
                         ? result.gate1Score.toFixed(0)
-                        : result.gate1Score}
-                      %
+                        : result.gate1Score}%
                     </div>
                   </div>
                   <div className="bg-green-50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground">
-                      Sales Aptitude
-                    </div>
+                    <div className="text-sm text-muted-foreground">Sales Aptitude</div>
                     <div className="text-xl font-bold text-green-700">
                       {typeof result.gate2Score === "number"
                         ? result.gate2Score.toFixed(0)
-                        : result.gate2Score}
-                      %
+                        : result.gate2Score}%
                     </div>
                   </div>
                 </div>
@@ -237,25 +306,19 @@ export default function RepAssessment() {
                 </p>
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   <div className="bg-amber-50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground">
-                      Character
-                    </div>
+                    <div className="text-sm text-muted-foreground">Character</div>
                     <div className="text-xl font-bold text-amber-700">
                       {typeof result.gate1Score === "number"
                         ? result.gate1Score.toFixed(0)
-                        : result.gate1Score}
-                      %
+                        : result.gate1Score}%
                     </div>
                   </div>
                   <div className="bg-amber-50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground">
-                      Sales Aptitude
-                    </div>
+                    <div className="text-sm text-muted-foreground">Sales Aptitude</div>
                     <div className="text-xl font-bold text-amber-700">
                       {typeof result.gate2Score === "number"
                         ? result.gate2Score.toFixed(0)
-                        : result.gate2Score}
-                      %
+                        : result.gate2Score}%
                     </div>
                   </div>
                 </div>
@@ -277,36 +340,69 @@ export default function RepAssessment() {
                 <h2 className="text-2xl font-bold text-red-800 mb-2 font-serif">
                   Not the Right Fit — Yet
                 </h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-4">
                   Based on your responses, we don't think this is the right
                   time for you to join MiniMorph as a rep. This doesn't mean
                   never — gain more experience in sales and customer service,
-                  and try again in the future.
+                  and try again.
                 </p>
-                <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="bg-red-50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground">
-                      Character
-                    </div>
+                    <div className="text-sm text-muted-foreground">Character</div>
                     <div className="text-xl font-bold text-red-700">
                       {typeof result.gate1Score === "number"
                         ? result.gate1Score.toFixed(0)
-                        : result.gate1Score}
-                      %
+                        : result.gate1Score}%
                     </div>
                   </div>
                   <div className="bg-red-50 rounded-lg p-3">
-                    <div className="text-sm text-muted-foreground">
-                      Sales Aptitude
-                    </div>
+                    <div className="text-sm text-muted-foreground">Sales Aptitude</div>
                     <div className="text-xl font-bold text-red-700">
                       {typeof result.gate2Score === "number"
                         ? result.gate2Score.toFixed(0)
-                        : result.gate2Score}
-                      %
+                        : result.gate2Score}%
                     </div>
                   </div>
                 </div>
+
+                {/* Retake cooldown info */}
+                {retakeAvailableAt && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center gap-2 text-blue-800 font-medium text-sm mb-1">
+                      <CalendarClock className="w-4 h-4" />
+                      Retake Available
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      You can retake the assessment on{" "}
+                      <span className="font-semibold">
+                        {new Date(retakeAvailableAt).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                      . Use this time to study our sales approach and values.
+                    </p>
+                  </div>
+                )}
+
+                {canRetake && (
+                  <Button
+                    onClick={() => {
+                      setShowResults(false);
+                      setAssessmentStarted(false);
+                      setStartedAtIso(null);
+                      setTimeRemaining(null);
+                      setAnswers({});
+                      setFreeTextAnswer("");
+                      setCurrentIndex(0);
+                    }}
+                    className="bg-forest hover:bg-forest-light text-white w-full mb-3"
+                  >
+                    Retake Assessment
+                  </Button>
+                )}
+
                 <Button
                   onClick={() => navigate("/")}
                   variant="outline"
@@ -322,19 +418,171 @@ export default function RepAssessment() {
     );
   }
 
-  // Assessment UI
+  // NDA not signed — redirect to trust gate
+  if (eligibility && eligibility.reason === "nda_required") {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center">
+            <Lock className="w-12 h-12 text-forest mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-forest mb-2">
+              Trust Verification Required
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              Before accessing the assessment, you need to complete our trust verification step.
+              This protects our proprietary training materials and IP.
+            </p>
+            <Button onClick={() => navigate("/become-rep/trust-gate")} className="bg-forest hover:bg-forest-light text-white">
+              Complete Verification
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Cooldown active — show waiting message
+  if (eligibility && eligibility.reason === "cooldown" && eligibility.retakeAvailableAt) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6 text-center">
+            <CalendarClock className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-forest mb-2">
+              Retake Available Soon
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              You can retake the assessment on{" "}
+              <span className="font-semibold text-forest">
+                {new Date(eligibility.retakeAvailableAt).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
+              . Use this time to study our sales approach, values, and what makes MiniMorph different.
+            </p>
+            <Button onClick={() => navigate("/")} variant="outline" className="w-full">
+              Return Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Pre-assessment start screen (before timer starts)
+  if (!assessmentStarted) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+        <Card className="max-w-lg w-full">
+          <CardContent className="pt-8 pb-8">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-full bg-forest/10 flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-forest" />
+              </div>
+              <h2 className="text-2xl font-bold text-forest font-serif mb-2">
+                MiniMorph Rep Assessment
+              </h2>
+              <p className="text-muted-foreground">
+                We're looking for people with strong character and natural sales instincts.
+              </p>
+              {eligibility?.attemptNumber && eligibility.attemptNumber > 1 && (
+                <p className="text-sm text-amber-700 mt-2 font-medium">
+                  Attempt #{eligibility.attemptNumber}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-4 mb-8">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-forest/5 border border-forest/10">
+                <Timer className="w-5 h-5 text-terracotta mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-forest">20-Minute Time Limit</p>
+                  <p className="text-xs text-forest/60">
+                    Once you start, you have 20 minutes to complete all 12 questions.
+                    The timer cannot be paused. Your answers will auto-submit when time expires.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-forest/5 border border-forest/10">
+                <Shield className="w-5 h-5 text-terracotta mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-forest">Part 1: Situational Judgment (6 questions)</p>
+                  <p className="text-xs text-forest/60">
+                    Tests your character, integrity, and professionalism. Weighted 2x in scoring.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-forest/5 border border-forest/10">
+                <Target className="w-5 h-5 text-terracotta mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-forest">Part 2: Sales Aptitude (6 questions)</p>
+                  <p className="text-xs text-forest/60">
+                    Tests objection handling, discovery skills, and prioritization. Includes one free-text pitch.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800">Answer Honestly</p>
+                  <p className="text-xs text-amber-700">
+                    There are no trick questions. We want to see how you naturally think and respond.
+                    You need 70% to pass. If you don't pass, you can retake after 30 days.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => startMutation.mutate()}
+              disabled={startMutation.isPending}
+              className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 text-base font-sans"
+              size="lg"
+            >
+              {startMutation.isPending ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Starting...
+                </>
+              ) : (
+                <>
+                  <Timer className="w-5 h-5 mr-2" />
+                  Start Assessment (20 min)
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Assessment UI (timer active)
   return (
     <div className="min-h-screen bg-cream">
-      {/* Header */}
-      <div className="bg-forest text-white py-6">
+      {/* Header with timer */}
+      <div className="bg-forest text-white py-4">
         <div className="container max-w-3xl mx-auto px-4">
-          <h1 className="text-2xl font-bold font-serif">
-            MiniMorph Rep Assessment
-          </h1>
-          <p className="text-white/80 mt-1">
-            We're looking for people with strong character and natural sales
-            instincts. Answer honestly — there are no trick questions.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold font-serif">
+                MiniMorph Rep Assessment
+              </h1>
+              <p className="text-white/70 text-sm mt-0.5">
+                Answer honestly — there are no trick questions.
+              </p>
+            </div>
+            {/* Timer display */}
+            <div className={`flex items-center gap-2 text-lg font-mono font-bold ${timerColor}`}>
+              <Timer className="w-5 h-5" />
+              {timeRemaining !== null ? formatTime(timeRemaining) : "--:--"}
+            </div>
+          </div>
         </div>
       </div>
 

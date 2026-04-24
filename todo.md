@@ -651,3 +651,42 @@
 - [x] Add pass/fail/borderline results page with appropriate messaging
 - [x] Build admin view to see candidate assessment scores and responses
 - [x] Test full gated flow end-to-end
+
+### Phase 44: Smart Onboarding — Timer, Retake, Trust Gate, Auto-Populate Paperwork
+
+#### Assessment Timer & Retake Cooldown
+- [x] Add 20-minute countdown timer to assessment UI (visible, enforced)
+- [x] Backend: enforce timer — auto-submit if time expires, reject late submissions
+- [x] Add startedAt timestamp to rep_assessments table
+- [x] 30-day retake cooldown: allow failed candidates to retake after 30 days
+- [x] Backend: check cooldown period before allowing new assessment attempt
+- [x] Frontend: show "Retake available on [date]" message for failed candidates in cooldown
+
+#### Trust & IP Verification Gate (Before Assessment)
+- [x] Add NDA/confidentiality agreement step before assessment access
+- [x] Collect government ID type + last 4 digits (identity verification light)
+- [x] Collect full legal name, date of birth, SSN last 4 (for trust + later tax auto-fill)
+- [x] Collect mailing address (for HR/payroll auto-fill)
+- [x] Store all trust data securely in rep_onboarding_data table
+- [x] Block assessment access until NDA is signed and identity info provided
+- [x] Show "Why we collect this" explanation (smart company, protecting IP, speeds up onboarding)
+
+#### Account Creation Enforced Before Everything
+- [x] Ensure account (email + password) is created as the very first step
+- [x] After account creation → trust/IP gate → assessment → application steps
+- [x] All data collected at every step is persisted to DB immediately (no data loss on refresh)
+
+#### Smart Auto-Population of Onboarding Paperwork
+- [x] Create rep_onboarding_data table (legal_name, dob, ssn_last4, address, city, state, zip, id_type, id_last4, nda_signed_at, nda_ip_address)
+- [x] Auto-populate W-9/tax info fields from collected data (name, SSN, address)
+- [x] Auto-populate HR/employment fields from collected data (name, DOB, address, phone, email)
+- [x] Auto-populate payroll setup from collected data (name, address, bank info from Stripe Connect)
+- [x] Auto-populate rep agreement from collected data (legal name, address, date)
+- [x] Show pre-filled forms in onboarding steps with "Verify & Confirm" instead of "Fill out"
+- [x] Display "We already have this from your signup" smart messaging on pre-filled fields
+
+#### Tests
+- [x] Vitest tests for timer enforcement (auto-submit, reject late)
+- [x] Vitest tests for retake cooldown logic (30-day check)
+- [x] Vitest tests for trust gate (NDA required, identity fields validated)
+- [x] Vitest tests for auto-population (data flows from onboarding_data to paperwork forms)

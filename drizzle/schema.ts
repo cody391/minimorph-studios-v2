@@ -1261,7 +1261,10 @@ export const repAssessments = mysqlTable("rep_assessments", {
   status: mysqlEnum("assessment_status", ["passed", "borderline", "failed"]).notNull(),
   answers: json("answers").notNull(), // { questionId: selectedOptionId | freeText }
   freeTextAnswer: text("free_text_answer"), // sa6 free-text pitch
+  startedAt: timestamp("started_at"), // when the timer started
   completedAt: timestamp("completed_at").defaultNow().notNull(),
+  timeLimitSeconds: int("time_limit_seconds").default(1200), // 20 minutes = 1200 seconds
+  attemptNumber: int("attempt_number").default(1).notNull(),
   reviewedAt: timestamp("reviewed_at"),
   reviewedBy: int("reviewed_by"),
   reviewNotes: text("review_notes"),
@@ -1269,3 +1272,34 @@ export const repAssessments = mysqlTable("rep_assessments", {
 });
 export type RepAssessment = typeof repAssessments.$inferSelect;
 export type InsertRepAssessment = typeof repAssessments.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP ONBOARDING DATA — Trust verification + auto-populate paperwork
+   ═══════════════════════════════════════════════════════ */
+export const repOnboardingData = mysqlTable("rep_onboarding_data", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  repId: int("rep_id"),
+  // Legal identity
+  legalFirstName: varchar("legal_first_name", { length: 128 }),
+  legalLastName: varchar("legal_last_name", { length: 128 }),
+  dateOfBirth: varchar("date_of_birth", { length: 10 }), // YYYY-MM-DD
+  ssnLast4: varchar("ssn_last4", { length: 4 }), // encrypted at rest by DB
+  idType: varchar("id_type", { length: 64 }), // drivers_license, passport, state_id
+  idLast4: varchar("id_last4", { length: 4 }),
+  // Address
+  streetAddress: varchar("street_address", { length: 255 }),
+  city: varchar("city", { length: 128 }),
+  state: varchar("state", { length: 64 }),
+  zipCode: varchar("zip_code", { length: 16 }),
+  country: varchar("country", { length: 64 }).default("US"),
+  // NDA / Trust gate
+  ndaSignedAt: timestamp("nda_signed_at"),
+  ndaIpAddress: varchar("nda_ip_address", { length: 64 }),
+  ndaVersion: varchar("nda_version", { length: 16 }).default("1.0"),
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type RepOnboardingData = typeof repOnboardingData.$inferSelect;
+export type InsertRepOnboardingData = typeof repOnboardingData.$inferInsert;

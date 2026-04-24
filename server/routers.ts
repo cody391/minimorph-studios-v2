@@ -15,6 +15,7 @@ import { socialAccountsRouter, socialCampaignsRouter, socialPostsRouter, content
 import { xGrowthDashboardRouter, xEngagementRouter, xGrowthTargetsRouter, xFollowTrackerRouter } from "./xGrowthRouter";
 import { localAuthRouter } from "./localAuth";
 import { assessmentRouter } from "./assessmentRouter";
+import { onboardingDataRouter } from "./onboardingDataRouter";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -1999,6 +2000,7 @@ export const appRouter = router({
   xFollowTracker: xFollowTrackerRouter,
   localAuth: localAuthRouter,
   assessment: assessmentRouter,
+  repOnboarding: onboardingDataRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))

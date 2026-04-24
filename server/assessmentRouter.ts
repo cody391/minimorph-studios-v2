@@ -3,14 +3,15 @@
  * ASSESSMENT ROUTER — Rep Assessment Gate System
  * Gate 1: Situational Judgment (Character & Integrity) — weighted 2x
  * Gate 2: Sales Aptitude (Skills & Instincts) — weighted 1x
+ * Features: 20-min timer, 30-day retake cooldown, trust gate
  * ═══════════════════════════════════════════════════════
  */
 import { protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { repAssessments, users } from "../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { repAssessments, repOnboardingData, users } from "../drizzle/schema";
+import { eq, desc, and } from "drizzle-orm";
 import {
   GATE_1_QUESTIONS,
   GATE_2_QUESTIONS,
@@ -94,6 +95,42 @@ function scoreAssessment(answers: Record<string, string>): ScoringResult {
 
 export { scoreAssessment };
 
+/* ─── Helpers ─── */
+
+const RETAKE_COOLDOWN_MS = SCORING.retakeCooldownDays * 24 * 60 * 60 * 1000;
+const TIME_LIMIT_WITH_GRACE =
+  SCORING.timeLimitSeconds + SCORING.gracePeriodSeconds;
+
+/** Get the latest assessment for a user */
+async function getLatestAssessment(db: any, userId: number) {
+  const results = await db
+    .select()
+    .from(repAssessments)
+    .where(eq(repAssessments.userId, userId))
+    .orderBy(desc(repAssessments.completedAt))
+    .limit(1);
+  return results[0] || null;
+}
+
+/** Count total attempts for a user */
+async function getAttemptCount(db: any, userId: number): Promise<number> {
+  const results = await db
+    .select({ id: repAssessments.id })
+    .from(repAssessments)
+    .where(eq(repAssessments.userId, userId));
+  return results.length;
+}
+
+/** Check if user has signed the NDA (trust gate) */
+async function hasSignedNda(db: any, userId: number): Promise<boolean> {
+  const results = await db
+    .select({ ndaSignedAt: repOnboardingData.ndaSignedAt })
+    .from(repOnboardingData)
+    .where(eq(repOnboardingData.userId, userId))
+    .limit(1);
+  return results.length > 0 && results[0].ndaSignedAt != null;
+}
+
 /* ─── Router ─── */
 
 export const assessmentRouter = router({
@@ -120,18 +157,158 @@ export const assessmentRouter = router({
       gate1: sanitize(GATE_1_QUESTIONS),
       gate2: sanitize(GATE_2_QUESTIONS),
       totalQuestions: ALL_QUESTIONS.length,
+      timeLimitSeconds: SCORING.timeLimitSeconds,
+    };
+  }),
+
+  /**
+   * Start the assessment — records startedAt timestamp for timer enforcement
+   * Returns the server start time so frontend can sync its countdown
+   */
+  startAssessment: protectedProcedure.mutation(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db)
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Database unavailable",
+      });
+
+    // Check trust gate — NDA must be signed before assessment
+    const ndaSigned = await hasSignedNda(db, ctx.user.id);
+    if (!ndaSigned) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message:
+          "You must complete the trust verification step before taking the assessment.",
+      });
+    }
+
+    // Check for existing passed/borderline assessment
+    const latest = await getLatestAssessment(db, ctx.user.id);
+    if (latest) {
+      if (latest.status === "passed" || latest.adminOverride === "approved") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You have already passed the assessment.",
+        });
+      }
+      if (latest.status === "borderline" && !latest.adminOverride) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Your previous assessment is under review. Please wait for a decision.",
+        });
+      }
+
+      // Check retake cooldown for failed assessments
+      if (latest.status === "failed" || latest.adminOverride === "rejected") {
+        const completedTime = new Date(latest.completedAt).getTime();
+        const cooldownEnd = completedTime + RETAKE_COOLDOWN_MS;
+        const now = Date.now();
+        if (now < cooldownEnd) {
+          const retakeDate = new Date(cooldownEnd);
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `You can retake the assessment after ${retakeDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}. Use this time to study our sales approach and values.`,
+          });
+        }
+      }
+    }
+
+    const attemptCount = await getAttemptCount(db, ctx.user.id);
+    const startedAt = new Date();
+
+    return {
+      startedAt: startedAt.toISOString(),
+      timeLimitSeconds: SCORING.timeLimitSeconds,
+      attemptNumber: attemptCount + 1,
+    };
+  }),
+
+  /**
+   * Check retake eligibility — returns status for UI display
+   */
+  checkEligibility: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db)
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Database unavailable",
+      });
+
+    const latest = await getLatestAssessment(db, ctx.user.id);
+
+    // Check trust gate
+    const ndaSigned = await hasSignedNda(db, ctx.user.id);
+
+    if (!latest) {
+      return {
+        canTake: ndaSigned,
+        reason: ndaSigned
+          ? "ready"
+          : "nda_required",
+        retakeAvailableAt: null,
+        attemptNumber: 1,
+        previousStatus: null,
+      };
+    }
+
+    if (latest.status === "passed" || latest.adminOverride === "approved") {
+      return {
+        canTake: false,
+        reason: "already_passed",
+        retakeAvailableAt: null,
+        attemptNumber: null,
+        previousStatus: "passed",
+      };
+    }
+
+    if (latest.status === "borderline" && !latest.adminOverride) {
+      return {
+        canTake: false,
+        reason: "under_review",
+        retakeAvailableAt: null,
+        attemptNumber: null,
+        previousStatus: "borderline",
+      };
+    }
+
+    // Failed or rejected — check cooldown
+    const completedTime = new Date(latest.completedAt).getTime();
+    const cooldownEnd = completedTime + RETAKE_COOLDOWN_MS;
+    const now = Date.now();
+    const attemptCount = await getAttemptCount(db, ctx.user.id);
+
+    if (now < cooldownEnd) {
+      return {
+        canTake: false,
+        reason: "cooldown",
+        retakeAvailableAt: new Date(cooldownEnd).toISOString(),
+        attemptNumber: attemptCount + 1,
+        previousStatus: "failed",
+      };
+    }
+
+    return {
+      canTake: ndaSigned,
+      reason: ndaSigned ? "retake_ready" : "nda_required",
+      retakeAvailableAt: null,
+      attemptNumber: attemptCount + 1,
+      previousStatus: "failed",
     };
   }),
 
   /**
    * Submit assessment answers
    * Scores automatically and stores result
+   * Enforces timer — rejects submissions that are too late
    */
   submit: protectedProcedure
     .input(
       z.object({
         answers: z.record(z.string(), z.string()), // { questionId: optionId }
         freeTextAnswer: z.string().optional(), // sa6 free-text pitch
+        startedAt: z.string(), // ISO timestamp from startAssessment
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -142,17 +319,53 @@ export const assessmentRouter = router({
           message: "Database unavailable",
         });
 
-      // Check if user already has a completed assessment
-      const existing = await db
-        .select()
-        .from(repAssessments)
-        .where(eq(repAssessments.userId, ctx.user.id))
-        .limit(1);
+      // Check trust gate
+      const ndaSigned = await hasSignedNda(db, ctx.user.id);
+      if (!ndaSigned) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Trust verification required before assessment.",
+        });
+      }
 
-      if (existing.length > 0) {
+      // Check for existing passed assessment
+      const latest = await getLatestAssessment(db, ctx.user.id);
+      if (latest) {
+        if (latest.status === "passed" || latest.adminOverride === "approved") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You have already passed the assessment.",
+          });
+        }
+        if (latest.status === "borderline" && !latest.adminOverride) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Your assessment is under review.",
+          });
+        }
+        // Check cooldown for failed
+        if (latest.status === "failed" || latest.adminOverride === "rejected") {
+          const completedTime = new Date(latest.completedAt).getTime();
+          const cooldownEnd = completedTime + RETAKE_COOLDOWN_MS;
+          if (Date.now() < cooldownEnd) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Retake cooldown period has not expired.",
+            });
+          }
+        }
+      }
+
+      // Timer enforcement — check if submission is within allowed time
+      const startedAt = new Date(input.startedAt);
+      const now = new Date();
+      const elapsedSeconds = (now.getTime() - startedAt.getTime()) / 1000;
+
+      if (elapsedSeconds > TIME_LIMIT_WITH_GRACE) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "You have already completed the assessment.",
+          message:
+            "Time expired. Your assessment was not submitted within the 20-minute time limit.",
         });
       }
 
@@ -170,6 +383,7 @@ export const assessmentRouter = router({
 
       // Score the assessment
       const result = scoreAssessment(input.answers);
+      const attemptCount = await getAttemptCount(db, ctx.user.id);
 
       // Store in database
       await db.insert(repAssessments).values({
@@ -180,6 +394,9 @@ export const assessmentRouter = router({
         status: result.status,
         answers: input.answers,
         freeTextAnswer: input.freeTextAnswer || null,
+        startedAt: startedAt,
+        timeLimitSeconds: SCORING.timeLimitSeconds,
+        attemptNumber: attemptCount + 1,
       });
 
       return {
@@ -189,6 +406,7 @@ export const assessmentRouter = router({
         status: result.status,
         gate1Label: "Situational Judgment",
         gate2Label: "Sales Aptitude",
+        attemptNumber: attemptCount + 1,
       };
     }),
 
@@ -207,11 +425,26 @@ export const assessmentRouter = router({
       .select()
       .from(repAssessments)
       .where(eq(repAssessments.userId, ctx.user.id))
+      .orderBy(desc(repAssessments.completedAt))
       .limit(1);
 
     if (result.length === 0) return null;
 
     const assessment = result[0];
+
+    // Calculate retake info if failed
+    let retakeAvailableAt: string | null = null;
+    if (
+      assessment.status === "failed" ||
+      assessment.adminOverride === "rejected"
+    ) {
+      const completedTime = new Date(assessment.completedAt).getTime();
+      const cooldownEnd = completedTime + RETAKE_COOLDOWN_MS;
+      if (Date.now() < cooldownEnd) {
+        retakeAvailableAt = new Date(cooldownEnd).toISOString();
+      }
+    }
+
     return {
       id: assessment.id,
       gate1Score: parseFloat(assessment.gate1Score),
@@ -222,6 +455,8 @@ export const assessmentRouter = router({
       reviewNotes: assessment.reviewNotes,
       completedAt: assessment.completedAt,
       reviewedAt: assessment.reviewedAt,
+      attemptNumber: assessment.attemptNumber,
+      retakeAvailableAt,
     };
   }),
 
@@ -261,6 +496,7 @@ export const assessmentRouter = router({
           reviewNotes: repAssessments.reviewNotes,
           completedAt: repAssessments.completedAt,
           reviewedAt: repAssessments.reviewedAt,
+          attemptNumber: repAssessments.attemptNumber,
         })
         .from(repAssessments)
         .leftJoin(users, eq(repAssessments.userId, users.id))
@@ -351,6 +587,8 @@ export const assessmentRouter = router({
           completedAt: repAssessments.completedAt,
           reviewedAt: repAssessments.reviewedAt,
           reviewedBy: repAssessments.reviewedBy,
+          startedAt: repAssessments.startedAt,
+          attemptNumber: repAssessments.attemptNumber,
         })
         .from(repAssessments)
         .leftJoin(users, eq(repAssessments.userId, users.id))

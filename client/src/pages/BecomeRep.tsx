@@ -91,8 +91,8 @@ export default function BecomeRep() {
         };
         reader.readAsDataURL(photoFile);
       }
-      // Redirect to assessment gate instead of going directly to Step 2
-      setLocation("/rep-assessment");
+      // Redirect to trust gate (NDA + identity) → then assessment → then back here at step=2
+      setLocation("/become-rep/trust-gate");
     },
     onError: (err: any) => toast.error(err.message),
   });
