@@ -1248,3 +1248,24 @@ export const xGrowthConfig = mysqlTable("x_growth_config", {
   updatedAt: timestamp("xgc_updated_at").defaultNow().onUpdateNow().notNull(),
 });
 export type XGrowthConfigEntry = typeof xGrowthConfig.$inferSelect;
+
+/* ═══════════════════════════════════════════════════════
+   REP ASSESSMENTS — Gate system for rep qualification
+   ═══════════════════════════════════════════════════════ */
+export const repAssessments = mysqlTable("rep_assessments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  gate1Score: decimal("gate1_score", { precision: 5, scale: 2 }).notNull(), // percentage 0-100
+  gate2Score: decimal("gate2_score", { precision: 5, scale: 2 }).notNull(), // percentage 0-100
+  totalScore: decimal("total_score", { precision: 5, scale: 2 }).notNull(), // weighted percentage
+  status: mysqlEnum("assessment_status", ["passed", "borderline", "failed"]).notNull(),
+  answers: json("answers").notNull(), // { questionId: selectedOptionId | freeText }
+  freeTextAnswer: text("free_text_answer"), // sa6 free-text pitch
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: int("reviewed_by"),
+  reviewNotes: text("review_notes"),
+  adminOverride: mysqlEnum("admin_override", ["approved", "rejected"]),
+});
+export type RepAssessment = typeof repAssessments.$inferSelect;
+export type InsertRepAssessment = typeof repAssessments.$inferInsert;

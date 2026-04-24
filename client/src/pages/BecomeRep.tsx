@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
 import {
   CheckCircle, ArrowLeft, ArrowRight, DollarSign, Users, TrendingUp,
@@ -31,7 +31,10 @@ const INDUSTRIES = [
 
 export default function BecomeRep() {
   const [, setLocation] = useLocation();
-  const [step, setStep] = useState(1);
+  const searchString = useSearch();
+  const urlParams = new URLSearchParams(searchString);
+  const initialStep = urlParams.get("step") ? parseInt(urlParams.get("step")!) : 1;
+  const [step, setStep] = useState(initialStep);
   const [submitted, setSubmitted] = useState(false);
 
   // Step 1: Personal Info + Account Creation
@@ -88,7 +91,8 @@ export default function BecomeRep() {
         };
         reader.readAsDataURL(photoFile);
       }
-      setStep(2);
+      // Redirect to assessment gate instead of going directly to Step 2
+      setLocation("/rep-assessment");
     },
     onError: (err: any) => toast.error(err.message),
   });

@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Users, CheckCircle, Clock, XCircle, Shield, Trophy, DollarSign,
   FileText, GraduationCap, AlertTriangle, CreditCard, ArrowUpRight,
+  ClipboardCheck, Eye,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -138,6 +139,9 @@ export default function Reps() {
           </TabsTrigger>
           <TabsTrigger value="performance" className="font-sans text-xs">Performance</TabsTrigger>
           <TabsTrigger value="recruitment" className="font-sans text-xs">Recruitment</TabsTrigger>
+          <TabsTrigger value="assessments" className="font-sans text-xs">
+            Assessments
+          </TabsTrigger>
         </TabsList>
 
         {/* ALL REPS TAB */}
@@ -500,6 +504,11 @@ export default function Reps() {
             </Card>
           </div>
         </TabsContent>
+
+        {/* ASSESSMENTS TAB */}
+        <TabsContent value="assessments">
+          <AssessmentsTab />
+        </TabsContent>
       </Tabs>
 
       {/* Rep Management Dialog */}
@@ -574,6 +583,325 @@ export default function Reps() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDialog(false)} className="font-sans text-sm">Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   ASSESSMENTS TAB — Candidate assessment scores & review
+   ═══════════════════════════════════════════════════════ */
+function AssessmentsTab() {
+  const [selectedAssessment, setSelectedAssessment] = useState<any>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const { data: assessments, isLoading, refetch } = trpc.assessment.adminList.useQuery();
+
+  const { data: detail, isLoading: detailLoading } = trpc.assessment.adminGetDetail.useQuery(
+    { assessmentId: selectedAssessment?.id },
+    { enabled: !!selectedAssessment?.id }
+  );
+
+  const reviewMutation = trpc.assessment.adminReview.useMutation({
+    onSuccess: () => {
+      toast.success("Assessment reviewed");
+      refetch();
+      setShowDetailDialog(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const filtered = useMemo(() => {
+    if (!assessments) return [];
+    if (statusFilter === "all") return assessments;
+    return assessments.filter((a: any) => a.status === statusFilter);
+  }, [assessments, statusFilter]);
+
+  const counts = useMemo(() => {
+    if (!assessments) return { passed: 0, borderline: 0, failed: 0, total: 0 };
+    return {
+      passed: assessments.filter((a: any) => a.status === "passed").length,
+      borderline: assessments.filter((a: any) => a.status === "borderline").length,
+      failed: assessments.filter((a: any) => a.status === "failed").length,
+      total: assessments.length,
+    };
+  }, [assessments]);
+
+  const statusBadge = (status: string, override?: string | null) => {
+    if (override === "approved") return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px]">Approved (Override)</Badge>;
+    if (override === "rejected") return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px]">Rejected (Override)</Badge>;
+    switch (status) {
+      case "passed": return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px]"><CheckCircle className="h-3 w-3 mr-1" />Passed</Badge>;
+      case "borderline": return <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]"><AlertTriangle className="h-3 w-3 mr-1" />Borderline</Badge>;
+      case "failed": return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px]"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>;
+      default: return <Badge className="bg-gray-100 text-gray-600 text-[10px]">{status}</Badge>;
+    }
+  };
+
+  const scoreColor = (score: number) => {
+    if (score >= 70) return "text-green-700";
+    if (score >= 50) return "text-amber-700";
+    return "text-red-700";
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* KPI row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Total", count: counts.total, icon: ClipboardCheck, color: "text-forest" },
+          { label: "Passed", count: counts.passed, icon: CheckCircle, color: "text-green-600" },
+          { label: "Borderline", count: counts.borderline, icon: AlertTriangle, color: "text-amber-600" },
+          { label: "Failed", count: counts.failed, icon: XCircle, color: "text-red-600" },
+        ].map((s) => (
+          <Card key={s.label} className="border-border/50">
+            <CardContent className="p-3 flex items-center gap-3">
+              <s.icon className={`h-5 w-5 ${s.color}`} />
+              <div>
+                <div className="text-lg font-serif text-forest">{s.count}</div>
+                <div className="text-[10px] text-forest/50 font-sans">{s.label}</div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Filter */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-forest/50 font-sans">Filter:</span>
+        {["all", "passed", "borderline", "failed"].map((f) => (
+          <Button
+            key={f}
+            size="sm"
+            variant={statusFilter === f ? "default" : "outline"}
+            className={`text-xs h-7 ${statusFilter === f ? "bg-forest text-white" : ""}`}
+            onClick={() => setStatusFilter(f)}
+          >
+            {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
+          </Button>
+        ))}
+      </div>
+
+      {/* Table */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+            <ClipboardCheck className="h-4 w-4" /> Assessment Results
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+          ) : !filtered.length ? (
+            <div className="text-center py-12">
+              <ClipboardCheck className="h-10 w-10 text-forest/20 mx-auto mb-3" />
+              <p className="text-sm text-forest/50 font-sans">No assessments yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm font-sans">
+                <thead>
+                  <tr className="border-b border-border/30">
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Candidate</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Character</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Sales</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Total</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Status</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Date</th>
+                    <th className="text-right py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((a: any) => (
+                    <tr key={a.id} className="border-b border-border/10 hover:bg-cream-dark/20 transition-colors">
+                      <td className="py-2.5 px-3">
+                        <div className="font-medium text-forest text-sm">{a.userName || "Unknown"}</div>
+                        <div className="text-[10px] text-forest/40">{a.userEmail || ""}</div>
+                      </td>
+                      <td className={`py-2.5 px-3 text-center font-medium ${scoreColor(parseFloat(a.gate1Score))}`}>
+                        {parseFloat(a.gate1Score).toFixed(0)}%
+                      </td>
+                      <td className={`py-2.5 px-3 text-center font-medium ${scoreColor(parseFloat(a.gate2Score))}`}>
+                        {parseFloat(a.gate2Score).toFixed(0)}%
+                      </td>
+                      <td className={`py-2.5 px-3 text-center font-bold ${scoreColor(parseFloat(a.totalScore))}`}>
+                        {parseFloat(a.totalScore).toFixed(0)}%
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        {statusBadge(a.status, a.adminOverride)}
+                      </td>
+                      <td className="py-2.5 px-3 text-center text-[10px] text-forest/50">
+                        {a.completedAt ? new Date(a.completedAt).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-7 gap-1"
+                          onClick={() => { setSelectedAssessment(a); setShowDetailDialog(true); setReviewNotes(""); }}
+                        >
+                          <Eye className="h-3 w-3" /> Review
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Detail / Review Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-forest flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4" />
+              Assessment Review: {selectedAssessment?.userName || "Unknown"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {detailLoading ? (
+            <div className="py-8 text-center">
+              <div className="animate-spin w-6 h-6 border-2 border-forest border-t-transparent rounded-full mx-auto" />
+            </div>
+          ) : detail ? (
+            <div className="space-y-4 font-sans">
+              {/* Score summary */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-purple-50 rounded-lg p-3 text-center">
+                  <div className="text-xs text-purple-600 mb-1">Character (2x)</div>
+                  <div className={`text-2xl font-bold ${scoreColor(detail.gate1Score)}`}>
+                    {detail.gate1Score.toFixed(0)}%
+                  </div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                  <div className="text-xs text-blue-600 mb-1">Sales (1x)</div>
+                  <div className={`text-2xl font-bold ${scoreColor(detail.gate2Score)}`}>
+                    {detail.gate2Score.toFixed(0)}%
+                  </div>
+                </div>
+                <div className="bg-forest/5 rounded-lg p-3 text-center">
+                  <div className="text-xs text-forest/60 mb-1">Weighted Total</div>
+                  <div className={`text-2xl font-bold ${scoreColor(detail.totalScore)}`}>
+                    {detail.totalScore.toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Current status */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-forest/50">Status:</span>
+                {statusBadge(detail.status, detail.adminOverride)}
+              </div>
+
+              {/* Per-question breakdown */}
+              <div>
+                <h4 className="text-sm font-medium text-forest mb-2">Response Breakdown</h4>
+                <div className="space-y-2">
+                  {detail.enrichedAnswers.map((ans: any, idx: number) => (
+                    <div key={ans.questionId} className={`border rounded-lg p-3 ${
+                      ans.isFreeText ? "border-blue-200 bg-blue-50/30" :
+                      ans.selectedScore === ans.maxScore ? "border-green-200 bg-green-50/30" :
+                      ans.selectedScore === 0 ? "border-red-200 bg-red-50/30" :
+                      "border-border/30"
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-medium text-forest/50">Q{idx + 1}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                            ans.gate === 1 ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                          }`}>
+                            {ans.category}
+                          </span>
+                        </div>
+                        {!ans.isFreeText && (
+                          <span className={`text-xs font-medium ${
+                            ans.selectedScore === ans.maxScore ? "text-green-700" :
+                            ans.selectedScore === 0 ? "text-red-700" :
+                            "text-amber-700"
+                          }`}>
+                            {ans.selectedScore}/{ans.maxScore}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-forest/70 mb-1 line-clamp-2">{ans.scenario}</p>
+                      {ans.isFreeText ? (
+                        <div className="mt-1 p-2 bg-white rounded border border-blue-100">
+                          <span className="text-[10px] text-blue-600 block mb-1">Free-text response:</span>
+                          <p className="text-xs text-forest italic">"{ans.freeTextResponse || "No response"}"</p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-forest">
+                          <span className="text-forest/50">Selected:</span> {ans.selectedOptionText || "No answer"}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Admin review section (for borderline candidates) */}
+              {(detail.status === "borderline" || detail.status === "failed") && !detail.adminOverride && (
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-sm font-medium text-forest mb-2">Admin Decision</h4>
+                  <Textarea
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    placeholder="Add review notes (optional)..."
+                    className="mb-3 text-sm"
+                    rows={2}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white text-xs gap-1"
+                      onClick={() => reviewMutation.mutate({
+                        assessmentId: detail.id,
+                        decision: "approved",
+                        reviewNotes: reviewNotes || undefined,
+                      })}
+                      disabled={reviewMutation.isPending}
+                    >
+                      <CheckCircle className="h-3 w-3" /> Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="text-xs gap-1"
+                      onClick={() => reviewMutation.mutate({
+                        assessmentId: detail.id,
+                        decision: "rejected",
+                        reviewNotes: reviewNotes || undefined,
+                      })}
+                      disabled={reviewMutation.isPending}
+                    >
+                      <XCircle className="h-3 w-3" /> Reject
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {detail.adminOverride && (
+                <div className="border-t pt-3 mt-3">
+                  <div className="text-xs text-forest/50">
+                    <strong>Admin Decision:</strong> {detail.adminOverride === "approved" ? "✅ Approved" : "❌ Rejected"}
+                    {detail.reviewNotes && <span className="block mt-1 italic">Notes: "{detail.reviewNotes}"</span>}
+                    {detail.reviewedAt && <span className="block mt-1">Reviewed: {new Date(detail.reviewedAt).toLocaleString()}</span>}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailDialog(false)} className="font-sans text-sm">Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

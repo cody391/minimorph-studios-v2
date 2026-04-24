@@ -639,3 +639,15 @@
 ### Phase 42: Replace Fixed Earnings Figure with Tiered Examples
 - [x] Find and replace all $1,195/mo references with tiered earnings (Part-time → Full-time → Top Performer)
 - [x] Update earnings calculator to show tiered projections instead of single number
+
+### Phase 43: MiniMorph Rep Assessment (Gate System)
+- [x] Design Gate 1: Situational Judgment Test (6 scenarios testing character, integrity, professionalism)
+- [x] Design Gate 2: Sales Aptitude Assessment (6 scenarios testing objection handling, discovery, prioritization)
+- [x] Design scoring rubric (character weighted 2x, auto-reject below threshold, borderline flagged for review)
+- [x] Add rep_assessments table to database schema
+- [x] Build backend scoring engine and pass/fail logic
+- [x] Build assessment UI with progress indicator and timed sections
+- [x] Integrate assessment into /become-rep flow (after account creation, before application steps)
+- [x] Add pass/fail/borderline results page with appropriate messaging
+- [x] Build admin view to see candidate assessment scores and responses
+- [x] Test full gated flow end-to-end
