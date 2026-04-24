@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowRight, Check, Sparkles,
-  Shield, ChevronLeft, Eye, EyeOff, Lock,
+  Shield, ChevronLeft, Eye, EyeOff, Lock, AlertTriangle,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -408,7 +408,21 @@ export default function GetStarted() {
 
         {/* STEP 2: Package Selection */}
         {step === 2 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-4">
+            {/* Ecommerce Guardrail */}
+            {formData.industry === "Retail / E-commerce" && (
+              <div className="rounded-xl border-2 border-amber-400/50 bg-amber-50 p-4 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">Ecommerce websites require a custom Commerce package</p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    Online stores with product catalogs, shopping carts, and checkout need specialized infrastructure.
+                    Select any plan below to get started, and our team will contact you with a custom Commerce quote tailored to your product count and needs.
+                  </p>
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {PACKAGES.map((pkg) => (
               <button
                 key={pkg.tier}
@@ -445,6 +459,7 @@ export default function GetStarted() {
                 )}
               </button>
             ))}
+            </div>
           </div>
         )}
 

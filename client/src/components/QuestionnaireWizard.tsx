@@ -18,6 +18,7 @@ import {
   UtensilsCrossed,
   Hammer,
   ShoppingCart,
+  AlertTriangle,
   Sparkles,
   Plus,
   Trash2,
@@ -818,6 +819,13 @@ export function QuestionnaireWizard({
                 {/* Ecommerce */}
                 {websiteType === "ecommerce" && (
                   <div className="space-y-4">
+                    {/* Ecommerce guardrail banner */}
+                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                      <p className="text-xs text-amber-800">
+                        <strong>Ecommerce projects require a custom Commerce quote.</strong> Please fill out the details below so we can scope your project accurately. Our team will follow up with tailored pricing.
+                      </p>
+                    </div>
                     <div className="space-y-2">
                       <Label className="text-[#2D5A3D] font-medium">How many products?</Label>
                       <Select value={eProductCount} onValueChange={setEProductCount}>

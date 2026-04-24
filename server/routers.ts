@@ -1956,6 +1956,10 @@ const aiRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const { invokeLLM } = await import("./_core/llm");
+      const { formatAnswerBankForPrompt } = await import("@shared/answerBank");
+      const { formatIntegrationMatrixForPrompt } = await import("@shared/integrationMatrix");
+      const answerBankContext = formatAnswerBankForPrompt();
+      const integrationContext = formatIntegrationMatrixForPrompt();
       const systemPrompt = `You are the MiniMorph Studios onboarding assistant. Your job is to help new customers describe their website vision through friendly conversation.
 
 You need to gather the following information naturally through conversation:
@@ -2012,7 +2016,22 @@ IMPORTANT RULES:
     "specialRequests": "..."
   }</questionnaire_data>
 - Only include the JSON when you feel confident you have enough info from ALL 5 steps
-- Keep responses concise — 2-3 sentences max per turn`;
+- Keep responses concise — 2-3 sentences max per turn
+
+== GUARDRAILS ==
+- NEVER make guarantees about results, rankings, revenue, or ROI
+- NEVER promise specific timelines shorter than 2 weeks
+- NEVER discuss competitor pricing or badmouth other companies
+- NEVER share internal processes, commission structures, or rep information
+- NEVER make up features or integrations that are not listed above
+- If a customer asks about pricing, use the EXACT pricing from the answer bank below
+- If a question is classified as "escalate" in the answer bank, answer with the approved text AND add: "Our team will follow up with you directly to discuss the details."
+- If a question is classified as "redirect", point them to the appropriate page or action
+- If you genuinely do not know the answer, say: "That is a great question. Let me flag that for our team to follow up on."
+
+${answerBankContext}
+
+${integrationContext}`;
 
       const messages = [
         { role: "system" as const, content: systemPrompt },
@@ -2070,6 +2089,10 @@ IMPORTANT RULES:
     )
     .mutation(async ({ input, ctx }) => {
       const { invokeLLM } = await import("./_core/llm");
+      const { formatAnswerBankForPrompt } = await import("@shared/answerBank");
+      const { formatIntegrationMatrixForPrompt } = await import("@shared/integrationMatrix");
+      const answerBankContext = formatAnswerBankForPrompt();
+      const integrationContext = formatIntegrationMatrixForPrompt();
       const customer = await db.getCustomerById(input.customerId);
       const contracts = await db.listContractsByCustomer(input.customerId);
       const activeContract = contracts.find((c: any) => c.status === "active" || c.status === "expiring_soon");
@@ -2100,7 +2123,21 @@ IMPORTANT RULES:
 - If they want to make a change, ask them to describe it and you'll log it as a support request
 - When you identify an upsell opportunity, include it in <upsell_suggestion> tags:
   <upsell_suggestion>{"widgetSlug":"...","reason":"..."}</upsell_suggestion>
-- Keep responses concise and action-oriented`;
+- Keep responses concise and action-oriented
+
+== GUARDRAILS ==
+- NEVER make guarantees about results, rankings, revenue, or ROI
+- NEVER promise specific timelines shorter than 2 weeks
+- NEVER discuss competitor pricing or badmouth other companies
+- NEVER share internal processes, commission structures, or rep information
+- NEVER make up features or integrations that are not listed
+- If a customer asks about pricing, use the EXACT pricing from the answer bank below
+- If a question is classified as "escalate" in the answer bank, answer with the approved text AND add: "Our team will follow up with you directly."
+- If you genuinely do not know the answer, say: "That is a great question. Let me flag that for our team to follow up on."
+
+${answerBankContext}
+
+${integrationContext}`;
 
       const messages = [
         { role: "system" as const, content: systemPrompt },
