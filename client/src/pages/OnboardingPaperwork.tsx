@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
 import {
   FileText,
   DollarSign,
@@ -235,6 +236,7 @@ export default function OnboardingPaperwork() {
 
   return (
     <div className="min-h-screen bg-cream">
+      <OnboardingProgress currentStep={6} />
       {/* Header */}
       <div className="bg-forest text-white py-8 px-4">
         <div className="max-w-2xl mx-auto text-center">

@@ -8,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
 import {
   CheckCircle,
   XCircle,
@@ -566,6 +567,7 @@ export default function RepAssessment() {
   // Assessment UI (timer active)
   return (
     <div className="min-h-screen bg-cream">
+      <OnboardingProgress currentStep={4} />
       {/* Header with timer */}
       <div className="bg-forest text-white py-4">
         <div className="container max-w-3xl mx-auto px-4">

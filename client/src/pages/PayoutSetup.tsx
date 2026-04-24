@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
 import {
   Shield,
   CheckCircle,
@@ -93,6 +94,7 @@ export default function PayoutSetup() {
   // Not connected — show Stripe Connect onboarding
   return (
     <div className="min-h-screen bg-cream">
+      <OnboardingProgress currentStep={7} />
       {/* Header */}
       <div className="bg-forest text-white py-10 px-4">
         <div className="max-w-2xl mx-auto text-center">

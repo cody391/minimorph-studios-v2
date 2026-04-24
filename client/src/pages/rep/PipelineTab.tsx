@@ -305,6 +305,39 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                               Last touch: {new Date(lead.lastTouchAt).toLocaleDateString()}
                             </p>
                           )}
+                          {/* Quick Actions */}
+                          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/20">
+                            {lead.email && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${lead.email}`; }}
+                                className="p-1.5 rounded-md hover:bg-blue-50 text-forest/40 hover:text-blue-600 transition-colors" title="Send Email"
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                            {lead.phone && (
+                              <>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${lead.phone}`; }}
+                                  className="p-1.5 rounded-md hover:bg-green-50 text-forest/40 hover:text-green-600 transition-colors" title="Call"
+                                >
+                                  <Phone className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); window.location.href = `sms:${lead.phone}`; }}
+                                  className="p-1.5 rounded-md hover:bg-purple-50 text-forest/40 hover:text-purple-600 transition-colors" title="Send SMS"
+                                >
+                                  <Send className="h-3.5 w-3.5" />
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setShowDetail(true); }}
+                              className="p-1.5 rounded-md hover:bg-forest/5 text-forest/40 hover:text-forest transition-colors ml-auto" title="View Details"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                       );
                     })

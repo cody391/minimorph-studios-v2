@@ -969,7 +969,7 @@ export default function SalesAcademy() {
 
         {/* ─── ROLE PLAY TAB ─── */}
         <TabsContent value="roleplay" className="mt-4">
-          <RolePlayTab />
+          <RolePlayTab academyData={academyData} overallProgress={overallProgress} />
         </TabsContent>
       </Tabs>
     </div>
@@ -990,7 +990,38 @@ const SCENARIO_TYPES = [
   { value: "price_negotiation", label: "Price Negotiation", icon: Crown, description: "Defend your pricing and demonstrate value", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
 ] as const;
 
-function RolePlayTab() {
+// Map scenario types to the modules that should be completed first
+const SCENARIO_MODULE_REQUIREMENTS: Record<string, string[]> = {
+  cold_call: ["digital-prospecting"],
+  discovery_call: ["discovery-call"],
+  objection_handling: ["objection-handling"],
+  closing: ["closing-techniques"],
+  follow_up: ["account-management"],
+  upsell: ["account-management", "product-mastery"],
+  angry_customer: ["values-ethics", "objection-handling"],
+  price_negotiation: ["closing-techniques", "psychology-selling"],
+};
+
+// Weekly challenge rotation
+const WEEKLY_CHALLENGES = [
+  { scenario: "cold_call", title: "Cold Call Blitz", description: "Score 80+ on a cold call to earn this week's badge", targetScore: 80 },
+  { scenario: "objection_handling", title: "Objection Crusher", description: "Handle tough objections and score 85+ this week", targetScore: 85 },
+  { scenario: "discovery_call", title: "Discovery Master", description: "Uncover deep pain points — score 80+ to complete", targetScore: 80 },
+  { scenario: "closing", title: "Closer's Challenge", description: "Seal the deal with a score of 85+ this week", targetScore: 85 },
+  { scenario: "price_negotiation", title: "Value Defender", description: "Defend your pricing and score 80+ to win", targetScore: 80 },
+  { scenario: "follow_up", title: "Re-Engagement Pro", description: "Bring a cold lead back to life — score 80+", targetScore: 80 },
+  { scenario: "upsell", title: "Upsell Artist", description: "Upgrade a client to Premium tier — score 85+", targetScore: 85 },
+  { scenario: "angry_customer", title: "De-Escalation Expert", description: "Calm an angry customer and score 80+", targetScore: 80 },
+];
+
+function getWeeklyChallenge() {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const weekNumber = Math.floor((now.getTime() - startOfYear.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  return WEEKLY_CHALLENGES[weekNumber % WEEKLY_CHALLENGES.length];
+}
+
+function RolePlayTab({ academyData, overallProgress }: { academyData: any; overallProgress: number }) {
   const [activeSession, setActiveSession] = useState<number | null>(null);
   const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string; timestamp?: number }>>([]);
   const [persona, setPersona] = useState<any>(null);
@@ -998,6 +1029,25 @@ function RolePlayTab() {
   const [showScorecard, setShowScorecard] = useState(false);
 
   const { data: sessions, isLoading: sessionsLoading } = trpc.academy.rolePlaySessions.useQuery();
+
+  // Check which modules are completed
+  const completedModules = useMemo(() => {
+    if (!academyData?.modules) return new Set<string>();
+    return new Set(academyData.modules.filter((m: any) => m.progress?.quizPassed).map((m: any) => m.id));
+  }, [academyData]);
+
+  const isScenarioUnlocked = (scenarioValue: string) => {
+    const required = SCENARIO_MODULE_REQUIREMENTS[scenarioValue] || [];
+    return required.every(modId => completedModules.has(modId));
+  };
+
+  const weeklyChallenge = getWeeklyChallenge();
+  const weeklyCompleted = sessions?.some((s: any) =>
+    s.scenarioType === weeklyChallenge.scenario &&
+    s.status === "scored" &&
+    s.score >= weeklyChallenge.targetScore &&
+    new Date(s.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
+  );
   const utils = trpc.useUtils();
 
   const startMut = trpc.academy.startRolePlay.useMutation({
@@ -1234,29 +1284,70 @@ function RolePlayTab() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
       </Card>
 
+      {/* Weekly Challenge Banner */}
+      <Card className={`border-2 ${weeklyCompleted ? 'border-green-400 bg-green-50' : 'border-amber-400 bg-amber-50'} overflow-hidden`}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${weeklyCompleted ? 'bg-green-200' : 'bg-amber-200'}`}>
+              {weeklyCompleted ? <Trophy className="w-5 h-5 text-green-700" /> : <Target className="w-5 h-5 text-amber-700" />}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-serif text-forest">Weekly Challenge: {weeklyChallenge.title}</h3>
+                {weeklyCompleted && <Badge className="bg-green-600 text-white text-[10px]">Completed</Badge>}
+              </div>
+              <p className="text-xs text-forest/60 font-sans mt-0.5">{weeklyChallenge.description}</p>
+            </div>
+            {!weeklyCompleted && isScenarioUnlocked(weeklyChallenge.scenario) && (
+              <Button
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                onClick={() => startMut.mutate({ scenarioType: weeklyChallenge.scenario as any })}
+                disabled={startMut.isPending}
+              >
+                {startMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Start Challenge'}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <h3 className="text-sm font-serif text-forest">Choose a Scenario</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {SCENARIO_TYPES.map((scenario) => {
           const Icon = scenario.icon;
+          const unlocked = isScenarioUnlocked(scenario.value);
+          const requiredModules = SCENARIO_MODULE_REQUIREMENTS[scenario.value] || [];
+          const missingModules = requiredModules.filter(m => !completedModules.has(m));
           return (
             <Card
               key={scenario.value}
-              className="border-border/50 hover:shadow-lg cursor-pointer transition-all group"
-              onClick={() => startMut.mutate({ scenarioType: scenario.value as any })}
+              className={`border-border/50 transition-all ${unlocked ? 'hover:shadow-lg cursor-pointer group' : 'opacity-60 cursor-not-allowed'}`}
+              onClick={() => unlocked && startMut.mutate({ scenarioType: scenario.value as any })}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${scenario.color}`}>
-                    <Icon className="w-5 h-5" />
+                  <div className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${unlocked ? scenario.color : 'bg-gray-100 text-gray-400 border-gray-200'}`}>
+                    {unlocked ? <Icon className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                   </div>
                   <div className="flex-1">
                     <h4 className="text-sm font-sans font-medium text-forest">{scenario.label}</h4>
-                    <p className="text-xs text-forest/50 font-sans mt-0.5">{scenario.description}</p>
+                    {unlocked ? (
+                      <p className="text-xs text-forest/50 font-sans mt-0.5">{scenario.description}</p>
+                    ) : (
+                      <p className="text-xs text-red-500/70 font-sans mt-0.5">
+                        Complete {missingModules.map(m => m.replace(/-/g, ' ')).join(', ')} module{missingModules.length > 1 ? 's' : ''} first
+                      </p>
+                    )}
                   </div>
-                  {startMut.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-forest/40" />
+                  {unlocked ? (
+                    startMut.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-forest/40" />
+                    ) : (
+                      <Play className="w-4 h-4 text-forest/20 group-hover:text-forest/50 transition-colors" />
+                    )
                   ) : (
-                    <Play className="w-4 h-4 text-forest/20 group-hover:text-forest/50 transition-colors" />
+                    <Lock className="w-4 h-4 text-gray-300" />
                   )}
                 </div>
               </CardContent>

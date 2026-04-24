@@ -926,7 +926,7 @@
 
 ### Category 2: Recruitment & Application (93→100)
 - [x] Fix Values Gate commission rate from "10-20%" to "10-15%"
-- [ ] Add application progress bar across the full onboarding flow
+- [x] Add application progress bar across the full onboarding flow (8-step OnboardingProgress component on all pages)
 
 ### Category 3: Training & Education (97→100)
 - [x] Update App Guide to list all 9 modules (add Values & Ethics as Module 0)
@@ -942,14 +942,14 @@
 - [x] Fix Pipeline PACKAGE_PRICES: starter $99→$149, growth $199→$299
 
 ### Category 6: Compensation & Transparency (92→100)
-- [ ] Add projected earnings based on current pipeline in Earnings tab
+- [x] Add projected earnings based on current pipeline in Earnings tab
 
 ### Category 7: Lead Quality & Pipeline (86→100)
 - [x] Add frontend daily training gate to Pipeline tab (check canRepAccessLeads)
 
 ### Category 8: Communication Tools (84→100)
 - [x] Add frontend daily training gate to Comms tab
-- [ ] Add quick-action buttons (email/SMS/call) on Pipeline lead cards
+- [x] Add quick-action buttons (email/SMS/call/view) on Pipeline lead cards
 
 ### Category 9: Gamification & Motivation (78→100)
 - [x] Migrate RANK_TRAINING_CONFIG from gamification levels to accountability tiers
@@ -958,7 +958,7 @@
 
 ### Category 10: Ongoing Development (83→100)
 - [x] Build First 90 Days structured program with Academy-based daily drills in App Guide
-- [ ] Add weekly Role Play challenges gated by module completion
+- [x] Add weekly Role Play challenges gated by module completion (8-week rotation, score targets, completion tracking)
 
 ### Category 11: Support & Community (80→100)
 - [x] Build rep Team Feed within the dashboard (announcements, wins, tips, shoutouts)

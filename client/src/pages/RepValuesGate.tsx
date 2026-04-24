@@ -8,6 +8,7 @@ import {
   ArrowLeft, ArrowRight, Star, Users, Zap, Lock,
   AlertTriangle, ChevronDown, ChevronUp,
 } from "lucide-react";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
 import {
   CORE_VALUES,
   CODE_OF_CONDUCT,
@@ -34,6 +35,7 @@ export default function RepValuesGate() {
 
   return (
     <div className="min-h-screen bg-cream">
+      <OnboardingProgress currentStep={1} />
       {/* Hero */}
       <div className="bg-forest text-white py-12 px-4">
         <div className="max-w-3xl mx-auto text-center">

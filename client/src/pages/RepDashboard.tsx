@@ -440,6 +440,56 @@ export default function RepDashboard() {
                 </CardContent></Card>
               ))}
             </div>
+
+            {/* Projected Earnings from Pipeline */}
+            {activeLeads.length > 0 && (
+              <Card className="border-border/50 bg-gradient-to-r from-forest/5 to-terracotta/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+                    <Target className="h-4 w-4 text-terracotta" /> Projected Earnings
+                  </CardTitle>
+                  <CardDescription className="text-xs font-sans">Estimated commissions if your active pipeline leads close</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {(() => {
+                      const PRICES: Record<string, number> = { starter: 149, growth: 299, premium: 499 };
+                      const tierRate = accountabilityTier?.tier === "platinum" ? 0.15 : accountabilityTier?.tier === "gold" ? 0.14 : accountabilityTier?.tier === "silver" ? 0.12 : 0.10;
+                      let totalProjected = 0;
+                      const rows = activeLeads.map((lead: any) => {
+                        const monthly = PRICES[lead.packageTier] || 149;
+                        const annual = monthly * 12;
+                        const commission = annual * tierRate;
+                        totalProjected += commission;
+                        return { name: lead.businessName || lead.contactName || "Lead", tier: lead.packageTier, monthly, commission };
+                      });
+                      return (
+                        <>
+                          {rows.slice(0, 5).map((r: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-white/60">
+                              <div>
+                                <p className="text-sm font-medium text-forest font-sans">{r.name}</p>
+                                <p className="text-[10px] text-forest/40 font-sans capitalize">{r.tier} — ${r.monthly}/mo x 12</p>
+                              </div>
+                              <span className="text-sm font-serif text-green-600">${r.commission.toLocaleString()}</span>
+                            </div>
+                          ))}
+                          {rows.length > 5 && <p className="text-xs text-forest/40 font-sans text-center">+ {rows.length - 5} more leads in pipeline</p>}
+                          <div className="flex items-center justify-between p-4 rounded-lg bg-forest/10 mt-2">
+                            <div>
+                              <p className="text-sm font-semibold text-forest font-sans">Total Projected</p>
+                              <p className="text-[10px] text-forest/50 font-sans">At your {accountabilityTier?.tier || "bronze"} tier rate ({(tierRate * 100).toFixed(0)}%)</p>
+                            </div>
+                            <span className="text-xl font-serif text-forest">${totalProjected.toLocaleString()}</span>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="border-border/50">
               <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-forest">Commission History</CardTitle></CardHeader>
               <CardContent>

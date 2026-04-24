@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { toast } from "sonner";
 import {
   Shield,
@@ -199,6 +200,7 @@ export default function TrustGate() {
 
   return (
     <div className="min-h-screen bg-cream">
+      <OnboardingProgress currentStep={3} />
       {/* Header */}
       <div className="bg-forest text-white py-8 px-4">
         <div className="max-w-2xl mx-auto text-center">

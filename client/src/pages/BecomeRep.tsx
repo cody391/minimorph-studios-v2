@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
+import { OnboardingProgress } from "@/components/OnboardingProgress";
 import {
   CheckCircle, ArrowLeft, ArrowRight, DollarSign, Users, TrendingUp,
   Zap, User, Briefcase, Heart, FileCheck, Sparkles, Trophy, Star, Camera,
@@ -307,6 +308,7 @@ export default function BecomeRep() {
 
   return (
     <div className="min-h-screen bg-cream">
+      <OnboardingProgress currentStep={step === 1 ? 2 : 5} />
       {/* Hero */}
       <div className="bg-forest text-white py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
