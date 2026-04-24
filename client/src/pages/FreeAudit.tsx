@@ -301,24 +301,24 @@ export default function FreeAudit() {
         </div>
       </section>
 
-      {/* Social Proof */}
+      {/* What You Get */}
       <section className="py-16 border-t border-slate-800/50">
         <div className="container max-w-4xl text-center space-y-8">
           <h2 className="text-2xl font-bold text-white">
-            Trusted by <span className="text-indigo-400">Small Businesses</span> Everywhere
+            What Your <span className="text-indigo-400">Free Audit</span> Includes
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="space-y-2">
-              <p className="text-4xl font-bold text-indigo-400">500+</p>
-              <p className="text-sm text-slate-400">Audits Generated</p>
+              <p className="text-4xl font-bold text-indigo-400">PDF</p>
+              <p className="text-sm text-slate-400">Detailed Report</p>
             </div>
             <div className="space-y-2">
-              <p className="text-4xl font-bold text-indigo-400">4.9/5</p>
-              <p className="text-sm text-slate-400">Average Rating</p>
+              <p className="text-4xl font-bold text-indigo-400">AI</p>
+              <p className="text-sm text-slate-400">Powered Analysis</p>
             </div>
             <div className="space-y-2">
-              <p className="text-4xl font-bold text-indigo-400">2 min</p>
-              <p className="text-sm text-slate-400">Average Report Time</p>
+              <p className="text-4xl font-bold text-indigo-400">Free</p>
+              <p className="text-sm text-slate-400">No Strings Attached</p>
             </div>
           </div>
         </div>

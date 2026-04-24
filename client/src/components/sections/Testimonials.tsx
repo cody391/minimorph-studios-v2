@@ -1,34 +1,10 @@
 /*
  * Design: Warm Machine — Humanized AI Aesthetic
- * Testimonials: Large editorial quotes with warm styling.
- * Builds trust and social proof.
+ * Testimonials: Will display real client testimonials once available.
+ * Currently shows an invitation to be the first reviewer.
  */
 import { motion } from "framer-motion";
 import { Quote } from "lucide-react";
-
-const testimonials = [
-  {
-    quote:
-      "MiniMorph didn't just build us a website — they built us a system. The ongoing support and monthly reports make us feel like we have a full digital team without the overhead.",
-    name: "Sarah Chen",
-    role: "Owner, Bloom & Gather Florist",
-    initials: "SC",
-  },
-  {
-    quote:
-      "I was skeptical about AI managing my account, but the check-ins are more consistent than any agency I've worked with. They caught issues before I even noticed them.",
-    name: "Marcus Rivera",
-    role: "Founder, Rivera Fitness Co.",
-    initials: "MR",
-  },
-  {
-    quote:
-      "The guided buying process was a game-changer. I knew exactly what I was getting, and the final product exceeded my expectations. Already renewed for year two.",
-    name: "Emily Thornton",
-    role: "CEO, Thornton Legal Group",
-    initials: "ET",
-  },
-];
 
 export default function Testimonials() {
   return (
@@ -69,37 +45,24 @@ export default function Testimonials() {
           </motion.h2>
         </div>
 
-        {/* Testimonial Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-          {testimonials.map((testimonial, idx) => (
-            <motion.div
-              key={testimonial.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: idx * 0.1 }}
-              className="p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/8 transition-all duration-500"
-            >
-              <Quote size={24} className="text-terracotta/60 mb-6" />
-              <p className="text-base text-cream/80 font-sans leading-relaxed mb-8">
-                "{testimonial.quote}"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-sage/30 flex items-center justify-center text-sm font-sans font-bold text-cream/80">
-                  {testimonial.initials}
-                </div>
-                <div>
-                  <p className="text-sm font-sans font-medium text-cream">
-                    {testimonial.name}
-                  </p>
-                  <p className="text-xs font-sans text-cream/50">
-                    {testimonial.role}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {/* Empty state */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="max-w-md mx-auto text-center"
+        >
+          <div className="p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10">
+            <Quote size={32} className="text-terracotta/40 mx-auto mb-4" />
+            <p className="text-base text-cream/60 font-sans leading-relaxed mb-4">
+              We're just getting started. Our first clients are building amazing websites with us right now.
+            </p>
+            <p className="text-sm text-cream/40 font-sans">
+              Real testimonials from real businesses — coming soon.
+            </p>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

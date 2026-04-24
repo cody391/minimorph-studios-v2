@@ -177,7 +177,7 @@ export function startLeadGenScheduler() {
           ? bestSources
           : ["google_maps", "yelp", "facebook", "bbb"] as any[];
 
-        // Scrape areas where we have active reps (placeholder — uses general areas)
+        // TODO: Scrape areas where we have active reps (currently uses general areas)
         const result = await runMultiSourceScrape({
           location: "United States", // Will be replaced by rep service areas
           sources,

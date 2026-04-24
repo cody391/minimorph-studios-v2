@@ -113,10 +113,10 @@ export default function Careers() {
         <div className="container max-w-6xl mx-auto px-6 py-6">
           <div className="flex flex-wrap justify-center gap-8 md:gap-16 text-center">
             {[
-              { value: "200+", label: "Websites Built" },
-              { value: "$2.5M+", label: "Revenue Generated" },
-              { value: "4.9/5", label: "Client Rating" },
               { value: "10-20%", label: "Commission Rate" },
+              { value: "100%", label: "Remote" },
+              { value: "AI-Powered", label: "Sales Tools" },
+              { value: "Flexible", label: "Schedule" },
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-2xl font-serif text-forest">{s.value}</p>

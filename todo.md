@@ -557,3 +557,13 @@
 - [ ] Write validation test for X API credentials
 - [ ] Test posting a tweet from the admin UI
 - [x] Add View/Preview button to PostCard with dialog showing full post content and tweet preview
+
+### Phase 36: Remove All Placeholder Data
+- [x] Audit and remove placeholder testimonials from Home page
+- [x] Audit and remove placeholder portfolio/case studies from Home page
+- [x] Audit and remove placeholder team members from Home/About pages (no team section found)
+- [x] Audit and remove placeholder stats/metrics from all pages (Hero, Stats, Portfolio, Careers, FreeAudit)
+- [x] Audit and remove mock data from backend services and routers (test mocks are fine, updated leadGenScheduler comment)
+- [x] Audit and remove placeholder content from all other pages (Analytics demo data removed, Pricing/Services/FAQ are real content)
+- [x] Replace removed placeholders with empty states or dynamic data from DB
+- [x] Verify TypeScript compilation and browser testing after cleanup
