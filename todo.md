@@ -580,3 +580,34 @@
 - [x] Create batch of draft X posts covering MiniMorph services, value props, and brand messaging (10 posts created)
 - [x] Verify all drafts appear in admin UI with View/Preview buttons
 - [x] Posts remain as drafts until owner approves — no auto-publishing
+
+### Phase 39: X Growth Engine — Automated Brand Growth
+#### X Engagement Service
+- [x] Add X API methods: follow user, like tweet, reply to tweet, search tweets, search users
+- [x] Add safety rate limits (40 follows/day, 80 likes/day, 20 replies/day)
+- [x] Add unfollow capability for non-followers after 7 days
+
+#### X Growth Engine Admin Panel
+- [x] Growth Engine dashboard in admin (activity log, daily stats, target settings)
+- [x] Target audience configuration (keywords, hashtags, account types to engage with)
+- [x] Approval queue for replies before they go out
+- [x] Activity log showing all engagement actions taken
+
+#### Branded Visual Content
+- [x] Generate AI branded images for posts (tip cards, quote graphics, stats infographics) — 5 branded images
+- [x] Create visual post drafts: educational web design tips (authority building)
+- [x] Create visual post drafts: rep recruitment (targeting sales people, side-hustlers)
+- [x] Create visual post drafts: lead gen (targeting small business owners)
+- [x] Create visual post drafts: thought leadership (Forbes-worthy insights)
+
+#### Automated Engagement Scheduler
+- [x] Build engagement scheduler that runs daily within safe limits
+- [x] Search and follow target accounts (small biz owners, entrepreneurs, sales people)
+- [x] Auto-like relevant posts in target communities
+- [x] Generate contextual replies for approval queue
+- [x] Track follow-back rates and engagement metrics
+
+#### Lead Gen & Rep Recruitment Activation
+- [x] Configure Lead Gen Engine targets for businesses without good websites
+- [x] Create rep recruitment pipeline targeting sales communities on X
+- [x] Balance 60% rep recruitment / 40% lead gen initially — targets configured with both categories

@@ -1184,3 +1184,66 @@ export const socialContentLibrary = mysqlTable("social_content_library", {
 });
 export type SocialContentLibraryEntry = typeof socialContentLibrary.$inferSelect;
 export type InsertSocialContentLibraryEntry = typeof socialContentLibrary.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   X GROWTH ENGINE — Engagement Activity Log
+   ═══════════════════════════════════════════════════════ */
+export const xEngagementLog = mysqlTable("x_engagement_log", {
+  id: int("id").autoincrement().primaryKey(),
+  actionType: mysqlEnum("action_type", ["follow", "unfollow", "like", "reply", "retweet"]).notNull(),
+  targetUserId: varchar("target_user_id", { length: 64 }),
+  targetUsername: varchar("target_username", { length: 128 }),
+  targetTweetId: varchar("target_tweet_id", { length: 64 }),
+  targetTweetText: text("target_tweet_text"),
+  replyText: text("reply_text"),
+  status: mysqlEnum("engagement_status", ["pending_approval", "approved", "executed", "failed", "rejected"]).default("executed").notNull(),
+  failureReason: text("engagement_failure_reason"),
+  category: mysqlEnum("engagement_category", ["rep_recruitment", "lead_gen", "brand_awareness", "authority", "general"]).default("general").notNull(),
+  createdAt: timestamp("xel_created_at").defaultNow().notNull(),
+});
+export type XEngagementLogEntry = typeof xEngagementLog.$inferSelect;
+export type InsertXEngagementLogEntry = typeof xEngagementLog.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   X GROWTH ENGINE — Follow Tracker
+   ═══════════════════════════════════════════════════════ */
+export const xFollowTracker = mysqlTable("x_follow_tracker", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: varchar("x_user_id", { length: 64 }).notNull(),
+  username: varchar("x_username", { length: 128 }).notNull(),
+  name: varchar("x_name", { length: 255 }),
+  description: text("x_description"),
+  followersCount: int("x_followers_count"),
+  followedAt: timestamp("followed_at").defaultNow().notNull(),
+  followedBack: boolean("followed_back").default(false),
+  unfollowedAt: timestamp("unfollowed_at"),
+  category: mysqlEnum("follow_category", ["rep_recruitment", "lead_gen", "brand_awareness", "authority", "general"]).default("general").notNull(),
+});
+export type XFollowTrackerEntry = typeof xFollowTracker.$inferSelect;
+export type InsertXFollowTrackerEntry = typeof xFollowTracker.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   X GROWTH ENGINE — Target Configuration
+   ═══════════════════════════════════════════════════════ */
+export const xGrowthTargets = mysqlTable("x_growth_targets", {
+  id: int("id").autoincrement().primaryKey(),
+  targetType: mysqlEnum("target_type", ["keyword", "hashtag", "account", "community"]).notNull(),
+  value: varchar("target_value", { length: 255 }).notNull(),
+  category: mysqlEnum("gt_category", ["rep_recruitment", "lead_gen", "brand_awareness", "authority"]).notNull(),
+  priority: int("target_priority").default(5),
+  isActive: boolean("target_is_active").default(true),
+  createdAt: timestamp("xgt_created_at").defaultNow().notNull(),
+});
+export type XGrowthTarget = typeof xGrowthTargets.$inferSelect;
+export type InsertXGrowthTarget = typeof xGrowthTargets.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   X GROWTH ENGINE — Configuration Key-Value Store
+   ═══════════════════════════════════════════════════════ */
+export const xGrowthConfig = mysqlTable("x_growth_config", {
+  id: int("id").autoincrement().primaryKey(),
+  configKey: varchar("config_key", { length: 128 }).notNull().unique(),
+  configValue: text("config_value").notNull(),
+  updatedAt: timestamp("xgc_updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type XGrowthConfigEntry = typeof xGrowthConfig.$inferSelect;

@@ -28,6 +28,7 @@ const AdminSocialMedia = lazy(() => import("./pages/admin/SocialMedia"));
 const AdminContentCalendar = lazy(() => import("./pages/admin/ContentCalendar"));
 const AdminBrandKit = lazy(() => import("./pages/admin/BrandKit"));
 const AdminAIContentStudio = lazy(() => import("./pages/admin/AIContentStudio"));
+const AdminXGrowthEngine = lazy(() => import("./pages/admin/XGrowthEngine"));
 
 // Lazy-load portals
 const RepDashboard = lazy(() => import("./pages/RepDashboard"));
@@ -173,6 +174,9 @@ function Router() {
       </Route>
       <Route path="/admin/social/ai">
         <AdminPage><AdminAIContentStudio /></AdminPage>
+      </Route>
+      <Route path="/admin/x-growth">
+        <AdminPage><AdminXGrowthEngine /></AdminPage>
       </Route>
       <Route path="/admin/social">
         <AdminPage><AdminSocialMedia /></AdminPage>

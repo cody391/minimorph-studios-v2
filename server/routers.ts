@@ -12,6 +12,7 @@ import { repSupportTicketsRouter, repNotifPrefsRouter } from "./repEcosystem";
 import { leadGenRouter } from "./leadGenRouter";
 import { academyRouter } from "./academyRouter";
 import { socialAccountsRouter, socialCampaignsRouter, socialPostsRouter, contentCalendarRouter, brandAssetsRouter, socialAnalyticsRouter, aiContentRouter, socialLibraryRouter } from "./socialRouter";
+import { xGrowthDashboardRouter, xEngagementRouter, xGrowthTargetsRouter, xFollowTrackerRouter } from "./xGrowthRouter";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -1990,6 +1991,10 @@ export const appRouter = router({
   socialAnalytics: socialAnalyticsRouter,
   aiContent: aiContentRouter,
   socialLibrary: socialLibraryRouter,
+  xGrowthDashboard: xGrowthDashboardRouter,
+  xEngagement: xEngagementRouter,
+  xGrowthTargets: xGrowthTargetsRouter,
+  xFollowTracker: xFollowTrackerRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))

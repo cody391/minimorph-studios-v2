@@ -45,6 +45,7 @@ import {
   Calendar,
   Palette,
   Sparkles,
+  Rocket,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -72,6 +73,7 @@ const menuItems = [
   { icon: Calendar, label: "Content Calendar", path: "/admin/social/calendar" },
   { icon: Palette, label: "Brand Kit", path: "/admin/social/brand" },
   { icon: Sparkles, label: "AI Content Studio", path: "/admin/social/ai" },
+  { icon: Rocket, label: "X Growth Engine", path: "/admin/x-growth" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "admin-sidebar-width";

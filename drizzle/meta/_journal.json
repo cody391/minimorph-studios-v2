@@ -148,6 +148,13 @@
       "when": 1776980552609,
       "tag": "0020_military_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1776999520488,
+      "tag": "0021_classy_lord_tyger",
+      "breakpoints": true
     }
   ]
 }
