@@ -183,6 +183,13 @@
       "when": 1777010776082,
       "tag": "0025_previous_sabretooth",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1777015706842,
+      "tag": "0026_reflective_imperial_guard",
+      "breakpoints": true
     }
   ]
 }

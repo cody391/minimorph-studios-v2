@@ -1307,3 +1307,131 @@ export const repOnboardingData = mysqlTable("rep_onboarding_data", {
 });
 export type RepOnboardingData = typeof repOnboardingData.$inferSelect;
 export type InsertRepOnboardingData = typeof repOnboardingData.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP PERFORMANCE SCORES — Daily snapshots of rep performance
+   ═══════════════════════════════════════════════════════ */
+export const repPerformanceScores = mysqlTable("rep_performance_scores", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  // Overall score (0-100)
+  overallScore: decimal("overall_score", { precision: 5, scale: 2 }).default("0.00").notNull(),
+  // Component scores (0-100 each)
+  activityScore: decimal("activity_score", { precision: 5, scale: 2 }).default("0.00").notNull(),
+  closeRateScore: decimal("close_rate_score", { precision: 5, scale: 2 }).default("0.00").notNull(),
+  clientSatisfactionScore: decimal("client_satisfaction_score", { precision: 5, scale: 2 }).default("0.00").notNull(),
+  valuesComplianceScore: decimal("values_compliance_score", { precision: 5, scale: 2 }).default("0.00").notNull(),
+  // Raw metrics for the period
+  callsMade: int("calls_made").default(0).notNull(),
+  followUpsSent: int("follow_ups_sent").default(0).notNull(),
+  meetingsBooked: int("meetings_booked").default(0).notNull(),
+  dealsClosed: int("deals_closed").default(0).notNull(),
+  leadsAssigned: int("leads_assigned").default(0).notNull(),
+  leadsConverted: int("leads_converted").default(0).notNull(),
+  // Period
+  periodDate: timestamp("period_date").notNull(), // The date this score covers
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type RepPerformanceScore = typeof repPerformanceScores.$inferSelect;
+export type InsertRepPerformanceScore = typeof repPerformanceScores.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP ACTIVITY LOG — Timestamped record of all rep actions
+   ═══════════════════════════════════════════════════════ */
+export const repActivityLog = mysqlTable("rep_activity_log", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  activityType: mysqlEnum("activity_type", [
+    "call_made", "call_received", "email_sent", "email_received",
+    "meeting_booked", "meeting_completed", "follow_up_sent",
+    "proposal_sent", "deal_closed", "deal_lost",
+    "lead_accepted", "lead_rejected", "lead_timeout",
+    "login", "training_completed", "quiz_passed"
+  ]).notNull(),
+  // Optional references
+  leadId: int("lead_id"),
+  customerId: int("customer_id"),
+  contractId: int("contract_id"),
+  // Details
+  notes: text("notes"),
+  durationSeconds: int("duration_seconds"), // For calls/meetings
+  outcome: varchar("outcome", { length: 128 }), // e.g., "interested", "not_interested", "voicemail"
+  metadata: json("metadata"), // Flexible extra data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type RepActivityLogEntry = typeof repActivityLog.$inferSelect;
+export type InsertRepActivityLogEntry = typeof repActivityLog.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP STRIKES — Violations, warnings, and disciplinary actions
+   ═══════════════════════════════════════════════════════ */
+export const repStrikes = mysqlTable("rep_strikes", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  severity: mysqlEnum("severity", ["warning", "strike", "instant_deactivation"]).notNull(),
+  category: mysqlEnum("category", [
+    "values_violation", "performance", "professionalism",
+    "fraud", "confidentiality_breach", "client_harm",
+    "misrepresentation", "inactivity"
+  ]).notNull(),
+  description: text("description").notNull(),
+  evidence: text("evidence"), // AI-generated evidence summary
+  source: mysqlEnum("source", ["ai_monitor", "client_feedback", "admin_manual", "system_auto"]).default("system_auto").notNull(),
+  status: mysqlEnum("status", ["pending_review", "confirmed", "dismissed", "appealed"]).default("pending_review").notNull(),
+  // Resolution
+  resolvedBy: int("resolved_by"), // Admin user ID who reviewed
+  resolvedAt: timestamp("resolved_at"),
+  resolution: text("resolution"), // Admin notes on resolution
+  // Required action
+  requiredAction: varchar("required_action", { length: 255 }), // e.g., "retrain:values-ethics", "probation:30d"
+  actionCompletedAt: timestamp("action_completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type RepStrike = typeof repStrikes.$inferSelect;
+export type InsertRepStrike = typeof repStrikes.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP TIERS — Current tier and tier history
+   ═══════════════════════════════════════════════════════ */
+export const repTiers = mysqlTable("rep_tiers", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  tier: mysqlEnum("tier", ["bronze", "silver", "gold", "platinum"]).default("bronze").notNull(),
+  commissionRate: decimal("commission_rate", { precision: 4, scale: 2 }).default("10.00").notNull(), // Base 10%
+  // Tier qualification metrics (rolling 30-day)
+  monthlyRevenue: decimal("monthly_revenue", { precision: 12, scale: 2 }).default("0.00").notNull(),
+  monthsActive: int("months_active").default(0).notNull(),
+  // Residual decay rate (1.0 = no decay, 0.0 = fully decayed)
+  residualDecayRate: decimal("residual_decay_rate", { precision: 3, scale: 2 }).default("1.00").notNull(),
+  lastActiveAt: timestamp("last_active_at"), // Last meaningful activity
+  // History
+  promotedAt: timestamp("promoted_at"), // When they reached this tier
+  previousTier: mysqlEnum("previous_tier", ["bronze", "silver", "gold", "platinum"]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type RepTier = typeof repTiers.$inferSelect;
+export type InsertRepTier = typeof repTiers.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP LEAD ALLOCATIONS — Lead assignment history
+   ═══════════════════════════════════════════════════════ */
+export const repLeadAllocations = mysqlTable("rep_lead_allocations", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id").notNull(),
+  leadId: int("lead_id").notNull(),
+  // Score at time of assignment
+  scoreAtAssignment: decimal("score_at_assignment", { precision: 5, scale: 2 }).notNull(),
+  tierAtAssignment: mysqlEnum("tier_at_assignment", ["bronze", "silver", "gold", "platinum"]).notNull(),
+  // Assignment lifecycle
+  assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  timeoutAt: timestamp("timeout_at"), // When this assignment expires if not accepted
+  status: mysqlEnum("status", ["assigned", "accepted", "timeout", "rejected", "completed", "lost"]).default("assigned").notNull(),
+  // Outcome
+  outcome: varchar("outcome", { length: 128 }), // e.g., "closed_won", "closed_lost", "reassigned"
+  reassignedTo: int("reassigned_to"), // If timed out, who got it next
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type RepLeadAllocation = typeof repLeadAllocations.$inferSelect;
+export type InsertRepLeadAllocation = typeof repLeadAllocations.$inferInsert;

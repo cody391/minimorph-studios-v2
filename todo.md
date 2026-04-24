@@ -772,63 +772,73 @@
 ### Phase 48: Uber-Model AI-Managed Rep Accountability System
 
 #### Database Schema
-- [ ] Create rep_performance_scores table (daily score snapshots, activity metrics)
-- [ ] Create rep_activity_log table (calls, follow-ups, meetings, closes — timestamped)
-- [ ] Create rep_strikes table (violation type, severity, AI evidence, status)
-- [ ] Create rep_tiers table (current tier, tier history, commission rate)
-- [ ] Add residual_decay_rate and last_active_at to reps table
-- [ ] Create rep_lead_allocations table (lead assignment history, score at time of assignment)
+- [x] Create rep_performance_scores table (daily score snapshots, activity metrics)
+- [x] Create rep_activity_log table (calls, follow-ups, meetings, closes — timestamped)
+- [x] Create rep_strikes table (violation type, severity, AI evidence, status)
+- [x] Create rep_tiers table (current tier, tier history, commission rate)
+- [x] Add residual_decay_rate and last_active_at to reps table (in rep_tiers table)
+- [x] Create rep_lead_allocations table (lead assignment history, score at time of assignment)
 
 #### Performance Score Engine
-- [ ] Backend: calculate daily Performance Score (0-100) from activity, close rate, client satisfaction, values compliance
-- [ ] Score weights: activity 30%, close rate 30%, client satisfaction 20%, values compliance 20%
-- [ ] Auto-update scores on-demand calculation
-- [ ] Store score history for trend analysis
+- [x] Backend: calculate daily Performance Score (0-100) from activity, close rate, client satisfaction, values compliance
+- [x] Score weights: activity 30%, close rate 30%, client satisfaction 20%, values compliance 20%
+- [x] Auto-update scores on-demand calculation
+- [x] Store score history for trend analysis
+- [x] Register accountabilityRouter in appRouter
 
 #### Lead Allocation Algorithm (Uber-style)
-- [ ] Distribute leads based on Performance Score (higher score = more leads)
-- [ ] Lead queue system: new leads enter pool, assigned to highest-scoring available rep
-- [ ] Lead timeout: if rep doesn't act within 4 hours, lead reassigned to next rep
-- [ ] Score threshold: below 40 = lead freeze (no new leads until score improves)
+- [x] Distribute leads based on Performance Score (higher score = more leads)
+- [x] Lead queue system: new leads enter pool, assigned to highest-scoring available rep
+- [x] Lead timeout: if rep doesn't act within 4 hours, lead reassigned to next rep
+- [x] Score threshold: below 40 = lead freeze (no new leads until score improves)
 
 #### Residual Commission Decay
-- [ ] Track last_active_at timestamp (updated on any meaningful activity)
-- [ ] Active = 100% residuals, 30d inactive = 75%, 60d = 50%, 90d = 25%, 120d = reassigned
-- [ ] Backend: automated decay calculation on commission payouts
+- [x] Track last_active_at timestamp (updated on any meaningful activity)
+- [x] Active = 100% residuals, 30d inactive = 75%, 60d = 50%, 90d = 25%, 120d = reassigned
+- [x] Backend: automated decay calculation on commission payouts
 
 #### AI Values Monitor
-- [ ] Analyze rep-client interactions for values compliance
-- [ ] Auto-flag: deceptive language, high-pressure tactics, misrepresentation
-- [ ] Severity levels: warning (minor), strike (major), instant-deactivation (critical)
-- [ ] Generate evidence summary for each flag
+- [x] Analyze rep-client interactions for values compliance
+- [x] Auto-flag: deceptive language, high-pressure tactics, misrepresentation
+- [x] Severity levels: warning (minor), strike (major), instant-deactivation (critical)
+- [x] Generate evidence summary for each flag
 
 #### Strike System
-- [ ] 3 strikes in 6 months = automatic deactivation
-- [ ] Strike categories: values violation, performance, professionalism, fraud
-- [ ] Instant deactivation triggers: fraud, sharing confidential info, client harm
-- [ ] Mandatory retraining on specific value after warning
+- [x] 3 strikes in 6 months = automatic deactivation
+- [x] Strike categories: values violation, performance, professionalism, fraud
+- [x] Instant deactivation triggers: fraud, sharing confidential info, client harm
+- [x] Mandatory retraining on specific value after warning
 
 #### Rep Tier System
-- [ ] Bronze: 0-3 months or <$3K/mo — standard commission, standard leads
-- [ ] Silver: 3+ months, $3K-$7K/mo — +2% commission, priority leads
-- [ ] Gold: 6+ months, $7K-$12K/mo — +4% commission, premium leads, slower decay
-- [ ] Platinum: 12+ months, $12K+/mo — +5% commission, first-pick leads, no decay
-- [ ] Auto-promote/demote based on rolling 30-day performance
+- [x] Bronze: 0-3 months or <$3K/mo — standard commission, standard leads
+- [x] Silver: 3+ months, $3K-$7K/mo — +2% commission, priority leads
+- [x] Gold: 6+ months, $7K-$12K/mo — +4% commission, premium leads, slower decay
+- [x] Platinum: 12+ months, $12K+/mo — +5% commission, first-pick leads, no decay
+- [x] Auto-promote/demote based on rolling 30-day performance
 
 #### Rep Dashboard (Their "Uber Driver App")
-- [ ] Performance Score display with trend chart
-- [ ] Current tier + progress to next tier
-- [ ] Today's leads queue with priority indicators
-- [ ] Missed opportunity alerts ("You left $X on the table")
-- [ ] Earnings: today, this week, this month, residuals
-- [ ] Activity tracker: calls made, follow-ups, meetings
-- [ ] AI coaching messages (daily tips based on weak areas)
-- [ ] Strike/warning history
-- [ ] Residual health indicator (active/at-risk/decaying)
+- [x] Performance Score display with trend chart
+- [x] Current tier + progress to next tier
+- [x] Today's leads queue with priority indicators
+- [x] Missed opportunity alerts ("You left $X on the table")
+- [x] Earnings: today, this week, this month, residuals
+- [x] Activity tracker: calls made, follow-ups, meetings
+- [x] AI coaching messages (daily tips based on weak areas)
+- [x] Strike/warning history
+- [x] Residual health indicator (active/at-risk/decaying)
 
 #### Admin Governance Panel
-- [ ] Rep roster with real-time Performance Scores
-- [ ] Strike management: review, approve, dismiss, escalate
-- [ ] Deactivation workflow: freeze leads → final warning → deactivate
-- [ ] Override controls: manually adjust scores, tiers, lead allocation
-- [ ] Flag queue: AI-flagged interactions awaiting review
+- [x] Rep roster with real-time Performance Scores
+- [x] Strike management: review, approve, dismiss, escalate
+- [x] Deactivation workflow: freeze leads → final warning → deactivate
+- [x] Override controls: manually adjust scores, tiers, lead allocation
+- [x] Flag queue: AI-flagged interactions awaiting review
+
+#### Phase 48 Tests
+- [x] Vitest: Performance Score calculation (unit tests for scoring functions) — 40 tests, all passing
+- [x] Vitest: Tier calculation logic
+- [x] Vitest: Residual decay calculation
+- [x] Vitest: Admin access control (FORBIDDEN for non-admin)
+- [x] Vitest: Strike system rules validation
+- [x] Vitest: Constants validation (weights, thresholds, config)
+- [x] Vitest: Router auth checks for all accountability endpoints

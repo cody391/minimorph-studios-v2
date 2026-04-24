@@ -1,6 +1,7 @@
 import { useState, useMemo, lazy, Suspense } from "react";
 import NotificationsBell from "./rep/NotificationsBell";
 const PipelineTab = lazy(() => import("./rep/PipelineTab"));
+const PerformanceHub = lazy(() => import("./rep/PerformanceHub"));
 const SalesAcademy = lazy(() => import("./rep/SalesAcademy"));
 const CommsHub = lazy(() => import("./rep/CommsHub"));
 const SupportTicketsPanel = lazy(() => import("./rep/SupportTicketsPanel"));
@@ -43,7 +44,7 @@ const levelIcons: Record<string, any> = { rookie: Shield, closer: Target, ace: S
 export default function RepDashboard() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("performance");
 
   const { data: repProfile, isLoading: repLoading } = trpc.reps.myProfile.useQuery(undefined, { enabled: isAuthenticated });
   const { data: allLeads } = trpc.leads.list.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
@@ -136,6 +137,7 @@ export default function RepDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-4 sm:mb-6">
             <TabsList className="bg-white border border-sage/20 flex-wrap h-auto gap-0.5 sm:gap-1 p-1 w-max sm:w-auto">
+              <TabsTrigger value="performance" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-terracotta data-[state=active]:text-white">Performance</TabsTrigger>
               <TabsTrigger value="overview" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Overview</TabsTrigger>
               <TabsTrigger value="training" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Training</TabsTrigger>
               <TabsTrigger value="activity" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Activity</TabsTrigger>
@@ -148,6 +150,13 @@ export default function RepDashboard() {
               <TabsTrigger value="guide" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Guide</TabsTrigger>
             </TabsList>
           </div>
+
+          {/* ═══════ PERFORMANCE HUB TAB ═══════ */}
+          <TabsContent value="performance" className="space-y-6">
+            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+              <PerformanceHub repProfile={repProfile} />
+            </Suspense>
+          </TabsContent>
 
           {/* ═══════ OVERVIEW TAB ═══════ */}
           <TabsContent value="overview" className="space-y-6">

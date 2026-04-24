@@ -25,8 +25,9 @@ import {
   FileText, GraduationCap, AlertTriangle, CreditCard, ArrowUpRight,
   ClipboardCheck, Eye,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { toast } from "sonner";
+const GovernancePanel = lazy(() => import("./GovernancePanel"));
 
 const statusColors: Record<string, string> = {
   applied: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -144,6 +145,9 @@ export default function Reps() {
           </TabsTrigger>
           <TabsTrigger value="pipeline" className="font-sans text-xs">
             Pipeline
+          </TabsTrigger>
+          <TabsTrigger value="governance" className="font-sans text-xs data-[state=active]:bg-terracotta data-[state=active]:text-white">
+            Governance
           </TabsTrigger>
         </TabsList>
 
@@ -516,6 +520,13 @@ export default function Reps() {
         {/* ONBOARDING PIPELINE TAB */}
         <TabsContent value="pipeline">
           <OnboardingPipelineTab />
+        </TabsContent>
+
+        {/* GOVERNANCE TAB */}
+        <TabsContent value="governance">
+          <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+            <GovernancePanel />
+          </Suspense>
         </TabsContent>
       </Tabs>
 

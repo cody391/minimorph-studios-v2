@@ -16,6 +16,7 @@ import { xGrowthDashboardRouter, xEngagementRouter, xGrowthTargetsRouter, xFollo
 import { localAuthRouter } from "./localAuth";
 import { assessmentRouter } from "./assessmentRouter";
 import { onboardingDataRouter } from "./onboardingDataRouter";
+import { accountabilityRouter } from "./accountabilityRouter";
 import { invokeLLM } from "./_core/llm";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
@@ -2066,6 +2067,7 @@ export const appRouter = router({
   localAuth: localAuthRouter,
   assessment: assessmentRouter,
   repOnboarding: onboardingDataRouter,
+  accountability: accountabilityRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))
