@@ -6,7 +6,7 @@
  */
 
 import { invokeLLM } from "../_core/llm";
-import { getDb } from "../db";
+import { getDb, createRepNotification } from "../db";
 import { leads, outreachSequences, aiConversations, reps, repServiceAreas } from "../../drizzle/schema";
 import { eq, and, lte, isNull, desc, sql, inArray } from "drizzle-orm";
 import { sendSms } from "./sms";
@@ -436,6 +436,18 @@ Respond in JSON:
         lastTouchAt: new Date(),
       }).where(eq(leads.id, params.leadId));
       result.assignedToRepId = repId;
+      // Notify the rep about the hot lead handoff
+      try {
+        await createRepNotification({
+          repId,
+          type: "lead_assigned",
+          title: "New Hot Lead",
+          message: `AI detected buying intent from ${lead.businessName || "a prospect"}. This lead has been assigned to you for personal follow-up.`,
+          metadata: { leadId: params.leadId, businessName: lead.businessName, source: "ai_handoff" },
+        });
+      } catch (notifErr) {
+        console.error("[Outreach] Failed to create rep notification for AI handoff:", notifErr);
+      }
     }
 
   } else if (aiDecision.decision === "assign_to_owner" || aiDecision.isEnterprise) {

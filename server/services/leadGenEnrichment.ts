@@ -13,6 +13,7 @@ import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
 import { scrapedBusinesses, leads, type InsertLead } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
+import { dedupOrNull } from "./leadDedup";
 
 export interface EnrichmentResult {
   ownerName?: string;
@@ -265,6 +266,17 @@ export async function convertToLead(businessId: number): Promise<number> {
       scrapedBusinessId: biz.id,
     },
   };
+
+  // Cross-source dedup: check for existing lead before inserting
+  const dup = await dedupOrNull(leadData);
+  if (dup) {
+    // Mark the scraped business as converted to the existing lead
+    await db.update(scrapedBusinesses).set({
+      convertedToLeadId: dup.leadId,
+      status: "converted",
+    }).where(eq(scrapedBusinesses.id, businessId));
+    return dup.leadId;
+  }
 
   const [result] = await db.insert(leads).values(leadData).$returningId();
 

@@ -1721,11 +1721,31 @@ const onboardingRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
       const project = await db.getOnboardingProjectById(input.projectId);
+      // Append new feedback with timestamp instead of overwriting
+      const timestampedFeedback = `[${new Date().toISOString()}] Customer feedback:\n${input.feedbackNotes}`;
+      const previousNotes = project?.feedbackNotes || "";
+      const combinedNotes = previousNotes
+        ? `${timestampedFeedback}\n\n${previousNotes}`
+        : timestampedFeedback;
       await db.updateOnboardingProject(input.projectId, {
-        feedbackNotes: input.feedbackNotes,
+        feedbackNotes: combinedNotes,
         stage: "revisions",
         revisionsCount: (project?.revisionsCount || 0) + 1,
       });
+      // Send confirmation email to customer
+      try {
+        if (project?.contactEmail && project?.contactName) {
+          await sendOnboardingStageEmail({
+            to: project.contactEmail,
+            customerName: project.contactName,
+            stage: "review",
+            businessName: project.businessName,
+            projectId: project.id,
+          });
+        }
+      } catch (emailErr) {
+        console.error("[onboarding.submitFeedback] Failed to send confirmation email:", emailErr);
+      }
       return { success: true };
     }),
 
@@ -1737,6 +1757,21 @@ const onboardingRouter = router({
       await db.updateOnboardingProject(input.projectId, {
         stage: "final_approval",
       });
+      // Send launch confirmation email to customer
+      try {
+        const project = await db.getOnboardingProjectById(input.projectId);
+        if (project?.contactEmail && project?.contactName) {
+          await sendOnboardingStageEmail({
+            to: project.contactEmail,
+            customerName: project.contactName,
+            stage: "launch",
+            businessName: project.businessName,
+            projectId: project.id,
+          });
+        }
+      } catch (emailErr) {
+        console.error("[onboarding.approveLaunch] Failed to send launch email:", emailErr);
+      }
       return { success: true };
     }),
 
@@ -1764,6 +1799,32 @@ const onboardingRouter = router({
         updateData.launchedAt = new Date();
       }
       await db.updateOnboardingProject(id, updateData);
+      // Wire stage-change email to customer
+      try {
+        const project = await db.getOnboardingProjectById(id);
+        if (project?.contactEmail && project?.contactName) {
+          // Map DB stage names to email template keys
+          const stageEmailMap: Record<string, string> = {
+            questionnaire: "questionnaire",
+            design: "design",
+            review: "review",
+            launch: "launch",
+            complete: "complete",
+          };
+          const emailStage = stageEmailMap[data.stage];
+          if (emailStage) {
+            await sendOnboardingStageEmail({
+              to: project.contactEmail,
+              customerName: project.contactName,
+              stage: emailStage,
+              businessName: project.businessName,
+              projectId: project.id,
+            });
+          }
+        }
+      } catch (emailErr) {
+        console.error("[onboarding.updateStage] Failed to send stage email:", emailErr);
+      }
       return { success: true };
     }),
 });

@@ -18,6 +18,7 @@ import { scoreLeadML, rescoreAllLeads, getScoringInsights } from "./services/lea
 import { runMultiSourceScrape, enrichWithCompetitors } from "./services/leadGenMultiSource";
 import { generateProposal, getRepPerformanceMetrics, findBestRepByPerformance } from "./services/leadGenProposal";
 import { batchEnrichContacts, getEnrichmentStatus, enrichBusinessContact } from "./services/contactEnrichment";
+import { dedupOrNull } from "./services/leadDedup";
 import { runAdaptiveScaling, getAdaptiveScalingSummary, analyzeRepCapacity } from "./services/leadGenAdaptive";
 import { handleConversation, buildBusinessIntelligence } from "./services/leadGenConversationAI";
 import { getDb } from "./db";
@@ -478,8 +479,8 @@ export const leadGenRouter = router({
     .mutation(async ({ input }) => {
       const db = (await getDb())!;
 
-      // Create a lead from this inbound audit request
-      const [newLead] = await db.insert(leads).values({
+      // Cross-source dedup: check for existing lead before inserting
+      const leadData = {
         businessName: input.businessName || input.websiteUrl || "Unknown Business",
         contactName: input.contactName || "Website Visitor",
         email: input.email,
@@ -487,14 +488,22 @@ export const leadGenRouter = router({
         website: input.websiteUrl || null,
         source: "website_form" as const,
         temperature: "warm" as const,
-        qualificationScore: 60, // Inbound leads start warm
+        qualificationScore: 60,
         stage: "new" as const,
         notes: `Inbound audit request. Website: ${input.websiteUrl || "none"}. Submitted via free audit page.`,
-      });
+      };
+      const dup = await dedupOrNull(leadData);
+      let leadId: number;
+      if (dup) {
+        leadId = dup.leadId;
+      } else {
+        const [newLead] = await db.insert(leads).values(leadData).$returningId();
+        leadId = newLead.id;
+      }
 
       // Trigger audit generation in background (don't await)
       if (input.websiteUrl) {
-        generateAuditForLead(newLead.insertId).catch(err =>
+        generateAuditForLead(leadId).catch(err =>
           console.error("[PublicAudit] Audit generation failed:", err)
         );
       }

@@ -1069,3 +1069,26 @@
 - [x] F6: Verify internal endpoint protection (webhooks, scheduled, secrets)
 - [x] F7: Write surgical security tests
 - [x] F8: Typecheck 0 errors, all tests passing, build succeeds
+
+### Customer POV End-to-End Autonomy Walkthrough
+- [ ] Phase 1: Discovery / Lead Creation audit
+- [ ] Phase 2: AI Outreach Touchpoints audit
+- [ ] Phase 3: Reply Detection / AI Classification audit
+- [ ] Phase 4: Human Rep Handoff audit
+- [ ] Phase 5: Customer Payment / Close audit
+- [ ] Phase 6: Customer Onboarding to Build Website audit
+- [ ] Phase 7: Website Review and Revisions audit
+- [ ] Phase 8: AI Widget Upsell audit
+- [ ] Phase 9: Domain Handoff and Launch audit
+- [ ] Phase 10: Monthly Retention Pipeline audit
+- [ ] Phase 11: Admin Exception View audit
+- [ ] Phase 12: Final Customer POV Report
+- [ ] Validation: typecheck, tests, build after any surgical fixes
+
+### Customer POV Gap Repair — Surgical Fixes
+- [x] Fix 1: Wire onboarding stage-change emails into updateStage, submitFeedback, approveLaunch
+- [x] Fix 2: Append revision notes with timestamp instead of overwriting
+- [x] Fix 3: Add rep notification when AI hands off hot lead (assign_to_rep)
+- [x] Fix 4: Cross-source lead dedup before creating leads from any automated source
+- [x] Fix 5: Health score scheduled job (POST /api/scheduled/health-score-update)
+- [x] Validation: typecheck 0 errors, all tests pass, build succeeds

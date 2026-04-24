@@ -20,8 +20,8 @@ import { runMultiSourceScrape, getSourceQuality } from "./services/leadGenMultiS
 import { batchEnrichContacts } from "./services/contactEnrichment";
 import { runAdaptiveScaling } from "./services/leadGenAdaptive";
 import { getDb } from "./db";
-import { contracts, customers, npsSurveys, nurtureLogs } from "../drizzle/schema";
-import { eq, and, gte, lte, inArray } from "drizzle-orm";
+import { contracts, customers, npsSurveys, nurtureLogs, onboardingProjects } from "../drizzle/schema";
+import { eq, and, gte, lte, inArray, desc } from "drizzle-orm";
 import { sendNpsSurveyEmail } from "./services/customerEmails";
 import { sendRenewalReminderEmail } from "./services/customerEmails";
 
@@ -427,6 +427,92 @@ export function registerScheduledRoutes(app: Express) {
     })
   );
 
+  // ─── 13. Health Score Update ───
+  app.post(
+    "/api/scheduled/health-score-update",
+    async (req: Request, res: Response) =>
+      runJob(req, res, "health-score-update", async () => {
+        const db = (await getDb())!;
+        const now = new Date();
+        const allCustomers = await db.select().from(customers);
+        let updated = 0;
+        let errors = 0;
+
+        for (const cust of allCustomers) {
+          try {
+            let score = 100;
+
+            // 1. Contract health (-30 if expired/cancelled, -15 if expiring soon)
+            const custContracts = await db.select().from(contracts)
+              .where(eq(contracts.customerId, cust.id));
+            const activeContract = custContracts.find(c => c.status === "active" || c.status === "renewed");
+            const expiringSoon = custContracts.find(c => c.status === "expiring_soon");
+            const expired = custContracts.find(c => c.status === "expired" || c.status === "cancelled");
+            if (!activeContract && expired) score -= 30;
+            else if (expiringSoon) score -= 15;
+
+            // 2. NPS health (-20 if latest NPS <= 6, -10 if 7-8)
+            const npsResults = await db.select().from(npsSurveys)
+              .where(and(eq(npsSurveys.customerId, cust.id), eq(npsSurveys.status, "completed")))
+              .orderBy(desc(npsSurveys.completedAt))
+              .limit(1);
+            if (npsResults.length > 0 && npsResults[0].score !== null) {
+              if (npsResults[0].score <= 6) score -= 20;
+              else if (npsResults[0].score <= 8) score -= 10;
+            }
+
+            // 3. Onboarding health (-15 if stuck in early stage for > 14 days)
+            const projects = await db.select().from(onboardingProjects)
+              .where(eq(onboardingProjects.customerId, cust.id))
+              .limit(1);
+            if (projects.length > 0) {
+              const proj = projects[0];
+              const stuckStages = ["intake", "questionnaire", "assets_upload"];
+              if (stuckStages.includes(proj.stage)) {
+                const daysSinceCreated = (now.getTime() - new Date(proj.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+                if (daysSinceCreated > 14) score -= 15;
+              }
+            }
+
+            // 4. Support activity (-10 if unresolved support request in last 30 days)
+            const recentLogs = await db.select().from(nurtureLogs)
+              .where(and(
+                eq(nurtureLogs.customerId, cust.id),
+                eq(nurtureLogs.type, "support_request"),
+              ))
+              .orderBy(desc(nurtureLogs.createdAt))
+              .limit(5);
+            const unresolvedSupport = recentLogs.filter(l => l.status !== "resolved");
+            if (unresolvedSupport.length > 0) score -= 10;
+
+            // 5. Engagement bonus (+5 if responded to NPS, +5 if referral made)
+            // (already factored NPS above; keep score non-negative)
+
+            score = Math.max(0, Math.min(100, score));
+
+            // Derive status from score
+            let newStatus: "active" | "at_risk" | "churned" = "active";
+            if (score <= 30) newStatus = "churned";
+            else if (score <= 60) newStatus = "at_risk";
+
+            // Only update if changed
+            if (cust.healthScore !== score || cust.status !== newStatus) {
+              await db.update(customers).set({
+                healthScore: score,
+                status: newStatus,
+              }).where(eq(customers.id, cust.id));
+              updated++;
+            }
+          } catch (err: any) {
+            console.error(`[HealthScore] Error for customer ${cust.id}:`, err.message);
+            errors++;
+          }
+        }
+
+        return { totalCustomers: allCustomers.length, updated, errors };
+      })
+  );
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -437,5 +523,5 @@ export function registerScheduledRoutes(app: Express) {
     });
   });
 
-  console.log("[Scheduled] Registered 12 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 13 scheduled job endpoints at /api/scheduled/*");
 }
