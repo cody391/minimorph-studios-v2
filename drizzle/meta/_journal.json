@@ -176,6 +176,13 @@
       "when": 1777008823088,
       "tag": "0024_normal_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1777010776082,
+      "tag": "0025_previous_sabretooth",
+      "breakpoints": true
     }
   ]
 }

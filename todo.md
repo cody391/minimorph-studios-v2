@@ -690,3 +690,47 @@
 - [x] Vitest tests for retake cooldown logic (30-day check)
 - [x] Vitest tests for trust gate (NDA required, identity fields validated)
 - [x] Vitest tests for auto-population (data flows from onboarding_data to paperwork forms)
+
+### Phase 45: Onboarding Excellence — Ethics Gate, Photo, AI Review, E-Sig, Admin Pipeline
+
+#### Company Values & Ethics Gate (Pre-Application)
+- [x] Create a "Who We Are & What We Expect" landing page shown before application starts
+- [x] Display company mission, values, ethics code, and earning potential
+- [x] Clear messaging: "We only accept people of honest, trustworthy, moral character"
+- [x] Require explicit acknowledgment ("I understand and share these values") before proceeding
+- [x] Set the tone: this pays well but we run a tight ship
+
+#### Mandatory Professional Photo (Early in Flow)
+- [x] Move photo requirement to be mandatory (not optional) in Step 1
+- [x] Add live camera capture option (webcam/phone camera) in addition to file upload
+- [x] Show clear messaging: "This photo will be used on your professional email signature"
+- [x] Add guidance text about professional appearance (no sunglasses, good lighting, etc.)
+
+#### Randomize Assessment Questions
+- [x] Shuffle question order per attempt (seeded by userId + attemptNumber)
+- [x] Shuffle option order within each question
+- [x] Ensure scoring still works correctly with shuffled questions
+
+#### AI Motivation Review
+- [x] Backend: use LLM to analyze the "Why MiniMorph" paragraph for seriousness
+- [x] Score motivation on sincerity, specificity, and effort (1-10 scale)
+- [x] Flag low-effort responses (generic, too short, copy-paste detected)
+- [x] Store AI assessment alongside the application for admin review
+- [x] Show AI assessment in admin view with confidence level
+
+#### E-Signature Capture on Paperwork
+- [x] Build signature pad component (draw with mouse/finger or type name)
+- [x] Add signature capture to each paperwork form confirmation
+- [x] Store signature data (base64 image or typed text) with timestamp and IP
+- [x] Display "Legally binding e-signature" notice
+
+#### Admin Onboarding Pipeline Dashboard
+- [x] Build pipeline view showing each rep's progress through stages
+- [x] Stages: Values Gate → Account Created → Trust Gate → Assessment → Application → Paperwork → Complete
+- [x] Show stuck/stalled candidates (started but didn't finish)
+- [x] Quick actions: approve, reject, send reminder (approve/reject via existing assessment review)
+- [x] Filter by stage, date range, assessment score (stage counts + visual funnel)
+
+#### Cleanup
+- [x] Clear all existing test rep applications, assessments, and onboarding data
+- [x] Vitest tests for new features (randomization, AI review, e-sig, pipeline)

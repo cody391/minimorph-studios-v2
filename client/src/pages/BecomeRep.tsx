@@ -110,12 +110,63 @@ export default function BecomeRep() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  // Camera capture state
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setShowCamera(true);
+    } catch (err) {
+      toast.error("Unable to access camera. Please upload a photo instead.");
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 640;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    // Center-crop the video to a square
+    const v = videoRef.current;
+    const size = Math.min(v.videoWidth, v.videoHeight);
+    const sx = (v.videoWidth - size) / 2;
+    const sy = (v.videoHeight - size) / 2;
+    ctx.drawImage(v, sx, sy, size, size, 0, 0, 640, 640);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    setPhotoPreview(dataUrl);
+    // Convert to File for upload
+    canvas.toBlob((blob) => {
+      if (blob) setPhotoFile(new File([blob], "camera-photo.jpg", { type: "image/jpeg" }));
+    }, "image/jpeg", 0.9);
+    stopCamera();
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setShowCamera(false);
+  };
+
   const handleStep1 = () => {
     if (!fullName.trim()) { toast.error("Name is required"); return; }
     if (!email.trim()) { toast.error("Email is required"); return; }
     if (!password) { toast.error("Password is required"); return; }
     if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
     if (password !== confirmPassword) { toast.error("Passwords don't match"); return; }
+    if (!photoFile) { toast.error("A professional photo is required — it will appear on your email signature"); return; }
     // Register account first, which will trigger rep profile creation on success
     registerMutation.mutate({ email, password, name: fullName });
   };
@@ -329,19 +380,58 @@ export default function BecomeRep() {
                   <Label className="text-forest/80 text-sm">LinkedIn Profile (optional)</Label>
                   <Input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="mt-1 border-sage/30 focus:border-forest" />
                 </div>
-                {/* Profile Photo Upload */}
-                <div>
-                  <Label className="text-forest/80 text-sm">Profile Photo</Label>
-                  <p className="text-[11px] text-forest/40 font-sans mb-2">This photo will be used as your avatar and in your email signature.</p>
+                {/* Professional Photo — MANDATORY */}
+                <div className="border border-terracotta/20 rounded-lg p-4 bg-terracotta/5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Label className="text-forest text-sm font-medium">Professional Photo *</Label>
+                    <Badge variant="outline" className="text-[10px] border-terracotta/30 text-terracotta">Required</Badge>
+                  </div>
+                  <p className="text-[11px] text-forest/60 font-sans mb-3 leading-relaxed">
+                    This photo will appear on your <strong>official MiniMorph email signature</strong> and rep profile.
+                    Please use a professional headshot — good lighting, neutral background, no sunglasses or hats.
+                  </p>
+
+                  {/* Camera capture modal */}
+                  {showCamera && (
+                    <div className="mb-3 rounded-lg overflow-hidden border border-sage/30 bg-black">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full aspect-square object-cover"
+                      />
+                      <div className="flex gap-2 p-2 bg-forest/90">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={capturePhoto}
+                          className="flex-1 bg-terracotta hover:bg-terracotta/90 text-white text-xs rounded-full"
+                        >
+                          <Camera className="w-3.5 h-3.5 mr-1" /> Take Photo
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={stopCamera}
+                          className="text-xs rounded-full border-white/30 text-white hover:bg-white/10"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-4">
                     <div
-                      className="relative w-20 h-20 rounded-full border-2 border-dashed border-sage/40 flex items-center justify-center cursor-pointer hover:border-terracotta/50 transition-colors overflow-hidden group"
+                      className="relative w-20 h-20 rounded-full border-2 border-dashed border-terracotta/40 flex items-center justify-center cursor-pointer hover:border-terracotta/60 transition-colors overflow-hidden group"
                       onClick={() => photoInputRef.current?.click()}
                     >
                       {photoPreview ? (
                         <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <Camera className="w-6 h-6 text-forest/30 group-hover:text-terracotta/60 transition-colors" />
+                        <Camera className="w-6 h-6 text-terracotta/40 group-hover:text-terracotta/60 transition-colors" />
                       )}
                       {photoPreview && (
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -349,17 +439,28 @@ export default function BecomeRep() {
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => photoInputRef.current?.click()}
-                        className="text-xs font-sans rounded-full"
-                      >
-                        {photoPreview ? "Change Photo" : "Upload Photo"}
-                      </Button>
-                      <p className="text-[10px] text-forest/30 mt-1">JPG or PNG, max 5MB</p>
+                    <div className="flex-1 space-y-1.5">
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => photoInputRef.current?.click()}
+                          className="text-xs font-sans rounded-full"
+                        >
+                          {photoPreview ? "Change Photo" : "Upload Photo"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={startCamera}
+                          className="text-xs font-sans rounded-full"
+                        >
+                          <Camera className="w-3.5 h-3.5 mr-1" /> Use Camera
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-forest/40">JPG or PNG, max 5MB. Professional headshot recommended.</p>
                     </div>
                     <input
                       ref={photoInputRef}

@@ -19,6 +19,35 @@ import {
   ALL_QUESTIONS,
 } from "./assessmentData";
 
+/* ─── Seeded Shuffle (deterministic per user+attempt) ─── */
+function hashSeed(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+function seededRandom(seed: number): () => number {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const result = [...arr];
+  const rng = seededRandom(seed);
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 /* ─── Scoring Engine ─── */
 
 interface ScoringResult {
@@ -93,7 +122,7 @@ function scoreAssessment(answers: Record<string, string>): ScoringResult {
   };
 }
 
-export { scoreAssessment };
+export { scoreAssessment, hashSeed, seededShuffle };
 
 /* ─── Helpers ─── */
 
@@ -138,21 +167,30 @@ export const assessmentRouter = router({
    * Get assessment questions (public to authenticated users)
    * Returns questions without score values (so candidates can't game it)
    */
-  getQuestions: protectedProcedure.query(() => {
-    const sanitize = (questions: typeof GATE_1_QUESTIONS) =>
-      questions.map((q) => ({
-        id: q.id,
-        gate: q.gate,
-        category: q.category,
-        scenario: q.scenario,
-        freeText: q.freeText || false,
-        options: q.options.map((o) => ({
-          id: o.id,
-          text: o.text,
-          // DO NOT include score
-        })),
-      }));
+   getQuestions: protectedProcedure.query(async ({ ctx }) => {
+    // Seeded shuffle: deterministic per user+attempt so questions stay stable during a session
+    // but different across attempts
+    const db = await getDb();
+    const attemptCount = db ? await getAttemptCount(db, ctx.user.id) : 0;
+    const seed = hashSeed(`${ctx.user.id}-${attemptCount}`);
 
+    const sanitize = (questions: typeof GATE_1_QUESTIONS) => {
+      const shuffled = seededShuffle(
+        questions.map((q) => ({
+          id: q.id,
+          gate: q.gate,
+          category: q.category,
+          scenario: q.scenario,
+          freeText: q.freeText || false,
+          options: seededShuffle(
+            q.options.map((o) => ({ id: o.id, text: o.text })),
+            hashSeed(`${seed}-${q.id}`)
+          ),
+        })),
+        seed
+      );
+      return shuffled;
+    };
     return {
       gate1: sanitize(GATE_1_QUESTIONS),
       gate2: sanitize(GATE_2_QUESTIONS),

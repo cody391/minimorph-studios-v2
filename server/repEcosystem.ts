@@ -6,6 +6,10 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, adminProcedure } from "./_core/trpc";
 import * as db from "./db";
+import { invokeLLM } from "./_core/llm";
+import { repApplications } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { getDb } from "./db";
 
 /* ═══════════════════════════════════════════════════════
    GAMIFICATION POINT VALUES
@@ -758,6 +762,11 @@ export const repApplicationRouter = router({
         repId: rep.id,
         ...input,
       } as any);
+      // AI Motivation Review — analyze the "Why MiniMorph" paragraph asynchronously
+      // Fire-and-forget so the user doesn't wait
+      reviewMotivationWithAI(rep.id, input.motivation).catch((err: any) =>
+        console.error("[AI Motivation Review] Failed:", err.message)
+      );
       // Move rep to onboarding status
       await db.updateRep(rep.id, { status: "onboarding" });
       return { success: true };
@@ -792,12 +801,98 @@ export const repApplicationRouter = router({
 });
 
 
-/* ═══════════════════════════════════════════════════════
+// AI MOTIVATION REVIEW HELPER
+// Analyzes the "Why MiniMorph" paragraph for seriousness
+async function reviewMotivationWithAI(repId: number, motivation: string): Promise<void> {
+  const database = await getDb();
+  if (!database) return;
+
+  try {
+    const response = await invokeLLM({
+      messages: [
+        {
+          role: "system",
+          content: `You are an HR screening AI for MiniMorph Studios, a premium AI-powered web design company. 
+Your job is to analyze a candidate's "Why I want to join MiniMorph" paragraph and assess how serious, genuine, and aligned they are with our values.
+
+Our core values:
+- Integrity above all else
+- Honest, trustworthy representation of our brand
+- Professionalism and attention to detail
+- Genuine desire to help businesses succeed
+- Smart, driven, and self-motivated
+
+Score each dimension 1-10:
+- sincerity: Does this feel genuine or copy-pasted/generic?
+- specificity: Do they reference specific things about MiniMorph, AI, web design, or their own relevant experience?
+- effort: Did they clearly put thought into this, or is it minimal/lazy?
+- alignment: Do their stated values align with ours?
+- red_flags: Any concerning patterns (entitlement, dishonesty signals, purely money-motivated with no interest in the work)
+
+Return ONLY valid JSON matching this exact schema.`,
+        },
+        {
+          role: "user",
+          content: `Analyze this candidate's motivation paragraph:\n\n"${motivation}"`,
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "motivation_analysis",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              sincerity: { type: "integer", description: "1-10 sincerity score" },
+              specificity: { type: "integer", description: "1-10 specificity score" },
+              effort: { type: "integer", description: "1-10 effort score" },
+              alignment: { type: "integer", description: "1-10 values alignment score" },
+              red_flags: { type: "array", items: { type: "string" }, description: "List of red flags, empty if none" },
+              summary: { type: "string", description: "2-3 sentence assessment summary" },
+              overall_score: { type: "integer", description: "1-10 overall motivation score" },
+              recommendation: {
+                type: "string",
+                enum: ["strong_yes", "yes", "maybe", "no", "strong_no"],
+                description: "Hiring recommendation",
+              },
+            },
+            required: ["sincerity", "specificity", "effort", "alignment", "red_flags", "summary", "overall_score", "recommendation"],
+            additionalProperties: false,
+          },
+        },
+      },
+    });
+
+    const rawContent = response.choices?.[0]?.message?.content;
+    if (!rawContent || typeof rawContent !== 'string') return;
+
+    const analysis = JSON.parse(rawContent);
+
+    // Update the rep application with AI review results
+    await database
+      .update(repApplications)
+      .set({
+        aiMotivationScore: analysis.overall_score,
+        aiMotivationAnalysis: analysis,
+        aiReviewedAt: new Date(),
+      })
+      .where(eq(repApplications.repId, repId));
+
+    console.log(
+      `[AI Motivation Review] Rep ${repId}: score=${analysis.overall_score}/10, recommendation=${analysis.recommendation}`
+    );
+  } catch (err: any) {
+    console.error(`[AI Motivation Review] Error for rep ${repId}:`, err.message);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
    REP SUPPORT TICKETS ROUTER
    AI triage → Owner SMS approval → Rep notification
-   ═══════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════ */
 export const repSupportTicketsRouter = router({
-  // Submit a new support ticket
+  // Submit a new support ticketet
   submit: protectedProcedure
     .input(z.object({
       subject: z.string().min(3).max(255),

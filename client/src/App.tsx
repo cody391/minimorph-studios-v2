@@ -46,6 +46,7 @@ const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const RepAssessment = lazy(() => import("./pages/RepAssessment"));
 const TrustGate = lazy(() => import("./pages/TrustGate"));
 const OnboardingPaperwork = lazy(() => import("./pages/OnboardingPaperwork"));
+const RepValuesGate = lazy(() => import("./pages/RepValuesGate"));
 
 // Admin layout wrapper
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -78,6 +79,11 @@ function Router() {
       {/* Login */}
       <Route path="/login">
         <LazyPage><Login /></LazyPage>
+      </Route>
+
+      {/* Values & Ethics Gate (shown before application) */}
+      <Route path="/become-rep/values">
+        <LazyPage><RepValuesGate /></LazyPage>
       </Route>
 
       {/* Become a rep */}

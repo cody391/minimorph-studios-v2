@@ -577,6 +577,10 @@ export const repApplications = mysqlTable("rep_applications", {
   agreedToTaxInfo: boolean("agreedToTaxInfo").default(false).notNull(),
   stripeConnectAccountId: varchar("stripeConnectAccountId", { length: 128 }),
   stripeConnectOnboarded: boolean("stripeConnectOnboarded").default(false).notNull(),
+  // AI motivation review
+  aiMotivationScore: int("aiMotivationScore"), // 1-10 scale
+  aiMotivationAnalysis: json("aiMotivationAnalysis"), // { sincerity, specificity, effort, flags, summary }
+  aiReviewedAt: timestamp("aiReviewedAt"),
   reviewNotes: text("reviewNotes"),
   reviewedAt: timestamp("reviewedAt"),
   reviewedBy: int("reviewedBy"),

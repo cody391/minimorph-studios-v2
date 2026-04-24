@@ -91,7 +91,7 @@ export default function Careers() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Button
-                onClick={() => setLocation("/become-rep")}
+                onClick={() => setLocation("/become-rep/values")}
                 className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full px-8 py-6 text-base font-sans"
               >
                 Apply Now <ArrowRight className="ml-2 h-4 w-4" />
@@ -292,7 +292,7 @@ export default function Careers() {
             Join the MiniMorph team. No cold calling, no inventory, no overhead. Just close deals and get paid.
           </p>
           <Button
-            onClick={() => setLocation("/become-rep")}
+            onClick={() => setLocation("/become-rep/values")}
             className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full px-10 py-6 text-base font-sans"
           >
             Apply Now <ArrowRight className="ml-2 h-4 w-4" />

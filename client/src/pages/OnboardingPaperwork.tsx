@@ -23,6 +23,7 @@ import {
   Shield,
   Zap,
 } from "lucide-react";
+import { SignaturePad } from "@/components/SignaturePad";
 
 type FormType = "w9_tax" | "hr_employment" | "payroll_setup" | "rep_agreement";
 
@@ -120,6 +121,7 @@ export default function OnboardingPaperwork() {
   const [currentFormIndex, setCurrentFormIndex] = useState(0);
   const [completedForms, setCompletedForms] = useState<Set<FormType>>(new Set());
   const [formOverrides, setFormOverrides] = useState<Record<string, string>>({});
+  const [signature, setSignature] = useState<{ type: "drawn" | "typed"; data: string; name?: string } | null>(null);
 
   const currentFormType = FORM_ORDER[currentFormIndex];
   const config = FORM_CONFIG[currentFormType];
@@ -148,7 +150,8 @@ export default function OnboardingPaperwork() {
 
   const handleConfirmForm = () => {
     setCompletedForms((prev) => new Set(Array.from(prev).concat(currentFormType)));
-    toast.success(`${config.title} confirmed!`);
+    toast.success(`${config.title} signed & confirmed!`);
+    setSignature(null); // Reset signature for next form
 
     if (currentFormIndex < FORM_ORDER.length - 1) {
       setCurrentFormIndex((i) => i + 1);
@@ -361,14 +364,28 @@ export default function OnboardingPaperwork() {
                   />
                 )}
 
+                {/* E-Signature */}
                 <div className="pt-4 border-t border-sage/10">
+                  <SignaturePad
+                    onSignatureChange={setSignature}
+                    signerName={formData?.autoPopulatedFields ? (formData.autoPopulatedFields as any).name || (formData.autoPopulatedFields as any).legalName || "" : ""}
+                  />
+                </div>
+
+                <div className="pt-4">
                   <Button
                     onClick={handleConfirmForm}
-                    className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans"
+                    disabled={!signature}
+                    className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans disabled:opacity-50"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Verify & Confirm {config.title}
+                    Sign & Confirm {config.title}
                   </Button>
+                  {!signature && (
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                      Please provide your signature above to confirm this form
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (

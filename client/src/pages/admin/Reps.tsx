@@ -142,6 +142,9 @@ export default function Reps() {
           <TabsTrigger value="assessments" className="font-sans text-xs">
             Assessments
           </TabsTrigger>
+          <TabsTrigger value="pipeline" className="font-sans text-xs">
+            Pipeline
+          </TabsTrigger>
         </TabsList>
 
         {/* ALL REPS TAB */}
@@ -508,6 +511,11 @@ export default function Reps() {
         {/* ASSESSMENTS TAB */}
         <TabsContent value="assessments">
           <AssessmentsTab />
+        </TabsContent>
+
+        {/* ONBOARDING PIPELINE TAB */}
+        <TabsContent value="pipeline">
+          <OnboardingPipelineTab />
         </TabsContent>
       </Tabs>
 
@@ -905,6 +913,288 @@ function AssessmentsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+
+// ─── ONBOARDING PIPELINE TAB ───
+const PIPELINE_STAGES = [
+  { key: "account", label: "Account Created", icon: Users, color: "bg-blue-500" },
+  { key: "trust_gate", label: "Trust Gate", icon: Shield, color: "bg-purple-500" },
+  { key: "assessment", label: "Assessment", icon: ClipboardCheck, color: "bg-amber-500" },
+  { key: "application", label: "Application", icon: FileText, color: "bg-terracotta" },
+  { key: "paperwork", label: "Paperwork", icon: FileText, color: "bg-green-500" },
+  { key: "complete", label: "Complete", icon: CheckCircle, color: "bg-forest" },
+] as const;
+
+type PipelineStage = typeof PIPELINE_STAGES[number]["key"];
+
+function getRepPipelineStage(rep: any, assessment: any, onboardingData: any, application: any): PipelineStage {
+  // Check from most complete to least
+  if (rep.status === "active" || rep.status === "certified" || rep.status === "training") return "complete";
+  if (application && application.agreedToTerms) return "paperwork";
+  if (application) return "application";
+  if (assessment && (assessment.status === "passed" || assessment.adminOverride === "approved")) return "application";
+  if (assessment) return "assessment";
+  if (onboardingData && onboardingData.ndaSignedAt) return "assessment";
+  if (onboardingData) return "trust_gate";
+  return "account";
+}
+
+function OnboardingPipelineTab() {
+  const { data: reps, isLoading: repsLoading } = trpc.reps.list.useQuery();
+  const { data: assessments } = trpc.assessment.adminList.useQuery();
+
+  // Build pipeline data from available information
+  const pipelineData = useMemo(() => {
+    if (!reps) return [];
+
+    return reps.map((rep: any) => {
+      // Find assessment for this rep
+      const repAssessment = assessments?.find((a: any) => a.userId === rep.userId);
+
+      // Determine stage based on available data
+      let stage: PipelineStage = "account";
+      const hasApplication = rep.status !== "applied" || rep.bio;
+
+      if (rep.status === "active" || rep.status === "certified" || rep.status === "training") {
+        stage = "complete";
+      } else if (rep.status === "onboarding") {
+        stage = "paperwork";
+      } else if (hasApplication && repAssessment?.status === "passed") {
+        stage = "application";
+      } else if (repAssessment) {
+        stage = "assessment";
+      } else {
+        // If they have a rep record but no assessment, they're at trust_gate or account
+        stage = "trust_gate";
+      }
+
+      return {
+        id: rep.id,
+        name: rep.fullName,
+        email: rep.email,
+        photo: rep.profilePhotoUrl,
+        stage,
+        status: rep.status,
+        createdAt: rep.createdAt,
+        assessmentScore: repAssessment ? parseFloat(repAssessment.totalScore) : null,
+        assessmentStatus: repAssessment?.status || null,
+      };
+    });
+  }, [reps, assessments]);
+
+  // Count per stage
+  const stageCounts = useMemo(() => {
+    const counts: Record<PipelineStage, number> = {
+      account: 0,
+      trust_gate: 0,
+      assessment: 0,
+      application: 0,
+      paperwork: 0,
+      complete: 0,
+    };
+    pipelineData.forEach((r: any) => {
+      counts[r.stage as PipelineStage]++;
+    });
+    return counts;
+  }, [pipelineData]);
+
+  if (repsLoading) {
+    return (
+      <Card className="border-border/50">
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Pipeline overview */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="font-serif text-forest text-base flex items-center gap-2">
+            <Users className="h-4 w-4" /> Onboarding Pipeline
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Visual pipeline */}
+          <div className="flex items-center gap-1 mb-6">
+            {PIPELINE_STAGES.map((stage, idx) => {
+              const count = stageCounts[stage.key];
+              const total = pipelineData.length || 1;
+              const widthPct = Math.max(count / total * 100, 8);
+
+              return (
+                <div key={stage.key} className="flex flex-col items-center" style={{ flex: `${widthPct} 0 0%` }}>
+                  <div className={`w-full h-8 ${stage.color} rounded-md flex items-center justify-center text-white text-xs font-bold transition-all`}>
+                    {count}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground mt-1 text-center leading-tight">
+                    {stage.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Pipeline table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-sage/20 text-left">
+                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Candidate</th>
+                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Current Stage</th>
+                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Assessment</th>
+                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Status</th>
+                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Applied</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pipelineData.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-muted-foreground text-sm">
+                      No candidates in the pipeline yet
+                    </td>
+                  </tr>
+                ) : (
+                  pipelineData.map((candidate: any) => {
+                    const stageConfig = PIPELINE_STAGES.find((s) => s.key === candidate.stage);
+                    const StageIcon = stageConfig?.icon || Users;
+
+                    return (
+                      <tr key={candidate.id} className="border-b border-sage/10 hover:bg-cream/50">
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            {candidate.photo ? (
+                              <img src={candidate.photo} alt="" className="w-7 h-7 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-7 h-7 rounded-full bg-forest/10 flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-forest">
+                                  {candidate.name?.charAt(0) || "?"}
+                                </span>
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-forest text-xs">{candidate.name}</p>
+                              <p className="text-[10px] text-muted-foreground">{candidate.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-2 h-2 rounded-full ${stageConfig?.color || "bg-gray-400"}`} />
+                            <span className="text-xs font-medium text-forest/80">{stageConfig?.label || "Unknown"}</span>
+                          </div>
+                          {/* Progress dots */}
+                          <div className="flex gap-0.5 mt-1">
+                            {PIPELINE_STAGES.map((s, idx) => {
+                              const stageIdx = PIPELINE_STAGES.findIndex((ps) => ps.key === candidate.stage);
+                              return (
+                                <div
+                                  key={s.key}
+                                  className={`w-3 h-1 rounded-full ${
+                                    idx <= stageIdx ? s.color : "bg-gray-200"
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </td>
+                        <td className="py-3">
+                          {candidate.assessmentScore !== null ? (
+                            <div>
+                              <span className={`text-xs font-bold ${
+                                candidate.assessmentStatus === "passed" ? "text-green-600" :
+                                candidate.assessmentStatus === "borderline" ? "text-amber-600" :
+                                "text-red-600"
+                              }`}>
+                                {candidate.assessmentScore.toFixed(0)}%
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className={`ml-1 text-[9px] px-1 ${
+                                  candidate.assessmentStatus === "passed" ? "border-green-200 text-green-700" :
+                                  candidate.assessmentStatus === "borderline" ? "border-amber-200 text-amber-700" :
+                                  "border-red-200 text-red-700"
+                                }`}
+                              >
+                                {candidate.assessmentStatus}
+                              </Badge>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">Not taken</span>
+                          )}
+                        </td>
+                        <td className="py-3">
+                          <Badge className={`text-[9px] ${statusColors[candidate.status] || "bg-gray-100 text-gray-600"}`}>
+                            {candidate.status}
+                          </Badge>
+                        </td>
+                        <td className="py-3 text-[10px] text-muted-foreground">
+                          {candidate.createdAt ? new Date(candidate.createdAt).toLocaleDateString("en-US", {
+                            month: "short", day: "numeric",
+                          }) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stalled candidates alert */}
+      {pipelineData.filter((c: any) => {
+        if (c.stage === "complete") return false;
+        const daysSinceApply = c.createdAt ? (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24) : 0;
+        return daysSinceApply > 7;
+      }).length > 0 && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="font-serif text-amber-800 text-sm flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" /> Stalled Candidates
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-amber-700 mb-3">
+              These candidates started the process more than 7 days ago but haven't completed onboarding.
+            </p>
+            <div className="space-y-2">
+              {pipelineData
+                .filter((c: any) => {
+                  if (c.stage === "complete") return false;
+                  const daysSinceApply = c.createdAt ? (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24) : 0;
+                  return daysSinceApply > 7;
+                })
+                .map((c: any) => {
+                  const days = c.createdAt ? Math.floor((Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                  const stageConfig = PIPELINE_STAGES.find((s) => s.key === c.stage);
+                  return (
+                    <div key={c.id} className="flex items-center justify-between p-2 bg-white rounded border border-amber-200">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-amber-900">{c.name}</span>
+                        <Badge variant="outline" className="text-[9px] border-amber-300 text-amber-700">
+                          Stuck at: {stageConfig?.label}
+                        </Badge>
+                      </div>
+                      <span className="text-[10px] text-amber-600 font-medium">{days} days ago</span>
+                    </div>
+                  );
+                })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
