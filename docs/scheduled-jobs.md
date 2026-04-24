@@ -125,6 +125,28 @@ Returns `401 Unauthorized` if missing or invalid. Returns `500` if `SCHEDULER_SE
 | Function called | `runAdaptiveScaling()` |
 | Response `result` | `{ repsAnalyzed, repsNeedingLeads, actionsExecuted, newScrapeJobsCreated }` |
 
+### 11. NPS Surveys
+
+| Field | Value |
+|-------|-------|
+| Endpoint | `POST /api/scheduled/nps-surveys` |
+| Purpose | Create and send NPS surveys for customers who have reached lifecycle milestones (30 days, 6 months post-contract-start) |
+| Recommended cadence | Daily |
+| Idempotency | Checks `npsSurveys` table for existing records matching `customerId + contractId + milestone`. Skips if already exists. |
+| Email function | `sendNpsSurveyEmail()` |
+| Response `result` | `{ scanned, created, emailsSent, skipped, errors }` |
+
+### 12. Renewal Check
+
+| Field | Value |
+|-------|-------|
+| Endpoint | `POST /api/scheduled/renewal-check` |
+| Purpose | Detect contracts expiring within 30 days, send 30/14/7-day renewal reminders, mark contracts as `expiring_soon` |
+| Recommended cadence | Daily |
+| Idempotency | Checks `nurtureLogs` for existing records matching `customerId + contractId + type=renewal_outreach + subject=renewal_{window}`. One reminder per contract per window. |
+| Email function | `sendRenewalReminderEmail()` |
+| Response `result` | `{ scanned, remindersSent, skipped, contractsUpdated, errors }` |
+
 ### Health Check
 
 | Field | Value |
@@ -195,6 +217,12 @@ If a job is already running (overlap guard): HTTP 409 with `"error": "Job \"outr
 
 # Multi-source scrape — every 8 hours at :55
 55 */8 * * *  curl -s -X POST -H "x-scheduler-secret: $SCHEDULER_SECRET" https://your-domain/api/scheduled/multi-source
+
+# NPS surveys — daily at 10:00 AM
+0 10 * * *    curl -s -X POST -H "x-scheduler-secret: $SCHEDULER_SECRET" https://your-domain/api/scheduled/nps-surveys
+
+# Renewal check — daily at 9:00 AM
+0 9 * * *     curl -s -X POST -H "x-scheduler-secret: $SCHEDULER_SECRET" https://your-domain/api/scheduled/renewal-check
 ```
 
 ## Local Development

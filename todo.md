@@ -1051,3 +1051,11 @@
 - [x] D5: Preserve local dev scheduler option behind ENABLE_INTERNAL_SCHEDULER env var
 - [x] D6: Document scheduled jobs in docs/scheduled-jobs.md
 - [x] D7: Typecheck 0 errors, all tests passing, build succeeds
+
+### Phase E — Retention Trigger Repair
+- [x] E1: Create /api/scheduled/nps-surveys endpoint (30-day lifecycle trigger, idempotent)
+- [x] E2: Create /api/scheduled/renewal-check endpoint (30/14/7-day windows, idempotent)
+- [x] E3: Verify idempotency in both jobs (no duplicate surveys, no duplicate reminders)
+- [x] E4: Update docs/scheduled-jobs.md with new endpoints
+- [x] E5: Write surgical tests for NPS and renewal jobs
+- [x] E6: Typecheck 0 errors, all tests passing, build succeeds

@@ -19,6 +19,11 @@ import { scanForEnterpriseLeads } from "./services/leadGenEnterprise";
 import { runMultiSourceScrape, getSourceQuality } from "./services/leadGenMultiSource";
 import { batchEnrichContacts } from "./services/contactEnrichment";
 import { runAdaptiveScaling } from "./services/leadGenAdaptive";
+import { getDb } from "./db";
+import { contracts, customers, npsSurveys, nurtureLogs } from "../drizzle/schema";
+import { eq, and, gte, lte, inArray } from "drizzle-orm";
+import { sendNpsSurveyEmail } from "./services/customerEmails";
+import { sendRenewalReminderEmail } from "./services/customerEmails";
 
 // ─── In-memory execution lock ───
 const runningJobs = new Set<string>();
@@ -194,6 +199,234 @@ export function registerScheduledRoutes(app: Express) {
     })
   );
 
+  // 11. NPS Surveys — create and send NPS surveys for eligible customers
+  app.post("/api/scheduled/nps-surveys", (req, res) =>
+    runJob(req, res, "nps-surveys", async () => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+
+      // Get all active contracts
+      const activeContracts = await db
+        .select()
+        .from(contracts)
+        .where(eq(contracts.status, "active"));
+
+      let scanned = 0;
+      let created = 0;
+      let emailsSent = 0;
+      let skipped = 0;
+      let errors = 0;
+
+      for (const contract of activeContracts) {
+        scanned++;
+
+        // Determine which milestones this contract is eligible for
+        const milestones: Array<"30_day" | "6_month"> = [];
+        if (contract.startDate <= thirtyDaysAgo) milestones.push("30_day");
+        if (contract.startDate <= sixMonthsAgo) milestones.push("6_month");
+
+        if (milestones.length === 0) {
+          skipped++;
+          continue;
+        }
+
+        // Check which milestones already have surveys
+        const existingSurveys = await db
+          .select({ milestone: npsSurveys.milestone })
+          .from(npsSurveys)
+          .where(
+            and(
+              eq(npsSurveys.customerId, contract.customerId),
+              eq(npsSurveys.contractId!, contract.id),
+              inArray(npsSurveys.milestone, milestones)
+            )
+          );
+
+        const existingMilestones = new Set(existingSurveys.map((s) => s.milestone));
+
+        // Get customer info for email
+        const [customer] = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.id, contract.customerId))
+          .limit(1);
+
+        if (!customer) {
+          skipped++;
+          continue;
+        }
+
+        for (const milestone of milestones) {
+          if (existingMilestones.has(milestone)) {
+            skipped++;
+            continue;
+          }
+
+          try {
+            // Create NPS survey record
+            await db.insert(npsSurveys).values({
+              customerId: contract.customerId,
+              contractId: contract.id,
+              milestone,
+              status: "sent",
+              sentAt: now,
+            });
+            created++;
+
+            // Send email
+            const surveyUrl = `${process.env.VITE_APP_URL || ""}/portal?tab=support`;
+            await sendNpsSurveyEmail({
+              to: customer.email,
+              customerName: customer.contactName,
+              surveyUrl,
+              milestone,
+            });
+            emailsSent++;
+          } catch (err: any) {
+            console.error(`[NPS] Error for customer ${contract.customerId}, milestone ${milestone}:`, err.message);
+            errors++;
+          }
+        }
+      }
+
+      return { scanned, created, emailsSent, skipped, errors };
+    })
+  );
+
+  // 12. Renewal Check — detect expiring contracts and send reminders
+  app.post("/api/scheduled/renewal-check", (req, res) =>
+    runJob(req, res, "renewal-check", async () => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const now = new Date();
+
+      const windows = [
+        { days: 30, label: "30_day" },
+        { days: 14, label: "14_day" },
+        { days: 7, label: "7_day" },
+      ] as const;
+
+      let scanned = 0;
+      let remindersSent = 0;
+      let skipped = 0;
+      let contractsUpdated = 0;
+      let errors = 0;
+
+      // Get active or expiring_soon contracts with endDate in the next 31 days
+      const thirtyOneDaysFromNow = new Date(now.getTime() + 31 * 24 * 60 * 60 * 1000);
+      const expiringContracts = await db
+        .select()
+        .from(contracts)
+        .where(
+          and(
+            inArray(contracts.status, ["active", "expiring_soon"]),
+            lte(contracts.endDate, thirtyOneDaysFromNow),
+            gte(contracts.endDate, now)
+          )
+        );
+
+      for (const contract of expiringContracts) {
+        scanned++;
+
+        const daysRemaining = Math.ceil(
+          (contract.endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
+        );
+
+        // Determine which window this contract falls into
+        let matchedWindow: (typeof windows)[number] | null = null;
+        for (const w of windows) {
+          if (daysRemaining <= w.days) {
+            matchedWindow = w;
+          }
+        }
+
+        if (!matchedWindow) {
+          skipped++;
+          continue;
+        }
+
+        // Mark contract as expiring_soon if still active
+        if (contract.status === "active") {
+          try {
+            await db
+              .update(contracts)
+              .set({ status: "expiring_soon" })
+              .where(eq(contracts.id, contract.id));
+            contractsUpdated++;
+          } catch (err: any) {
+            console.error(`[Renewal] Error updating contract ${contract.id}:`, err.message);
+            errors++;
+          }
+        }
+
+        // Check if we already sent a reminder for this contract + window
+        // Use nurtureLogs with type=renewal_outreach and subject containing the window label
+        const existingReminder = await db
+          .select({ id: nurtureLogs.id })
+          .from(nurtureLogs)
+          .where(
+            and(
+              eq(nurtureLogs.customerId, contract.customerId),
+              eq(nurtureLogs.contractId!, contract.id),
+              eq(nurtureLogs.type, "renewal_outreach"),
+              eq(nurtureLogs.subject, `renewal_${matchedWindow.label}`)
+            )
+          )
+          .limit(1);
+
+        if (existingReminder.length > 0) {
+          skipped++;
+          continue;
+        }
+
+        // Get customer info
+        const [customer] = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.id, contract.customerId))
+          .limit(1);
+
+        if (!customer) {
+          skipped++;
+          continue;
+        }
+
+        try {
+          // Send renewal reminder email
+          await sendRenewalReminderEmail({
+            to: customer.email,
+            customerName: customer.contactName,
+            daysRemaining,
+            packageTier: contract.packageTier,
+            endDate: contract.endDate,
+          });
+
+          // Log the reminder to prevent duplicates
+          await db.insert(nurtureLogs).values({
+            customerId: contract.customerId,
+            contractId: contract.id,
+            type: "renewal_outreach",
+            channel: "email",
+            subject: `renewal_${matchedWindow.label}`,
+            content: `Sent ${matchedWindow.days}-day renewal reminder. ${daysRemaining} days remaining.`,
+            status: "sent",
+            sentAt: now,
+          });
+
+          remindersSent++;
+        } catch (err: any) {
+          console.error(`[Renewal] Error for contract ${contract.id}:`, err.message);
+          errors++;
+        }
+      }
+
+      return { scanned, remindersSent, skipped, contractsUpdated, errors };
+    })
+  );
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -204,5 +437,5 @@ export function registerScheduledRoutes(app: Express) {
     });
   });
 
-  console.log("[Scheduled] Registered 10 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 12 scheduled job endpoints at /api/scheduled/*");
 }
