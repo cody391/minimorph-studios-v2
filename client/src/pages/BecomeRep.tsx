@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -143,11 +143,7 @@ export default function BecomeRep() {
     );
   };
 
-  const earningsEstimate = useMemo(() => {
-    const dealsPerMonth = availability === "full_time" ? 4 : 2;
-    const avgDealValue = 249 * 12;
-    return Math.round(dealsPerMonth * avgDealValue * 0.1);
-  }, [availability]);
+  // Removed fixed earnings estimate — using tiered examples instead
 
   const isStep1Loading = registerMutation.isPending || submitRepProfile.isPending;
 
@@ -195,7 +191,7 @@ export default function BecomeRep() {
           </button>
           <h1 className="text-3xl sm:text-4xl font-serif mb-3">Become a MiniMorph Rep</h1>
           <p className="text-lg text-white/80 font-sans max-w-2xl mx-auto">
-            Join our network of sales professionals. Earn 10% commission on every sale — that's up to <span className="text-terracotta font-medium">${earningsEstimate.toLocaleString()}/mo</span>.
+            Join our network of sales professionals. Earn <span className="text-terracotta font-medium">10-20% commission</span> on every sale. Part-timers earn <span className="text-terracotta font-medium">$500-2,000/mo</span>. Full-timers? <span className="text-terracotta font-medium">$5,000-15,000+/mo</span>. No cap.
           </p>
         </div>
       </div>
@@ -472,12 +468,29 @@ export default function BecomeRep() {
                   <p className="text-[11px] text-forest/40 mt-1 font-sans">Referrers earn a $200 bonus when you close your first deal.</p>
                 </div>
                 <div className="bg-forest/5 rounded-xl p-4 border border-forest/10">
-                  <p className="text-sm font-serif text-forest mb-2 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-terracotta" /> Your Earnings Potential
+                  <p className="text-sm font-serif text-forest mb-3 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-terracotta" /> Earnings Potential
                   </p>
-                  <p className="text-2xl font-serif text-forest">${earningsEstimate.toLocaleString()}<span className="text-sm text-forest/50 font-sans">/month</span></p>
-                  <p className="text-[11px] text-forest/50 font-sans mt-1">
-                    Based on {availability === "full_time" ? "4" : "2"} deals/month at avg. Growth package value with 10% commission
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-sans text-forest/60">Part-Time (5 hrs/wk)</span>
+                      <span className="text-sm font-serif text-forest">$500 - $2,000/mo</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-sans text-forest/60">Side Hustle (15 hrs/wk)</span>
+                      <span className="text-sm font-serif text-forest">$2,000 - $5,000/mo</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-sans text-forest/60">Full-Time (40 hrs/wk)</span>
+                      <span className="text-sm font-serif text-forest font-medium">$5,000 - $15,000/mo</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t border-forest/10 pt-2">
+                      <span className="text-xs font-sans text-terracotta font-medium">Top Performers</span>
+                      <span className="text-sm font-serif text-terracotta font-bold">$20,000+/mo</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-forest/40 font-sans mt-2">
+                    Based on 10% base commission. Legend tier reps earn 20%, doubling these figures. No cap on earnings.
                   </p>
                 </div>
                 <div className="flex gap-3">

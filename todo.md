@@ -632,3 +632,10 @@
 - [x] Keep Manus OAuth only for admin access
 - [x] Test full rep signup flow end-to-end
 - [x] Test full customer signup flow end-to-end (verified in browser)
+
+### Phase 41: Admin Rep Dashboard Access
+- [x] Create rep profile for owner/admin so they can view /rep dashboard
+
+### Phase 42: Replace Fixed Earnings Figure with Tiered Examples
+- [x] Find and replace all $1,195/mo references with tiered earnings (Part-time → Full-time → Top Performer)
+- [x] Update earnings calculator to show tiered projections instead of single number
