@@ -8,21 +8,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  ArrowLeft, ArrowRight, Check, Sparkles, Palette,
-  Globe, Zap, Shield, Star, ChevronLeft,
+  ArrowLeft, ArrowRight, Check, Sparkles,
+  Shield, ChevronLeft, Eye, EyeOff, Lock,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const STEPS = [
   { id: 1, title: "Your Business", description: "Tell us about you" },
   { id: 2, title: "Choose a Plan", description: "Pick your package" },
   { id: 3, title: "Style Preferences", description: "Your design vision" },
-  { id: 4, title: "Review & Submit", description: "Confirm your order" },
+  { id: 4, title: "Review & Pay", description: "Confirm and checkout" },
 ];
 
 const PACKAGES = [
   {
-    tier: "starter",
+    tier: "starter" as const,
     name: "Starter",
     price: 149,
     pages: 5,
@@ -30,7 +31,7 @@ const PACKAGES = [
     popular: false,
   },
   {
-    tier: "growth",
+    tier: "growth" as const,
     name: "Growth",
     price: 299,
     pages: 10,
@@ -38,7 +39,7 @@ const PACKAGES = [
     popular: true,
   },
   {
-    tier: "premium",
+    tier: "premium" as const,
     name: "Premium",
     price: 499,
     pages: 20,
@@ -64,11 +65,16 @@ const INDUSTRIES = [
 
 export default function GetStarted() {
   const [, setLocation] = useLocation();
+  const { user, isAuthenticated } = useAuth();
   const [step, setStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     businessName: "",
     contactName: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     phone: "",
     industry: "",
     website: "",
@@ -79,49 +85,103 @@ export default function GetStarted() {
     additionalNotes: "",
   });
 
-  const submitMutation = trpc.contact.submit.useMutation({
-    onSuccess: () => {
-      setStep(5); // success state
-    },
-    onError: () => {
-      toast.error("Something went wrong. Please try again.");
-    },
-  });
+  const registerMutation = trpc.localAuth.register.useMutation();
+  const loginMutation = trpc.localAuth.login.useMutation();
+  const checkoutMutation = trpc.orders.createCheckout.useMutation();
+  const submitContactMutation = trpc.contact.submit.useMutation();
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const passwordsMatch = formData.password === formData.confirmPassword;
+  const passwordLongEnough = formData.password.length >= 8;
+
   const canProceed = useMemo(() => {
     switch (step) {
-      case 1: return formData.businessName && formData.contactName && formData.email;
+      case 1:
+        if (isAuthenticated) {
+          return formData.businessName && formData.contactName && formData.email;
+        }
+        return formData.businessName && formData.contactName && formData.email && passwordLongEnough && passwordsMatch;
       case 2: return !!formData.selectedPackage;
       case 3: return !!formData.stylePreference;
       case 4: return true;
       default: return false;
     }
-  }, [step, formData]);
+  }, [step, formData, isAuthenticated, passwordLongEnough, passwordsMatch]);
 
-  const handleSubmit = () => {
-    const selectedPkg = PACKAGES.find((p) => p.tier === formData.selectedPackage);
-    const selectedStyle = STYLES.find((s) => s.id === formData.stylePreference);
-    const message = [
-      `Package: ${selectedPkg?.name} ($${selectedPkg?.price}/mo)`,
-      `Industry: ${formData.industry || "Not specified"}`,
-      `Style: ${selectedStyle?.label || "Not specified"}`,
-      formData.colorPreference ? `Color preference: ${formData.colorPreference}` : "",
-      formData.inspirationSites ? `Inspiration: ${formData.inspirationSites}` : "",
-      formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : "",
-      formData.website ? `Current website: ${formData.website}` : "",
-      formData.phone ? `Phone: ${formData.phone}` : "",
-    ].filter(Boolean).join("\n");
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      // Step 1: Create account if not logged in
+      if (!isAuthenticated) {
+        try {
+          await registerMutation.mutateAsync({
+            email: formData.email,
+            password: formData.password,
+            name: formData.contactName,
+          });
+        } catch (regError: any) {
+          // If email already exists, try logging in
+          if (regError.message?.includes("already registered")) {
+            try {
+              await loginMutation.mutateAsync({
+                email: formData.email,
+                password: formData.password,
+              });
+            } catch {
+              toast.error("This email is already registered. Please use the correct password or log in first.");
+              setIsSubmitting(false);
+              return;
+            }
+          } else {
+            toast.error(regError.message || "Failed to create account");
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
 
-    submitMutation.mutate({
-      name: formData.contactName,
-      email: formData.email,
-      businessName: formData.businessName,
-      message,
-    });
+      // Step 2: Submit contact/order details for the rep to follow up
+      const selectedPkg = PACKAGES.find((p) => p.tier === formData.selectedPackage);
+      const selectedStyle = STYLES.find((s) => s.id === formData.stylePreference);
+      const message = [
+        `Package: ${selectedPkg?.name} ($${selectedPkg?.price}/mo)`,
+        `Industry: ${formData.industry || "Not specified"}`,
+        `Style: ${selectedStyle?.label || "Not specified"}`,
+        formData.colorPreference ? `Color preference: ${formData.colorPreference}` : "",
+        formData.inspirationSites ? `Inspiration: ${formData.inspirationSites}` : "",
+        formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : "",
+        formData.website ? `Current website: ${formData.website}` : "",
+        formData.phone ? `Phone: ${formData.phone}` : "",
+      ].filter(Boolean).join("\n");
+
+      await submitContactMutation.mutateAsync({
+        name: formData.contactName,
+        email: formData.email,
+        businessName: formData.businessName,
+        message,
+      });
+
+      // Step 3: Create Stripe checkout session
+      const tier = formData.selectedPackage as "starter" | "growth" | "premium";
+      const result = await checkoutMutation.mutateAsync({
+        packageTier: tier,
+        businessName: formData.businessName,
+      });
+
+      if (result.checkoutUrl) {
+        toast.success("Redirecting to secure checkout...");
+        window.open(result.checkoutUrl, "_blank");
+        // Show success state
+        setStep(5);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Success state
@@ -132,16 +192,48 @@ export default function GetStarted() {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="h-8 w-8 text-green-600" />
           </div>
-          <h1 className="text-3xl font-serif text-forest mb-3">You're All Set!</h1>
+          <h1 className="text-3xl font-serif text-forest mb-3">Almost There!</h1>
           <p className="text-base text-forest/60 font-sans mb-2">
-            Thank you, {formData.contactName}. We've received your order for the <strong className="text-forest">{PACKAGES.find((p) => p.tier === formData.selectedPackage)?.name}</strong> package.
+            Your account has been created and your order for the <strong className="text-forest">{PACKAGES.find((p) => p.tier === formData.selectedPackage)?.name}</strong> package has been submitted.
           </p>
-          <p className="text-sm text-forest/50 font-sans mb-8">
-            A MiniMorph representative will reach out within 24 hours to kick off your project. Check your email at <strong>{formData.email}</strong> for next steps.
+          <p className="text-sm text-forest/50 font-sans mb-4">
+            A checkout window should have opened. If it didn't, click below to complete your payment.
           </p>
-          <Button onClick={() => setLocation("/")} className="bg-forest hover:bg-forest/90 text-white font-sans rounded-full px-8">
-            Back to Home
-          </Button>
+          <div className="flex flex-col items-center gap-3">
+            <Button
+              onClick={async () => {
+                try {
+                  const tier = formData.selectedPackage as "starter" | "growth" | "premium";
+                  const result = await checkoutMutation.mutateAsync({
+                    packageTier: tier,
+                    businessName: formData.businessName,
+                  });
+                  if (result.checkoutUrl) {
+                    window.open(result.checkoutUrl, "_blank");
+                  }
+                } catch {
+                  toast.error("Failed to create checkout session");
+                }
+              }}
+              className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8"
+            >
+              <Lock className="h-4 w-4 mr-2" />
+              Complete Payment
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/customer")}
+              className="font-sans text-sm rounded-full border-border/50"
+            >
+              Go to My Dashboard
+            </Button>
+            <button
+              onClick={() => setLocation("/")}
+              className="text-xs text-forest/40 hover:text-forest/60 font-sans mt-2"
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -179,7 +271,7 @@ export default function GetStarted() {
           <p className="text-sm text-forest/50 font-sans">{STEPS[step - 1].description}</p>
         </div>
 
-        {/* STEP 1: Business Info */}
+        {/* STEP 1: Business Info + Account */}
         {step === 1 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -223,6 +315,73 @@ export default function GetStarted() {
                 />
               </div>
             </div>
+
+            {/* Password fields - only show if not already logged in */}
+            {!isAuthenticated && (
+              <>
+                <div className="border-t border-border/20 pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Lock className="h-4 w-4 text-forest/50" />
+                    <p className="text-sm font-sans text-forest/70 font-medium">Create your account</p>
+                  </div>
+                  <p className="text-xs text-forest/50 font-sans mb-4">
+                    You'll use this to track your project progress and communicate with your team.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-sans text-forest/70 mb-1.5 block">Password *</Label>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={(e) => updateField("password", e.target.value)}
+                          placeholder="Min. 8 characters"
+                          className="font-sans border-border/50 focus:border-forest pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 hover:text-forest/60"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      {formData.password && !passwordLongEnough && (
+                        <p className="text-xs text-red-500 mt-1 font-sans">Must be at least 8 characters</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-sans text-forest/70 mb-1.5 block">Confirm Password *</Label>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={(e) => updateField("confirmPassword", e.target.value)}
+                        placeholder="Confirm your password"
+                        className="font-sans border-border/50 focus:border-forest"
+                      />
+                      {formData.confirmPassword && !passwordsMatch && (
+                        <p className="text-xs text-red-500 mt-1 font-sans">Passwords don't match</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-forest/40 font-sans">
+                  Already have an account?{" "}
+                  <button onClick={() => setLocation("/login")} className="text-terracotta hover:underline">
+                    Log in here
+                  </button>
+                </p>
+              </>
+            )}
+
+            {isAuthenticated && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <p className="text-sm text-green-700 font-sans">
+                  Logged in as <strong>{user?.name || user?.email}</strong>. Your order will be linked to this account.
+                </p>
+              </div>
+            )}
+
             <div>
               <Label className="text-sm font-sans text-forest/70 mb-1.5 block">Industry</Label>
               <div className="flex flex-wrap gap-2">
@@ -352,7 +511,7 @@ export default function GetStarted() {
           </div>
         )}
 
-        {/* STEP 4: Review */}
+        {/* STEP 4: Review & Pay */}
         {step === 4 && (
           <div className="space-y-6">
             <Card className="border-border/50">
@@ -408,9 +567,9 @@ export default function GetStarted() {
             <div className="bg-sage/10 rounded-xl p-4 flex items-start gap-3">
               <Shield className="h-5 w-5 text-forest/40 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-forest font-sans">What happens next?</p>
+                <p className="text-sm font-medium text-forest font-sans">Secure Checkout</p>
                 <p className="text-xs text-forest/60 font-sans mt-1">
-                  After submitting, a MiniMorph representative will contact you within 24 hours to finalize details and begin your project. No payment is required until you approve the initial design concepts.
+                  After clicking "Proceed to Payment", you'll be redirected to Stripe's secure checkout page. Your payment information is never stored on our servers. A MiniMorph representative will contact you within 24 hours to kick off your project.
                 </p>
               </div>
             </div>
@@ -441,23 +600,33 @@ export default function GetStarted() {
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={submitMutation.isPending}
+              disabled={isSubmitting}
               className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-sm rounded-full px-8"
             >
-              {submitMutation.isPending ? (
+              {isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Submitting...
+                  Processing...
                 </div>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Submit Order
+                  <Lock className="h-4 w-4 mr-2" />
+                  Proceed to Payment
                 </>
               )}
             </Button>
           )}
         </div>
+
+        {/* Login link at bottom */}
+        {step === 1 && !isAuthenticated && (
+          <p className="text-center text-xs text-forest/40 font-sans mt-6">
+            Already a customer?{" "}
+            <button onClick={() => setLocation("/login")} className="text-terracotta hover:underline">
+              Log in to your account
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

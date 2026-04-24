@@ -626,9 +626,9 @@
 - [x] Create login endpoint (email + password → verify hash, returns session)
 - [x] Rewrite /become-rep flow: Step 1 includes password, creates user+rep, auto-login, Steps 2-4 work seamlessly
 - [x] After Step 4 submission, redirect to rep dashboard
-- [ ] Add customer email/password signup to buying wizard flow — NEXT
+- [x] Add customer email/password signup to buying wizard flow
 - [x] Remove all Manus OAuth/branding from customer and rep-facing pages
 - [x] Create /login page for reps and customers (email + password)
 - [x] Keep Manus OAuth only for admin access
 - [x] Test full rep signup flow end-to-end
-- [ ] Test full customer signup flow end-to-end — NEXT
+- [x] Test full customer signup flow end-to-end (verified in browser)
