@@ -119,7 +119,7 @@ describe("Trust Gate (NDA & Identity)", () => {
   });
 
   it("NDA version should be defined", () => {
-    expect(NDA_VERSION).toBe("1.0");
+    expect(NDA_VERSION).toBe("1.1");
   });
 
   it("NDA should contain key sections", () => {

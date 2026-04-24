@@ -110,29 +110,29 @@ export const GATE_1_QUESTIONS: AssessmentQuestion[] = [
   {
     id: "sj4",
     gate: 1,
-    category: "Team Ethics",
+    category: "Brand Protection",
     scenario:
-      "You overhear another rep making promises to a potential client that MiniMorph can't deliver — like guaranteed first-page Google rankings within a month. What do you do?",
+      "A client tells you they saw a social media post from someone claiming to be a MiniMorph rep, making guarantees about results that you know aren't accurate — like \"guaranteed 10x revenue in 30 days.\" The client asks if that's true. What do you do?",
     options: [
       {
         id: "sj4a",
-        text: "Mind your own business — it's their deal, not yours",
+        text: "Confirm the claim to avoid losing the deal — you can figure out the details later",
         score: 0,
       },
       {
         id: "sj4b",
-        text: "Privately mention it to the rep and suggest they correct the expectations with the client. If it continues, escalate to management",
+        text: "Honestly tell the client that no one can guarantee specific results, explain what MiniMorph actually delivers, and report the misleading post to the company immediately",
         score: 3,
       },
       {
         id: "sj4c",
-        text: "Immediately report them to management without talking to them first",
+        text: "Ignore the question and redirect the conversation to pricing",
         score: 1,
       },
       {
         id: "sj4d",
-        text: "Start making similar promises so you don't lose deals to them",
-        score: 0,
+        text: "Tell the client that person probably isn't a real MiniMorph rep and leave it at that",
+        score: 1,
       },
     ],
   },

@@ -756,3 +756,79 @@
 - [x] Flag non-professional photos (sunglasses, hats, inappropriate backgrounds)
 - [x] Show quality feedback with specific improvement suggestions
 - [x] Allow override if quality is borderline (not blocking, just warning)
+
+### Phase 47: Values & Culture Alignment Audit
+- [x] Audit values gate (RepValuesGate.tsx) for core values and messaging
+- [x] Audit intake assessment questions (assessmentData.ts) for values alignment
+- [x] Audit NDA/trust gate (onboardingDataRouter.ts) for values messaging
+- [x] Audit academy training content (academyRouter.ts) for values alignment
+- [x] Audit onboarding paperwork (OnboardingPaperwork.tsx) for values messaging
+- [x] Create single source of truth for company values (shared/companyValues.ts)
+- [x] Update all touchpoints to reference the single source of truth (Values Gate, NDA, Rep Agreement done)
+- [x] Ensure assessment questions directly test the stated values
+- [x] Ensure academy training reinforces the same values from intake
+- [x] Add values alignment test to verify no gaps or contradictions
+
+### Phase 48: Uber-Model AI-Managed Rep Accountability System
+
+#### Database Schema
+- [ ] Create rep_performance_scores table (daily score snapshots, activity metrics)
+- [ ] Create rep_activity_log table (calls, follow-ups, meetings, closes — timestamped)
+- [ ] Create rep_strikes table (violation type, severity, AI evidence, status)
+- [ ] Create rep_tiers table (current tier, tier history, commission rate)
+- [ ] Add residual_decay_rate and last_active_at to reps table
+- [ ] Create rep_lead_allocations table (lead assignment history, score at time of assignment)
+
+#### Performance Score Engine
+- [ ] Backend: calculate daily Performance Score (0-100) from activity, close rate, client satisfaction, values compliance
+- [ ] Score weights: activity 30%, close rate 30%, client satisfaction 20%, values compliance 20%
+- [ ] Auto-update scores on-demand calculation
+- [ ] Store score history for trend analysis
+
+#### Lead Allocation Algorithm (Uber-style)
+- [ ] Distribute leads based on Performance Score (higher score = more leads)
+- [ ] Lead queue system: new leads enter pool, assigned to highest-scoring available rep
+- [ ] Lead timeout: if rep doesn't act within 4 hours, lead reassigned to next rep
+- [ ] Score threshold: below 40 = lead freeze (no new leads until score improves)
+
+#### Residual Commission Decay
+- [ ] Track last_active_at timestamp (updated on any meaningful activity)
+- [ ] Active = 100% residuals, 30d inactive = 75%, 60d = 50%, 90d = 25%, 120d = reassigned
+- [ ] Backend: automated decay calculation on commission payouts
+
+#### AI Values Monitor
+- [ ] Analyze rep-client interactions for values compliance
+- [ ] Auto-flag: deceptive language, high-pressure tactics, misrepresentation
+- [ ] Severity levels: warning (minor), strike (major), instant-deactivation (critical)
+- [ ] Generate evidence summary for each flag
+
+#### Strike System
+- [ ] 3 strikes in 6 months = automatic deactivation
+- [ ] Strike categories: values violation, performance, professionalism, fraud
+- [ ] Instant deactivation triggers: fraud, sharing confidential info, client harm
+- [ ] Mandatory retraining on specific value after warning
+
+#### Rep Tier System
+- [ ] Bronze: 0-3 months or <$3K/mo — standard commission, standard leads
+- [ ] Silver: 3+ months, $3K-$7K/mo — +2% commission, priority leads
+- [ ] Gold: 6+ months, $7K-$12K/mo — +4% commission, premium leads, slower decay
+- [ ] Platinum: 12+ months, $12K+/mo — +5% commission, first-pick leads, no decay
+- [ ] Auto-promote/demote based on rolling 30-day performance
+
+#### Rep Dashboard (Their "Uber Driver App")
+- [ ] Performance Score display with trend chart
+- [ ] Current tier + progress to next tier
+- [ ] Today's leads queue with priority indicators
+- [ ] Missed opportunity alerts ("You left $X on the table")
+- [ ] Earnings: today, this week, this month, residuals
+- [ ] Activity tracker: calls made, follow-ups, meetings
+- [ ] AI coaching messages (daily tips based on weak areas)
+- [ ] Strike/warning history
+- [ ] Residual health indicator (active/at-risk/decaying)
+
+#### Admin Governance Panel
+- [ ] Rep roster with real-time Performance Scores
+- [ ] Strike management: review, approve, dismiss, escalate
+- [ ] Deactivation workflow: freeze leads → final warning → deactivate
+- [ ] Override controls: manually adjust scores, tiers, lead allocation
+- [ ] Flag queue: AI-flagged interactions awaiting review

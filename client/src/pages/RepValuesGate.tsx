@@ -6,46 +6,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Shield, Heart, Eye, Scale, Handshake, DollarSign,
   ArrowLeft, ArrowRight, Star, Users, Zap, Lock,
-  CheckCircle, AlertTriangle,
+  AlertTriangle, ChevronDown, ChevronUp,
 } from "lucide-react";
+import {
+  CORE_VALUES,
+  CODE_OF_CONDUCT,
+  COMPANY_MISSION,
+  CULTURE_STATEMENT,
+} from "@shared/companyValues";
 
-const CORE_VALUES = [
-  {
-    icon: Shield,
-    title: "Integrity First",
-    description: "We never misrepresent our product, overpromise results, or pressure anyone into a purchase. Our reputation is built on honesty — one conversation at a time.",
-  },
-  {
-    icon: Heart,
-    title: "Client Obsession",
-    description: "Every business we serve is someone's livelihood. We treat their goals as our own. If our product isn't the right fit, we say so.",
-  },
-  {
-    icon: Eye,
-    title: "Radical Transparency",
-    description: "No hidden fees, no bait-and-switch, no fine print tricks. We tell clients exactly what they're getting, what it costs, and what to expect.",
-  },
-  {
-    icon: Scale,
-    title: "Ethical Selling",
-    description: "We sell solutions, not fear. We educate, not manipulate. Our sales process is consultative — we help businesses make informed decisions.",
-  },
-  {
-    icon: Handshake,
-    title: "Trustworthy Representation",
-    description: "You carry our brand into every meeting. Clients judge MiniMorph by you. We need people who make us proud — not people we have to worry about.",
-  },
-  {
-    icon: Users,
-    title: "Team Above Self",
-    description: "We share leads, celebrate wins together, and lift each other up. Lone wolves who hoard information or undercut teammates don't last here.",
-  },
-];
+const ICON_MAP: Record<string, React.ElementType> = {
+  Shield, Heart, Eye, Scale, Handshake, Users,
+};
 
 export default function RepValuesGate() {
   const [, navigate] = useLocation();
   const [acknowledged, setAcknowledged] = useState(false);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
+  const [expandedValue, setExpandedValue] = useState<string | null>(null);
+  const [showFullCode, setShowFullCode] = useState(false);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
@@ -89,9 +68,7 @@ export default function RepValuesGate() {
               <div>
                 <h3 className="font-serif text-forest text-lg mb-2">This Is Not a Casual Application</h3>
                 <p className="text-forest/70 font-sans text-sm leading-relaxed">
-                  We're an AI-driven company that builds premium websites for businesses.
-                  Our clients trust us with their brand, their budget, and their growth.
-                  That trust starts with <strong>you</strong> — the person representing us.
+                  {CULTURE_STATEMENT}
                 </p>
                 <p className="text-forest/70 font-sans text-sm leading-relaxed mt-2">
                   We pay extremely well. Top reps earn <strong>$5,000–$15,000+ per month</strong>.
@@ -112,9 +89,7 @@ export default function RepValuesGate() {
               Who We Are
             </h3>
             <p className="text-forest/70 font-sans text-sm leading-relaxed mb-3">
-              MiniMorph Studios is an AI-powered web design company that builds beautiful,
-              intelligent websites for small and medium businesses. We combine cutting-edge
-              AI technology with human creativity to deliver premium results at accessible prices.
+              {COMPANY_MISSION}
             </p>
             <p className="text-forest/70 font-sans text-sm leading-relaxed mb-3">
               Our clients range from local restaurants to growing SaaS companies.
@@ -131,35 +106,115 @@ export default function RepValuesGate() {
           </CardContent>
         </Card>
 
-        {/* Our Values */}
+        {/* Our Values — from shared source of truth */}
         <div>
           <h3 className="font-serif text-forest text-xl mb-4 flex items-center gap-2 px-1">
             <Star className="w-5 h-5 text-terracotta" />
             Our Non-Negotiable Values
           </h3>
           <div
-            className="space-y-3 max-h-[500px] overflow-y-auto pr-2 scroll-smooth"
+            className="space-y-3 max-h-[600px] overflow-y-auto pr-2 scroll-smooth"
             onScroll={handleScroll}
           >
-            {CORE_VALUES.map((value, i) => (
-              <Card key={i} className="border-sage/20 hover:border-forest/20 transition-colors">
-                <CardContent className="pt-5 pb-5">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-forest/5 flex items-center justify-center shrink-0">
-                      <value.icon className="w-5 h-5 text-forest" />
+            {CORE_VALUES.map((value) => {
+              const IconComponent = ICON_MAP[value.icon] || Shield;
+              const isExpanded = expandedValue === value.id;
+              return (
+                <Card
+                  key={value.id}
+                  className="border-sage/20 hover:border-forest/20 transition-colors cursor-pointer"
+                  onClick={() => setExpandedValue(isExpanded ? null : value.id)}
+                >
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-forest/5 flex items-center justify-center shrink-0">
+                        <IconComponent className="w-5 h-5 text-forest" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-serif text-forest font-medium mb-1">{value.title}</h4>
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-forest/40" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-forest/40" />
+                          )}
+                        </div>
+                        <p className="text-forest/60 font-sans text-sm leading-relaxed">{value.description}</p>
+
+                        {isExpanded && (
+                          <div className="mt-4 space-y-3 border-t border-sage/20 pt-3">
+                            <div>
+                              <p className="text-xs font-semibold text-forest/80 uppercase tracking-wide mb-1.5">
+                                What This Looks Like in Practice
+                              </p>
+                              <ul className="space-y-1">
+                                {value.inPractice.map((item, i) => (
+                                  <li key={i} className="text-forest/60 font-sans text-xs leading-relaxed flex items-start gap-2">
+                                    <span className="text-sage mt-0.5">✓</span>
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-red-700/80 uppercase tracking-wide mb-1.5">
+                                Violations (Grounds for Termination)
+                              </p>
+                              <ul className="space-y-1">
+                                {value.violations.map((item, i) => (
+                                  <li key={i} className="text-red-700/60 font-sans text-xs leading-relaxed flex items-start gap-2">
+                                    <span className="text-red-400 mt-0.5">✗</span>
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-serif text-forest font-medium mb-1">{value.title}</h4>
-                      <p className="text-forest/60 font-sans text-sm leading-relaxed">{value.description}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
+          <p className="text-center text-forest/40 text-xs mt-2 font-sans">
+            Click any value to see what it looks like in practice
+          </p>
         </div>
 
-        {/* What We Expect */}
+        {/* Code of Conduct Preview */}
+        <Card className="border-sage/20 bg-forest/3">
+          <CardContent className="pt-6">
+            <h3 className="font-serif text-forest text-lg mb-3 flex items-center gap-2">
+              <Scale className="w-5 h-5 text-forest" />
+              Code of Conduct
+            </h3>
+            <p className="text-forest/60 font-sans text-sm leading-relaxed mb-3">
+              Every MiniMorph representative signs and abides by our Code of Conduct.
+              This isn't a formality — it's the foundation of how we operate.
+              Violations result in immediate termination.
+            </p>
+            <div
+              className={`bg-white rounded-lg p-4 border border-sage/20 font-sans text-xs text-forest/70 leading-relaxed whitespace-pre-line transition-all ${
+                showFullCode ? "" : "max-h-[200px] overflow-hidden relative"
+              }`}
+            >
+              {CODE_OF_CONDUCT}
+              {!showFullCode && (
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
+              )}
+            </div>
+            <button
+              onClick={() => setShowFullCode(!showFullCode)}
+              className="text-forest/60 hover:text-forest text-xs font-sans mt-2 underline"
+            >
+              {showFullCode ? "Show less" : "Read full Code of Conduct"}
+            </button>
+          </CardContent>
+        </Card>
+
+        {/* What Happens Next */}
         <Card className="border-sage/20 bg-forest/5">
           <CardContent className="pt-6">
             <h3 className="font-serif text-forest text-lg mb-3 flex items-center gap-2">
@@ -174,6 +229,7 @@ export default function RepValuesGate() {
                 <li><strong>Take a timed assessment</strong> (20 minutes) — we evaluate your character and sales aptitude</li>
                 <li><strong>Tell us why you want this</strong> — our AI reviews your response for sincerity and effort</li>
                 <li><strong>Complete onboarding paperwork</strong> — most of it will be auto-filled from what you already provided</li>
+                <li><strong>Enter the Academy</strong> — values-first training that connects everything back to who we are</li>
               </ol>
               <p className="mt-3">
                 This process is intentionally thorough. We're not looking for warm bodies —
@@ -224,7 +280,7 @@ export default function RepValuesGate() {
                 className="mt-1"
               />
               <label htmlFor="values-ack" className="text-forest font-sans text-sm leading-relaxed cursor-pointer">
-                <strong>I have read and understand MiniMorph's values and expectations.</strong>{" "}
+                <strong>I have read and understand MiniMorph's values, Code of Conduct, and expectations.</strong>{" "}
                 I am a person of honest, trustworthy, and moral character. I understand that
                 this application process is thorough and I commit to taking it seriously.
                 I want to represent MiniMorph with integrity and professionalism.
@@ -241,7 +297,7 @@ export default function RepValuesGate() {
             </Button>
             {!acknowledged && (
               <p className="text-center text-forest/40 text-xs mt-3 font-sans">
-                Please read our values and check the acknowledgment above to continue
+                Please read our values and Code of Conduct, then check the acknowledgment above to continue
               </p>
             )}
           </CardContent>

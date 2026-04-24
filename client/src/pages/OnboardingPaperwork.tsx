@@ -763,6 +763,8 @@ function RepAgreementForm({
           <li>Either party may terminate with 14 days written notice</li>
           <li>Non-compete during active engagement (competing AI website services only)</li>
           <li>All MiniMorph IP, training materials, and client data remain Company property</li>
+          <li><strong>Code of Conduct compliance required</strong> — Integrity First, Client Obsession, Radical Transparency, Ethical Selling, Trustworthy Representation, Brand Stewardship</li>
+          <li>Violations of the Code of Conduct constitute grounds for immediate termination</li>
         </ul>
       </div>
     </div>

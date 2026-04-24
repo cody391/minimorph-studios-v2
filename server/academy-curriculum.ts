@@ -36,9 +36,394 @@ export interface AcademyModule {
 }
 
 export const ACADEMY_MODULES: AcademyModule[] = [
-  /* ═══════════════════════════════════════════════════════
+  /* ═══════════════════════════════════════════════════
+     MODULE 0: VALUES & ETHICS (MANDATORY FIRST)
+     Every rep must complete this before any other training.
+     ═══════════════════════════════════════════════════ */
+  {
+    id: "values-ethics",
+    title: "Values & Ethics: The MiniMorph Standard",
+    description: "This is the most important module in the entire academy. Before you learn a single sales technique, you need to understand WHO we are, WHAT we stand for, and WHY we hold every representative to the highest standard. If you can't live these values, nothing else matters.",
+    icon: "Shield",
+    estimatedMinutes: 30,
+    lessons: [
+      {
+        title: "Why Values Come First",
+        content: `## Before You Sell a Single Thing
+
+Most sales training starts with techniques, scripts, and closing strategies. We don't.
+
+We start here — with values — because MiniMorph is not a typical sales organization. We are an AI-driven company that runs a tight ship. Smart technology deserves smart people. People who are honest, driven, and genuinely care about the businesses they serve.
+
+### The MiniMorph Difference
+
+We pay extremely well because we expect extremely high standards. This isn't a gig — it's a career for people who want to build something they're proud of.
+
+But here's the thing: **we will remove anyone who doesn't live up to these standards.** Not because we're harsh — because our clients deserve better, and so do you. Every rep who cuts corners makes it harder for every honest rep to earn trust.
+
+### How This Module Works
+
+You'll learn our six core values, see exactly what they look like in practice, understand what violates them, and take a quiz that you must pass with 90% or higher. This isn't a formality — it's a filter.
+
+> "The way you do anything is the way you do everything." — This is our operating principle.`,
+        keyTakeaways: [
+          "Values training comes before all other training at MiniMorph",
+          "High pay comes with high standards — no exceptions",
+          "Every rep who cuts corners hurts every other rep's ability to earn trust",
+          "You must pass this module with 90%+ before accessing any other training"
+        ]
+      },
+      {
+        title: "The Six Core Values",
+        content: `## The Foundation Everything Else Is Built On
+
+These six values aren't corporate buzzwords on a poster. They are the operating system of this company. Every decision you make as a rep should pass through these filters.
+
+### 1. Integrity First
+**"Honesty in every interaction, no exceptions."**
+
+We never misrepresent our product, overpromise results, or pressure anyone into a purchase. Our reputation is built on honesty — one conversation at a time.
+
+**In practice:**
+- Accurately describe what MiniMorph can and cannot do
+- Never fabricate testimonials, statistics, or results
+- Admit mistakes immediately and work to fix them
+- If a prospect isn't a good fit, tell them honestly
+
+**Red flags (will get you removed):**
+- Exaggerating product capabilities to close a deal
+- Making guarantees the company can't back up
+- Lying about competitor weaknesses
+
+---
+
+### 2. Client Obsession
+**"Their success is our success."**
+
+Every business we serve is someone's livelihood. We treat their goals as our own. If our product isn't the right fit, we say so.
+
+**In practice:**
+- Ask questions first, pitch second — understand their real needs
+- Recommend the tier that actually fits, not the most expensive one
+- Follow up after the sale to ensure they're getting value
+- Go the extra mile on support — it's their business on the line
+
+**Red flags:**
+- Upselling features a client doesn't need
+- Ignoring client concerns to protect a commission
+- Disappearing after the sale is closed
+
+---
+
+### 3. Radical Transparency
+**"What you see is what you get."**
+
+No hidden fees, no bait-and-switch, no fine print tricks. We tell clients exactly what they're getting, what it costs, and what to expect.
+
+**In practice:**
+- Quote the full price upfront — no surprise charges later
+- Explain the timeline honestly, including potential delays
+- Share both the strengths and limitations of each tier
+- If something goes wrong, communicate immediately
+
+**Red flags:**
+- Burying costs in fine print or add-ons
+- Withholding information that would affect a buying decision
+
+---
+
+### 4. Ethical Selling
+**"Educate, don't manipulate."**
+
+We sell solutions, not fear. We educate, not manipulate. Our sales process is consultative — we help businesses make informed decisions.
+
+**In practice:**
+- Use discovery questions to understand needs before recommending
+- Never create false urgency or fake scarcity
+- Respect when a prospect says no — don't badger them
+- Position yourself as an advisor, not a pushy salesperson
+
+**Red flags:**
+- Using high-pressure tactics or manufactured deadlines
+- Exploiting a prospect's fear or insecurity to close
+- Refusing to take no for an answer
+
+---
+
+### 5. Trustworthy Representation
+**"You are MiniMorph to every client you meet."**
+
+You carry our brand into every meeting. Clients judge MiniMorph by you. We need people who make us proud.
+
+**In practice:**
+- Present yourself professionally in every interaction
+- Be punctual, prepared, and responsive
+- If you don't know the answer, say so and follow up
+- Protect client data and company information
+
+**Red flags:**
+- Making up answers to questions you don't know
+- Being unprepared for client meetings
+- Sharing confidential company or client information
+
+---
+
+### 6. Brand Stewardship
+**"The brand is everything — protect it."**
+
+MiniMorph's reputation is bigger than any one person. Every interaction you have either builds or erodes the brand. Protect it like it's your own.
+
+**In practice:**
+- Treat every client interaction as a reflection of the entire company
+- Report issues or concerns immediately — don't let problems fester
+- Follow established processes and scripts — they exist for a reason
+- Continuously improve through training and self-assessment
+
+**Red flags:**
+- Doing anything that damages MiniMorph's reputation
+- Ignoring company processes or cutting corners
+- Failing to report known issues or client complaints`,
+        keyTakeaways: [
+          "Integrity First: Never misrepresent, overpromise, or pressure",
+          "Client Obsession: Their success is your success — recommend what's right, not what pays most",
+          "Radical Transparency: Full price upfront, honest timelines, no hidden anything",
+          "Ethical Selling: Educate and advise, never manipulate or create false urgency",
+          "Trustworthy Representation: You ARE MiniMorph to every client — be prepared and professional",
+          "Brand Stewardship: The brand is bigger than you — protect it, report issues, follow processes"
+        ]
+      },
+      {
+        title: "The Code of Conduct",
+        content: `## Your Binding Agreement
+
+The MiniMorph Code of Conduct is not a guideline — it's a condition of your engagement. You signed it in your NDA. Now let's make sure you understand every word.
+
+### What the Code Requires
+
+1. **Integrity in Every Interaction** — Never misrepresent, fabricate, or make promises we can't keep. If you don't know, say "I'll find out."
+
+2. **Client-First Decision Making** — Every recommendation should be in the client's best interest. If MiniMorph isn't the right fit, say so. A declined sale today builds referrals for years.
+
+3. **Transparent Communication** — Full price, real timeline, strengths AND limitations. No hidden fees, no bait-and-switch.
+
+4. **Ethical Sales Practices** — Solutions, not fear. Education, not manipulation. No false urgency, no exploiting insecurities.
+
+5. **Professional Representation** — Be punctual, prepared, responsive. Protect data. Present yourself in a way that makes the company proud.
+
+6. **Brand Stewardship** — Every interaction builds or erodes the brand. Follow processes, report issues, keep improving.
+
+### Violations That Lead to Immediate Removal
+
+- Misrepresenting MiniMorph's capabilities or pricing
+- Using deceptive or high-pressure sales tactics
+- Sharing confidential client or company information
+- Discriminatory, harassing, or unprofessional behavior
+- Falsifying reports, metrics, or client communications
+- Competing directly with MiniMorph during engagement
+
+### The AI Is Watching
+
+MiniMorph uses AI to monitor client interactions for values compliance. This isn't surveillance — it's quality assurance. The system flags potential issues automatically, and repeated violations trigger the strike system.
+
+> Think of it like this: the AI is your quality coach. It catches things before they become problems. Good reps love it because it proves they're doing the right thing.`,
+        keyTakeaways: [
+          "The Code of Conduct is binding — you signed it in your NDA",
+          "Six requirements: integrity, client-first, transparency, ethical selling, professional representation, brand stewardship",
+          "Specific violations lead to immediate removal — no warnings",
+          "AI monitors interactions for values compliance — this protects good reps"
+        ]
+      },
+      {
+        title: "Values in Real Scenarios",
+        content: `## How Values Show Up in Your Daily Work
+
+Let's walk through real scenarios you'll face and see how the values apply.
+
+### Scenario 1: The Tempting Upsell
+A small bakery owner needs a basic website. They have a tight budget. Your commission would be 3x higher if you sold them the premium tier.
+
+**Wrong move:** Push the premium tier by emphasizing features they'll "grow into."
+**Right move:** Recommend the tier that fits their current needs and budget. Explain that they can upgrade later if their business grows. *This is Client Obsession and Ethical Selling in action.*
+
+### Scenario 2: The Competitor Question
+A prospect asks: "What about [Competitor]? They seem cheaper."
+
+**Wrong move:** Trash the competitor with unverified claims about their quality.
+**Right move:** Acknowledge the competitor exists, then focus on what makes MiniMorph different — ongoing support, AI-powered design, transparent pricing. Let the prospect decide. *This is Integrity First and Radical Transparency.*
+
+### Scenario 3: The "I Don't Know" Moment
+A prospect asks a technical question about SEO integration that you're not sure about.
+
+**Wrong move:** Make up an answer that sounds good.
+**Right move:** Say "That's a great question. I want to give you an accurate answer, so let me check with our technical team and get back to you today." *This is Trustworthy Representation.*
+
+### Scenario 4: The Misleading Claim
+You see a social media post from someone claiming to be a MiniMorph rep, guaranteeing "10x revenue in 30 days." A client asks you about it.
+
+**Wrong move:** Confirm the claim to avoid losing the deal.
+**Right move:** Honestly tell the client that no one can guarantee specific results, explain what MiniMorph actually delivers, and report the misleading post to the company. *This is Brand Stewardship and Integrity First.*
+
+### Scenario 5: The Pressure Play
+You're behind on your monthly numbers. A prospect is on the fence. You could create urgency by saying "This price is only available today."
+
+**Wrong move:** Create false urgency to close the deal.
+**Right move:** Ask what's holding them back, address their real concerns, and give them space to decide. If they're not ready, schedule a follow-up. *This is Ethical Selling.*`,
+        keyTakeaways: [
+          "Always recommend what fits the client, not what pays you more",
+          "Focus on MiniMorph's strengths instead of trashing competitors",
+          "Say 'I'll find out' instead of making up answers",
+          "Report brand-damaging behavior immediately",
+          "Never create false urgency — address real concerns instead"
+        ]
+      }
+    ],
+    quiz: [
+      {
+        id: "ve-1",
+        question: "A prospect's business clearly isn't a good fit for MiniMorph, but closing them would hit your monthly target. What do you do?",
+        type: "multiple_choice",
+        options: [
+          "Close the deal anyway — they'll figure it out",
+          "Tell them honestly that we're not the right fit and suggest alternatives",
+          "Downplay the mismatch and hope they don't notice",
+          "Refer them to a competitor and ask for a referral fee"
+        ],
+        correctAnswer: 1,
+        explanation: "Integrity First and Client Obsession require us to be honest even when it costs us a sale. The right move always builds long-term reputation.",
+        difficulty: "easy"
+      },
+      {
+        id: "ve-2",
+        question: "Which of the following is NOT one of MiniMorph's six core values?",
+        type: "multiple_choice",
+        options: [
+          "Radical Transparency",
+          "Client Obsession",
+          "Maximum Revenue",
+          "Brand Stewardship"
+        ],
+        correctAnswer: 2,
+        explanation: "'Maximum Revenue' is not a MiniMorph value. Our values are: Integrity First, Client Obsession, Radical Transparency, Ethical Selling, Trustworthy Representation, and Brand Stewardship.",
+        difficulty: "easy"
+      },
+      {
+        id: "ve-3",
+        question: "A client asks a technical question you don't know the answer to. What's the correct response according to MiniMorph values?",
+        type: "multiple_choice",
+        options: [
+          "Give your best guess — confidence is key in sales",
+          "Change the subject to something you do know",
+          "Say 'I want to give you an accurate answer — let me check and get back to you today'",
+          "Tell them it's not your department"
+        ],
+        correctAnswer: 2,
+        explanation: "Trustworthy Representation means never making up answers. Admitting you don't know and following up builds more trust than a confident guess.",
+        difficulty: "easy"
+      },
+      {
+        id: "ve-4",
+        question: "You notice a social media post from someone claiming to represent MiniMorph, making guarantees about results that aren't accurate. What should you do?",
+        type: "multiple_choice",
+        options: [
+          "Ignore it — it's not your problem",
+          "Report it to the company immediately",
+          "Start making similar claims so you're competitive",
+          "Comment on the post calling them out publicly"
+        ],
+        correctAnswer: 1,
+        explanation: "Brand Stewardship requires you to report issues that could damage MiniMorph's reputation. Don't ignore it, don't copy it, and don't handle it publicly — report it through proper channels.",
+        difficulty: "medium"
+      },
+      {
+        id: "ve-5",
+        question: "What does 'Ethical Selling' mean at MiniMorph?",
+        type: "multiple_choice",
+        options: [
+          "Always close the deal, but do it politely",
+          "Educate prospects and help them make informed decisions — never manipulate or create false urgency",
+          "Only sell to prospects who can afford the premium tier",
+          "Follow a strict script without deviation"
+        ],
+        correctAnswer: 1,
+        explanation: "Ethical Selling means we educate, not manipulate. We help businesses make informed decisions. No false urgency, no pressure tactics, no exploiting insecurities.",
+        difficulty: "easy"
+      },
+      {
+        id: "ve-6",
+        question: "You're behind on your monthly numbers. A prospect is interested but wants to 'think about it.' What's the MiniMorph way to handle this?",
+        type: "multiple_choice",
+        options: [
+          "Tell them the price goes up tomorrow to create urgency",
+          "Keep calling them every day until they say yes",
+          "Ask what specific concerns they have, address them honestly, and schedule a follow-up",
+          "Offer an unauthorized discount to close immediately"
+        ],
+        correctAnswer: 2,
+        explanation: "Ethical Selling and Radical Transparency mean we never create false urgency or pressure. Address real concerns, give them space, and follow up professionally.",
+        difficulty: "medium"
+      },
+      {
+        id: "ve-7",
+        question: "Why does MiniMorph use AI to monitor client interactions?",
+        type: "multiple_choice",
+        options: [
+          "To micromanage reps and catch them making mistakes",
+          "Quality assurance — to flag potential issues before they become problems and protect good reps",
+          "To replace human managers entirely",
+          "To collect data for selling to third parties"
+        ],
+        correctAnswer: 1,
+        explanation: "AI monitoring is quality assurance, not surveillance. It catches issues early, protects good reps by proving they do the right thing, and maintains brand standards consistently.",
+        difficulty: "medium"
+      },
+      {
+        id: "ve-8",
+        question: "Which of the following would result in IMMEDIATE removal from MiniMorph?",
+        type: "multiple_choice",
+        options: [
+          "Missing a follow-up call with a prospect",
+          "Having a low close rate for one month",
+          "Falsifying client communications or reports",
+          "Asking a manager for help with a difficult prospect"
+        ],
+        correctAnswer: 2,
+        explanation: "Falsifying reports or client communications is a Code of Conduct violation that leads to immediate removal. Low performance or missed calls are coaching opportunities, not termination events.",
+        difficulty: "medium"
+      },
+      {
+        id: "ve-9",
+        question: "A prospect asks about a competitor. According to MiniMorph values, how should you respond?",
+        type: "scenario",
+        options: [
+          "Tell them the competitor is terrible and they'll regret choosing them",
+          "Acknowledge the competitor, then focus on what makes MiniMorph different — let the prospect decide",
+          "Refuse to discuss competitors at all",
+          "Offer to match whatever the competitor is charging"
+        ],
+        correctAnswer: 1,
+        explanation: "Integrity First means we don't trash competitors. We acknowledge they exist, highlight our genuine differentiators, and let the prospect make an informed decision.",
+        difficulty: "easy"
+      },
+      {
+        id: "ve-10",
+        question: "What is the passing score for this Values & Ethics module?",
+        type: "multiple_choice",
+        options: [
+          "60%",
+          "70%",
+          "80%",
+          "90%"
+        ],
+        correctAnswer: 3,
+        explanation: "The Values & Ethics module requires a 90% passing score — higher than any other module. This reflects how seriously MiniMorph takes its values.",
+        difficulty: "easy"
+      }
+    ],
+    passingScore: 90 // Higher than other modules — values are non-negotiable
+  },
+   /* ===================================================
      MODULE 1: PRODUCT MASTERY
-     ═══════════════════════════════════════════════════════ */
+     =================================================== */
   {
     id: "product-mastery",
     title: "MiniMorph Product Mastery",

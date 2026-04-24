@@ -14,31 +14,37 @@ import { eq } from "drizzle-orm";
 
 /* ─── NDA Content ─── */
 
-const NDA_VERSION = "1.0";
+const NDA_VERSION = "1.1";
 
 const NDA_TEXT = `MINIMORPH STUDIOS — CONFIDENTIALITY & NON-DISCLOSURE AGREEMENT
 
 By signing below, you ("Recipient") agree to the following terms with MiniMorph Studios ("Company"):
 
-1. CONFIDENTIAL INFORMATION
+1. COMPANY VALUES & CODE OF CONDUCT
+You acknowledge that MiniMorph Studios operates on a foundation of six core values: Integrity First, Client Obsession, Radical Transparency, Ethical Selling, Trustworthy Representation, and Brand Stewardship. You have read, understood, and agree to abide by the MiniMorph Code of Conduct, which is incorporated into this agreement by reference. Violation of the Code of Conduct constitutes a breach of this agreement.
+
+2. CONFIDENTIAL INFORMATION
 You acknowledge that during your onboarding and engagement as a MiniMorph Sales Representative, you will have access to proprietary information including but not limited to: sales methodologies, pricing strategies, client lists, AI technology details, training materials, business processes, and marketing strategies ("Confidential Information").
 
-2. NON-DISCLOSURE OBLIGATION
+3. NON-DISCLOSURE OBLIGATION
 You agree not to disclose, share, copy, or use any Confidential Information for any purpose other than your duties as a MiniMorph representative. This obligation survives termination of your engagement.
 
-3. INTELLECTUAL PROPERTY
+4. INTELLECTUAL PROPERTY
 All materials, tools, scripts, templates, and training content provided by MiniMorph remain the exclusive property of MiniMorph Studios. You may not reproduce, distribute, or create derivative works without written permission.
 
-4. NON-COMPETE (DURING ENGAGEMENT)
+5. ETHICAL CONDUCT
+You agree to conduct all sales and client interactions in accordance with MiniMorph's ethical selling standards. This includes: never misrepresenting products or services, never using high-pressure or deceptive tactics, always acting in the client's best interest, and maintaining professional representation of the brand at all times.
+
+6. NON-COMPETE (DURING ENGAGEMENT)
 While actively engaged as a MiniMorph representative, you agree not to represent or sell directly competing AI website building services.
 
-5. RETURN OF MATERIALS
+7. RETURN OF MATERIALS
 Upon termination of your engagement, you agree to return or destroy all Confidential Information and Company materials in your possession.
 
-6. REMEDIES
-You acknowledge that breach of this agreement may cause irreparable harm and that MiniMorph is entitled to seek injunctive relief in addition to any other remedies.
+8. REMEDIES
+You acknowledge that breach of this agreement — including violations of the Code of Conduct or ethical standards — may cause irreparable harm and that MiniMorph is entitled to seek injunctive relief in addition to any other remedies.
 
-7. DURATION
+9. DURATION
 This agreement remains in effect for 2 years following the termination of your engagement with MiniMorph Studios.
 
 This agreement is governed by the laws of the State of Delaware.`;

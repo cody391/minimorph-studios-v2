@@ -195,7 +195,7 @@ describe("Trust Gate / NDA", () => {
 
   it("NDA version should be defined", () => {
     expect(NDA_VERSION).toBeDefined();
-    expect(NDA_VERSION).toBe("1.0");
+    expect(NDA_VERSION).toBe("1.1");
   });
 
   it("NDA text should mention confidentiality", () => {

@@ -12,8 +12,8 @@ import {
 } from "./academy-curriculum";
 
 describe("Academy Curriculum", () => {
-  it("should have 8 training modules", () => {
-    expect(ACADEMY_MODULES.length).toBe(8);
+  it("should have 9 training modules (including values-ethics)", () => {
+    expect(ACADEMY_MODULES.length).toBe(9);
   });
 
   it("should have unique module IDs", () => {
@@ -37,6 +37,7 @@ describe("Academy Curriculum", () => {
 
   it("should have correct module IDs", () => {
     const expectedIds = [
+      "values-ethics",
       "product-mastery",
       "psychology-selling",
       "discovery-call",
@@ -50,9 +51,13 @@ describe("Academy Curriculum", () => {
     expect(actualIds).toEqual(expectedIds);
   });
 
-  it("should have passing score of 80% for all modules", () => {
+  it("should have passing score of 80% for all modules (except values-ethics at 90%)", () => {
     for (const mod of ACADEMY_MODULES) {
-      expect(mod.passingScore).toBe(80);
+      if (mod.id === "values-ethics") {
+        expect(mod.passingScore).toBe(90);
+      } else {
+        expect(mod.passingScore).toBe(80);
+      }
     }
   });
 });
@@ -247,8 +252,12 @@ describe("Academy Content Quality", () => {
 });
 
 describe("Academy Module Ordering", () => {
-  it("should start with product mastery (know the product first)", () => {
-    expect(ACADEMY_MODULES[0].id).toBe("product-mastery");
+  it("should start with values-ethics (values come before everything)", () => {
+    expect(ACADEMY_MODULES[0].id).toBe("values-ethics");
+  });
+
+  it("should have product mastery as the second module", () => {
+    expect(ACADEMY_MODULES[1].id).toBe("product-mastery");
   });
 
   it("should have psychology before closing techniques", () => {
