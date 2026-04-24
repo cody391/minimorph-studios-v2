@@ -52,7 +52,7 @@ export default function RepDashboard() {
   const [activeTab, setActiveTab] = useState(tabFromUrl || "performance");
 
   const { data: repProfile, isLoading: repLoading } = trpc.reps.myProfile.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: allLeads } = trpc.leads.list.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
+  const { data: myLeads } = trpc.leads.myLeads.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: commissions } = trpc.commissions.byRep.useQuery({ repId: repProfile?.id ?? 0 }, { enabled: isAuthenticated && !!repProfile });
   const { data: gamification } = trpc.repGamification.myStats.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: leaderboard } = trpc.repGamification.leaderboard.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
@@ -68,9 +68,8 @@ export default function RepDashboard() {
   const { data: sentEmails } = trpc.repComms.mySentEmails.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: accessCheck } = trpc.academy.canAccessLeads.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
 
-  const myLeads = useMemo(() => allLeads?.filter((l: any) => l.assignedRepId === repProfile?.id) ?? [], [allLeads, repProfile]);
-  const activeLeads = useMemo(() => myLeads.filter((l: any) => !["closed_won", "closed_lost"].includes(l.stage)), [myLeads]);
-  const wonLeads = useMemo(() => myLeads.filter((l: any) => l.stage === "closed_won"), [myLeads]);
+  const activeLeads = useMemo(() => (myLeads ?? []).filter((l: any) => !["closed_won", "closed_lost"].includes(l.stage)), [myLeads]);
+  const wonLeads = useMemo(() => (myLeads ?? []).filter((l: any) => l.stage === "closed_won"), [myLeads]);
   const totalEarnings = useMemo(() => commissions?.filter((c: any) => c.status !== "cancelled").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
   const pendingPayouts = useMemo(() => commissions?.filter((c: any) => c.status === "pending").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
   const approvedPayouts = useMemo(() => commissions?.filter((c: any) => c.status === "approved").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
@@ -360,15 +359,15 @@ export default function RepDashboard() {
             <Card className="border-border/50">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <Users className="h-4 w-4 text-terracotta" /> My Leads ({myLeads.length})
+                  <Users className="h-4 w-4 text-terracotta" /> My Leads ({(myLeads ?? []).length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {myLeads.length === 0 ? (
+                {(myLeads ?? []).length === 0 ? (
                   <div className="text-center py-8"><Target className="h-8 w-8 text-forest/20 mx-auto mb-3" /><p className="text-sm text-forest/50 font-sans">No leads assigned yet.</p></div>
                 ) : (
                   <div className="space-y-2">
-                    {myLeads.slice(0, 10).map((lead: any) => (
+                    {(myLeads ?? []).slice(0, 10).map((lead: any) => (
                       <div key={lead.id} className="flex items-center justify-between p-4 rounded-lg border border-border/30 hover:bg-cream-dark/20 transition-colors">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -403,7 +402,7 @@ export default function RepDashboard() {
 
           {/* ═══════ ACTIVITY TAB ═══════ */}
           <TabsContent value="activity" className="space-y-6">
-            <ActivityTab activities={activities} stats={activityStats} leads={myLeads} />
+            <ActivityTab activities={activities} stats={activityStats} leads={myLeads ?? []} />
           </TabsContent>
 
           {/* ═══════ COMMS TAB ═══════ */}
@@ -421,7 +420,7 @@ export default function RepDashboard() {
               </Card>
             ) : (
               <Suspense fallback={<div className="p-8 text-center"><p className="text-sm text-forest/40">Loading communications...</p></div>}>
-                <CommsHub templates={emailTemplates ?? []} sentEmails={sentEmails ?? []} leads={myLeads} />
+                <CommsHub templates={emailTemplates ?? []} sentEmails={sentEmails ?? []} leads={myLeads ?? []} />
               </Suspense>
             )}
           </TabsContent>

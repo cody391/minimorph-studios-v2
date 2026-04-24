@@ -24,6 +24,7 @@ import { eq } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
 import { teamFeedRouter } from "./teamFeedRouter";
 import { invokeLLM } from "./_core/llm";
+import { assertRepOwnership, assertCustomerOwnership, assertProjectOwnership, assertLeadOwnership, assertAssetOwnership } from "./ownership";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -60,10 +61,11 @@ const repsRouter = router({
     return rep ?? null;
   }),
 
-  // Protected: get a rep by ID
+  // Protected: get a rep by ID (ownership: admin or own rep only)
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertRepOwnership(ctx.user, input.id);
       const rep = await db.getRepById(input.id);
       return rep ?? null;
     }),
@@ -326,10 +328,11 @@ const leadsRouter = router({
       return db.listLeads(input ?? undefined);
     }),
 
-  // Protected: get lead by ID
+  // Protected: get lead by ID (ownership: admin or assigned rep only)
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertLeadOwnership(ctx.user, input.id);
       const lead = await db.getLeadById(input.id);
       return lead ?? null;
     }),
@@ -879,9 +882,11 @@ const customersRouter = router({
       return db.listCustomers(input?.status);
     }),
 
+  // Ownership: admin or own customer only
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertCustomerOwnership(ctx.user, input.id);
       const customer = await db.getCustomerById(input.id);
       return customer ?? null;
     }),
@@ -952,9 +957,11 @@ const contractsRouter = router({
       return db.listContractsByCustomer(input.customerId);
     }),
 
+  // Ownership: admin or own rep only
   byRep: protectedProcedure
     .input(z.object({ repId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertRepOwnership(ctx.user, input.repId);
       return db.listContractsByRep(input.repId);
     }),
 
@@ -1047,9 +1054,11 @@ const commissionsRouter = router({
     return db.listCommissions();
   }),
 
+  // Ownership: admin or own rep only
   byRep: protectedProcedure
     .input(z.object({ repId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertRepOwnership(ctx.user, input.repId);
       return db.listCommissionsByRep(input.repId);
     }),
 
@@ -1626,7 +1635,8 @@ const onboardingRouter = router({
         }),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
       await db.updateOnboardingProject(input.projectId, {
         questionnaire: input.questionnaire,
         stage: "assets_upload",
@@ -1634,7 +1644,7 @@ const onboardingRouter = router({
       return { success: true };
     }),
 
-  // Protected: set domain preference
+  // Protected: set domain preference (ownership check)
   setDomain: protectedProcedure
     .input(
       z.object({
@@ -1645,13 +1655,14 @@ const onboardingRouter = router({
         domainNotes: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
       const { projectId, ...domainData } = input;
       await db.updateOnboardingProject(projectId, domainData);
       return { success: true };
     }),
 
-  // Protected: upload an asset file
+  // Protected: upload an asset file (ownership check)
   uploadAsset: protectedProcedure
     .input(
       z.object({
@@ -1663,7 +1674,8 @@ const onboardingRouter = router({
         notes: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
       const { storagePut } = await import("./storage");
       const buffer = Buffer.from(input.fileBase64, "base64");
       const fileKey = `onboarding/${input.projectId}/${input.fileName}`;
@@ -1681,17 +1693,19 @@ const onboardingRouter = router({
       });
     }),
 
-  // Protected: list assets for a project
+  // Protected: list assets for a project (ownership check)
   listAssets: protectedProcedure
     .input(z.object({ projectId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
       return db.listProjectAssets(input.projectId);
     }),
 
-  // Protected: delete an asset
+  // Protected: delete an asset (ownership check via project)
   deleteAsset: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertAssetOwnership(ctx.user, input.id);
       await db.deleteProjectAsset(input.id);
       return { success: true };
     }),
@@ -1704,7 +1718,8 @@ const onboardingRouter = router({
         feedbackNotes: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
       const project = await db.getOnboardingProjectById(input.projectId);
       await db.updateOnboardingProject(input.projectId, {
         feedbackNotes: input.feedbackNotes,
@@ -1714,10 +1729,11 @@ const onboardingRouter = router({
       return { success: true };
     }),
 
-  // Protected: approve for launch
+  // Protected: approve for launch (ownership check)
   approveLaunch: protectedProcedure
     .input(z.object({ projectId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
       await db.updateOnboardingProject(input.projectId, {
         stage: "final_approval",
       });

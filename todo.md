@@ -1059,3 +1059,13 @@
 - [x] E4: Update docs/scheduled-jobs.md with new endpoints
 - [x] E5: Write surgical tests for NPS and renewal jobs
 - [x] E6: Typecheck 0 errors, all tests passing, build succeeds
+
+### Phase F — Security & Ownership Hardening
+- [x] F1: Inventory all risky procedures and classify access levels
+- [x] F2: Add reusable ownership helper functions (assertCustomerAccess, assertRepAccess, etc.)
+- [x] F3: Harden high-risk procedures with ownership checks
+- [x] F4: Fix client-side filtering leaks and demo patterns
+- [x] F5: Public route abuse protection (rate limiting)
+- [x] F6: Verify internal endpoint protection (webhooks, scheduled, secrets)
+- [x] F7: Write surgical security tests
+- [x] F8: Typecheck 0 errors, all tests passing, build succeeds

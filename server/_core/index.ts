@@ -57,6 +57,17 @@ async function startServer() {
   app.use("/api/trpc/leadGen.requestPublicAudit", publicFormLimiter);
   app.use("/api/trpc/orders.create", publicFormLimiter);
 
+  // ── Stricter rate limiting on auth endpoints (brute-force protection) ──
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 attempts per window per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many authentication attempts, please try again later." },
+  });
+  app.use("/api/trpc/localAuth.register", authLimiter);
+  app.use("/api/trpc/localAuth.login", authLimiter);
+
   // CRITICAL: Stripe webhook needs raw body BEFORE json parser
   registerStripeWebhook(app);
   // Configure body parser with larger size limit for file uploads
