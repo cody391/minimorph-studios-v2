@@ -249,7 +249,7 @@ export default function RepValuesGate() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div className="bg-forest/5 rounded-lg p-4 text-center">
-                <p className="text-2xl font-serif text-terracotta">10–20%</p>
+                <p className="text-2xl font-serif text-terracotta">10–15%</p>
                 <p className="text-xs text-forest/60 mt-1">Commission on every sale</p>
               </div>
               <div className="bg-forest/5 rounded-lg p-4 text-center">

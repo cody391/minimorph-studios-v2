@@ -63,6 +63,7 @@ import {
   InsertRepNotificationPreference,
   pushSubscriptions,
   InsertPushSubscription,
+  repTiers,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -758,7 +759,7 @@ export async function getLeaderboard(limit = 10) {
   return db.select({
     repId: repGamification.repId,
     totalPoints: repGamification.totalPoints,
-    level: repGamification.level,
+    level: repTiers.tier, // accountability tier (bronze/silver/gold/platinum)
     currentStreak: repGamification.currentStreak,
     monthlyDeals: repGamification.monthlyDeals,
     repName: reps.fullName,
@@ -767,6 +768,7 @@ export async function getLeaderboard(limit = 10) {
     totalRevenue: reps.totalRevenue,
   }).from(repGamification)
     .leftJoin(reps, eq(repGamification.repId, reps.id))
+    .leftJoin(repTiers, eq(repGamification.repId, repTiers.repId))
     .orderBy(desc(repGamification.totalPoints))
     .limit(limit);
 }

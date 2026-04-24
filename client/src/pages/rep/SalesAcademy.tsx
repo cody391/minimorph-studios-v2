@@ -534,7 +534,7 @@ export default function SalesAcademy() {
                   You have <span className="font-bold text-amber-700">{dailyCheckIn.pendingReviews.length}</span> review{dailyCheckIn.pendingReviews.length > 1 ? "s" : ""} to complete today.
                   {dailyCheckIn.config && (
                     <span className="text-forest/40 ml-1">
-                      ({dailyCheckIn.level.charAt(0).toUpperCase() + dailyCheckIn.level.slice(1)} rank: max {dailyCheckIn.config.maxDailyReviews}/day)
+                      ({dailyCheckIn.level.charAt(0).toUpperCase() + dailyCheckIn.level.slice(1)} tier: max {dailyCheckIn.config.maxDailyReviews}/day)
                     </span>
                   )}
                 </p>
@@ -604,7 +604,7 @@ export default function SalesAcademy() {
                   No pending coaching reviews today. You're free to work your pipeline.
                 </p>
                 <div className="flex items-center justify-center gap-4 text-xs text-forest/40 font-sans">
-                  <span className="flex items-center gap-1"><Star className="w-3 h-3" /> Rank: {dailyCheckIn?.level?.charAt(0).toUpperCase()}{dailyCheckIn?.level?.slice(1)}</span>
+                  <span className="flex items-center gap-1"><Star className="w-3 h-3" /> Tier: {dailyCheckIn?.level?.charAt(0).toUpperCase()}{dailyCheckIn?.level?.slice(1)}</span>
                   <span className="flex items-center gap-1"><CalendarCheck className="w-3 h-3" /> Max daily: {dailyCheckIn?.config?.maxDailyReviews || 0}</span>
                 </div>
               </CardContent>

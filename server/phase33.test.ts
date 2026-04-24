@@ -42,8 +42,8 @@ describe("Academy Gatekeeper", () => {
     const status = await getCertificationStatus(999999);
     expect(status.isFullyCertified).toBe(false);
     expect(status.modulesCompleted).toBe(0);
-    expect(status.totalModules).toBeGreaterThanOrEqual(8);
-    expect(status.moduleStatuses.length).toBeGreaterThanOrEqual(8);
+    expect(status.totalModules).toBeGreaterThanOrEqual(9);
+    expect(status.moduleStatuses.length).toBeGreaterThanOrEqual(9);
   });
 
   it("canRepAccessLeads should return access status for rep", async () => {
@@ -55,11 +55,11 @@ describe("Academy Gatekeeper", () => {
   });
 });
 
-// ─── Rank-based Training Config ───
+// ─── Rank-based Training Config (Accountability Tiers) ───
 describe("Rank-based Training Requirements", () => {
   it("getRankTrainingConfig should return config object", async () => {
     const { getRankTrainingConfig } = await import("./services/academyGatekeeper");
-    const config = getRankTrainingConfig("rookie");
+    const config = getRankTrainingConfig("bronze");
     expect(config).toHaveProperty("maxDailyReviews");
     expect(config).toHaveProperty("canSkipSuggested");
     expect(config).toHaveProperty("canLetReviewsExpire");
@@ -68,9 +68,9 @@ describe("Rank-based Training Requirements", () => {
     expect(config).toHaveProperty("quizRequiredForSuggested");
   });
 
-  it("rookie should have strictest requirements", async () => {
+  it("bronze should have strictest requirements", async () => {
     const { getRankTrainingConfig } = await import("./services/academyGatekeeper");
-    const config = getRankTrainingConfig("rookie");
+    const config = getRankTrainingConfig("bronze");
     expect(config.canSkipSuggested).toBe(false);
     expect(config.canLetReviewsExpire).toBe(false);
     expect(config.quizRequiredForCritical).toBe(true);
@@ -79,55 +79,50 @@ describe("Rank-based Training Requirements", () => {
     expect(config.maxDailyReviews).toBe(10);
   });
 
-  it("closer should relax suggested quiz requirement", async () => {
+  it("silver should relax suggested quiz requirement", async () => {
     const { getRankTrainingConfig } = await import("./services/academyGatekeeper");
-    const config = getRankTrainingConfig("closer");
+    const config = getRankTrainingConfig("silver");
     expect(config.quizRequiredForCritical).toBe(true);
     expect(config.quizRequiredForImportant).toBe(true);
     expect(config.quizRequiredForSuggested).toBe(false);
     expect(config.canSkipSuggested).toBe(false);
   });
 
-  it("ace should be able to skip suggested reviews", async () => {
+  it("gold should be able to skip suggested reviews and let them expire", async () => {
     const { getRankTrainingConfig } = await import("./services/academyGatekeeper");
-    const config = getRankTrainingConfig("ace");
+    const config = getRankTrainingConfig("gold");
     expect(config.canSkipSuggested).toBe(true);
+    expect(config.canLetReviewsExpire).toBe(true);
+    expect(config.expiryHours).toBeGreaterThan(0);
     expect(config.quizRequiredForCritical).toBe(true);
   });
 
-  it("elite should allow reviews to expire", async () => {
+  it("platinum should have most relaxed requirements (exempt)", async () => {
     const { getRankTrainingConfig } = await import("./services/academyGatekeeper");
-    const config = getRankTrainingConfig("elite");
-    expect(config.canLetReviewsExpire).toBe(true);
-    expect(config.expiryHours).toBeGreaterThan(0);
-  });
-
-  it("legend should have most relaxed requirements", async () => {
-    const { getRankTrainingConfig } = await import("./services/academyGatekeeper");
-    const config = getRankTrainingConfig("legend");
+    const config = getRankTrainingConfig("platinum");
     expect(config.canLetReviewsExpire).toBe(true);
     expect(config.canSkipSuggested).toBe(true);
-    expect(config.maxDailyReviews).toBeLessThanOrEqual(3);
+    expect(config.maxDailyReviews).toBe(0); // exempt
+    expect(config.quizRequiredForCritical).toBe(false);
   });
 
-  it("unknown rank should default to rookie config", async () => {
+  it("unknown rank should default to bronze config", async () => {
     const { getRankTrainingConfig } = await import("./services/academyGatekeeper");
     const config = getRankTrainingConfig("unknown_rank");
-    expect(config.maxDailyReviews).toBe(10); // rookie default
+    expect(config.maxDailyReviews).toBe(10); // bronze default
     expect(config.canSkipSuggested).toBe(false);
   });
 
-  it("getAllRankConfigs should return all rank configurations", async () => {
+  it("getAllRankConfigs should return all accountability tier configurations", async () => {
     const { getAllRankConfigs } = await import("./services/academyGatekeeper");
     const configs = getAllRankConfigs();
     expect(Array.isArray(configs)).toBe(true);
-    expect(configs.length).toBeGreaterThanOrEqual(5);
+    expect(configs.length).toBeGreaterThanOrEqual(4);
     const levels = configs.map(c => c.level);
-    expect(levels).toContain("rookie");
-    expect(levels).toContain("closer");
-    expect(levels).toContain("ace");
-    expect(levels).toContain("elite");
-    expect(levels).toContain("legend");
+    expect(levels).toContain("bronze");
+    expect(levels).toContain("silver");
+    expect(levels).toContain("gold");
+    expect(levels).toContain("platinum");
   });
 });
 
@@ -153,11 +148,11 @@ describe("Daily Check-in System", () => {
     expect(result.isCleared).toBe(true);
   });
 
-  it("getRepLevel should return a valid level string", async () => {
+  it("getRepLevel should return a valid accountability tier", async () => {
     const { getRepLevel } = await import("./services/academyGatekeeper");
     const level = await getRepLevel(999999);
     expect(typeof level).toBe("string");
-    expect(["rookie", "closer", "ace", "elite", "legend"]).toContain(level);
+    expect(["bronze", "silver", "gold", "platinum"]).toContain(level);
   });
 });
 
@@ -213,7 +208,7 @@ describe("App Guide", () => {
       "Leads & Pipeline",
       "Communications Hub",
       "Earnings & Commissions",
-      "Gamification & Ranks",
+      "Accountability Tiers",
       "AI Coaching & Feedback",
       "Support & Resources",
       "Settings & Profile",

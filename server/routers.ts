@@ -17,6 +17,7 @@ import { localAuthRouter } from "./localAuth";
 import { assessmentRouter } from "./assessmentRouter";
 import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
+import { teamFeedRouter } from "./teamFeedRouter";
 import { invokeLLM } from "./_core/llm";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
@@ -2076,6 +2077,7 @@ export const appRouter = router({
   assessment: assessmentRouter,
   repOnboarding: onboardingDataRouter,
   accountability: accountabilityRouter,
+  teamFeed: teamFeedRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))

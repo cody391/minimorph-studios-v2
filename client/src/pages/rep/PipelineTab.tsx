@@ -42,8 +42,8 @@ const tempMeta: Record<string, { icon: any; color: string; bg: string }> = {
 };
 
 const PACKAGE_PRICES: Record<string, string> = {
-  starter: "99",
-  growth: "199",
+  starter: "149",
+  growth: "299",
   premium: "499",
 };
 

@@ -7,6 +7,7 @@ const CommsHub = lazy(() => import("./rep/CommsHub"));
 const SupportTicketsPanel = lazy(() => import("./rep/SupportTicketsPanel"));
 const RepSettingsPanel = lazy(() => import("./rep/RepSettingsPanel"));
 const AppGuide = lazy(() => import("./rep/AppGuide"));
+const TeamFeed = lazy(() => import("./rep/TeamFeed"));
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -65,6 +66,7 @@ export default function RepDashboard() {
   const { data: quizResults } = trpc.repTraining.myQuizResults.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: emailTemplates } = trpc.repComms.templates.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: sentEmails } = trpc.repComms.mySentEmails.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
+  const { data: accessCheck } = trpc.academy.canAccessLeads.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
 
   const myLeads = useMemo(() => allLeads?.filter((l: any) => l.assignedRepId === repProfile?.id) ?? [], [allLeads, repProfile]);
   const activeLeads = useMemo(() => myLeads.filter((l: any) => !["closed_won", "closed_lost"].includes(l.stage)), [myLeads]);
@@ -233,6 +235,7 @@ export default function RepDashboard() {
               <TabsTrigger value="earnings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Earnings</TabsTrigger>
               <TabsTrigger value="pipeline" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Pipeline</TabsTrigger>
               <TabsTrigger value="leaderboard" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Board</TabsTrigger>
+              <TabsTrigger value="team" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Team</TabsTrigger>
               <TabsTrigger value="support" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Support</TabsTrigger>
               <TabsTrigger value="settings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Settings</TabsTrigger>
               <TabsTrigger value="guide" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Guide</TabsTrigger>
@@ -405,9 +408,22 @@ export default function RepDashboard() {
 
           {/* ═══════ COMMS TAB ═══════ */}
           <TabsContent value="comms" className="space-y-6">
-            <Suspense fallback={<div className="p-8 text-center"><p className="text-sm text-forest/40">Loading communications...</p></div>}>
-              <CommsHub templates={emailTemplates ?? []} sentEmails={sentEmails ?? []} leads={myLeads} />
-            </Suspense>
+            {accessCheck && !accessCheck.allowed ? (
+              <Card className="border-amber-200 bg-amber-50/50">
+                <CardContent className="py-8 text-center">
+                  <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+                  <h3 className="text-base font-serif text-forest mb-2">Daily Training Required</h3>
+                  <p className="text-sm text-forest/60 font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
+                  <Button onClick={() => setActiveTab("training")} className="bg-forest text-white hover:bg-forest/90 font-sans text-sm">
+                    <BookOpen className="h-4 w-4 mr-2" /> Go to Training
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Suspense fallback={<div className="p-8 text-center"><p className="text-sm text-forest/40">Loading communications...</p></div>}>
+                <CommsHub templates={emailTemplates ?? []} sentEmails={sentEmails ?? []} leads={myLeads} />
+              </Suspense>
+            )}
           </TabsContent>
 
           {/* ═══════ EARNINGS TAB ═══════ */}
@@ -511,9 +527,22 @@ export default function RepDashboard() {
 
           {/* ═══════ PIPELINE TAB ═══════ */}
           <TabsContent value="pipeline" className="space-y-6">
-            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
-              <PipelineTab repProfile={repProfile} />
-            </Suspense>
+            {accessCheck && !accessCheck.allowed ? (
+              <Card className="border-amber-200 bg-amber-50/50">
+                <CardContent className="py-8 text-center">
+                  <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
+                  <h3 className="text-base font-serif text-forest mb-2">Daily Training Required</h3>
+                  <p className="text-sm text-forest/60 font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
+                  <Button onClick={() => setActiveTab("training")} className="bg-forest text-white hover:bg-forest/90 font-sans text-sm">
+                    <BookOpen className="h-4 w-4 mr-2" /> Go to Training
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+                <PipelineTab repProfile={repProfile} />
+              </Suspense>
+            )}
           </TabsContent>
 
           {/* ═══════ LEADERBOARD TAB ═══════ */}
@@ -575,6 +604,13 @@ export default function RepDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ═══════ TEAM TAB ═══════ */}
+          <TabsContent value="team" className="space-y-6">
+            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+              <TeamFeed repProfile={repProfile} />
+            </Suspense>
           </TabsContent>
 
           {/* ═══════ SUPPORT TAB ═══════ */}

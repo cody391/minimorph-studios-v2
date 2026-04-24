@@ -1461,3 +1461,30 @@ export const repLeadAllocations = mysqlTable("rep_lead_allocations", {
 });
 export type RepLeadAllocation = typeof repLeadAllocations.$inferSelect;
 export type InsertRepLeadAllocation = typeof repLeadAllocations.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   TEAM FEED — Announcements, wins, and community posts
+   ═══════════════════════════════════════════════════════ */
+export const teamFeed = mysqlTable("team_feed", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("rep_id"), // null = system/admin post
+  type: mysqlEnum("type", [
+    "announcement",   // Admin announcements
+    "deal_closed",    // Auto-posted when a rep closes a deal
+    "certification",  // Auto-posted when a rep completes Academy
+    "tier_promotion", // Auto-posted when a rep advances a tier
+    "milestone",      // Auto-posted for streaks, badges, etc.
+    "tip",            // Rep shares a tip or insight
+    "shoutout",       // Rep gives a shoutout to another rep
+  ]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  // Optional metadata
+  metadata: json("metadata"), // e.g., { dealValue: 5000, tier: "silver", mentionedRepId: 5 }
+  isPinned: boolean("is_pinned").default(false).notNull(),
+  // Engagement
+  likes: int("likes").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type TeamFeedEntry = typeof teamFeed.$inferSelect;
+export type InsertTeamFeedEntry = typeof teamFeed.$inferInsert;

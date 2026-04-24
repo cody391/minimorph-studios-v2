@@ -918,3 +918,54 @@
 #### Issue 7: Manus Branding Audit
 - [x] Check all rep-facing and customer-facing pages for Manus branding
 - [x] Remove or replace any Manus references (ManusDialog login text, code comments in repEcosystem, storage, localAuth)
+
+## 100% Grade Sprint — All 12 Categories
+
+### Category 1: First Impression & Brand (90→100)
+- [x] Add "Careers" link to main navbar navigation
+
+### Category 2: Recruitment & Application (93→100)
+- [x] Fix Values Gate commission rate from "10-20%" to "10-15%"
+- [ ] Add application progress bar across the full onboarding flow
+
+### Category 3: Training & Education (97→100)
+- [x] Update App Guide to list all 9 modules (add Values & Ethics as Module 0)
+- [x] Fix App Guide "8 modules" references to "9 modules"
+- [x] Fix academyGatekeeper comment "all 8 academy modules" to "all 9"
+
+### Category 4: AI Tools & Technology (88→100)
+- [x] Seed daily training with Academy-based content for new reps (no conversation data yet)
+- [x] Gate Role Play behind module completion (must complete relevant modules first)
+
+### Category 5: Dashboard & Workflow (85→100)
+- [x] Fix Leaderboard badges from gamification levels (rookie/closer) to accountability tiers (Bronze/Silver)
+- [x] Fix Pipeline PACKAGE_PRICES: starter $99→$149, growth $199→$299
+
+### Category 6: Compensation & Transparency (92→100)
+- [ ] Add projected earnings based on current pipeline in Earnings tab
+
+### Category 7: Lead Quality & Pipeline (86→100)
+- [x] Add frontend daily training gate to Pipeline tab (check canRepAccessLeads)
+
+### Category 8: Communication Tools (84→100)
+- [x] Add frontend daily training gate to Comms tab
+- [ ] Add quick-action buttons (email/SMS/call) on Pipeline lead cards
+
+### Category 9: Gamification & Motivation (78→100)
+- [x] Migrate RANK_TRAINING_CONFIG from gamification levels to accountability tiers
+- [x] Migrate getRepLevel() to read from accountability tier instead of repGamification
+- [x] Update daily training UI to show accountability tier name instead of gamification level
+
+### Category 10: Ongoing Development (83→100)
+- [x] Build First 90 Days structured program with Academy-based daily drills in App Guide
+- [ ] Add weekly Role Play challenges gated by module completion
+
+### Category 11: Support & Community (80→100)
+- [x] Build rep Team Feed within the dashboard (announcements, wins, tips, shoutouts)
+- [x] Build mentorship display (Platinum reps shown as mentors)
+- [x] Team Feed supports likes and pinned posts for top performers
+
+### Category 12: System Coherence (75→100)
+- [x] Create shared/pricing.ts as single source of truth for all package pricing
+- [x] shared/accountability.ts already serves as source of truth for tiers and commission rates
+- [x] Fixed AppGuide Gold commission from 13% to 14% to match source of truth

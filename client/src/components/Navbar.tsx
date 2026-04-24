@@ -15,7 +15,10 @@ const navLinks = [
   { label: "How It Works", href: "#how-it-works" },
   { label: "Pricing", href: "#pricing" },
   { label: "Testimonials", href: "#testimonials" },
+  { label: "Careers", href: "/careers", isRoute: true },
 ];
+
+type NavLink = { label: string; href: string; isRoute?: boolean };
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -62,10 +65,10 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden lg:flex items-center gap-8">
-          {navLinks.map((link) => (
+          {navLinks.map((link: NavLink) => (
             <button
               key={link.href}
-              onClick={() => scrollTo(link.href)}
+              onClick={() => link.isRoute ? (setMobileOpen(false), setLocation(link.href)) : scrollTo(link.href)}
               className="text-sm font-medium text-forest/70 hover:text-forest transition-colors duration-300 font-sans"
             >
               {link.label}
@@ -104,10 +107,10 @@ export default function Navbar() {
             className="lg:hidden bg-cream/95 backdrop-blur-md border-t border-border overflow-hidden"
           >
             <div className="container py-6 flex flex-col gap-4">
-              {navLinks.map((link) => (
+              {navLinks.map((link: NavLink) => (
                 <button
                   key={link.href}
-                  onClick={() => scrollTo(link.href)}
+                  onClick={() => link.isRoute ? (setMobileOpen(false), setLocation(link.href)) : scrollTo(link.href)}
                   className="text-left text-base font-medium text-forest/80 hover:text-forest py-2 font-sans transition-colors"
                 >
                   {link.label}

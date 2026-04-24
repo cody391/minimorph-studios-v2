@@ -5,13 +5,13 @@
  * 1. Full certification required before rep gets leads or makes live calls
  * 2. AI coaching feedback → personalized micro-lessons → required review queue
  * 3. Daily check-in: reps must complete pending reviews before accessing leads
- * 4. Rank-based training requirements: rookies review everything, legends get less
+ * 4. Tier-based training requirements: Bronze reviews everything, Platinum is exempt
  */
 
 import { getDb } from "../db";
 import {
   reps, academyProgress, academyCertifications, coachingReviews,
-  dailyCheckIns, aiCoachingFeedback, repGamification,
+  dailyCheckIns, aiCoachingFeedback, repTiers,
 } from "../../drizzle/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { invokeLLM } from "../_core/llm";
@@ -27,7 +27,7 @@ const RANK_TRAINING_CONFIG: Record<string, {
   quizRequiredForImportant: boolean;
   quizRequiredForSuggested: boolean;
 }> = {
-  rookie: {
+  bronze: {
     maxDailyReviews: 10,
     canSkipSuggested: false,
     canLetReviewsExpire: false,
@@ -36,7 +36,7 @@ const RANK_TRAINING_CONFIG: Record<string, {
     quizRequiredForImportant: true,
     quizRequiredForSuggested: true,
   },
-  closer: {
+  silver: {
     maxDailyReviews: 7,
     canSkipSuggested: false,
     canLetReviewsExpire: false,
@@ -45,30 +45,21 @@ const RANK_TRAINING_CONFIG: Record<string, {
     quizRequiredForImportant: true,
     quizRequiredForSuggested: false, // no quiz for suggested
   },
-  ace: {
-    maxDailyReviews: 5,
-    canSkipSuggested: true, // can skip suggested
-    canLetReviewsExpire: false,
-    expiryHours: 0,
-    quizRequiredForCritical: true,
-    quizRequiredForImportant: true,
-    quizRequiredForSuggested: false,
-  },
-  elite: {
+  gold: {
     maxDailyReviews: 3,
-    canSkipSuggested: true,
+    canSkipSuggested: true, // can skip suggested
     canLetReviewsExpire: true,
     expiryHours: 48,
     quizRequiredForCritical: true,
     quizRequiredForImportant: false, // no quiz for important
     quizRequiredForSuggested: false,
   },
-  legend: {
-    maxDailyReviews: 1,
+  platinum: {
+    maxDailyReviews: 0, // exempt from daily training
     canSkipSuggested: true,
     canLetReviewsExpire: true,
     expiryHours: 24,
-    quizRequiredForCritical: true,
+    quizRequiredForCritical: false,
     quizRequiredForImportant: false,
     quizRequiredForSuggested: false,
   },
@@ -89,7 +80,7 @@ const CATEGORY_MODULE_MAP: Record<string, string> = {
 };
 
 /**
- * Check if a rep is fully certified (passed all 8 academy modules)
+ * Check if a rep is fully certified (passed all 9 academy modules)
  */
 export async function isRepCertified(repId: number): Promise<boolean> {
   const db = await getDb();
@@ -170,14 +161,15 @@ export async function getCertificationStatus(repId: number): Promise<{
 }
 
 /**
- * Get rep's gamification level
+ * Get rep's accountability tier (Bronze/Silver/Gold/Platinum)
+ * Reads from the repTiers table — the single source of truth for tier status
  */
 export async function getRepLevel(repId: number): Promise<string> {
   const db = await getDb();
-  if (!db) return "rookie";
+  if (!db) return "bronze";
 
-  const gamification = await db.select().from(repGamification).where(eq(repGamification.repId, repId)).limit(1);
-  return gamification.length > 0 ? gamification[0].level : "rookie";
+  const tier = await db.select({ tier: repTiers.tier }).from(repTiers).where(eq(repTiers.repId, repId)).limit(1);
+  return tier.length > 0 ? (tier[0].tier || "bronze") : "bronze";
 }
 
 /**
@@ -203,7 +195,7 @@ export async function generateCoachingReview(
   if (improvements.length === 0) return { reviewsCreated: 0 };
 
   const level = await getRepLevel(repId);
-  const config = RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.rookie;
+  const config = RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.bronze;
 
   // Check how many pending reviews the rep already has
   const pendingReviews = await db.select({ count: sql<number>`count(*)` })
@@ -327,14 +319,14 @@ export async function getDailyCheckIn(repId: number): Promise<{
   pendingReviews: any[];
   isCleared: boolean;
   level: string;
-  config: typeof RANK_TRAINING_CONFIG.rookie;
+  config: typeof RANK_TRAINING_CONFIG.bronze;
 }> {
   const db = await getDb();
-  if (!db) return { checkIn: null, pendingReviews: [], isCleared: false, level: "rookie", config: RANK_TRAINING_CONFIG.rookie };
+  if (!db) return { checkIn: null, pendingReviews: [], isCleared: false, level: "bronze", config: RANK_TRAINING_CONFIG.bronze };
 
   const today = new Date().toISOString().slice(0, 10);
   const level = await getRepLevel(repId);
-  const config = RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.rookie;
+  const config = RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.bronze;
 
   // Expire old reviews for eligible ranks
   if (config.canLetReviewsExpire) {
@@ -361,7 +353,7 @@ export async function getDailyCheckIn(repId: number): Promise<{
   }
 
   // Cap at daily max
-  const todayReviews = pendingReviews.slice(0, config.maxDailyReviews);
+  let todayReviews = pendingReviews.slice(0, config.maxDailyReviews);
 
   // Count quizzes required
   const quizzesRequired = todayReviews.filter(r => {
@@ -376,6 +368,23 @@ export async function getDailyCheckIn(repId: number): Promise<{
   ).limit(1);
 
   if (existing.length === 0) {
+    // If certified rep has no pending reviews, seed Academy-based training
+    if (todayReviews.length === 0 && config.maxDailyReviews > 0) {
+      const seeded = await seedDailyTrainingForNewRep(repId);
+      if (seeded > 0) {
+        // Re-fetch pending reviews after seeding
+        let freshReviews = await db.select().from(coachingReviews).where(
+          and(eq(coachingReviews.repId, repId), eq(coachingReviews.status, "pending"))
+        ).orderBy(
+          sql`FIELD(${coachingReviews.priority}, 'critical', 'important', 'suggested')`,
+          desc(coachingReviews.createdAt)
+        );
+        if (config.canSkipSuggested) {
+          freshReviews = freshReviews.filter(r => r.priority !== "suggested");
+        }
+        todayReviews = freshReviews.slice(0, config.maxDailyReviews);
+      }
+    }
     const isCleared = todayReviews.length === 0;
     await db.insert(dailyCheckIns).values({
       repId,
@@ -423,7 +432,7 @@ export async function completeCoachingReview(
   if (r.status !== "pending") return { success: false };
 
   const level = await getRepLevel(repId);
-  const config = RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.rookie;
+  const config = RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.bronze;
 
   // Check if quiz is required for this priority level
   const quizRequired = r.priority === "critical" ? config.quizRequiredForCritical
@@ -523,7 +532,7 @@ export async function canRepAccessLeads(repId: number): Promise<{
  * Get rank training config for a level
  */
 export function getRankTrainingConfig(level: string) {
-  return RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.rookie;
+  return RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.bronze;
 }
 
 /**
@@ -534,4 +543,90 @@ export function getAllRankConfigs() {
     level,
     ...config,
   }));
+}
+
+
+/**
+ * Seed daily training reviews for new reps who have no conversation data yet.
+ * Pulls from Academy curriculum to generate relevant micro-lessons and quizzes.
+ * Called automatically when getDailyCheckIn finds 0 pending reviews for a certified rep.
+ */
+export async function seedDailyTrainingForNewRep(repId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const level = await getRepLevel(repId);
+  const config = RANK_TRAINING_CONFIG[level] || RANK_TRAINING_CONFIG.bronze;
+
+  // Platinum reps are exempt
+  if (config.maxDailyReviews === 0) return 0;
+
+  // Check if rep already has pending reviews
+  const pending = await db.select({ count: sql<number>`count(*)` })
+    .from(coachingReviews)
+    .where(and(eq(coachingReviews.repId, repId), eq(coachingReviews.status, "pending")));
+  if (Number(pending[0]?.count ?? 0) > 0) return 0;
+
+  // Check what modules the rep has completed to pull relevant content
+  const progress = await db.select().from(academyProgress).where(eq(academyProgress.repId, repId));
+  const completedModuleIds = progress.filter(p => p.quizPassed).map(p => p.moduleId);
+
+  // Pick modules to review — prioritize completed ones (reinforcement), but include all
+  const modulesToReview = ACADEMY_MODULES.filter(m => completedModuleIds.includes(m.id));
+  if (modulesToReview.length === 0) return 0; // Not certified yet, no seeding needed
+
+  // Pick random modules for today's reviews (up to maxDailyReviews)
+  const shuffled = [...modulesToReview].sort(() => Math.random() - 0.5);
+  const toGenerate = Math.min(config.maxDailyReviews, shuffled.length);
+  const selectedModules = shuffled.slice(0, toGenerate);
+
+  let created = 0;
+  for (const mod of selectedModules) {
+    // Pick a random lesson from the module
+    const lesson = mod.lessons[Math.floor(Math.random() * mod.lessons.length)];
+    // Pick a random quiz question from the module
+    const quizQ = mod.quiz[Math.floor(Math.random() * mod.quiz.length)];
+
+    const category = CATEGORY_MODULE_MAP[mod.id] 
+      ? Object.entries(CATEGORY_MODULE_MAP).find(([, v]) => v === mod.id)?.[0] || "product_knowledge"
+      : "product_knowledge";
+
+    const validCategories = [
+      "objection_handling", "closing", "rapport", "discovery",
+      "product_knowledge", "tone", "follow_up", "listening",
+      "urgency", "personalization",
+    ];
+    const safeCategory = validCategories.includes(category) ? category : "product_knowledge";
+
+    // Extract a key takeaway from the lesson as the micro-lesson content
+    const keyTakeaways = lesson.keyTakeaways || [];
+    const content = `## ${lesson.title}\n\n${keyTakeaways.length > 0 
+      ? keyTakeaways.map((t: string) => `- ${t}`).join("\n") 
+      : "Review this module's core concepts and apply them in your next conversation."}`;
+
+    const quizData = {
+      question: quizQ.question,
+      options: quizQ.options,
+      correctAnswer: quizQ.correctAnswer,
+      explanation: quizQ.explanation,
+    };
+
+    const priorities = ["important", "suggested"] as const;
+    const priority = priorities[Math.floor(Math.random() * priorities.length)];
+
+    await db.insert(coachingReviews).values({
+      repId,
+      feedbackId: 0, // 0 = seeded from Academy curriculum, not from conversation feedback
+      category: safeCategory as "objection_handling" | "closing" | "rapport" | "discovery" | "product_knowledge" | "tone" | "follow_up" | "listening" | "urgency" | "personalization",
+      priority,
+      title: `Review: ${lesson.title}`,
+      content,
+      relatedModuleId: mod.id,
+      quizQuestion: quizData,
+      status: "pending",
+    });
+    created++;
+  }
+
+  return created;
 }
