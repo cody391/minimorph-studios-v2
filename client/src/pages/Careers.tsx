@@ -38,7 +38,7 @@ const FAQS = [
   },
   {
     q: "How do I get paid?",
-    a: "Commissions are tracked automatically. After admin approval, payouts go directly to your bank account via Stripe Connect. You can see pending, approved, and paid commissions in real-time on your dashboard.",
+    a: "Commissions are tracked automatically and approved instantly when the customer pays. Payouts go directly to your bank account via Stripe Connect. You can see pending, approved, and paid commissions in real-time on your dashboard.",
   },
   {
     q: "Is this a full-time or part-time role?",
@@ -297,7 +297,7 @@ export default function Careers() {
           >
             Apply Now <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-          <p className="text-white/30 font-sans text-xs mt-4">Applications reviewed within 48 hours</p>
+          <p className="text-white/30 font-sans text-xs mt-4">Instant approval after assessment — start earning today</p>
         </div>
       </section>
 

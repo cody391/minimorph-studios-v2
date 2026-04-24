@@ -423,13 +423,17 @@ export const assessmentRouter = router({
       const result = scoreAssessment(input.answers);
       const attemptCount = await getAttemptCount(db, ctx.user.id);
 
+      // AUTO-DECISION: Borderline candidates are auto-approved (no admin bottleneck)
+      // The AI motivation review will flag serious issues async
+      const finalStatus = result.status === "borderline" ? "passed" : result.status;
+
       // Store in database
       await db.insert(repAssessments).values({
         userId: ctx.user.id,
         gate1Score: result.gate1Score.toFixed(2),
         gate2Score: result.gate2Score.toFixed(2),
         totalScore: result.totalScore.toFixed(2),
-        status: result.status,
+        status: finalStatus,
         answers: input.answers,
         freeTextAnswer: input.freeTextAnswer || null,
         startedAt: startedAt,
@@ -437,11 +441,15 @@ export const assessmentRouter = router({
         attemptNumber: attemptCount + 1,
       });
 
+      if (result.status === "borderline") {
+        console.log(`[Auto-Onboard] Assessment for user ${ctx.user.id}: borderline auto-approved (score: ${result.totalScore.toFixed(1)}%)`);
+      }
+
       return {
         gate1Score: result.gate1Score,
         gate2Score: result.gate2Score,
         totalScore: result.totalScore,
-        status: result.status,
+        status: finalStatus,
         gate1Label: "Situational Judgment",
         gate2Label: "Sales Aptitude",
         attemptNumber: attemptCount + 1,

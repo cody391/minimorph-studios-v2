@@ -293,29 +293,29 @@ export default function RepAssessment() {
 
             {isBorderline && (
               <>
-                <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-6">
-                  <AlertTriangle className="w-10 h-10 text-amber-600" />
+                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="w-10 h-10 text-green-600" />
                 </div>
-                <h2 className="text-2xl font-bold text-amber-800 mb-2 font-serif">
-                  Under Review
+                <h2 className="text-2xl font-bold text-green-800 mb-2 font-serif">
+                  You Passed!
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Your assessment is being reviewed by our team. We see
-                  potential and want to take a closer look. We'll reach out
-                  within 24-48 hours with a decision.
+                  You've demonstrated the character and potential we're
+                  looking for at MiniMorph Studios. Let's continue with your
+                  application.
                 </p>
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-amber-50 rounded-lg p-3">
+                  <div className="bg-green-50 rounded-lg p-3">
                     <div className="text-sm text-muted-foreground">Character</div>
-                    <div className="text-xl font-bold text-amber-700">
+                    <div className="text-xl font-bold text-green-700">
                       {typeof result.gate1Score === "number"
                         ? result.gate1Score.toFixed(0)
                         : result.gate1Score}%
                     </div>
                   </div>
-                  <div className="bg-amber-50 rounded-lg p-3">
+                  <div className="bg-green-50 rounded-lg p-3">
                     <div className="text-sm text-muted-foreground">Sales Aptitude</div>
-                    <div className="text-xl font-bold text-amber-700">
+                    <div className="text-xl font-bold text-green-700">
                       {typeof result.gate2Score === "number"
                         ? result.gate2Score.toFixed(0)
                         : result.gate2Score}%
@@ -323,11 +323,12 @@ export default function RepAssessment() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => navigate("/")}
-                  variant="outline"
-                  className="w-full"
+                  onClick={() => navigate("/become-rep?step=2")}
+                  className="bg-forest hover:bg-forest-light text-white w-full"
+                  size="lg"
                 >
-                  Return Home
+                  Continue Application
+                  <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
               </>
             )}

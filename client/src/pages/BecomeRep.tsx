@@ -277,9 +277,9 @@ export default function BecomeRep() {
             <div className="w-20 h-20 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <Sparkles className="w-10 h-10 text-forest" />
             </div>
-            <h2 className="text-2xl font-serif text-forest mb-3">Welcome to MiniMorph!</h2>
+            <h2 className="text-2xl font-serif text-forest mb-3">You're In! Welcome to MiniMorph!</h2>
             <p className="text-forest/60 font-sans mb-4 leading-relaxed max-w-md mx-auto">
-              Your account has been created and your application submitted. Our team will review it within 24-48 hours. Once approved, you'll get access to:
+              Your application has been approved automatically. You now have full access to the MiniMorph rep platform. Here's what's waiting for you:
             </p>
             <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto mb-8">
               {[

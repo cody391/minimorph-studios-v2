@@ -90,6 +90,13 @@ export default function Navbar() {
             Contact
           </Button>
           <Button
+            variant="ghost"
+            className="text-forest/70 hover:text-forest hover:bg-forest/5 font-sans text-sm"
+            onClick={() => setLocation("/rep")}
+          >
+            Rep Sign In
+          </Button>
+          <Button
             className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-sm px-6 rounded-full shadow-none hover:shadow-md transition-all duration-300"
             onClick={() => setLocation("/get-started")}
           >
@@ -141,6 +148,13 @@ export default function Navbar() {
                   onClick={() => scrollTo("#contact")}
                 >
                   Contact
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-start text-forest/70 hover:text-forest font-sans"
+                  onClick={() => { setMobileOpen(false); setLocation("/rep"); }}
+                >
+                  Rep Sign In
                 </Button>
                 <Button
                   className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full"

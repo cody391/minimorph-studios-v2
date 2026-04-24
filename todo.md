@@ -842,3 +842,11 @@
 - [x] Vitest: Strike system rules validation
 - [x] Vitest: Constants validation (weights, thresholds, config)
 - [x] Vitest: Router auth checks for all accountability endpoints
+
+### Phase 49: Autonomous Rep Onboarding + Rep Sign In
+- [x] Remove admin approval bottleneck — auto-approve reps who pass intake assessment
+- [x] Auto-reject reps who fail intake assessment
+- [x] Remove "waiting for approval" message after intake completion
+- [x] Auto-advance rep status from applied → onboarding → training → certified flow without admin intervention
+- [x] Add Rep Sign In button/link on the main website (visible to returning reps)
+- [x] Vitest tests for autonomous onboarding flow

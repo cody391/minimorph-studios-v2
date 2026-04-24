@@ -767,8 +767,10 @@ export const repApplicationRouter = router({
       reviewMotivationWithAI(rep.id, input.motivation).catch((err: any) =>
         console.error("[AI Motivation Review] Failed:", err.message)
       );
-      // Move rep to onboarding status
-      await db.updateRep(rep.id, { status: "onboarding" });
+      // AUTO-ADVANCE: Skip manual admin review — go straight to training
+      // The AI motivation review runs async and can flag issues later
+      await db.updateRep(rep.id, { status: "training" });
+      console.log(`[Auto-Onboard] Rep ${rep.id} auto-advanced to training status`);
       return { success: true };
     }),
   // Get my application

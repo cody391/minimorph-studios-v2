@@ -197,8 +197,8 @@ export default function OnboardingPaperwork() {
               All Paperwork Complete!
             </h2>
             <p className="text-muted-foreground mb-6">
-              Every form has been verified and confirmed. You're all set for onboarding.
-              Our team will review your application and get back to you within 24-48 hours.
+              Every form has been verified and confirmed. You're all set!
+              Head to your Rep Dashboard to start training and begin earning.
             </p>
             <div className="grid grid-cols-2 gap-3 mb-6">
               {FORM_ORDER.map((ft) => {

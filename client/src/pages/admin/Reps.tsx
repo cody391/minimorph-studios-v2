@@ -227,14 +227,15 @@ export default function Reps() {
           <Card className="border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Pending Applications
+                <FileText className="h-4 w-4" /> Applications (Auto-Approved)
               </CardTitle>
+              <p className="text-xs text-forest/50 font-sans">Reps are auto-approved after passing the assessment. Manual review is only needed for flagged cases.</p>
             </CardHeader>
             <CardContent>
               {pendingApps.length === 0 ? (
                 <div className="text-center py-12">
                   <CheckCircle className="h-10 w-10 text-forest/20 mx-auto mb-3" />
-                  <p className="text-sm text-forest/50 font-sans">No pending applications. All caught up!</p>
+                  <p className="text-sm text-forest/50 font-sans">All applications auto-processed. No manual review needed.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
