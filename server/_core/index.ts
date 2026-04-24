@@ -13,6 +13,7 @@ import { serveStatic, setupVite } from "./vite";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerTwilioWebhooks } from "../twilio-webhooks";
 import { registerResendWebhooks } from "../resend-webhooks";
+import { registerScheduledRoutes } from "../scheduled-routes";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -65,6 +66,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerTwilioWebhooks(app);
   registerResendWebhooks(app);
+  registerScheduledRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",
@@ -89,12 +91,18 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
-    // Start the lead gen scheduler after server is ready
-    import("../services/leadGenScheduler").then(({ startLeadGenScheduler }) => {
-      startLeadGenScheduler();
-    }).catch((err) => {
-      console.error("[LeadGen Scheduler] Failed to start:", err);
-    });
+    // Internal setInterval scheduler — disabled by default in production.
+    // Use /api/scheduled/* endpoints with external cron instead.
+    if (process.env.ENABLE_INTERNAL_SCHEDULER === "true") {
+      import("../services/leadGenScheduler").then(({ startLeadGenScheduler }) => {
+        console.log("[LeadGen Scheduler] ENABLE_INTERNAL_SCHEDULER=true — starting internal setInterval scheduler (dev only)");
+        startLeadGenScheduler();
+      }).catch((err) => {
+        console.error("[LeadGen Scheduler] Failed to start:", err);
+      });
+    } else {
+      console.log("[LeadGen Scheduler] Internal scheduler disabled. Use /api/scheduled/* endpoints with external cron.");
+    }
   });
 }
 

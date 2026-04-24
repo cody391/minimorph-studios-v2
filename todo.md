@@ -1042,3 +1042,12 @@
 - [x] C3: Portal empty/loading/error states for all tabs
 - [x] C4: Query safety audit (no admin calls, no arbitrary IDs, no in-place sort)
 - [x] C5: Typecheck 0 errors, all tests passing, build succeeds
+
+### Phase D — Scheduler Production Fix
+- [x] D1: Identify all existing scheduler jobs in leadGenScheduler.ts
+- [x] D2: Create scheduled API endpoints for each job
+- [x] D3: Protect scheduled endpoints with shared secret header
+- [x] D4: Stop setInterval on server boot (production default)
+- [x] D5: Preserve local dev scheduler option behind ENABLE_INTERNAL_SCHEDULER env var
+- [x] D6: Document scheduled jobs in docs/scheduled-jobs.md
+- [x] D7: Typecheck 0 errors, all tests passing, build succeeds

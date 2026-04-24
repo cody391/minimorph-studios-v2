@@ -28,4 +28,7 @@ export const ENV = {
   xAccessToken: process.env.X_ACCESS_TOKEN ?? "",
   xAccessTokenSecret: process.env.X_ACCESS_TOKEN_SECRET ?? "",
   xBearerToken: process.env.X_BEARER_TOKEN ?? "",
+  // Scheduler
+  schedulerSecret: process.env.SCHEDULER_SECRET ?? "",
+  enableInternalScheduler: process.env.ENABLE_INTERNAL_SCHEDULER === "true",
 };
