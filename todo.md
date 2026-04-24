@@ -863,3 +863,12 @@
 - [x] Remove Contact from Navbar desktop CTA area and mobile hamburger
 - [x] Remove Rep Sign In from Navbar desktop CTA area and mobile hamburger
 - [x] Ensure Careers, Contact, and Rep Sign In are in the Footer
+
+### Fix Rep Onboarding Pipeline
+- [x] After application approval ("You're In!"), redirect to /become-rep/paperwork instead of dashboard
+- [x] After paperwork complete, redirect to Stripe Connect onboarding step
+- [x] After Stripe Connect complete, redirect to Sales Academy
+- [x] Gate dashboard: if paperwork incomplete, redirect to paperwork
+- [x] Gate dashboard: if Stripe not connected, show Stripe step before dashboard access
+- [x] Gate dashboard: if training not started, land on Sales Academy tab
+- [x] Full pipeline: Values → Account → NDA → Assessment → Application → Paperwork → Stripe → Academy

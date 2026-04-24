@@ -414,7 +414,7 @@ export const onboardingDataRouter = router({
   /**
    * Admin: view onboarding data for a specific user
    */
-  adminGetUserData: adminProcedure
+    adminGetUserData: adminProcedure
     .input(z.object({ userId: z.number() }))
     .query(async ({ input }) => {
       const db = await getDb();
@@ -423,13 +423,35 @@ export const onboardingDataRouter = router({
           code: "INTERNAL_SERVER_ERROR",
           message: "Database unavailable",
         });
-
       const result = await db
         .select()
         .from(repOnboardingData)
         .where(eq(repOnboardingData.userId, input.userId))
         .limit(1);
-
       return result[0] || null;
     }),
+
+  /**
+   * Mark paperwork as completed for the current rep
+   */
+  completePaperwork: protectedProcedure.mutation(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db)
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Database unavailable",
+      });
+    const rep = await db
+      .select()
+      .from(reps)
+      .where(eq(reps.userId, ctx.user.id))
+      .limit(1);
+    if (!rep[0])
+      throw new TRPCError({ code: "NOT_FOUND", message: "Rep profile not found" });
+    await db
+      .update(reps)
+      .set({ paperworkCompletedAt: new Date() })
+      .where(eq(reps.id, rep[0].id));
+    return { success: true };
+  }),
 });

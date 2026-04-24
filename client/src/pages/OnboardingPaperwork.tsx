@@ -148,13 +148,23 @@ export default function OnboardingPaperwork() {
     return { filled, total };
   }, [formData]);
 
+  const completePaperwork = trpc.repOnboarding.completePaperwork.useMutation({
+    onError: () => toast.error("Failed to save paperwork completion. Please try again."),
+  });
+
   const handleConfirmForm = () => {
-    setCompletedForms((prev) => new Set(Array.from(prev).concat(currentFormType)));
+    const newCompleted = new Set(Array.from(completedForms).concat(currentFormType));
+    setCompletedForms(newCompleted);
     toast.success(`${config.title} signed & confirmed!`);
     setSignature(null); // Reset signature for next form
 
     if (currentFormIndex < FORM_ORDER.length - 1) {
       setCurrentFormIndex((i) => i + 1);
+    }
+
+    // If this was the last form, mark paperwork as complete in the backend
+    if (newCompleted.size === FORM_ORDER.length) {
+      completePaperwork.mutate();
     }
   };
 
@@ -197,8 +207,7 @@ export default function OnboardingPaperwork() {
               All Paperwork Complete!
             </h2>
             <p className="text-muted-foreground mb-6">
-              Every form has been verified and confirmed. You're all set!
-              Head to your Rep Dashboard to start training and begin earning.
+              Every form has been verified and confirmed. Next step: set up your payout account so you can receive commissions.
             </p>
             <div className="grid grid-cols-2 gap-3 mb-6">
               {FORM_ORDER.map((ft) => {
@@ -212,11 +221,11 @@ export default function OnboardingPaperwork() {
               })}
             </div>
             <Button
-              onClick={() => navigate("/rep")}
+              onClick={() => navigate("/become-rep/payout-setup")}
               className="bg-forest hover:bg-forest-light text-white w-full rounded-full py-5"
               size="lg"
             >
-              Go to Rep Dashboard <ArrowRight className="w-4 h-4 ml-2" />
+              Set Up Payout Account <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
         </Card>

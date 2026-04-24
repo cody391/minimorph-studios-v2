@@ -1,0 +1,1 @@
+ALTER TABLE `reps` ADD `paperworkCompletedAt` timestamp;

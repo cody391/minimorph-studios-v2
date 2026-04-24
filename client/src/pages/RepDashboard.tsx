@@ -44,7 +44,11 @@ const levelIcons: Record<string, any> = { rookie: Shield, closer: Target, ace: S
 export default function RepDashboard() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("performance");
+
+  // Support ?tab= query parameter for deep linking (e.g., from onboarding flow)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabFromUrl = urlParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabFromUrl || "performance");
 
   const { data: repProfile, isLoading: repLoading } = trpc.reps.myProfile.useQuery(undefined, { enabled: isAuthenticated });
   const { data: allLeads } = trpc.leads.list.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
@@ -130,6 +134,48 @@ export default function RepDashboard() {
       </div>
     </div>
   );
+
+  // ── Onboarding gates ──
+  // 1. If paperwork not completed, redirect to paperwork
+  if (!repProfile.paperworkCompletedAt && repProfile.status === "training") {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+        <Card className="max-w-md w-full border-border/50 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-terracotta/10 rounded-full flex items-center justify-center mx-auto mb-5">
+              <FileText className="h-8 w-8 text-terracotta" />
+            </div>
+            <h2 className="text-xl font-serif text-forest mb-2">Complete Your Paperwork</h2>
+            <p className="text-sm text-forest/60 font-sans mb-6">Before you can access your dashboard, you need to complete your HR & accounting paperwork.</p>
+            <Button onClick={() => setLocation("/become-rep/paperwork")} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8 py-5 w-full" size="lg">
+              <FileText className="w-4 h-4 mr-2" /> Complete Paperwork
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // 2. If Stripe Connect not set up, redirect to payout setup
+  if (!repProfile.stripeConnectOnboarded && repProfile.status === "training") {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+        <Card className="max-w-md w-full border-border/50 shadow-lg">
+          <CardContent className="p-8 text-center">
+            <div className="w-16 h-16 bg-[#635BFF]/10 rounded-full flex items-center justify-center mx-auto mb-5">
+              <DollarSign className="h-8 w-8 text-[#635BFF]" />
+            </div>
+            <h2 className="text-xl font-serif text-forest mb-2">Set Up Your Payouts</h2>
+            <p className="text-sm text-forest/60 font-sans mb-6">Connect your bank account through Stripe so you can receive commission payouts.</p>
+            <Button onClick={() => setLocation("/become-rep/payout-setup")} className="bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans rounded-full px-8 py-5 w-full" size="lg">
+              <DollarSign className="w-4 h-4 mr-2" /> Set Up Payouts
+            </Button>
+            <button onClick={() => setLocation("/rep?tab=academy")} className="mt-4 text-xs text-forest/40 hover:text-forest/60 font-sans underline transition-colors block mx-auto">Skip for now</button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const LevelIcon = levelIcons[gamification?.level || "rookie"] || Shield;
   const levelProgress = gamification ? Math.min(100, Math.round((gamification.totalPoints / (gamification.level === "rookie" ? 500 : gamification.level === "closer" ? 2000 : gamification.level === "ace" ? 5000 : gamification.level === "elite" ? 15000 : 99999)) * 100)) : 0;

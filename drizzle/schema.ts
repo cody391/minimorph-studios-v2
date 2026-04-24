@@ -52,6 +52,7 @@ export const reps = mysqlTable("reps", {
   profilePhotoUrl: varchar("profilePhotoUrl", { length: 512 }),
   stripeConnectAccountId: varchar("stripeConnectAccountId", { length: 128 }),
   stripeConnectOnboarded: boolean("stripeConnectOnboarded").default(false),
+  paperworkCompletedAt: timestamp("paperworkCompletedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

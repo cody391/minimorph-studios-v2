@@ -47,6 +47,7 @@ const RepAssessment = lazy(() => import("./pages/RepAssessment"));
 const TrustGate = lazy(() => import("./pages/TrustGate"));
 const OnboardingPaperwork = lazy(() => import("./pages/OnboardingPaperwork"));
 const RepValuesGate = lazy(() => import("./pages/RepValuesGate"));
+const PayoutSetup = lazy(() => import("./pages/PayoutSetup"));
 
 // Admin layout wrapper
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -104,6 +105,11 @@ function Router() {
       {/* Onboarding paperwork (auto-populated) */}
       <Route path="/become-rep/paperwork">
         <LazyPage><OnboardingPaperwork /></LazyPage>
+      </Route>
+
+      {/* Payout setup (Stripe Connect) */}
+      <Route path="/become-rep/payout-setup">
+        <LazyPage><PayoutSetup /></LazyPage>
       </Route>
 
       {/* Careers / recruitment */}

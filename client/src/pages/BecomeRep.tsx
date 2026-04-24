@@ -279,23 +279,25 @@ export default function BecomeRep() {
             </div>
             <h2 className="text-2xl font-serif text-forest mb-3">You're In! Welcome to MiniMorph!</h2>
             <p className="text-forest/60 font-sans mb-4 leading-relaxed max-w-md mx-auto">
-              Your application has been approved automatically. You now have full access to the MiniMorph rep platform. Here's what's waiting for you:
+              Your application has been approved. Just a few more steps to get you fully set up — we need your HR and tax paperwork, then you'll head straight to the Sales Academy.
             </p>
-            <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto mb-8">
+            <div className="space-y-2 max-w-sm mx-auto mb-8 text-left">
               {[
-                { icon: Trophy, label: "Training Academy" },
-                { icon: Users, label: "Lead Pipeline" },
-                { icon: DollarSign, label: "Commission Tracker" },
-                { icon: Star, label: "Gamification & Badges" },
+                { num: "1", label: "Complete onboarding paperwork", desc: "W-9, HR info, payroll — mostly auto-filled" },
+                { num: "2", label: "Set up your payout account", desc: "Connect Stripe to receive commissions" },
+                { num: "3", label: "Sales Academy training", desc: "Learn the company, products, and how to sell" },
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-left p-2 rounded-lg bg-forest/5">
-                  <item.icon className="w-4 h-4 text-terracotta shrink-0" />
-                  <span className="text-xs font-sans text-forest">{item.label}</span>
+                <div key={item.num} className="flex items-start gap-3 p-3 rounded-lg bg-forest/5">
+                  <div className="w-6 h-6 rounded-full bg-terracotta text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{item.num}</div>
+                  <div>
+                    <span className="text-sm font-medium font-sans text-forest">{item.label}</span>
+                    <p className="text-xs text-forest/50 font-sans">{item.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            <Button onClick={() => setLocation("/rep")} className="bg-forest text-white hover:bg-forest/90 rounded-full px-8">
-              Go to Rep Dashboard
+            <Button onClick={() => setLocation("/become-rep/paperwork")} className="bg-forest text-white hover:bg-forest/90 rounded-full px-8 w-full" size="lg">
+              Continue to Paperwork <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
         </Card>
