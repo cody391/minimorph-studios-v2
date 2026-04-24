@@ -1540,6 +1540,21 @@ const ordersRouter = router({
             },
             quantity: 1,
           },
+          ...(pkg.setupFeeInCents > 0
+            ? [
+                {
+                  price_data: {
+                    currency: "usd" as const,
+                    product_data: {
+                      name: `${pkg.name} — One-Time Setup Fee`,
+                      description: "Custom website design, build, and launch",
+                    },
+                    unit_amount: pkg.setupFeeInCents,
+                  },
+                  quantity: 1,
+                },
+              ]
+            : []),
         ],
         success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/get-started?cancelled=true`,
@@ -1699,11 +1714,32 @@ const onboardingRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
+      // Analyze questionnaire for custom quote triggers
+      const { analyzeQuestionnaire } = await import("@shared/quoteEngine");
+      const analysis = analyzeQuestionnaire(input.questionnaire as any);
       await db.updateOnboardingProject(input.projectId, {
         questionnaire: input.questionnaire,
         stage: "assets_upload",
+        needsCustomQuote: analysis.needsCustomQuote,
+        reviewFlags: analysis.reviewFlags,
+        complexityScore: analysis.complexityScore,
       });
-      return { success: true };
+      // Notify admin if custom quote is needed
+      if (analysis.needsCustomQuote) {
+        try {
+          const { notifyOwner } = await import("./_core/notification");
+          await notifyOwner({
+            title: "Custom Quote Required",
+            content: `Project #${input.projectId} needs admin review.\nComplexity: ${analysis.complexityScore}/100\nFlags: ${analysis.reviewFlags.join(", ")}`,
+          });
+        } catch { /* notification is best-effort */ }
+      }
+      return {
+        success: true,
+        needsCustomQuote: analysis.needsCustomQuote,
+        complexityScore: analysis.complexityScore,
+        reviewFlags: analysis.reviewFlags,
+      };
     }),
 
   // Protected: set domain preference (ownership check)

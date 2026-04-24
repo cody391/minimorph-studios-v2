@@ -1,126 +1,202 @@
 /*
- * Design: Warm Machine — Humanized AI Aesthetic
- * "Why MiniMorph" — customer-facing value proposition.
- * Focuses on what the customer gets, not how the machine works internally.
+ * What's Included + Integrations/Add-ons section.
+ * Three tiers: Included/Basic, Popular Add-ons, Custom Quote.
  */
 import { motion } from "framer-motion";
 import {
-  HeartHandshake,
-  Clock,
-  TrendingUp,
-  ShieldCheck,
+  Check, Globe, MapPin, Link2, Search, Bot, BarChart3,
+  Bell, Star, Calendar, FileText, Image, Smartphone, Mail,
+  ShoppingCart, Package, Languages, Code, CreditCard, Cog, Zap,
 } from "lucide-react";
 
-const pillars = [
+const included = [
+  "Custom website build",
+  "Mobile-friendly design",
+  "Contact/quote form",
+  "Basic SEO setup",
+  "Customer portal",
+  "Monthly report",
+  "Support request flow",
+  "Onboarding guidance",
+  "Domain/launch guidance",
+  "Human-backed support",
+  "AI-assisted recommendations",
+];
+
+const integrationTiers = [
   {
-    icon: HeartHandshake,
-    title: "A Real Person Who Knows You",
-    description:
-      "You'll always have a dedicated representative who understands your business, your goals, and your customers. No call centers, no ticket queues.",
-    color: "bg-terracotta/10 text-terracotta",
+    title: "Included / Basic",
+    description: "Every plan comes with these essentials.",
+    color: "border-electric/20",
+    headerBg: "bg-electric/10",
+    headerText: "text-electric",
+    items: [
+      { icon: FileText, label: "Contact form" },
+      { icon: MapPin, label: "Google Maps embed" },
+      { icon: Link2, label: "Social links" },
+      { icon: Search, label: "Basic SEO structure" },
+    ],
   },
   {
-    icon: Clock,
-    title: "Support That Never Sleeps",
-    description:
-      "Updates, fixes, and improvements happen around the clock. Your website is monitored and maintained 24/7 so you never have to worry about downtime.",
-    color: "bg-sage/20 text-forest",
+    title: "Popular Add-Ons",
+    description: "Upgrade your site with powerful features.",
+    color: "border-violet/20",
+    headerBg: "bg-violet/10",
+    headerText: "text-violet",
+    items: [
+      { icon: Bot, label: "AI chat widget" },
+      { icon: BarChart3, label: "Google Analytics setup" },
+      { icon: Search, label: "Google Search Console" },
+      { icon: Bell, label: "SMS lead alerts" },
+      { icon: Star, label: "Review widget" },
+      { icon: Calendar, label: "Booking integration" },
+      { icon: Globe, label: "Extra service pages" },
+      { icon: Image, label: "Monthly content/photo updates" },
+      { icon: Smartphone, label: "Meta/TikTok pixel" },
+      { icon: Mail, label: "Newsletter capture" },
+    ],
   },
   {
-    icon: TrendingUp,
-    title: "Growth Built Into Every Month",
-    description:
-      "Monthly performance reports, proactive recommendations, and continuous improvements. Your website doesn't just stay the same — it gets better over time.",
-    color: "bg-forest/10 text-forest",
-  },
-  {
-    icon: ShieldCheck,
-    title: "One Team, Start to Finish",
-    description:
-      "From your first conversation through design, launch, and ongoing care — the same team handles everything. No handoffs, no starting over, no gaps.",
-    color: "bg-terracotta/10 text-terracotta",
+    title: "Custom Quote",
+    description: "Complex integrations reviewed before quoting.",
+    color: "border-gold/20",
+    headerBg: "bg-gold/10",
+    headerText: "text-gold",
+    items: [
+      { icon: ShoppingCart, label: "Ecommerce store" },
+      { icon: Package, label: "Shopify / WooCommerce" },
+      { icon: Package, label: "Product migration" },
+      { icon: Package, label: "100+ products" },
+      { icon: Languages, label: "Multilingual website" },
+      { icon: Code, label: "Custom API integration" },
+      { icon: CreditCard, label: "Complex booking with payments" },
+      { icon: CreditCard, label: "Toast / Square ordering" },
+      { icon: Cog, label: "CRM/Zapier automation" },
+    ],
   },
 ];
 
 export default function CorePrinciple() {
   return (
-    <section className="py-24 lg:py-32 bg-cream-dark relative overflow-hidden">
-      <div className="container">
-        <div className="max-w-5xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-16 lg:mb-20">
+    <>
+      {/* What's Included */}
+      <section className="py-20 lg:py-28 bg-midnight relative overflow-hidden">
+        <div className="absolute inset-0 noise-texture opacity-30" />
+        <div className="container relative z-10">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <motion.span
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
+                >
+                  What You Get
+                </motion.span>
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 }}
+                  className="text-3xl sm:text-4xl font-serif text-off-white leading-tight mb-6"
+                >
+                  Everything included{" "}
+                  <span className="text-gradient-electric">in every plan.</span>
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2 }}
+                  className="text-base text-off-white/50 font-sans leading-relaxed"
+                >
+                  Every MiniMorph plan includes the core features you need to get online and stay supported. Some integrations, ecommerce, advanced SEO pages, SMS alerts, AI chat widgets, product catalogs, migrations, and complex booking/payment systems may be add-ons or custom quote.
+                </motion.p>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="glass-card p-6"
+              >
+                <div className="grid grid-cols-1 gap-2.5">
+                  {included.map((item) => (
+                    <div key={item} className="flex items-center gap-3 p-2 rounded-lg bg-off-white/3">
+                      <Check size={16} className="text-electric shrink-0" />
+                      <span className="text-sm font-sans text-off-white/70">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Integrations / Add-ons */}
+      <section id="integrations" className="py-20 lg:py-28 bg-charcoal relative overflow-hidden">
+        <div className="absolute inset-0 noise-texture opacity-30" />
+        <div className="container relative z-10">
+          <div className="max-w-3xl mx-auto text-center mb-16">
             <motion.span
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-sm font-sans font-medium text-terracotta uppercase tracking-widest mb-4 block"
+              className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
             >
-              Why MiniMorph
+              Integrations & Add-Ons
             </motion.span>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-              className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-serif text-forest leading-[1.1] mb-6"
+              transition={{ delay: 0.1 }}
+              className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
             >
-              Your dedicated team,{" "}
-              <br className="hidden sm:block" />
-              <span className="italic text-terracotta">always on.</span>
+              Start simple.{" "}
+              <span className="text-gradient-electric">Add power when you need it.</span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-lg lg:text-xl text-forest/60 font-sans leading-relaxed max-w-2xl mx-auto"
+              transition={{ delay: 0.2 }}
+              className="text-lg text-off-white/50 font-sans leading-relaxed"
             >
-              Most agencies build your site and disappear. We stick around for
-              the full journey — designing, launching, supporting, and growing
-              your online presence every single month.
+              Tell us what you want during onboarding. We will recommend the right features for your business.
             </motion.p>
           </div>
 
-          {/* Four Pillars Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
-            {pillars.map((pillar, idx) => (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {integrationTiers.map((tier, idx) => (
               <motion.div
-                key={pillar.title}
-                initial={{ opacity: 0, y: 25 }}
+                key={tier.title}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="p-8 lg:p-10 rounded-2xl bg-card border border-border/50 hover:shadow-md transition-shadow duration-300"
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                className={`glass-card ${tier.color} overflow-hidden`}
               >
-                <div
-                  className={`w-12 h-12 rounded-xl ${pillar.color} flex items-center justify-center mb-5`}
-                >
-                  <pillar.icon size={22} />
+                <div className={`p-4 ${tier.headerBg}`}>
+                  <h3 className={`text-lg font-serif ${tier.headerText}`}>{tier.title}</h3>
+                  <p className="text-xs font-sans text-off-white/40 mt-1">{tier.description}</p>
                 </div>
-                <h3 className="text-xl lg:text-2xl font-serif text-forest mb-3">
-                  {pillar.title}
-                </h3>
-                <p className="text-base text-forest/60 font-sans leading-relaxed">
-                  {pillar.description}
-                </p>
+                <div className="p-4 space-y-2">
+                  {tier.items.map((item) => (
+                    <div key={item.label} className="flex items-center gap-2.5 p-2 rounded-lg bg-off-white/3">
+                      <item.icon size={15} className={tier.headerText + "/60"} />
+                      <span className="text-sm font-sans text-off-white/60">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
               </motion.div>
             ))}
           </div>
-
-          {/* Bottom reinforcement */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.5 }}
-            className="text-center mt-14"
-          >
-            <p className="text-forest/50 font-sans text-base italic">
-              "We don't just build websites. We build partnerships that last."
-            </p>
-          </motion.div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

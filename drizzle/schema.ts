@@ -339,6 +339,13 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   // (serviceBusinessFields | restaurantFields | contractorFields | ecommerceFields | otherFields),
   // mustHaveFeatures[], specialRequests. Backward-compatible with legacy flat fields.
 
+  // Custom quote / admin review triggers (auto-computed from questionnaire)
+  needsCustomQuote: boolean("needsCustomQuote").default(false).notNull(),
+  reviewFlags: json("reviewFlags"), // string[] of trigger reasons
+  complexityScore: int("complexityScore").default(0).notNull(), // 0-100
+  adminReviewedAt: timestamp("adminReviewedAt"),
+  adminReviewNotes: text("adminReviewNotes"),
+
   // Design review
   designMockupUrl: varchar("designMockupUrl", { length: 512 }),
   feedbackNotes: text("feedbackNotes"),

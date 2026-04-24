@@ -1,7 +1,9 @@
 /*
- * Design: Warm Machine — Humanized AI Aesthetic
+ * Design: Premium Dark — MiniMorph Studios
  * Home: Single-page layout assembling all sections in narrative order.
- * Flow: Hero → Stats → Services → Portfolio → How It Works → Core Principle → Pricing → Testimonials → FAQ → Contact → Footer
+ * Flow: Hero → Trust Strip → Pain + Solution → Demo Builds → How It Works →
+ *       What Happens After → Competitor Discovery → What's Included → Integrations →
+ *       Pricing → Testimonials → FAQ → Final CTA → Footer
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
@@ -21,13 +23,17 @@ export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-midnight">
       <Navbar />
       <Hero />
       <Stats />
+      {/* Services = Pain + Solution pillars */}
       <Services />
+      {/* Portfolio = Demo Builds */}
       <Portfolio />
+      {/* HowItWorks = How It Works + What Happens After + Competitor Discovery */}
       <HowItWorks />
+      {/* CorePrinciple = What's Included + Integrations/Add-ons */}
       <CorePrinciple />
       <Pricing />
       <Testimonials />

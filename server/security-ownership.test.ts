@@ -178,7 +178,7 @@ describe("F3: onboarding.submitQuestionnaire ownership", () => {
       projectId: 99999,
       questionnaire: { brandTone: "professional" },
     });
-    expect(result).toEqual({ success: true });
+    expect(result).toMatchObject({ success: true });
   });
 });
 

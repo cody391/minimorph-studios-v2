@@ -225,6 +225,13 @@
       "when": 1777061618751,
       "tag": "0031_tense_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1777072199959,
+      "tag": "0032_giant_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

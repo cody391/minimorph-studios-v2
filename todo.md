@@ -1103,3 +1103,30 @@
 - [ ] Phase 7: Demo / sample site strategy support (cards/placeholders for 5 industries)
 - [ ] Phase 8: Tests and validation (8 focused tests + typecheck + full suite + build)
 - [ ] Final report: Files changed, existing functionality found, all changes documented
+
+### Public Website 120% Redesign — Premium Dark Theme Conversion Build
+- [x] R1: Design system overhaul — premium dark theme (near-black base, glassmorphism cards, electric accent, Inter/DM Sans fonts, OKLCH colors in index.css)
+- [x] R2: Hero section — "Your website should keep working after launch" headline, product mockup card, dual CTAs, Muskegon MI mention, no phone number
+- [x] R3: Trust strip — credibility bar (Muskegon-based, Human-backed, AI-assisted, Secure checkout, Customer portal, Monthly reports, Ongoing updates)
+- [x] R4: Pain section — "Most websites get built, launched, and abandoned" with 6 pain bullets
+- [x] R5: Solution section — "MiniMorph keeps your website moving" with 6 system pillars (Build, Launch, Maintain, Improve, Report, Renew)
+- [x] R6: Imagine Your Business interactive section — industry mockup cards with switchable examples (Auto Detailing, Landscaping, Restaurant, Contractor, Salon, Ecommerce)
+- [x] R7: Demo Builds section — 6 industry concept cards (Lakeshore Auto Detailing, Q's Landscaping, G&L Chillidog, Shoreline Concrete, Salon/Spa, Festival Hammock Supply) with disclaimers
+- [x] R8: Competitor/Style Discovery section — "We do not build in a vacuum" with onboarding differentiator, legal-safe language
+- [x] R9: How It Works — 6-step customer journey (Choose plan, Complete onboarding, First draft, Review/changes, Launch, Monthly care)
+- [x] R10: What Happens After You Pay — post-purchase flow section to remove fear
+- [x] R11: What's Included — core items list with add-on/custom quote clarification
+- [x] R12: Integrations/Add-ons section — 3 tiers (Included, Popular Add-ons, Custom Quote) with cards
+- [x] R13: Pricing section — 4 tiers (Starter $149/mo, Growth $299/mo, Premium $499/mo, Commerce/Custom Quote) with 12-month contract language
+- [x] R14: Comparison section — MiniMorph vs one-time web designer
+- [x] R15: FAQ section — 21 questions with honest, conversion-friendly, legal-safe answers
+- [x] R16: Final CTA section — "Ready to stop letting your website sit unfinished?"
+- [x] R17: Footer update — remove phone numbers, update location to Muskegon MI, clean portal links
+- [x] R18: Remove all phone numbers from entire public site (header, footer, contact, mobile menu, metadata)
+- [x] R19: Remove all "Austin, Texas" references, replace with Muskegon, Michigan
+- [x] R20: Remove all "coming soon", placeholder, fake testimonials, lorem ipsum, dead CTAs
+- [x] R21: SEO optimization — title tags, meta descriptions, H1/H2 hierarchy, Open Graph, Twitter cards, alt text, internal links, structured data
+- [x] R22: Design consistency audit — fonts, headings, spacing, buttons, cards, icons, shadows, gradients, max widths, responsive behavior
+- [x] R23: Mobile responsiveness — mobile-first CTA placement, sticky CTA button, mobile layout audit
+- [x] R24: Legal page check — no phone numbers, Muskegon MI location, consistent contract language, no guaranteed claims
+- [x] R25: Validation — typecheck, tests, production build

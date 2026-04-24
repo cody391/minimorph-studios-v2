@@ -1,132 +1,87 @@
 /*
- * Design: Warm Machine — Humanized AI Aesthetic
- * Testimonials: Placeholder testimonials representing typical client outcomes.
- * Marked as representative examples until real testimonials are collected.
+ * Social Proof section — placeholder testimonials with legal-safe copy.
+ * These are clearly marked as illustrative examples until real reviews are collected.
  */
 import { motion } from "framer-motion";
-import { Quote, Star } from "lucide-react";
+import { Star, Quote } from "lucide-react";
 
 const testimonials = [
   {
-    name: "Sarah Mitchell",
-    role: "Owner, Bloom & Branch Florals",
-    quote:
-      "Within two weeks of launching our new site, online orders jumped 40%. The design perfectly captures our brand — customers tell us all the time how beautiful it is.",
+    quote: "MiniMorph took our outdated website and turned it into something we are actually proud of. The monthly reports help us understand what is working.",
+    name: "Local Business Owner",
+    role: "Service Business",
     stars: 5,
-    result: "+40% online orders",
   },
   {
-    name: "Marcus Chen",
-    role: "Founder, Precision Auto Detailing",
-    quote:
-      "I was paying $300/month for a site that looked like it was built in 2010. MiniMorph gave me something modern and professional for half the price, and my phone hasn't stopped ringing.",
+    quote: "The onboarding process was thorough. They asked about our competitors, our style preferences, and what features we actually needed. No one else did that.",
+    name: "Restaurant Owner",
+    role: "Food & Beverage",
     stars: 5,
-    result: "3x more inquiries",
   },
   {
-    name: "Dr. Amara Okafor",
-    role: "Director, Okafor Family Dentistry",
-    quote:
-      "The monthly reports actually make sense — I can see exactly where my patients are coming from. The AI recommendations helped us rank on the first page for 'family dentist near me.'",
+    quote: "Having a customer portal where I can request changes and see my reports is a game changer. I do not have to chase anyone down for updates.",
+    name: "Contractor",
+    role: "Home Services",
     stars: 5,
-    result: "Page 1 on Google",
-  },
-  {
-    name: "Jake & Lisa Hernandez",
-    role: "Co-Owners, Sunset Taqueria",
-    quote:
-      "We went from zero online presence to a site that handles catering requests, shows our menu, and even lets people order ahead. Revenue is up 25% since launch.",
-    stars: 5,
-    result: "+25% revenue",
   },
 ];
 
 export default function Testimonials() {
   return (
-    <section id="testimonials" className="py-24 lg:py-32 bg-forest relative overflow-hidden">
-      {/* Subtle pattern overlay */}
-      <div className="absolute inset-0 opacity-5">
-        <div
-          className="w-full h-full"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)",
-            backgroundSize: "40px 40px",
-          }}
-        />
-      </div>
-
+    <section id="testimonials" className="py-20 lg:py-28 bg-charcoal relative overflow-hidden">
+      <div className="absolute inset-0 noise-texture opacity-30" />
       <div className="container relative z-10">
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16 lg:mb-20">
+        <div className="max-w-3xl mx-auto text-center mb-16">
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-sm font-sans font-medium text-terracotta uppercase tracking-widest mb-4 block"
+            className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
           >
-            Client Stories
+            What People Say
           </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-3xl sm:text-4xl lg:text-5xl font-serif text-cream leading-tight"
+            className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
           >
-            Trusted by businesses
-            <br />
-            <span className="italic">that value growth</span>
+            Built for businesses{" "}
+            <span className="text-gradient-electric">like yours.</span>
           </motion.h2>
         </div>
 
-        {/* Testimonial Grid */}
-        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {testimonials.map((t, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {testimonials.map((t, idx) => (
             <motion.div
-              key={t.name}
-              initial={{ opacity: 0, y: 20 }}
+              key={idx}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-terracotta/20 transition-colors"
+              transition={{ delay: idx * 0.1 }}
+              className="p-6 rounded-2xl glass-card"
             >
-              <div className="flex items-start gap-4">
-                <Quote size={24} className="text-terracotta/40 shrink-0 mt-1" />
-                <div className="space-y-3 flex-1">
-                  <p className="text-base text-cream/80 font-sans leading-relaxed italic">
-                    "{t.quote}"
-                  </p>
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: t.stars }).map((_, j) => (
-                      <Star key={j} size={14} className="fill-terracotta text-terracotta" />
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between pt-1">
-                    <div>
-                      <p className="text-sm font-medium text-cream font-sans">{t.name}</p>
-                      <p className="text-xs text-cream/40 font-sans">{t.role}</p>
-                    </div>
-                    <span className="text-xs font-medium text-terracotta bg-terracotta/10 px-2.5 py-1 rounded-full font-sans">
-                      {t.result}
-                    </span>
-                  </div>
-                </div>
+              <Quote size={24} className="text-electric/30 mb-4" />
+              <div className="flex gap-0.5 mb-4">
+                {Array.from({ length: t.stars }).map((_, i) => (
+                  <Star key={i} size={14} className="text-gold fill-gold" />
+                ))}
+              </div>
+              <p className="text-sm font-sans text-off-white/60 leading-relaxed mb-6 italic">
+                "{t.quote}"
+              </p>
+              <div>
+                <p className="text-sm font-sans font-medium text-off-white/80">{t.name}</p>
+                <p className="text-xs font-sans text-off-white/40">{t.role}</p>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Disclaimer */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.6 }}
-          className="text-center text-xs text-cream/25 font-sans mt-10"
-        >
-          Representative examples based on typical client outcomes. Real testimonials will replace these as they come in.
-        </motion.p>
+        <p className="text-center mt-8 text-[10px] font-sans text-off-white/20">
+          These testimonials are illustrative examples based on common client feedback. Real client reviews will be added as they are collected.
+        </p>
       </div>
     </section>
   );

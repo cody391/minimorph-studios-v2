@@ -1,7 +1,6 @@
 /*
- * Design: Warm Machine — Humanized AI Aesthetic
- * Navbar: Clean, warm, minimal. Forest green logo, cream background, terracotta CTA.
- * Sticky with subtle backdrop blur on scroll.
+ * Design: Premium Dark — MiniMorph Studios
+ * Navbar: Near-black with glass blur on scroll, electric accent CTA.
  */
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,10 +10,10 @@ import { useLocation } from "wouter";
 
 const navLinks = [
   { label: "Services", href: "#services" },
-  { label: "Portfolio", href: "#portfolio" },
   { label: "How It Works", href: "#how-it-works" },
+  { label: "Demo Builds", href: "#demo-builds" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Testimonials", href: "#testimonials" },
+  { label: "FAQ", href: "#faq" },
   { label: "Careers", href: "/careers", isRoute: true },
 ];
 
@@ -41,7 +40,7 @@ export default function Navbar() {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-cream/90 backdrop-blur-md shadow-[0_1px_0_0_oklch(0.88_0.02_85)]"
+          ? "bg-midnight/90 backdrop-blur-xl shadow-[0_1px_0_0_oklch(0.30_0.01_260/0.5)]"
           : "bg-transparent"
       }`}
     >
@@ -53,12 +52,12 @@ export default function Navbar() {
             e.preventDefault();
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="flex items-center gap-2 group"
+          className="flex items-center gap-2.5 group"
         >
-          <div className="w-8 h-8 rounded-full bg-forest flex items-center justify-center">
-            <span className="text-cream text-sm font-bold font-sans">M</span>
+          <div className="w-8 h-8 rounded-lg bg-electric/15 flex items-center justify-center border border-electric/20 transition-all duration-300">
+            <span className="text-electric text-sm font-bold font-sans">M</span>
           </div>
-          <span className="font-serif text-xl text-forest tracking-tight">
+          <span className="font-serif text-xl text-off-white tracking-tight">
             MiniMorph
           </span>
         </a>
@@ -68,8 +67,12 @@ export default function Navbar() {
           {navLinks.map((link: NavLink) => (
             <button
               key={link.href}
-              onClick={() => link.isRoute ? (setMobileOpen(false), setLocation(link.href)) : scrollTo(link.href)}
-              className="text-sm font-medium text-forest/70 hover:text-forest transition-colors duration-300 font-sans"
+              onClick={() =>
+                link.isRoute
+                  ? (setMobileOpen(false), setLocation(link.href))
+                  : scrollTo(link.href)
+              }
+              className="text-sm font-medium text-off-white/60 hover:text-off-white transition-colors duration-300 font-sans"
             >
               {link.label}
             </button>
@@ -79,16 +82,16 @@ export default function Navbar() {
         {/* Desktop CTA */}
         <div className="hidden lg:flex items-center gap-3">
           <Button
-            className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-sm px-6 rounded-full shadow-none hover:shadow-md transition-all duration-300"
+            className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-sm px-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300"
             onClick={() => setLocation("/get-started")}
           >
-            Get Started
+            Start My Website Build
           </Button>
         </div>
 
         {/* Mobile Menu Toggle */}
         <button
-          className="lg:hidden p-2 text-forest"
+          className="lg:hidden p-2 text-off-white"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle menu"
         >
@@ -104,24 +107,31 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="lg:hidden bg-cream/95 backdrop-blur-md border-t border-border overflow-hidden"
+            className="lg:hidden bg-midnight/95 backdrop-blur-xl border-t border-glass-border overflow-hidden"
           >
             <div className="container py-6 flex flex-col gap-4">
               {navLinks.map((link: NavLink) => (
                 <button
                   key={link.href}
-                  onClick={() => link.isRoute ? (setMobileOpen(false), setLocation(link.href)) : scrollTo(link.href)}
-                  className="text-left text-base font-medium text-forest/80 hover:text-forest py-2 font-sans transition-colors"
+                  onClick={() =>
+                    link.isRoute
+                      ? (setMobileOpen(false), setLocation(link.href))
+                      : scrollTo(link.href)
+                  }
+                  className="text-left text-base font-medium text-off-white/70 hover:text-off-white py-2 font-sans transition-colors"
                 >
                   {link.label}
                 </button>
               ))}
-              <div className="pt-4 border-t border-border flex flex-col gap-3">
+              <div className="pt-4 border-t border-glass-border flex flex-col gap-3">
                 <Button
-                  className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full"
-                  onClick={() => { setMobileOpen(false); setLocation("/get-started"); }}
+                  className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold rounded-full"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setLocation("/get-started");
+                  }}
                 >
-                  Get Started
+                  Start My Website Build
                 </Button>
               </div>
             </div>

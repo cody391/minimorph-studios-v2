@@ -23,8 +23,8 @@ export default function Privacy() {
           <section>
             <h2 className="text-xl font-semibold mb-3">1. Information We Collect</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We collect information you provide directly to us, including your name, email address, phone number,
-              business name, and website URL when you fill out forms, request a free audit, apply to become a
+              We collect information you provide directly to us, including your name, email address,
+              business name, and website URL when you fill out forms, request a quote, apply to become a
               sales representative, or contact us. We also collect information about your interactions with our
               emails and SMS messages, including open rates, click-through rates, and delivery status.
             </p>
@@ -97,7 +97,7 @@ export default function Privacy() {
               If you have questions about this Privacy Policy or wish to exercise your data rights,
               please contact us at:<br />
               <strong>MiniMorph Studios</strong><br />
-              Sarasota, FL 34236<br />
+              Muskegon, Michigan<br />
               Email: privacy@minimorphstudios.com
             </p>
           </section>

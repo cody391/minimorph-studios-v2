@@ -101,7 +101,7 @@ export default function LeadGenEngine() {
 
   const handleStartScrape = () => {
     if (!scrapeArea.trim()) {
-      toast.error("Enter a target area (e.g., 'Austin, TX')");
+      toast.error("Enter a target area (e.g., 'Muskegon, MI')");
       return;
     }
     createScrapeJob.mutate({ targetArea: scrapeArea, radiusKm: scrapeRadius });
@@ -285,7 +285,7 @@ export default function LeadGenEngine() {
             <CardContent className="space-y-4">
               <div className="flex gap-3">
                 <Input
-                  placeholder="Target area (e.g., 'Austin, TX' or 'Miami, FL')"
+                  placeholder="Target area (e.g., 'Muskegon, MI' or 'Grand Rapids, MI')"
                   value={scrapeArea}
                   onChange={(e) => setScrapeArea(e.target.value)}
                   className="flex-1"

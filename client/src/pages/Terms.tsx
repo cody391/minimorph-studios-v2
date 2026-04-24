@@ -104,8 +104,8 @@ export default function Terms() {
             <h2 className="text-xl font-semibold mb-3">9. Governing Law</h2>
             <p className="text-muted-foreground leading-relaxed">
               These Terms shall be governed by and construed in accordance with the laws of the
-              State of Florida, without regard to its conflict of law provisions. Any disputes
-              arising under these terms shall be resolved in the courts of Sarasota County, Florida.
+              State of Michigan, without regard to its conflict of law provisions. Any disputes
+              arising under these terms shall be resolved in the courts of Muskegon County, Michigan.
             </p>
           </section>
 
@@ -114,7 +114,7 @@ export default function Terms() {
             <p className="text-muted-foreground leading-relaxed">
               For questions about these Terms of Service, contact us at:<br />
               <strong>MiniMorph Studios</strong><br />
-              Sarasota, FL 34236<br />
+              Muskegon, Michigan<br />
               Email: legal@minimorphstudios.com
             </p>
           </section>

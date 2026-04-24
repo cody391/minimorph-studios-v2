@@ -8,6 +8,7 @@ export interface PackageDefinition {
   tier: "starter" | "growth" | "premium";
   description: string;
   monthlyPriceInCents: number; // monthly recurring price
+  setupFeeInCents: number; // one-time setup fee
   features: string[];
 }
 
@@ -15,49 +16,52 @@ export const PACKAGES: Record<string, PackageDefinition> = {
   starter: {
     name: "Starter Package",
     tier: "starter",
-    description: "Perfect for small businesses getting started online",
-    monthlyPriceInCents: 14900, // $149/month
+    description: "For businesses that need a clean, professional website with ongoing support",
+    monthlyPriceInCents: 15000, // $150/month
+    setupFeeInCents: 50000, // $500 setup
     features: [
-      "Custom 5-page website",
+      "Up to 5 pages",
       "Mobile-responsive design",
+      "Contact/quote form",
       "Basic SEO setup",
-      "Contact form integration",
+      "Customer portal access",
       "Monthly performance report",
-      "AI-managed support",
-      "12-month contract",
+      "1 content update per month",
+      "Email support",
     ],
   },
   growth: {
     name: "Growth Package",
     tier: "growth",
-    description: "For businesses ready to scale their online presence",
-    monthlyPriceInCents: 29900, // $299/month
+    description: "For businesses ready to grow with more pages, features, and monthly support",
+    monthlyPriceInCents: 25000, // $250/month
+    setupFeeInCents: 75000, // $750 setup
     features: [
-      "Custom 10-page website",
-      "Advanced responsive design",
-      "Full SEO optimization",
-      "Monthly analytics reports",
-      "AI-managed nurture & support",
-      "Quarterly strategy reviews",
-      "Priority update requests",
-      "12-month contract",
+      "Up to 10 pages",
+      "Everything in Starter",
+      "Blog or news section",
+      "Google Analytics setup",
+      "2 content updates per month",
+      "AI-assisted recommendations",
+      "Priority email support",
+      "Add-on integrations available",
     ],
   },
   premium: {
-    name: "Premium Package",
+    name: "Pro Package",
     tier: "premium",
-    description: "The complete package for ambitious businesses",
-    monthlyPriceInCents: 49900, // $499/month
+    description: "For businesses that need advanced features, more pages, and hands-on support",
+    monthlyPriceInCents: 40000, // $400/month
+    setupFeeInCents: 100000, // $1,000 setup
     features: [
-      "Custom 20+ page website",
-      "Premium design & animations",
-      "Advanced SEO & content strategy",
-      "Weekly analytics reports",
-      "Dedicated AI account manager",
-      "Monthly strategy sessions",
-      "Unlimited update requests",
-      "E-commerce integration",
-      "12-month contract",
+      "Up to 20 pages",
+      "Everything in Growth",
+      "Advanced SEO pages",
+      "4 content updates per month",
+      "Review widget setup",
+      "Booking integration",
+      "SMS lead alerts",
+      "Priority support with faster response",
     ],
   },
 };

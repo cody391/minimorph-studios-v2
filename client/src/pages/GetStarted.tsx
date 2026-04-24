@@ -25,25 +25,28 @@ const PACKAGES = [
   {
     tier: "starter" as const,
     name: "Starter",
-    price: 149,
+    price: 150,
+    setup: 500,
     pages: 5,
-    features: ["Custom 5-page website", "Mobile-responsive design", "Basic SEO setup", "Contact form integration", "Monthly performance report", "AI-managed support", "12-month contract"],
+    features: ["Up to 5 pages", "Mobile-responsive design", "Contact/quote form", "Basic SEO setup", "Customer portal access", "Monthly performance report", "1 content update per month", "Email support"],
     popular: false,
   },
   {
     tier: "growth" as const,
     name: "Growth",
-    price: 299,
+    price: 250,
+    setup: 750,
     pages: 10,
-    features: ["Custom 10-page website", "Advanced responsive design", "Full SEO optimization", "Monthly analytics reports", "AI-managed nurture & support", "Quarterly strategy reviews", "Priority update requests", "12-month contract"],
+    features: ["Up to 10 pages", "Everything in Starter", "Blog or news section", "Google Analytics setup", "2 content updates per month", "AI-assisted recommendations", "Priority email support", "Add-on integrations available"],
     popular: true,
   },
   {
     tier: "premium" as const,
-    name: "Premium",
-    price: 499,
+    name: "Pro",
+    price: 400,
+    setup: 1000,
     pages: 20,
-    features: ["Custom 20+ page website", "Premium design & animations", "Advanced SEO & content strategy", "Weekly analytics reports", "Dedicated AI account manager", "Monthly strategy sessions", "Unlimited update requests", "E-commerce integration", "12-month contract"],
+    features: ["Up to 20 pages", "Everything in Growth", "Advanced SEO pages", "4 content updates per month", "Review widget setup", "Booking integration", "SMS lead alerts", "Priority support with faster response"],
     popular: false,
   },
 ];
@@ -75,7 +78,6 @@ export default function GetStarted() {
     email: "",
     password: "",
     confirmPassword: "",
-    phone: "",
     industry: "",
     website: "",
     selectedPackage: "",
@@ -154,7 +156,7 @@ export default function GetStarted() {
         formData.inspirationSites ? `Inspiration: ${formData.inspirationSites}` : "",
         formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : "",
         formData.website ? `Current website: ${formData.website}` : "",
-        formData.phone ? `Phone: ${formData.phone}` : "",
+
       ].filter(Boolean).join("\n");
 
       await submitContactMutation.mutateAsync({
@@ -305,15 +307,7 @@ export default function GetStarted() {
                   className="font-sans border-border/50 focus:border-forest"
                 />
               </div>
-              <div>
-                <Label className="text-sm font-sans text-forest/70 mb-1.5 block">Phone</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => updateField("phone", e.target.value)}
-                  placeholder="(555) 123-4567"
-                  className="font-sans border-border/50 focus:border-forest"
-                />
-              </div>
+
             </div>
 
             {/* Password fields - only show if not already logged in */}
@@ -433,7 +427,7 @@ export default function GetStarted() {
                   <span className="text-2xl font-serif text-forest">${pkg.price}</span>
                   <span className="text-sm text-forest/50 font-sans">/mo</span>
                 </div>
-                <p className="text-[10px] text-forest/40 font-sans mb-1">${(pkg.price * 12).toLocaleString()} over 12 months</p>
+                <p className="text-[10px] text-forest/40 font-sans mb-1">${pkg.setup} one-time setup fee</p>
                 <p className="text-[10px] text-forest/35 font-sans mb-4">12-month commitment, billed monthly</p>
                 <ul className="space-y-2">
                   {pkg.features.map((f) => (
@@ -525,7 +519,6 @@ export default function GetStarted() {
                     <div><span className="text-forest/50">Business:</span> <span className="text-forest font-medium">{formData.businessName}</span></div>
                     <div><span className="text-forest/50">Contact:</span> <span className="text-forest font-medium">{formData.contactName}</span></div>
                     <div><span className="text-forest/50">Email:</span> <span className="text-forest font-medium">{formData.email}</span></div>
-                    {formData.phone && <div><span className="text-forest/50">Phone:</span> <span className="text-forest font-medium">{formData.phone}</span></div>}
                     {formData.industry && <div><span className="text-forest/50">Industry:</span> <span className="text-forest font-medium">{formData.industry}</span></div>}
                   </div>
                 </div>
@@ -545,7 +538,7 @@ export default function GetStarted() {
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-serif text-forest">${pkg.price}<span className="text-sm text-forest/50">/mo</span></p>
-                          <p className="text-[10px] text-forest/40 font-sans">${pkg.price * 12}/year</p>
+                          <p className="text-[10px] text-forest/40 font-sans">+ ${pkg.setup} setup</p>
                         </div>
                       </div>
                     ) : null;
