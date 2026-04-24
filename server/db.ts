@@ -444,7 +444,7 @@ export async function getDashboardStats() {
   if (!db) return null;
 
   const [repCount] = await db.select({ count: sql<number>`count(*)` }).from(reps);
-  const [activeRepCount] = await db.select({ count: sql<number>`count(*)` }).from(reps).where(eq(reps.status, "active"));
+  const [activeRepCount] = await db.select({ count: sql<number>`count(*)` }).from(reps).where(inArray(reps.status, ["active", "certified"]));
   const [leadCount] = await db.select({ count: sql<number>`count(*)` }).from(leads);
   const [hotLeadCount] = await db.select({ count: sql<number>`count(*)` }).from(leads).where(eq(leads.temperature, "hot"));
   const [customerCount] = await db.select({ count: sql<number>`count(*)` }).from(customers);

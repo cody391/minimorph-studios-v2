@@ -15,7 +15,7 @@ import {
   academyCertifications,
 } from "../../drizzle/schema";
 import { isRepCertified } from "./academyGatekeeper";
-import { eq, and, sql, isNull, ne } from "drizzle-orm";
+import { eq, and, sql, isNull, ne, inArray } from "drizzle-orm";
 import { createScrapeJob, runScrapeJob } from "./leadGenScraper";
 import { enrichQualifiedBusinesses, batchConvertToLeads } from "./leadGenEnrichment";
 import { scheduleOutreachSequence } from "./leadGenOutreach";
@@ -40,7 +40,7 @@ export interface RepCapacityInfo {
 export async function getRepCapacity(): Promise<RepCapacityInfo[]> {
   const db = (await getDb())!;
 
-  const activeReps = await db.select().from(reps).where(eq(reps.status, "active"));
+  const activeReps = await db.select().from(reps).where(inArray(reps.status, ["active", "certified"]));
 
   // Only certified reps can receive leads
   const certifiedRepIds = new Set<number>();
@@ -242,7 +242,7 @@ export async function getEngineStats(): Promise<{
   const [closedWon] = await db.select({ count: sql<number>`count(*)` }).from(leads).where(eq(leads.stage, "closed_won"));
   const [closedLost] = await db.select({ count: sql<number>`count(*)` }).from(leads).where(eq(leads.stage, "closed_lost"));
 
-  const [activeReps] = await db.select({ count: sql<number>`count(*)` }).from(reps).where(eq(reps.status, "active"));
+  const [activeReps] = await db.select({ count: sql<number>`count(*)` }).from(reps).where(inArray(reps.status, ["active", "certified"]));
   const [runningJobs] = await db.select({ count: sql<number>`count(*)` }).from(scrapeJobs).where(eq(scrapeJobs.status, "running"));
 
   const capacity = await getRepCapacity();

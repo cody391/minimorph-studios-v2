@@ -334,6 +334,10 @@ export const academyRouter = router({
               certificationType: "full",
               score: avgScore,
             });
+            // Auto-activate rep upon full certification — no admin bottleneck
+            await db.update(reps)
+              .set({ status: "active", certifiedAt: new Date(), trainingProgress: 100 })
+              .where(eq(reps.id, repId));
           }
         }
       }

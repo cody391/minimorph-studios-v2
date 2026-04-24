@@ -170,7 +170,7 @@ export default function RepDashboard() {
             <Button onClick={() => setLocation("/become-rep/payout-setup")} className="bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans rounded-full px-8 py-5 w-full" size="lg">
               <DollarSign className="w-4 h-4 mr-2" /> Set Up Payouts
             </Button>
-            <button onClick={() => setLocation("/rep?tab=academy")} className="mt-4 text-xs text-forest/40 hover:text-forest/60 font-sans underline transition-colors block mx-auto">Skip for now</button>
+            <button onClick={() => setLocation("/rep?tab=training")} className="mt-4 text-xs text-forest/40 hover:text-forest/60 font-sans underline transition-colors block mx-auto">Skip for now</button>
           </CardContent>
         </Card>
       </div>

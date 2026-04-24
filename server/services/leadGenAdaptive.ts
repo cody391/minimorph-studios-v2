@@ -96,7 +96,7 @@ export async function analyzeRepCapacity(): Promise<RepCapacityReport[]> {
   const activeReps = await db
     .select()
     .from(reps)
-    .where(eq(reps.status, "active"));
+    .where(inArray(reps.status, ["active", "certified"]));
 
   const reports: RepCapacityReport[] = [];
 

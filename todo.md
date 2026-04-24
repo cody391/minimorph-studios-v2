@@ -872,3 +872,10 @@
 - [x] Gate dashboard: if Stripe not connected, show Stripe step before dashboard access
 - [x] Gate dashboard: if training not started, land on Sales Academy tab
 - [x] Full pipeline: Values → Account → NDA → Assessment → Application → Paperwork → Stripe → Academy
+
+### Audit Fixes
+- [x] Fix tab naming: PayoutSetup redirects to ?tab=academy but actual tab value is "training" — fix to match
+- [x] Fix certified→active gap: auto-activate rep upon full Academy certification (no admin needed)
+- [x] Clean up admin Applications tab: removed manual approve/reject, now read-only audit log
+- [x] Fix Stripe payout skip link: also uses ?tab=academy instead of ?tab=training
+- [x] Update all lead gen services to include certified reps alongside active (6 files updated)

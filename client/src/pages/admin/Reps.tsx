@@ -23,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Users, CheckCircle, Clock, XCircle, Shield, Trophy, DollarSign,
   FileText, GraduationCap, AlertTriangle, CreditCard, ArrowUpRight,
-  ClipboardCheck, Eye,
+  ClipboardCheck, Eye, Zap,
 } from "lucide-react";
 import { useState, useMemo, lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -227,49 +227,34 @@ export default function Reps() {
           <Card className="border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                <FileText className="h-4 w-4" /> Applications (Auto-Approved)
+                <FileText className="h-4 w-4" /> Applications (Autonomous)
               </CardTitle>
-              <p className="text-xs text-forest/50 font-sans">Reps are auto-approved after passing the assessment. Manual review is only needed for flagged cases.</p>
+              <p className="text-xs text-forest/50 font-sans">All applications are processed autonomously. Reps who pass the assessment are auto-approved. This is a read-only audit log.</p>
             </CardHeader>
             <CardContent>
               {pendingApps.length === 0 ? (
                 <div className="text-center py-12">
-                  <CheckCircle className="h-10 w-10 text-forest/20 mx-auto mb-3" />
-                  <p className="text-sm text-forest/50 font-sans">All applications auto-processed. No manual review needed.</p>
+                  <CheckCircle className="h-10 w-10 text-green-500/30 mx-auto mb-3" />
+                  <p className="text-sm text-forest/50 font-sans">All applications auto-processed. No manual action needed.</p>
+                  <p className="text-[10px] text-forest/30 font-sans mt-1">The system handles approvals, rejections, and onboarding automatically.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                    <p className="text-xs text-green-700 font-sans flex items-center gap-1.5">
+                      <Zap className="h-3.5 w-3.5" /> These {pendingApps.length} application(s) are being auto-processed through the pipeline. No action needed.
+                    </p>
+                  </div>
                   {pendingApps.map((rep: any) => (
-                    <div key={rep.id} className="border border-border/50 rounded-lg p-4 hover:border-forest/30 transition-colors">
+                    <div key={rep.id} className="border border-border/50 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div>
                           <h3 className="font-serif text-forest font-medium">{rep.fullName}</h3>
                           <p className="text-xs text-forest/50 font-sans">{rep.email} {rep.phone ? `| ${rep.phone}` : ""}</p>
+                          <p className="text-xs text-forest/40 font-sans mt-1">Status: {rep.status} | Applied: {new Date(rep.createdAt).toLocaleDateString()}</p>
                           {rep.bio && <p className="text-sm text-forest/70 font-sans mt-2 italic">"{rep.bio}"</p>}
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" className="bg-forest text-white hover:bg-forest/90 text-xs font-sans"
-                            onClick={() => {
-                              reviewApp.mutate({ repId: rep.id, approved: true, reviewNotes: reviewNotes || "Approved" });
-                            }}>
-                            <CheckCircle className="h-3 w-3 mr-1" /> Approve
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 text-xs font-sans"
-                            onClick={() => {
-                              reviewApp.mutate({ repId: rep.id, approved: false, reviewNotes: reviewNotes || "Declined" });
-                            }}>
-                            <XCircle className="h-3 w-3 mr-1" /> Decline
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="mt-3">
-                        <Textarea
-                          placeholder="Review notes (optional)..."
-                          className="text-xs font-sans"
-                          rows={2}
-                          value={reviewNotes}
-                          onChange={(e) => setReviewNotes(e.target.value)}
-                        />
+                        <Badge className="bg-yellow-100 text-yellow-700 text-[10px]">In Pipeline</Badge>
                       </div>
                     </div>
                   ))}

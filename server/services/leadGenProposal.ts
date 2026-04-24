@@ -16,7 +16,7 @@
 import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
 import { leads, reps, repServiceAreas, contracts } from "../../drizzle/schema";
-import { eq, and, sql, isNull, ne } from "drizzle-orm";
+import { eq, and, sql, isNull, ne, inArray } from "drizzle-orm";
 import { storagePut } from "../storage";
 import type { EnrichmentResult } from "./leadGenEnrichment";
 
@@ -329,7 +329,7 @@ export interface RepPerformance {
  */
 export async function getRepPerformanceMetrics(): Promise<RepPerformance[]> {
   const db = (await getDb())!;
-  const activeReps = await db.select().from(reps).where(eq(reps.status, "active"));
+  const activeReps = await db.select().from(reps).where(inArray(reps.status, ["active", "certified"]));
 
   const performances: RepPerformance[] = [];
 

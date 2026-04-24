@@ -17,7 +17,7 @@ import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { eq, desc, and, gte, lte, sql, count, asc, isNull } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, count, asc, isNull, inArray } from "drizzle-orm";
 import {
   reps,
   repPerformanceScores,
@@ -935,7 +935,7 @@ export const accountabilityRouter = router({
         // Auto-assign: find the highest-scoring active rep with capacity
         const activeReps = await db.select()
           .from(reps)
-          .where(eq(reps.status, "active"));
+          .where(inArray(reps.status, ["active", "certified"]));
 
         let bestRep: { id: number; score: number } | null = null;
 

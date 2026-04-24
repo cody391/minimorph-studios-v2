@@ -78,7 +78,7 @@ export default function PayoutSetup() {
               Academy and learn everything you need to start earning.
             </p>
             <Button
-              onClick={() => navigate("/rep?tab=academy")}
+              onClick={() => navigate("/rep?tab=training")}
               className="bg-forest hover:bg-forest-light text-white w-full rounded-full py-5"
               size="lg"
             >
@@ -216,7 +216,7 @@ export default function PayoutSetup() {
                   toast.info(
                     "You can set up payouts later from your dashboard. Heading to the Academy now."
                   );
-                  navigate("/rep?tab=academy");
+                  navigate("/rep?tab=training");
                 }}
                 className="text-xs text-forest/40 hover:text-forest/60 font-sans underline transition-colors"
               >

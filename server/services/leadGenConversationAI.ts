@@ -13,7 +13,7 @@
 import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
 import { leads, aiConversations, outreachSequences, reps, repServiceAreas } from "../../drizzle/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { sendSms } from "./sms";
 import { sendEmail } from "./email";
 import type { EnrichmentResult } from "./leadGenEnrichment";
@@ -594,7 +594,7 @@ async function findBestRepForLead(leadId: number): Promise<number | null> {
   if (!lead) return null;
 
   // Get all active reps
-  const activeReps = await db.select().from(reps).where(eq(reps.status, "active"));
+  const activeReps = await db.select().from(reps).where(inArray(reps.status, ["active", "certified"]));
   if (activeReps.length === 0) return null;
 
   // Get service areas for location matching
