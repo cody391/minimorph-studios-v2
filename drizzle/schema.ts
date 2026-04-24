@@ -332,19 +332,12 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   domainRegistrar: varchar("domainRegistrar", { length: 255 }),
   domainNotes: text("domainNotes"),
 
-  // Questionnaire responses (stored as JSON)
+  // Questionnaire responses (stored as JSON) — see shared/questionnaire.ts for ExpandedQuestionnaire type
   questionnaire: json("questionnaire"),
-  // Example structure:
-  // {
-  //   brandColors: string[],
-  //   brandTone: "professional" | "friendly" | "bold" | "elegant" | "playful",
-  //   targetAudience: string,
-  //   competitors: string[],
-  //   contentPreference: "we_write" | "customer_provides" | "mix",
-  //   mustHaveFeatures: string[],
-  //   inspirationUrls: string[],
-  //   specialRequests: string
-  // }
+  // Expanded structure: websiteType, brandTone, brandColors, targetAudience, contentPreference,
+  // inspirationSites[], competitorSites[], industry-specific branch fields
+  // (serviceBusinessFields | restaurantFields | contractorFields | ecommerceFields | otherFields),
+  // mustHaveFeatures[], specialRequests. Backward-compatible with legacy flat fields.
 
   // Design review
   designMockupUrl: varchar("designMockupUrl", { length: 512 }),

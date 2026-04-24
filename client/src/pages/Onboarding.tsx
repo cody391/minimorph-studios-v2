@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { AIChatBox } from "@/components/AIChatBox";
+import { QuestionnaireWizard } from "@/components/QuestionnaireWizard";
 
 /* ═══════════════════════════════════════════════════════
    TYPES
@@ -180,7 +181,7 @@ export default function Onboarding() {
 
         {/* Stage Content */}
         {currentStage === "questionnaire" && (
-          <QuestionnaireStep
+          <QuestionnaireWizard
             projectId={projectId}
             onNext={() => setCurrentStage("assets_upload")}
             onProjectCreated={setProjectId}
@@ -211,216 +212,9 @@ export default function Onboarding() {
     </div>
   );
 }
-
 /* ═══════════════════════════════════════════════════════
-   STEP 1: QUESTIONNAIRE
+   STEP 1: QUESTIONNAIRE (moved to QuestionnaireWizard.tsx)
    ═══════════════════════════════════════════════════════ */
-function QuestionnaireStep({
-  projectId,
-  onNext,
-  onProjectCreated,
-}: {
-  projectId: number | null;
-  onNext: () => void;
-  onProjectCreated: (id: number) => void;
-}) {
-  const [brandTone, setBrandTone] = useState<string>("professional");
-  const [targetAudience, setTargetAudience] = useState("");
-  const [competitors, setCompetitors] = useState("");
-  const [contentPreference, setContentPreference] = useState<string>("we_write");
-  const [mustHaveFeatures, setMustHaveFeatures] = useState("");
-  const [inspirationUrls, setInspirationUrls] = useState("");
-  const [specialRequests, setSpecialRequests] = useState("");
-  const [brandColors, setBrandColors] = useState("");
-  const [showAiChat, setShowAiChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Array<{role: "system" | "user" | "assistant"; content: string}>>([]);
-  const [aiAutoFilled, setAiAutoFilled] = useState(false);
-  const createProject = trpc.onboarding.create.useMutation();
-  const submitQuestionnaire = trpc.onboarding.submitQuestionnaire.useMutation();
-  const aiChat = trpc.ai.onboardingChat.useMutation({
-    onSuccess: (data) => {
-      setChatMessages(prev => [...prev, { role: "assistant", content: data.response }]);
-      if (data.extractedData) {
-        const d = data.extractedData;
-        if (d.brandTone) setBrandTone(d.brandTone);
-        if (d.brandColors?.length) setBrandColors(d.brandColors.join(", "));
-        if (d.targetAudience) setTargetAudience(d.targetAudience);
-        if (d.competitors?.length) setCompetitors(d.competitors.join(", "));
-        if (d.contentPreference) setContentPreference(d.contentPreference);
-        if (d.mustHaveFeatures?.length) setMustHaveFeatures(d.mustHaveFeatures.join(", "));
-        if (d.inspirationUrls?.length) setInspirationUrls(d.inspirationUrls.join(", "));
-        if (d.specialRequests) setSpecialRequests(d.specialRequests);
-        setAiAutoFilled(true);
-        toast.success("AI has filled in your questionnaire based on our conversation!");
-      }
-    },
-    onError: () => {
-      setChatMessages(prev => [...prev, { role: "assistant", content: "Sorry, I had trouble processing that. Could you try again?" }]);
-    },
-  });
-  const handleSendMessage = (content: string) => {
-    setChatMessages(prev => [...prev, { role: "user", content }]);
-    aiChat.mutate({
-      projectId: projectId ?? undefined,
-      message: content,
-      history: chatMessages.filter(m => m.role !== "system"),
-    });
-  };
-  const handleSubmit = async () => {
-    try {
-      let pid = projectId;
-      if (!pid) {
-        const result = await createProject.mutateAsync({
-          businessName: "My Business",
-          contactName: "Customer",
-          contactEmail: "customer@example.com",
-          packageTier: "growth",
-        });
-        pid = result.id;
-        onProjectCreated(pid);
-      }
-      await submitQuestionnaire.mutateAsync({
-        projectId: pid,
-        questionnaire: {
-          brandTone: brandTone as any,
-          targetAudience,
-          competitors: competitors.split(",").map((s) => s.trim()).filter(Boolean),
-          contentPreference: contentPreference as any,
-          mustHaveFeatures: mustHaveFeatures.split(",").map((s) => s.trim()).filter(Boolean),
-          inspirationUrls: inspirationUrls.split(",").map((s) => s.trim()).filter(Boolean),
-          specialRequests,
-          brandColors: brandColors.split(",").map((s) => s.trim()).filter(Boolean),
-        },
-      });
-      toast.success("Questionnaire saved!");
-      onNext();
-    } catch (err) {
-      toast.error("Failed to save questionnaire. Please try again.");
-    }
-  };
-  const isSubmitting = createProject.isPending || submitQuestionnaire.isPending;
-  return (
-    <div className="max-w-5xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-serif text-[#2D5A3D] mb-2">Tell Us About Your Brand</h2>
-        <p className="text-gray-600">
-          Help us understand your vision so we can design a website that truly represents your business.
-        </p>
-      </div>
-      {/* AI Assistant Toggle */}
-      <div className="mb-6 flex justify-center">
-        <button
-          onClick={() => setShowAiChat(!showAiChat)}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all border-2 ${
-            showAiChat
-              ? "bg-[#C4704B] text-white border-[#C4704B] shadow-md"
-              : "bg-white text-[#2D5A3D] border-[#2D5A3D]/20 hover:border-[#C4704B]/50 hover:bg-[#C4704B]/5"
-          }`}
-        >
-          <MessageSquare className="w-4 h-4" />
-          {showAiChat ? "Switch to Form View" : "Not sure where to start? Chat with our AI assistant"}
-        </button>
-      </div>
-      {aiAutoFilled && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-center">
-          <div className="flex items-center justify-center gap-2 text-green-700 text-sm font-medium">
-            <CheckCircle2 className="w-4 h-4" />
-            AI has pre-filled the form based on your conversation. Review and adjust anything below, then save.
-          </div>
-        </div>
-      )}
-      <div className={`grid gap-6 ${showAiChat ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
-        {/* AI Chat Panel */}
-        {showAiChat && (
-          <Card className="border-[#C4704B]/20 bg-white overflow-hidden">
-            <CardHeader className="pb-2 bg-gradient-to-r from-[#C4704B]/5 to-transparent">
-              <CardTitle className="text-base font-serif text-[#C4704B] flex items-center gap-2">
-                <MessageSquare className="w-4 h-4" />
-                AI Design Assistant
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Just describe your business and what you want — the AI will fill out the form for you.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <AIChatBox
-                messages={chatMessages}
-                onSendMessage={handleSendMessage}
-                isLoading={aiChat.isPending}
-                placeholder="Tell me about your business..."
-                height={520}
-                emptyStateMessage="Hi! I'm your design assistant. Tell me about your business and I'll help you fill out this questionnaire."
-                suggestedPrompts={[
-                  "I run a bakery in Austin",
-                  "I'm a freelance photographer",
-                  "I have a law firm",
-                  "I sell handmade jewelry online",
-                ]}
-              />
-            </CardContent>
-          </Card>
-        )}
-        {/* Form Panel */}
-        <Card className={`border-[#2D5A3D]/10 ${aiAutoFilled ? "ring-2 ring-green-300/50" : ""}`}>
-          <CardContent className="p-8 space-y-6">
-            <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">What tone best describes your brand?</Label>
-              <Select value={brandTone} onValueChange={setBrandTone}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="professional">Professional & Trustworthy</SelectItem>
-                  <SelectItem value="friendly">Friendly & Approachable</SelectItem>
-                  <SelectItem value="bold">Bold & Energetic</SelectItem>
-                  <SelectItem value="elegant">Elegant & Refined</SelectItem>
-                  <SelectItem value="playful">Playful & Creative</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">Brand colors (comma-separated, e.g. "#2D5A3D, #C4704B")</Label>
-              <Input value={brandColors} onChange={(e) => setBrandColors(e.target.value)} placeholder="Your brand colors, or leave blank and we'll suggest some" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">Who is your target audience?</Label>
-              <Textarea value={targetAudience} onChange={(e) => setTargetAudience(e.target.value)} placeholder="Describe your ideal customers — age range, interests, location, etc." rows={3} />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">Competitors or businesses you admire (comma-separated)</Label>
-              <Input value={competitors} onChange={(e) => setCompetitors(e.target.value)} placeholder="e.g. Acme Corp, BetterBrand, TopCompetitor" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">Who will write the website content?</Label>
-              <Select value={contentPreference} onValueChange={setContentPreference}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="we_write">MiniMorph writes everything</SelectItem>
-                  <SelectItem value="customer_provides">I'll provide all content</SelectItem>
-                  <SelectItem value="mix">A mix — I'll provide some, you write the rest</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">Must-have features (comma-separated)</Label>
-              <Input value={mustHaveFeatures} onChange={(e) => setMustHaveFeatures(e.target.value)} placeholder="e.g. Contact form, Photo gallery, Online booking, Menu page" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">Websites you love (comma-separated URLs)</Label>
-              <Input value={inspirationUrls} onChange={(e) => setInspirationUrls(e.target.value)} placeholder="e.g. https://example.com, https://nicebrand.com" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">Anything else we should know?</Label>
-              <Textarea value={specialRequests} onChange={(e) => setSpecialRequests(e.target.value)} placeholder="Special requirements, deadlines, integrations, or anything else on your mind..." rows={4} />
-            </div>
-            <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full bg-[#2D5A3D] hover:bg-[#234A31] text-white h-12 text-base">
-              {isSubmitting ? (<Loader2 className="w-5 h-5 animate-spin mr-2" />) : (<ArrowRight className="w-5 h-5 mr-2" />)}
-              Save & Continue to Asset Upload
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
 
 /* ═══════════════════════════════════════════════════════
    STEP 2: ASSET UPLOAD

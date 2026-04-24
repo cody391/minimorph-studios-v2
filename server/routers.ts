@@ -1618,20 +1618,82 @@ const onboardingRouter = router({
       return project;
     }),
 
-  // Protected: submit questionnaire
+  // Protected: submit questionnaire (expanded conditional branching)
   submitQuestionnaire: protectedProcedure
     .input(
       z.object({
         projectId: z.number(),
         questionnaire: z.object({
+          // Step 1: Website type
+          websiteType: z.enum(["service_business", "restaurant", "contractor", "ecommerce", "other"]).optional(),
+          // Step 2: Universal brand questions
           brandColors: z.array(z.string()).optional(),
           brandTone: z.enum(["professional", "friendly", "bold", "elegant", "playful"]).optional(),
           targetAudience: z.string().optional(),
-          competitors: z.array(z.string()).optional(),
           contentPreference: z.enum(["we_write", "customer_provides", "mix"]).optional(),
+          // Step 3: Inspiration & competitor analysis
+          inspirationSites: z.array(z.object({
+            url: z.string(),
+            whatYouLike: z.string(),
+            whatYouDislike: z.string(),
+          })).optional(),
+          competitorSites: z.array(z.object({
+            url: z.string(),
+            whatYouWantToBeat: z.string(),
+            featuresYouWish: z.string(),
+          })).optional(),
+          // Step 4: Industry-specific branches
+          serviceBusinessFields: z.object({
+            serviceArea: z.string().optional(),
+            hasBookingSystem: z.boolean().optional(),
+            currentBookingMethod: z.string().optional(),
+            servicesOffered: z.string().optional(),
+            licensedOrCertified: z.boolean().optional(),
+            licenseDetails: z.string().optional(),
+          }).optional(),
+          restaurantFields: z.object({
+            cuisineType: z.string().optional(),
+            hasPhysicalLocation: z.boolean().optional(),
+            locationCount: z.number().optional(),
+            needsOnlineMenu: z.boolean().optional(),
+            needsOnlineOrdering: z.boolean().optional(),
+            needsReservations: z.boolean().optional(),
+            operatingHours: z.string().optional(),
+            deliveryPartners: z.string().optional(),
+          }).optional(),
+          contractorFields: z.object({
+            serviceArea: z.string().optional(),
+            tradeType: z.string().optional(),
+            licensedOrCertified: z.boolean().optional(),
+            licenseNumber: z.string().optional(),
+            needsQuoteForm: z.boolean().optional(),
+            needsBeforeAfterGallery: z.boolean().optional(),
+            insuranceInfo: z.string().optional(),
+            emergencyService: z.boolean().optional(),
+          }).optional(),
+          ecommerceFields: z.object({
+            productCount: z.string().optional(),
+            productCategories: z.string().optional(),
+            needsShipping: z.boolean().optional(),
+            shippingRegions: z.string().optional(),
+            existingPlatform: z.string().optional(),
+            needsMigration: z.boolean().optional(),
+            hasInventorySystem: z.boolean().optional(),
+            paymentMethods: z.string().optional(),
+            needsSubscriptions: z.boolean().optional(),
+            taxHandling: z.string().optional(),
+          }).optional(),
+          otherFields: z.object({
+            businessDescription: z.string().optional(),
+            industryCategory: z.string().optional(),
+            uniqueRequirements: z.string().optional(),
+          }).optional(),
+          // Step 5: Features & special requests
           mustHaveFeatures: z.array(z.string()).optional(),
-          inspirationUrls: z.array(z.string()).optional(),
           specialRequests: z.string().optional(),
+          // Legacy compat
+          competitors: z.array(z.string()).optional(),
+          inspirationUrls: z.array(z.string()).optional(),
         }),
       })
     )
@@ -1861,24 +1923,59 @@ const aiRouter = router({
       const systemPrompt = `You are the MiniMorph Studios onboarding assistant. Your job is to help new customers describe their website vision through friendly conversation.
 
 You need to gather the following information naturally through conversation:
-1. Brand tone (professional, friendly, bold, elegant, or playful)
-2. Brand colors (or let them describe the feeling and you suggest colors)
-3. Target audience (who are their customers?)
-4. Competitors or businesses they admire
-5. Content preference (we write it, they provide it, or a mix)
-6. Must-have features (contact form, gallery, booking, menu, etc.)
-7. Inspiration websites they like
-8. Any special requests
+
+== STEP 1: WEBSITE TYPE ==
+First, determine what kind of website they need:
+- service_business (auto detailing, salons, fitness, cleaning, etc.)
+- restaurant (restaurants, cafes, bakeries, food trucks, catering)
+- contractor (plumbing, HVAC, roofing, landscaping, electrical)
+- ecommerce (online stores selling physical or digital products)
+- other (anything else)
+
+== STEP 2: UNIVERSAL BRAND QUESTIONS ==
+- Brand tone: professional, friendly, bold, elegant, or playful
+- Brand colors (or let them describe the feeling and you suggest hex codes)
+- Target audience (who are their ideal customers?)
+- Content preference: we_write, customer_provides, or mix
+
+== STEP 3: INSPIRATION & COMPETITOR ANALYSIS ==
+- Up to 3 websites they love/admire — for each, ask what they like AND dislike about it
+- Up to 3 competitor websites — for each, ask what they want to beat and what features competitors have that they wish they had
+
+== STEP 4: INDUSTRY-SPECIFIC QUESTIONS ==
+Based on websiteType, ask the relevant branch:
+
+For service_business: service area, booking system needed?, current booking method, services offered, licensed/certified?, license details
+For restaurant: cuisine type, physical location?, location count, online menu?, online ordering?, reservations?, operating hours, delivery partners
+For contractor: service area, trade type, licensed/certified?, license number, quote form needed?, before/after gallery?, insurance info, emergency service?
+For ecommerce: product count (1-10, 11-25, 26-50, 51-100, 100+), product categories, shipping needed?, shipping regions, existing platform, migration needed?, inventory system?, payment methods, subscriptions?, tax handling
+For other: business description, industry category, unique requirements
+
+== STEP 5: FEATURES & EXTRAS ==
+- Must-have features (contact form, gallery, booking, menu, etc.)
+- Any special requests
 
 IMPORTANT RULES:
 - Be warm, encouraging, and conversational — not robotic
 - Ask ONE question at a time, don't overwhelm them
+- Start by asking what kind of business they have to determine websiteType
 - If they seem unsure, offer specific suggestions based on their industry
 - If they don't have a logo or brand assets, reassure them that we can create everything
 - After gathering enough info, summarize what you've learned and ask if anything is missing
-- When you have enough information, include a JSON block at the end of your message wrapped in <questionnaire_data> tags with the extracted fields:
-  <questionnaire_data>{"brandTone":"...","brandColors":[...],"targetAudience":"...","competitors":[...],"contentPreference":"...","mustHaveFeatures":[...],"inspirationUrls":[...],"specialRequests":"..."}</questionnaire_data>
-- Only include the JSON when you feel confident you have enough info
+- When you have enough information, include a JSON block at the end of your message wrapped in <questionnaire_data> tags. The JSON should include ALL gathered fields:
+  <questionnaire_data>{
+    "websiteType": "service_business|restaurant|contractor|ecommerce|other",
+    "brandTone": "...",
+    "brandColors": [...],
+    "targetAudience": "...",
+    "contentPreference": "we_write|customer_provides|mix",
+    "inspirationSites": [{"url":"...","whatYouLike":"...","whatYouDislike":"..."}],
+    "competitorSites": [{"url":"...","whatYouWantToBeat":"...","featuresYouWish":"..."}],
+    "serviceBusinessFields|restaurantFields|contractorFields|ecommerceFields|otherFields": { ...relevant fields... },
+    "mustHaveFeatures": [...],
+    "specialRequests": "..."
+  }</questionnaire_data>
+- Only include the JSON when you feel confident you have enough info from ALL 5 steps
 - Keep responses concise — 2-3 sentences max per turn`;
 
       const messages = [

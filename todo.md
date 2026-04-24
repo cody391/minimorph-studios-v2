@@ -1071,19 +1071,19 @@
 - [x] F8: Typecheck 0 errors, all tests passing, build succeeds
 
 ### Customer POV End-to-End Autonomy Walkthrough
-- [ ] Phase 1: Discovery / Lead Creation audit
-- [ ] Phase 2: AI Outreach Touchpoints audit
-- [ ] Phase 3: Reply Detection / AI Classification audit
-- [ ] Phase 4: Human Rep Handoff audit
-- [ ] Phase 5: Customer Payment / Close audit
-- [ ] Phase 6: Customer Onboarding to Build Website audit
-- [ ] Phase 7: Website Review and Revisions audit
-- [ ] Phase 8: AI Widget Upsell audit
-- [ ] Phase 9: Domain Handoff and Launch audit
-- [ ] Phase 10: Monthly Retention Pipeline audit
-- [ ] Phase 11: Admin Exception View audit
-- [ ] Phase 12: Final Customer POV Report
-- [ ] Validation: typecheck, tests, build after any surgical fixes
+- [x] Phase 1: Discovery / Lead Creation audit
+- [x] Phase 2: AI Outreach Touchpoints audit
+- [x] Phase 3: Reply Detection / AI Classification audit
+- [x] Phase 4: Human Rep Handoff audit
+- [x] Phase 5: Customer Payment / Close audit
+- [x] Phase 6: Customer Onboarding to Build Website audit
+- [x] Phase 7: Website Review and Revisions audit
+- [x] Phase 8: AI Widget Upsell audit
+- [x] Phase 9: Domain Handoff and Launch audit
+- [x] Phase 10: Monthly Retention Pipeline audit
+- [x] Phase 11: Admin Exception View audit
+- [x] Phase 12: Final Customer POV Report
+- [x] Validation: typecheck, tests, build after any surgical fixes
 
 ### Customer POV Gap Repair — Surgical Fixes
 - [x] Fix 1: Wire onboarding stage-change emails into updateStage, submitFeedback, approveLaunch
@@ -1092,3 +1092,14 @@
 - [x] Fix 4: Cross-source lead dedup before creating leads from any automated source
 - [x] Fix 5: Health score scheduled job (POST /api/scheduled/health-score-update)
 - [x] Validation: typecheck 0 errors, all tests pass, build succeeds
+
+### Fulfillment Stress Test Implementation
+- [x] Phase 1: Audit current support (questionnaire, conditional logic, ecommerce fields, admin review, AI guidance, package logic, widget catalog, demo routes, integrations)
+- [x] Phase 2: Conditional onboarding questionnaire by website type (universal + 5 branches)
+- [ ] Phase 3: Custom quote / admin review triggers (ecommerce, 25+ products, 100+ products, migrations, multilingual, etc.)
+- [ ] Phase 4: AI agent scope / answer bank (20 questions with classification, escalation, guardrails)
+- [ ] Phase 5: Integration / upsell classification (included, upsell, custom quote, not supported)
+- [ ] Phase 6: Ecommerce package guardrail (prevent ecommerce sold as normal site)
+- [ ] Phase 7: Demo / sample site strategy support (cards/placeholders for 5 industries)
+- [ ] Phase 8: Tests and validation (8 focused tests + typecheck + full suite + build)
+- [ ] Final report: Files changed, existing functionality found, all changes documented
