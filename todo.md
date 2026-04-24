@@ -734,3 +734,6 @@
 #### Cleanup
 - [x] Clear all existing test rep applications, assessments, and onboarding data
 - [x] Vitest tests for new features (randomization, AI review, e-sig, pipeline)
+
+### Bug Fix: Camera Capture
+- [x] Fix camera capture in BecomeRep intake form — webcam/phone camera not working for avatar photo

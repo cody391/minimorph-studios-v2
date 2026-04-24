@@ -117,16 +117,31 @@ export default function BecomeRep() {
 
   const startCamera = async () => {
     try {
+      // Show the camera UI first so the <video> element mounts
+      setShowCamera(true);
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setShowCamera(true);
+      // Attach stream to video element — may need a small delay for ref to be ready
+      const attachStream = () => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        } else {
+          // Retry once after a brief delay if ref isn't ready yet
+          requestAnimationFrame(() => {
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+              videoRef.current.play().catch(() => {});
+            }
+          });
+        }
+      };
+      attachStream();
     } catch (err) {
-      toast.error("Unable to access camera. Please upload a photo instead.");
+      setShowCamera(false);
+      toast.error("Unable to access camera. Please check permissions and try again, or upload a photo instead.");
     }
   };
 
@@ -395,7 +410,14 @@ export default function BecomeRep() {
                   {showCamera && (
                     <div className="mb-3 rounded-lg overflow-hidden border border-sage/30 bg-black">
                       <video
-                        ref={videoRef}
+                        ref={(el) => {
+                          (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+                          // When the video element mounts, attach the stream if it's ready
+                          if (el && streamRef.current && !el.srcObject) {
+                            el.srcObject = streamRef.current;
+                            el.play().catch(() => {});
+                          }
+                        }}
                         autoPlay
                         playsInline
                         muted
