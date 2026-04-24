@@ -17,6 +17,11 @@ import { localAuthRouter } from "./localAuth";
 import { assessmentRouter } from "./assessmentRouter";
 import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
+import { TIER_CONFIG, type TierKey } from "../shared/accountability";
+import { repTiers, customers } from "../drizzle/schema";
+import { getDb } from "./db";
+import { eq } from "drizzle-orm";
+import { sendOnboardingStageEmail } from "./services/customerEmails";
 import { teamFeedRouter } from "./teamFeedRouter";
 import { invokeLLM } from "./_core/llm";
 /* ═══════════════════════════════════════════════════════
@@ -612,12 +617,14 @@ const leadsRouter = router({
 
       // 4. Calculate commission — DOUBLE for self-sourced leads
       const isSelfSourced = lead.selfSourced;
-      const gamification = await db.getRepGamification(rep.id);
-      const level = gamification?.level || "rookie";
-      const tierRates: Record<string, number> = {
-        rookie: 0.10, closer: 0.12, ace: 0.14, elite: 0.16, legend: 0.20,
-      };
-      let rate = tierRates[level] || 0.10;
+      // Use accountability tier (bronze/silver/gold/platinum) for commission rate
+      const database = await getDb();
+      let tierKey: TierKey = "bronze";
+      if (database) {
+        const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, rep.id)).limit(1);
+        tierKey = (tierRows[0]?.tier || "bronze") as TierKey;
+      }
+      let rate = TIER_CONFIG[tierKey].commissionRate / 100;
       // Double commission for self-sourced leads
       if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
       const annualValue = discountedPrice * 12;
@@ -702,7 +709,7 @@ const leadsRouter = router({
       const selfSourcedNote = isSelfSourced ? "\n⭐ Self-sourced lead (double commission)" : "";
       await notifyOwner({
         title: `Deal Closed: ${lead.businessName}`,
-        content: `Rep ${rep.fullName} closed a ${input.packageTier} deal with ${lead.businessName} at $${finalMonthlyPrice}/mo.${discountNote}${selfSourcedNote}\nAnnual value: $${annualValue.toFixed(2)}\nCommission: $${commissionAmount} (${(rate * 100).toFixed(0)}% at ${level} level) — auto-approved for instant payout\nOnboarding project auto-created.`,
+        content: `Rep ${rep.fullName} closed a ${input.packageTier} deal with ${lead.businessName} at $${finalMonthlyPrice}/mo.${discountNote}${selfSourcedNote}\nAnnual value: $${annualValue.toFixed(2)}\nCommission: $${commissionAmount} (${(rate * 100).toFixed(0)}% at ${tierKey} tier) — auto-approved for instant payout\nOnboarding project auto-created.`,
       });
 
       return {
@@ -838,6 +845,18 @@ const leadsRouter = router({
    CUSTOMERS ROUTER
    ═══════════════════════════════════════════════════════ */
 const customersRouter = router({
+  // Customer self-service: get the customer record for the logged-in user
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const database = await getDb();
+    if (!database) return null;
+    const rows = await database
+      .select()
+      .from(customers)
+      .where(eq(customers.userId, ctx.user.id))
+      .limit(1);
+    return rows[0] ?? null;
+  }),
+
   create: adminProcedure
     .input(
       z.object({
@@ -958,17 +977,14 @@ const commissionsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // Calculate commission based on rep's gamification level (tier-based rates)
-      const gamification = await db.getRepGamification(input.repId);
-      const level = gamification?.level || "rookie";
-      const tierRates: Record<string, number> = {
-        rookie: 0.10,
-        closer: 0.12,
-        ace: 0.14,
-        elite: 0.16,
-        legend: 0.20,
-      };
-      const rate = tierRates[level] || 0.10;
+      // Calculate commission based on rep's accountability tier
+      const commDb = await getDb();
+      let commTierKey: TierKey = "bronze";
+      if (commDb) {
+        const tierRows = await commDb.select().from(repTiers).where(eq(repTiers.repId, input.repId)).limit(1);
+        commTierKey = (tierRows[0]?.tier || "bronze") as TierKey;
+      }
+      const rate = TIER_CONFIG[commTierKey].commissionRate / 100;
       const contractValue = parseFloat(input.contractValue) || 0;
       const commissionAmount = (contractValue * rate).toFixed(2);
       const commission = await db.createCommission({
@@ -2025,6 +2041,90 @@ const repNotificationsRouter = router({
 });
 
 /* ═══════════════════════════════════════════════════════
+   RETENTION — NPS surveys, referrals, renewal reminders
+   ═══════════════════════════════════════════════════════ */
+const retentionRouter = router({
+  submitNps: protectedProcedure
+    .input(z.object({
+      surveyId: z.number(),
+      score: z.number().min(0).max(10),
+      feedback: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { npsSurveys } = await import("../drizzle/schema");
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      await database.update(npsSurveys)
+        .set({ score: input.score, feedback: input.feedback || null, status: "completed", completedAt: new Date() })
+        .where(eq(npsSurveys.id, input.surveyId));
+      return { success: true };
+    }),
+  pendingNps: protectedProcedure.query(async ({ ctx }) => {
+    const { npsSurveys, customers } = await import("../drizzle/schema");
+    const { and } = await import("drizzle-orm");
+    const database = await getDb();
+    if (!database) return null;
+    const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+    if (!custs.length) return null;
+    const pending = await database.select().from(npsSurveys)
+      .where(and(eq(npsSurveys.customerId, custs[0].id), eq(npsSurveys.status, "sent")))
+      .limit(1);
+    return pending[0] || null;
+  }),
+  submitReferral: protectedProcedure
+    .input(z.object({
+      referredEmail: z.string().email(),
+      referredName: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { customerReferrals, customers } = await import("../drizzle/schema");
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+      if (!custs.length) throw new TRPCError({ code: "NOT_FOUND", message: "Customer account not found" });
+      await database.insert(customerReferrals).values({
+        referrerId: custs[0].id,
+        referredEmail: input.referredEmail,
+        referredName: input.referredName || null,
+      });
+      try {
+        const { sendReferralInviteEmail } = await import("./services/customerEmails");
+        await sendReferralInviteEmail({
+          to: input.referredEmail,
+          referrerName: custs[0].contactName,
+          referralUrl: "https://minimorphstudios.net/get-started",
+        });
+      } catch (e) { console.error("[Retention] Failed to send referral email:", e); }
+      return { success: true };
+    }),
+  myReferrals: protectedProcedure.query(async ({ ctx }) => {
+    const { customerReferrals, customers } = await import("../drizzle/schema");
+    const { desc } = await import("drizzle-orm");
+    const database = await getDb();
+    if (!database) return [];
+    const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+    if (!custs.length) return [];
+    return database.select().from(customerReferrals)
+      .where(eq(customerReferrals.referrerId, custs[0].id))
+      .orderBy(desc(customerReferrals.createdAt));
+  }),
+  listNps: adminProcedure.query(async () => {
+    const { npsSurveys } = await import("../drizzle/schema");
+    const { desc } = await import("drizzle-orm");
+    const database = await getDb();
+    if (!database) return [];
+    return database.select().from(npsSurveys).orderBy(desc(npsSurveys.createdAt)).limit(100);
+  }),
+  listReferrals: adminProcedure.query(async () => {
+    const { customerReferrals } = await import("../drizzle/schema");
+    const { desc } = await import("drizzle-orm");
+    const database = await getDb();
+    if (!database) return [];
+    return database.select().from(customerReferrals).orderBy(desc(customerReferrals.createdAt)).limit(100);
+  }),
+});
+
+/* ═══════════════════════════════════════════════════════
    APP ROUTER
    ═══════════════════════════════════════════════════════ */
 export const appRouter = router({
@@ -2078,6 +2178,7 @@ export const appRouter = router({
   repOnboarding: onboardingDataRouter,
   accountability: accountabilityRouter,
   teamFeed: teamFeedRouter,
+  retention: retentionRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))

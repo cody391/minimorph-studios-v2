@@ -32,14 +32,11 @@ export default function CustomerPortal() {
   const [activeTab, setActiveTab] = useState("overview");
   const [chatMessages, setChatMessages] = useState<Array<{role: string; content: string}>>([]);
 
-  // For demo: we'll show customer data. In production, you'd look up the customer by user ID.
-  // For now, list all customers and show the first one (or prompt to select).
-  const { data: customers, isLoading: custLoading } = trpc.customers.list.useQuery(
+  // Look up the customer record linked to the logged-in user
+  const { data: customer, isLoading: custLoading } = trpc.customers.me.useQuery(
     undefined,
     { enabled: isAuthenticated }
   );
-
-  const customer = customers?.[0]; // First customer for demo
 
   const portalChat = trpc.ai.portalChat.useMutation();
 
@@ -80,7 +77,7 @@ export default function CustomerPortal() {
   );
 
   const activeContract = contracts?.find((c: any) => c.status === "active" || c.status === "expiring_soon");
-  const latestReport = reportsData?.sort((a: any, b: any) => b.id - a.id)?.[0];
+  const latestReport = reportsData?.length ? [...reportsData].sort((a: any, b: any) => b.id - a.id)[0] : undefined;
   const supportLogs = nurtureLogs?.filter((l: any) => l.type === "support_request" || l.type === "update_request") ?? [];
 
   if (authLoading) {
@@ -174,6 +171,8 @@ export default function CustomerPortal() {
             <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Support</TabsTrigger>
             <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Upgrades</TabsTrigger>
             <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Onboarding</TabsTrigger>
+            <TabsTrigger value="billing" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Billing</TabsTrigger>
+            <TabsTrigger value="referrals" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Referrals</TabsTrigger>
             <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-white">
               <Bot className="h-3 w-3 mr-1" /> AI Assistant
             </TabsTrigger>
@@ -475,6 +474,11 @@ export default function CustomerPortal() {
             </Card>
           </TabsContent>
 
+          {/* BILLING TAB */}
+          <TabsContent value="billing" className="space-y-6">
+            <BillingTab />
+          </TabsContent>
+
           {/* AI ASSISTANT TAB */}
           <TabsContent value="ai-assistant" className="space-y-6">
             <Card className="border-border/50">
@@ -582,6 +586,103 @@ function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   BILLING TAB — Payment history & plan details
+   ═══════════════════════════════════════════════════════ */
+function BillingTab() {
+  const { data: orders, isLoading } = trpc.orders.myOrders.useQuery();
+
+  const statusBadge = (status: string) => {
+    const map: Record<string, string> = {
+      paid: "bg-green-100 text-green-700",
+      pending: "bg-yellow-100 text-yellow-700",
+      failed: "bg-red-100 text-red-700",
+      refunded: "bg-gray-100 text-gray-700",
+    };
+    return map[status] || "bg-gray-100 text-gray-700";
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+            <FileText className="h-4 w-4 text-terracotta" />
+            Payment History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : !orders?.length ? (
+            <div className="text-center py-12">
+              <FileText className="h-8 w-8 text-forest/15 mx-auto mb-3" />
+              <p className="text-sm text-forest/50 font-sans">No payments yet.</p>
+              <p className="text-xs text-forest/30 font-sans mt-1">Your payment history will appear here once you subscribe.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {orders.map((order: any) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-4 rounded-xl border border-border/30 hover:border-terracotta/10 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-forest/5 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-forest/40" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-forest font-sans capitalize">
+                        {order.packageTier} Plan
+                      </p>
+                      <p className="text-xs text-forest/40 font-sans">
+                        {new Date(order.createdAt).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                        {order.businessName && ` — ${order.businessName}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-serif text-forest">
+                      ${(order.amount / 100).toFixed(2)}
+                    </span>
+                    <Badge className={`text-[10px] font-sans ${statusBadge(order.status)}`}>
+                      {order.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+            <Shield className="h-4 w-4 text-terracotta" />
+            Billing Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 rounded-xl bg-cream-dark/20 border border-border/20">
+            <p className="text-sm text-forest/70 font-sans leading-relaxed">
+              All payments are processed securely through Stripe. To update your payment method, manage your subscription, or download invoices, please contact your account manager through the Support tab.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1488,3 +1488,38 @@ export const teamFeed = mysqlTable("team_feed", {
 });
 export type TeamFeedEntry = typeof teamFeed.$inferSelect;
 export type InsertTeamFeedEntry = typeof teamFeed.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   NPS_SURVEYS — Net Promoter Score feedback from customers
+   ═══════════════════════════════════════════════════════ */
+export const npsSurveys = mysqlTable("nps_surveys", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  contractId: int("contractId"),
+  score: int("score"), // 0-10, null until completed
+  feedback: text("feedback"),
+  milestone: mysqlEnum("milestone", ["30_day", "6_month", "annual"]).notNull(),
+  status: mysqlEnum("status", ["sent", "completed", "expired"]).default("sent").notNull(),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type NpsSurvey = typeof npsSurveys.$inferSelect;
+export type InsertNpsSurvey = typeof npsSurveys.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER_REFERRALS — Track customer-to-customer referrals
+   ═══════════════════════════════════════════════════════ */
+export const customerReferrals = mysqlTable("customer_referrals", {
+  id: int("id").autoincrement().primaryKey(),
+  referrerId: int("referrerId").notNull(), // customer who referred
+  referredEmail: varchar("referredEmail", { length: 320 }).notNull(),
+  referredName: varchar("referredName", { length: 255 }),
+  status: mysqlEnum("status", ["invited", "signed_up", "converted"]).default("invited").notNull(),
+  rewardGiven: boolean("rewardGiven").default(false).notNull(),
+  convertedCustomerId: int("convertedCustomerId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CustomerReferral = typeof customerReferrals.$inferSelect;
+export type InsertCustomerReferral = typeof customerReferrals.$inferInsert;

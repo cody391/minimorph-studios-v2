@@ -429,10 +429,12 @@ export default function GetStarted() {
                   <h3 className="text-base font-serif text-forest">{pkg.name}</h3>
                   {pkg.popular && <Badge className="bg-terracotta/10 text-terracotta text-[10px] font-sans">Popular</Badge>}
                 </div>
-                <div className="mb-4">
+                <div className="mb-2">
                   <span className="text-2xl font-serif text-forest">${pkg.price}</span>
                   <span className="text-sm text-forest/50 font-sans">/mo</span>
                 </div>
+                <p className="text-[10px] text-forest/40 font-sans mb-1">${(pkg.price * 12).toLocaleString()} over 12 months</p>
+                <p className="text-[10px] text-forest/35 font-sans mb-4">12-month commitment, billed monthly</p>
                 <ul className="space-y-2">
                   {pkg.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-xs text-forest/60 font-sans">

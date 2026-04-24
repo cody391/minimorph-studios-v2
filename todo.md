@@ -969,3 +969,60 @@
 - [x] Create shared/pricing.ts as single source of truth for all package pricing
 - [x] shared/accountability.ts already serves as source of truth for tiers and commission rates
 - [x] Fixed AppGuide Gold commission from 13% to 14% to match source of truth
+
+## Customer Journey 100% Grade Sprint
+
+### Category 1: First Impression & Brand Consistency
+- [ ] Redesign Free Audit page to match cream/forest/terracotta brand palette
+- [ ] Fix empty Testimonials section — add realistic case studies with metrics
+
+### Category 3: Sales Process & Checkout
+- [ ] Show "12-month contract" and total annual cost on pricing cards
+- [ ] Show contract commitment on GetStarted page package selection
+
+### Category 4: Post-Purchase Communication
+- [ ] Build automated welcome email on checkout completion (Stripe webhook trigger)
+- [ ] Build post-purchase email sequence (welcome → kickoff → stage updates → launch celebration)
+
+### Category 5: Onboarding Experience
+- [ ] Add progress percentage to onboarding wizard steps
+- [ ] Add recommended file specs to asset upload section
+
+### Category 6: Project Transparency & Updates
+- [ ] Wire onboarding stage changes to customer email/SMS notifications
+- [ ] Add auto-acknowledgment for support tickets
+
+### Category 7: Customer Portal & Self-Service
+- [ ] Add Billing tab to Customer Portal with Stripe payment history
+- [ ] Improve empty states in portal tabs with helpful guidance
+
+### Category 8: AI Concierge & Support
+- [ ] Add ability for concierge to create support tickets from chat
+- [ ] Add proactive concierge messages on health score changes
+
+### Category 9: Ongoing Value & Reporting
+- [ ] Add AI-generated narrative summaries to monthly reports
+- [ ] Add NPS survey system (month 1, 6, 12)
+
+### Category 10: Upsell & Expansion
+- [ ] Add self-service widget purchasing through Stripe checkout
+- [ ] Add tier upgrade flow in customer portal
+
+### Category 11: Account Management & Retention
+- [ ] Build renewal email sequence starting at month 10
+- [ ] Build customer referral program with tracking
+- [ ] Add anniversary emails (6-month, 12-month)
+- [ ] Add exit survey for cancellations
+
+### Category 12: System Coherence & Trust
+- [ ] Fix stripe-webhook.ts commission calculation to use accountability tiers
+- [ ] Fix routers.ts commission calculation to use accountability tiers
+- [ ] Fix repEcosystem.ts calculateLevel to use accountability tiers
+
+### Surgical Customer Chain Repair
+- [x] Fix 1: Webhook creates customer record on self-service checkout (idempotent)
+- [x] Fix 2: Webhook creates contract on self-service checkout (idempotent)
+- [x] Fix 3: Webhook creates onboarding project on self-service checkout (idempotent)
+- [x] Fix 4: Add customers.me protectedProcedure for portal access
+- [x] Fix 5: Update CustomerPortal to use customers.me, remove demo logic
+- [x] Fix 6: Fix sendCustomerEmail TS error → use sendReferralInviteEmail

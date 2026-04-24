@@ -211,6 +211,13 @@
       "when": 1777025815182,
       "tag": "0029_tan_taskmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1777029455869,
+      "tag": "0030_slim_frog_thor",
+      "breakpoints": true
     }
   ]
 }

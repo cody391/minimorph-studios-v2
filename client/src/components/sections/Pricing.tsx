@@ -13,6 +13,7 @@ const plans = [
     name: "Starter",
     price: "$149",
     period: "/mo",
+    annualTotal: "$1,788",
     description: "Perfect for small businesses getting started online.",
     features: [
       "Custom 5-page website",
@@ -30,6 +31,7 @@ const plans = [
     name: "Growth",
     price: "$299",
     period: "/mo",
+    annualTotal: "$3,588",
     description: "For businesses ready to scale their online presence.",
     features: [
       "Custom 10-page website",
@@ -49,6 +51,7 @@ const plans = [
     name: "Premium",
     price: "$499",
     period: "/mo",
+    annualTotal: "$5,988",
     description: "The complete package for ambitious businesses.",
     features: [
       "Custom 20+ page website",
@@ -129,7 +132,7 @@ export default function Pricing() {
                 <h3 className="text-lg font-sans font-semibold text-forest mb-2">
                   {plan.name}
                 </h3>
-                <p className="text-sm text-forest/50 font-sans mb-6">
+                <p className="text-sm text-forest/50 font-sans mb-4">
                   {plan.description}
                 </p>
                 <div className="flex items-baseline gap-1">
@@ -139,6 +142,16 @@ export default function Pricing() {
                   <span className="text-base text-forest/50 font-sans">
                     {plan.period}
                   </span>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs text-forest/40 font-sans">
+                    {plan.annualTotal} over 12 months
+                  </span>
+                </div>
+                <div className="mt-3 p-2.5 rounded-lg bg-forest/5 border border-forest/8">
+                  <p className="text-[11px] text-forest/60 font-sans leading-relaxed">
+                    12-month commitment — billed monthly. Includes website build, hosting, maintenance, and ongoing support for the full term.
+                  </p>
                 </div>
               </div>
 
@@ -183,7 +196,7 @@ export default function Pricing() {
           transition={{ delay: 0.4 }}
           className="text-center text-sm text-forest/40 font-sans mt-12"
         >
-          All plans include a 12-month service agreement. Custom enterprise solutions available upon request.
+          All plans include a 12-month service agreement billed monthly. Your website is built, hosted, maintained, and supported for the full term. Cancel anytime after 12 months. Custom enterprise solutions available upon request.
         </motion.p>
       </div>
     </section>

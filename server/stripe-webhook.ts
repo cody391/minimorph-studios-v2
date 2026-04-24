@@ -3,8 +3,12 @@ import Stripe from "stripe";
 import { ENV } from "./_core/env";
 import * as db from "./db";
 import { getDb } from "./db";
-import { orders, users, contracts, leads, commissions } from "../drizzle/schema";
+import { orders, users, contracts, leads, commissions, customers, onboardingProjects } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { sendWelcomeEmail } from "./services/customerEmails";
+import { TIER_CONFIG, type TierKey } from "../shared/accountability";
+import { repTiers } from "../drizzle/schema";
+import { PACKAGES, type PackageKey } from "../shared/pricing";
 
 function getStripe(): Stripe | null {
   const key = (ENV as any).stripeSecretKey || process.env.STRIPE_SECRET_KEY;
@@ -81,8 +85,8 @@ export function registerStripeWebhook(app: Express) {
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const db = await getDb();
-  if (!db) {
+  const database = await getDb();
+  if (!database) {
     console.error("[Stripe] Database not available for checkout completion");
     return;
   }
@@ -91,20 +95,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     ? parseInt(session.metadata.user_id)
     : null;
 
-  // Update the order status
+  // ── 1. Update the order status ──────────────────────────────────────
+  let orderRow: typeof orders.$inferSelect | undefined;
   if (session.id) {
-    await db
+    await database
       .update(orders)
       .set({
         status: "paid",
         stripePaymentIntentId: session.payment_intent as string,
       })
       .where(eq(orders.stripeCheckoutSessionId, session.id));
+
+    // Fetch the order for metadata we'll need later
+    const orderRows = await database
+      .select()
+      .from(orders)
+      .where(eq(orders.stripeCheckoutSessionId, session.id))
+      .limit(1);
+    orderRow = orderRows[0];
   }
 
-  // Save stripe customer ID on the user
+  // ── 2. Save Stripe customer ID on the user ─────────────────────────
   if (userId && session.customer) {
-    await db
+    await database
       .update(users)
       .set({ stripeCustomerId: session.customer as string })
       .where(eq(users.id, userId));
@@ -114,8 +127,119 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     `[Stripe] Checkout completed: session=${session.id}, user=${userId}, amount=${session.amount_total}`
   );
 
-  // Auto-create recurring commission for the rep if this payment is tied to a contract
-  // This implements the "pay when customer pays" model
+  // ── 3. Derive metadata for customer/contract/onboarding ────────────
+  const customerEmail = session.customer_email || session.metadata?.customer_email || orderRow?.customerEmail;
+  const customerName = session.metadata?.customer_name || orderRow?.customerName || "Customer";
+  const businessName = session.metadata?.business_name || orderRow?.businessName || customerName;
+  const packageTier = (session.metadata?.package_tier || orderRow?.packageTier || "starter") as PackageKey;
+  const monthlyPrice = PACKAGES[packageTier].monthlyPrice;
+
+  // ── 4. Create customer record (idempotent) ─────────────────────────
+  let customerId: number | null = null;
+
+  if (userId) {
+    // Check if a customer already exists for this user
+    const existingCustomers = await database
+      .select()
+      .from(customers)
+      .where(eq(customers.userId, userId))
+      .limit(1);
+
+    if (existingCustomers.length > 0) {
+      customerId = existingCustomers[0].id;
+      console.log(`[Stripe] Customer already exists for user ${userId}: customer=${customerId}`);
+    } else {
+      const newCustomer = await db.createCustomer({
+        userId,
+        businessName,
+        contactName: customerName,
+        email: customerEmail || "",
+        phone: session.metadata?.phone || undefined,
+        status: "active",
+      });
+      customerId = newCustomer.id;
+      console.log(`[Stripe] Customer created: customer=${customerId}, user=${userId}`);
+    }
+  }
+
+  // ── 5. Create contract (idempotent — one per checkout session) ─────
+  let contractId: number | null = null;
+
+  if (customerId && session.id) {
+    // Check if a contract already exists for this checkout session
+    // We use the order's session ID as the idempotency key via the order link
+    const existingContracts = await database
+      .select()
+      .from(contracts)
+      .where(eq(contracts.customerId, customerId))
+      .orderBy(desc(contracts.createdAt))
+      .limit(1);
+
+    // Only skip if the most recent contract was created in the last 60 seconds
+    // (protects against duplicate webhook delivery)
+    const recentContract = existingContracts[0];
+    const sixtySecondsAgo = new Date(Date.now() - 60_000);
+    if (recentContract && recentContract.createdAt >= sixtySecondsAgo) {
+      contractId = recentContract.id;
+      console.log(`[Stripe] Contract already exists for customer ${customerId}: contract=${contractId}`);
+    } else {
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setFullYear(endDate.getFullYear() + 1);
+
+      const newContract = await db.createContract({
+        customerId,
+        repId: 0, // Self-service checkout — no rep assigned
+        packageTier,
+        monthlyPrice: monthlyPrice.toFixed(2),
+        startDate,
+        endDate,
+        notes: "Self-service checkout via Stripe",
+      });
+      contractId = newContract.id;
+      console.log(`[Stripe] Contract created: contract=${contractId}, customer=${customerId}, package=${packageTier}`);
+    }
+  }
+
+  // ── 6. Create onboarding project (idempotent) ─────────────────────
+  if (customerId) {
+    // Check if an onboarding project already exists for this customer
+    const existingProject = await db.getOnboardingProjectByCustomerId(customerId);
+
+    if (existingProject) {
+      console.log(`[Stripe] Onboarding project already exists for customer ${customerId}: project=${existingProject.id}`);
+    } else {
+      const newProject = await db.createOnboardingProject({
+        customerId,
+        orderId: orderRow?.id || undefined,
+        contractId: contractId || undefined,
+        businessName,
+        contactName: customerName,
+        contactEmail: customerEmail || "",
+        contactPhone: session.metadata?.phone || undefined,
+        packageTier,
+        stage: "questionnaire",
+      });
+      console.log(`[Stripe] Onboarding project created: project=${newProject.id}, customer=${customerId}`);
+    }
+  }
+
+  // ── 7. Send welcome email ──────────────────────────────────────────
+  try {
+    if (customerEmail) {
+      await sendWelcomeEmail({
+        to: customerEmail,
+        customerName,
+        packageTier,
+        businessName: businessName || undefined,
+      });
+      console.log(`[Stripe] Welcome email sent to ${customerEmail}`);
+    }
+  } catch (emailErr) {
+    console.error("[Stripe] Failed to send welcome email:", emailErr);
+  }
+
+  // ── 8. Auto-create recurring commission for the rep (if applicable) ─
   await createRecurringCommission(session);
 }
 
@@ -165,13 +289,10 @@ async function createRecurringCommission(session: Stripe.Checkout.Session) {
       const initialCommission = existingCommissions.find(c => c.type === "initial_sale");
       const isSelfSourced = initialCommission?.selfSourced || false;
 
-      // Get rep's gamification level for rate
-      const gamification = await db.getRepGamification(contract.repId);
-      const level = gamification?.level || "rookie";
-      const tierRates: Record<string, number> = {
-        rookie: 0.10, closer: 0.12, ace: 0.14, elite: 0.16, legend: 0.20,
-      };
-      let rate = tierRates[level] || 0.10;
+      // Get rep's accountability tier for commission rate
+      const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, contract.repId)).limit(1);
+      const tierKey = (tierRows[0]?.tier || "bronze") as TierKey;
+      let rate = TIER_CONFIG[tierKey].commissionRate / 100;
       if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
 
       const commissionAmount = (monthlyPrice * rate).toFixed(2);
