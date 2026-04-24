@@ -737,3 +737,22 @@
 
 ### Bug Fix: Camera Capture
 - [x] Fix camera capture in BecomeRep intake form — webcam/phone camera not working for avatar photo
+
+### Phase 46: Photo Capture Enhancements
+#### Photo Crop/Adjust Tool
+- [x] Build crop/adjust overlay after photo capture or upload
+- [x] Zoom slider (pinch-to-zoom on mobile, slider on desktop)
+- [x] Drag to reposition photo within circular crop frame
+- [x] Preview final cropped result before confirming
+
+#### Mirror Preview Toggle
+- [x] Add flip/mirror button on camera preview
+- [x] Toggle between mirrored (selfie) and true (how others see you) view
+- [x] Capture photo in true orientation regardless of preview mode
+
+#### AI Photo Quality Check
+- [x] Backend: analyze uploaded photo for quality (blur, lighting, face detection)
+- [x] Flag blurry, too dark, or too bright photos
+- [x] Flag non-professional photos (sunglasses, hats, inappropriate backgrounds)
+- [x] Show quality feedback with specific improvement suggestions
+- [x] Allow override if quality is borderline (not blocking, just warning)

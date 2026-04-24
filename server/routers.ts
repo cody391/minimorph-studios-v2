@@ -16,6 +16,7 @@ import { xGrowthDashboardRouter, xEngagementRouter, xGrowthTargetsRouter, xFollo
 import { localAuthRouter } from "./localAuth";
 import { assessmentRouter } from "./assessmentRouter";
 import { onboardingDataRouter } from "./onboardingDataRouter";
+import { invokeLLM } from "./_core/llm";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -189,6 +190,70 @@ const repsRouter = router({
       const { url } = await storagePut(`rep-photos/${rep.id}.${ext}`, buffer, input.mimeType);
       await db.updateRepProfilePhoto(rep.id, url);
       return { photoUrl: url };
+    }),
+
+  // AI photo quality check
+  checkPhotoQuality: protectedProcedure
+    .input(z.object({ photoBase64: z.string(), mimeType: z.string().default("image/jpeg") }))
+    .mutation(async ({ input }) => {
+      try {
+        const dataUrl = `data:${input.mimeType};base64,${input.photoBase64}`;
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional headshot quality reviewer for a sales representative onboarding process. Analyze the photo and evaluate it for use as a professional email signature and company profile photo. Be encouraging but honest.`,
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image_url" as const,
+                  image_url: { url: dataUrl, detail: "low" as const },
+                },
+                {
+                  type: "text" as const,
+                  text: `Evaluate this photo for professional use as a sales rep's email signature and profile photo. Check for:\n1. Face clearly visible and centered\n2. Good lighting (not too dark, not overexposed)\n3. Image sharpness (not blurry)\n4. Professional appearance (no sunglasses, appropriate attire)\n5. Clean background (not cluttered or distracting)\n6. Appropriate framing (head and shoulders)\n\nReturn your assessment as JSON.`,
+                },
+              ],
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "photo_quality_check",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  passed: { type: "boolean", description: "true if the photo is acceptable for professional use" },
+                  issues: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "List of specific quality issues found (empty if passed)",
+                  },
+                  suggestions: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Helpful suggestions to improve the photo (empty if perfect)",
+                  },
+                },
+                required: ["passed", "issues", "suggestions"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const content = response.choices?.[0]?.message?.content;
+        if (content && typeof content === "string") {
+          return JSON.parse(content) as { passed: boolean; issues: string[]; suggestions: string[] };
+        }
+        return { passed: true, issues: [], suggestions: [] };
+      } catch (err) {
+        console.error("AI photo quality check failed:", err);
+        // Don't block on failure — return passing
+        return { passed: true, issues: [], suggestions: [] };
+      }
     }),
 
   // Get email signature HTML for the rep

@@ -13,8 +13,9 @@ import { toast } from "sonner";
 import {
   CheckCircle, ArrowLeft, ArrowRight, DollarSign, Users, TrendingUp,
   Zap, User, Briefcase, Heart, FileCheck, Sparkles, Trophy, Star, Camera,
-  Eye, EyeOff, Lock,
+  Eye, EyeOff, Lock, FlipHorizontal2, Loader2,
 } from "lucide-react";
+import PhotoCropper from "@/components/PhotoCropper";
 
 const STEPS = [
   { id: 1, title: "Personal Info", icon: User },
@@ -112,6 +113,11 @@ export default function BecomeRep() {
 
   // Camera capture state
   const [showCamera, setShowCamera] = useState(false);
+  const [isMirrored, setIsMirrored] = useState(true); // selfie mode by default
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
+  const [isCheckingQuality, setIsCheckingQuality] = useState(false);
+  const [qualityFeedback, setQualityFeedback] = useState<{ passed: boolean; issues: string[]; suggestions: string[] } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -152,19 +158,65 @@ export default function BecomeRep() {
     canvas.height = 640;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    // Center-crop the video to a square
+    // Always capture in true (non-mirrored) orientation
     const v = videoRef.current;
     const size = Math.min(v.videoWidth, v.videoHeight);
     const sx = (v.videoWidth - size) / 2;
     const sy = (v.videoHeight - size) / 2;
     ctx.drawImage(v, sx, sy, size, size, 0, 0, 640, 640);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-    setPhotoPreview(dataUrl);
-    // Convert to File for upload
-    canvas.toBlob((blob) => {
-      if (blob) setPhotoFile(new File([blob], "camera-photo.jpg", { type: "image/jpeg" }));
-    }, "image/jpeg", 0.9);
     stopCamera();
+    // Open cropper instead of setting photo directly
+    setCropperSrc(dataUrl);
+    setShowCropper(true);
+  };
+
+  // Handle file upload → open cropper
+  const handleFileSelected = (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropperSrc(reader.result as string);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // AI photo quality check
+  const checkPhotoQuality = trpc.reps.checkPhotoQuality.useMutation({
+    onSuccess: (result: any) => {
+      setIsCheckingQuality(false);
+      setQualityFeedback(result);
+      if (result.passed) {
+        toast.success("Photo quality check passed!");
+      } else {
+        toast.warning("Photo quality concerns detected — see suggestions below.");
+      }
+    },
+    onError: (err: any) => {
+      setIsCheckingQuality(false);
+      // Don't block on AI check failure — just skip
+      console.error("Photo quality check failed:", err.message);
+    },
+  });
+
+  // Cropper confirm handler
+  const handleCropConfirm = (croppedDataUrl: string, croppedFile: File) => {
+    setPhotoPreview(croppedDataUrl);
+    setPhotoFile(croppedFile);
+    setShowCropper(false);
+    setCropperSrc(null);
+    setQualityFeedback(null);
+    // Trigger AI quality check in background
+    setIsCheckingQuality(true);
+    const base64 = croppedDataUrl.split(",")[1];
+    checkPhotoQuality.mutate({ photoBase64: base64, mimeType: "image/jpeg" });
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setCropperSrc(null);
   };
 
   const stopCamera = () => {
@@ -406,23 +458,48 @@ export default function BecomeRep() {
                     Please use a professional headshot — good lighting, neutral background, no sunglasses or hats.
                   </p>
 
-                  {/* Camera capture modal */}
-                  {showCamera && (
-                    <div className="mb-3 rounded-lg overflow-hidden border border-sage/30 bg-black">
-                      <video
-                        ref={(el) => {
-                          (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
-                          // When the video element mounts, attach the stream if it's ready
-                          if (el && streamRef.current && !el.srcObject) {
-                            el.srcObject = streamRef.current;
-                            el.play().catch(() => {});
-                          }
-                        }}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full aspect-square object-cover"
+                  {/* Photo Cropper overlay */}
+                  {showCropper && cropperSrc && (
+                    <div className="mb-3 border border-sage/30 rounded-lg p-3 bg-cream">
+                      <PhotoCropper
+                        imageSrc={cropperSrc}
+                        onConfirm={handleCropConfirm}
+                        onCancel={handleCropCancel}
                       />
+                    </div>
+                  )}
+
+                  {/* Camera capture modal */}
+                  {showCamera && !showCropper && (
+                    <div className="mb-3 rounded-lg overflow-hidden border border-sage/30 bg-black">
+                      <div className="relative">
+                        <video
+                          ref={(el) => {
+                            (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+                            if (el && streamRef.current && !el.srcObject) {
+                              el.srcObject = streamRef.current;
+                              el.play().catch(() => {});
+                            }
+                          }}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="w-full aspect-square object-cover"
+                          style={{ transform: isMirrored ? "scaleX(-1)" : "none" }}
+                        />
+                        {/* Mirror toggle */}
+                        <button
+                          type="button"
+                          onClick={() => setIsMirrored(!isMirrored)}
+                          className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 transition-colors"
+                          title={isMirrored ? "Showing mirror view (selfie). Click to see how others see you." : "Showing true view. Click for mirror (selfie) view."}
+                        >
+                          <FlipHorizontal2 className="w-4 h-4" />
+                        </button>
+                        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full">
+                          {isMirrored ? "Mirror (selfie)" : "True view (how others see you)"}
+                        </div>
+                      </div>
                       <div className="flex gap-2 p-2 bg-forest/90">
                         <Button
                           type="button"
@@ -484,6 +561,41 @@ export default function BecomeRep() {
                       </div>
                       <p className="text-[10px] text-forest/40">JPG or PNG, max 5MB. Professional headshot recommended.</p>
                     </div>
+                    {/* AI Quality Feedback */}
+                    {isCheckingQuality && (
+                      <div className="mt-2 flex items-center gap-2 text-xs text-forest/60">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>AI is checking photo quality...</span>
+                      </div>
+                    )}
+                    {qualityFeedback && !isCheckingQuality && (
+                      <div className={`mt-2 p-2.5 rounded-lg text-xs ${
+                        qualityFeedback.passed
+                          ? "bg-green-50 border border-green-200"
+                          : "bg-amber-50 border border-amber-200"
+                      }`}>
+                        <p className={`font-medium mb-1 ${qualityFeedback.passed ? "text-green-700" : "text-amber-700"}`}>
+                          {qualityFeedback.passed ? "✓ Photo looks great!" : "⚠ Photo quality suggestions:"}
+                        </p>
+                        {qualityFeedback.issues.length > 0 && (
+                          <ul className="text-amber-600 space-y-0.5 mb-1">
+                            {qualityFeedback.issues.map((issue: string, i: number) => (
+                              <li key={i}>• {issue}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {qualityFeedback.suggestions.length > 0 && !qualityFeedback.passed && (
+                          <ul className="text-forest/60 space-y-0.5">
+                            {qualityFeedback.suggestions.map((s: string, i: number) => (
+                              <li key={i}>💡 {s}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {!qualityFeedback.passed && (
+                          <p className="text-[10px] text-forest/40 mt-1">You can still proceed — these are suggestions, not requirements.</p>
+                        )}
+                      </div>
+                    )}
                     <input
                       ref={photoInputRef}
                       type="file"
@@ -492,12 +604,8 @@ export default function BecomeRep() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        if (!file.type.startsWith("image/")) { toast.error("Please select an image"); return; }
-                        if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
-                        setPhotoFile(file);
-                        const reader = new FileReader();
-                        reader.onload = () => setPhotoPreview(reader.result as string);
-                        reader.readAsDataURL(file);
+                        handleFileSelected(file);
+                        e.target.value = ""; // reset so same file can be re-selected
                       }}
                     />
                   </div>
