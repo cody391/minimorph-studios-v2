@@ -335,3 +335,45 @@ export async function sendReferralInviteEmail(params: {
     html,
   });
 }
+
+/* ═══════════════════════════════════════════════════════
+   6. PAYMENT FAILED EMAIL
+   Sent when invoice.payment_failed fires
+   ═══════════════════════════════════════════════════════ */
+export async function sendPaymentFailedEmail(params: {
+  to: string;
+  customerName: string;
+  packageTier: PackageKey;
+  attemptCount: number;
+}) {
+  const pkg = PACKAGES[params.packageTier];
+  const isFirstAttempt = params.attemptCount <= 1;
+
+  const html = brandWrap(`
+    <h2 style="color:#c0705a;margin:0 0 16px;font-size:24px;">
+      ${isFirstAttempt ? "Payment issue with your account" : "Urgent: Payment still failing"}
+    </h2>
+    <p style="margin:0 0 16px;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;">
+      We were unable to process your monthly payment of <strong>$${pkg.monthlyPrice}</strong> for your 
+      ${pkg.name} plan. ${isFirstAttempt
+        ? "This can happen if your card expired or your bank flagged the charge."
+        : `This is attempt #${params.attemptCount}. Please update your payment method to avoid service interruption.`}
+    </p>
+    <div style="margin:24px 0;padding:16px;background:#fef3f0;border-radius:8px;border-left:4px solid #c0705a;">
+      <p style="margin:0;font-size:14px;color:#2d4a3e;">
+        <strong>What to do:</strong> Log into your Customer Portal and update your payment method, 
+        or reply to this email and we'll help you sort it out.
+      </p>
+    </div>
+    <p style="margin:0;color:#6b7c6e;">— The MiniMorph Studios Team</p>
+  `);
+
+  return sendEmail({
+    to: params.to,
+    subject: isFirstAttempt
+      ? `Action needed: Payment failed for your MiniMorph plan`
+      : `Urgent: Update your payment method — attempt #${params.attemptCount}`,
+    html,
+  });
+}

@@ -3,9 +3,9 @@ import Stripe from "stripe";
 import { ENV } from "./_core/env";
 import * as db from "./db";
 import { getDb } from "./db";
-import { orders, users, contracts, leads, commissions, customers, onboardingProjects } from "../drizzle/schema";
+import { orders, users, contracts, leads, commissions, customers, onboardingProjects, nurtureLogs } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { sendWelcomeEmail } from "./services/customerEmails";
+import { sendWelcomeEmail, sendPaymentFailedEmail } from "./services/customerEmails";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
 import { repTiers } from "../drizzle/schema";
 import { PACKAGES, type PackageKey } from "../shared/pricing";
@@ -72,6 +72,26 @@ export function registerStripeWebhook(app: Express) {
             await handlePaymentFailed(paymentIntent);
             break;
           }
+          case "invoice.paid": {
+            const invoice = event.data.object as Stripe.Invoice;
+            await handleInvoicePaid(invoice);
+            break;
+          }
+          case "invoice.payment_failed": {
+            const invoice = event.data.object as Stripe.Invoice;
+            await handleInvoicePaymentFailed(invoice);
+            break;
+          }
+          case "customer.subscription.updated": {
+            const subscription = event.data.object as Stripe.Subscription;
+            await handleSubscriptionUpdated(subscription);
+            break;
+          }
+          case "customer.subscription.deleted": {
+            const subscription = event.data.object as Stripe.Subscription;
+            await handleSubscriptionDeleted(subscription);
+            break;
+          }
           default:
             console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
         }
@@ -84,6 +104,10 @@ export function registerStripeWebhook(app: Express) {
   );
 }
 
+/* ═══════════════════════════════════════════════════════
+   CHECKOUT.SESSION.COMPLETED
+   First payment — creates customer, contract, onboarding
+   ═══════════════════════════════════════════════════════ */
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const database = await getDb();
   if (!database) {
@@ -138,7 +162,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   let customerId: number | null = null;
 
   if (userId) {
-    // Check if a customer already exists for this user
     const existingCustomers = await database
       .select()
       .from(customers)
@@ -166,8 +189,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   let contractId: number | null = null;
 
   if (customerId && session.id) {
-    // Check if a contract already exists for this checkout session
-    // We use the order's session ID as the idempotency key via the order link
     const existingContracts = await database
       .select()
       .from(contracts)
@@ -187,6 +208,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       const endDate = new Date();
       endDate.setFullYear(endDate.getFullYear() + 1);
 
+      // Get the Stripe subscription ID from the session
+      const stripeSubscriptionId = session.subscription as string | undefined;
+
       const newContract = await db.createContract({
         customerId,
         repId: 0, // Self-service checkout — no rep assigned
@@ -194,16 +218,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         monthlyPrice: monthlyPrice.toFixed(2),
         startDate,
         endDate,
+        stripeSubscriptionId: stripeSubscriptionId || undefined,
         notes: "Self-service checkout via Stripe",
       });
       contractId = newContract.id;
-      console.log(`[Stripe] Contract created: contract=${contractId}, customer=${customerId}, package=${packageTier}`);
+      console.log(`[Stripe] Contract created: contract=${contractId}, customer=${customerId}, package=${packageTier}, sub=${stripeSubscriptionId}`);
     }
   }
 
   // ── 6. Create onboarding project (idempotent) ─────────────────────
   if (customerId) {
-    // Check if an onboarding project already exists for this customer
     const existingProject = await db.getOnboardingProjectByCustomerId(customerId);
 
     if (existingProject) {
@@ -239,96 +263,456 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.error("[Stripe] Failed to send welcome email:", emailErr);
   }
 
-  // ── 8. Auto-create recurring commission for the rep (if applicable) ─
-  await createRecurringCommission(session);
+  // ── 8. Auto-create initial commission for the rep (if applicable) ──
+  await createInitialCommission(session);
 }
 
+/* ═══════════════════════════════════════════════════════
+   INVOICE.PAID
+   Fires on every successful subscription payment (including first).
+   We skip the first invoice (handled by checkout.session.completed)
+   and create recurring commissions for subsequent invoices.
+   ═══════════════════════════════════════════════════════ */
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  const database = await getDb();
+  if (!database) return;
+
+  // Stripe v22 basil: subscription is at invoice.parent.subscription_details.subscription
+  const subDetail = invoice.parent?.subscription_details;
+  const subscriptionId = typeof subDetail?.subscription === "string"
+    ? subDetail.subscription
+    : (subDetail?.subscription as any)?.id ?? null;
+
+  if (!subscriptionId) {
+    console.log(`[Stripe] invoice.paid has no subscription — skipping (one-time payment)`);
+    return;
+  }
+
+  // Skip the first invoice — that's handled by checkout.session.completed
+  if (invoice.billing_reason === "subscription_create") {
+    console.log(`[Stripe] invoice.paid for initial subscription — skipping (handled by checkout)`);
+    return;
+  }
+
+  console.log(`[Stripe] invoice.paid: subscription=${subscriptionId}, amount=${invoice.amount_paid}, reason=${invoice.billing_reason}`);
+
+  // Find the contract linked to this subscription
+  const contractRows = await database
+    .select()
+    .from(contracts)
+    .where(eq(contracts.stripeSubscriptionId, subscriptionId))
+    .limit(1);
+
+  const contract = contractRows[0];
+  if (!contract) {
+    console.log(`[Stripe] invoice.paid: no contract found for subscription ${subscriptionId}`);
+    return;
+  }
+
+  // ── 1. Create a new order record for this recurring payment ────────
+  // Idempotency: use invoice.id stored in orders.metadata to prevent duplicates
+  const invoiceId = invoice.id;
+  if (invoiceId) {
+    const existingOrders = await database
+      .select()
+      .from(orders)
+      .where(eq(orders.stripePaymentIntentId, invoiceId))
+      .limit(1);
+
+    if (existingOrders.length > 0) {
+      console.log(`[Stripe] invoice.paid: order already exists for invoice ${invoiceId}`);
+    } else {
+      // Find the userId from the customer record
+      const customerRow = await database
+        .select()
+        .from(customers)
+        .where(eq(customers.id, contract.customerId))
+        .limit(1);
+
+      if (customerRow[0]?.userId) {
+        const newOrder = await db.createOrder({
+          userId: customerRow[0].userId,
+          packageTier: contract.packageTier,
+          amount: invoice.amount_paid || 0,
+          customerEmail: customerRow[0].email || undefined,
+          customerName: customerRow[0].contactName || undefined,
+          businessName: customerRow[0].businessName || undefined,
+        });
+        // Mark as paid and store invoice ID for idempotency
+        await database.update(orders).set({
+          status: "paid" as const,
+          stripePaymentIntentId: invoiceId,
+        }).where(eq(orders.id, newOrder.id));
+        console.log(`[Stripe] invoice.paid: recurring order created for contract ${contract.id}`);
+      }
+    }
+  }
+
+  // ── 2. Create recurring commission for the rep ─────────────────────
+  if (contract.repId && contract.repId > 0) {
+    await createRecurringCommissionForContract(contract);
+  }
+
+  // ── 3. Keep contract status active ─────────────────────────────────
+  if (contract.status === "expiring_soon") {
+    await db.updateContract(contract.id, { status: "active" });
+    console.log(`[Stripe] invoice.paid: contract ${contract.id} status restored to active`);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   INVOICE.PAYMENT_FAILED
+   Fires when a subscription payment attempt fails.
+   Flags the customer, creates a nurture log, sends email.
+   ═══════════════════════════════════════════════════════ */
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  const database = await getDb();
+  if (!database) return;
+
+  // Stripe v22 basil: subscription is at invoice.parent.subscription_details.subscription
+  const subDetail = invoice.parent?.subscription_details;
+  const subscriptionId = typeof subDetail?.subscription === "string"
+    ? subDetail.subscription
+    : (subDetail?.subscription as any)?.id ?? null;
+
+  if (!subscriptionId) return;
+
+  console.log(`[Stripe] invoice.payment_failed: subscription=${subscriptionId}, attempt=${invoice.attempt_count}`);
+
+  // Find the contract
+  const contractRows = await database
+    .select()
+    .from(contracts)
+    .where(eq(contracts.stripeSubscriptionId, subscriptionId))
+    .limit(1);
+
+  const contract = contractRows[0];
+  if (!contract) {
+    console.log(`[Stripe] invoice.payment_failed: no contract found for subscription ${subscriptionId}`);
+    return;
+  }
+
+  // ── 1. Flag customer as at_risk if multiple failures ───────────────
+  if ((invoice.attempt_count || 0) >= 2) {
+    await db.updateCustomer(contract.customerId, { status: "at_risk" });
+    console.log(`[Stripe] invoice.payment_failed: customer ${contract.customerId} flagged as at_risk`);
+  }
+
+  // ── 2. Create nurture log for tracking ─────────────────────────────
+  try {
+    await db.createNurtureLog({
+      customerId: contract.customerId,
+      contractId: contract.id,
+      type: "support_request",
+      channel: "email",
+      subject: `Payment failed — attempt #${invoice.attempt_count || 1}`,
+      content: `Stripe invoice ${invoice.id} payment failed. Amount: $${((invoice.amount_due || 0) / 100).toFixed(2)}. Attempt #${invoice.attempt_count || 1}.`,
+      status: "sent",
+      sentAt: new Date(),
+    });
+  } catch (err) {
+    console.error("[Stripe] Failed to create nurture log for payment failure:", err);
+  }
+
+  // ── 3. Send payment failed email to customer ───────────────────────
+  try {
+    const customerRow = await database
+      .select()
+      .from(customers)
+      .where(eq(customers.id, contract.customerId))
+      .limit(1);
+
+    if (customerRow[0]?.email) {
+      await sendPaymentFailedEmail({
+        to: customerRow[0].email,
+        customerName: customerRow[0].contactName || "Customer",
+        packageTier: contract.packageTier as PackageKey,
+        attemptCount: invoice.attempt_count || 1,
+      });
+      console.log(`[Stripe] Payment failed email sent to ${customerRow[0].email}`);
+    }
+  } catch (emailErr) {
+    console.error("[Stripe] Failed to send payment failed email:", emailErr);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER.SUBSCRIPTION.UPDATED
+   Fires when plan changes, pauses, or status transitions.
+   Syncs contract package tier and status.
+   ═══════════════════════════════════════════════════════ */
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const database = await getDb();
+  if (!database) return;
+
+  const subscriptionId = subscription.id;
+  console.log(`[Stripe] subscription.updated: id=${subscriptionId}, status=${subscription.status}`);
+
+  // Find the contract
+  const contractRows = await database
+    .select()
+    .from(contracts)
+    .where(eq(contracts.stripeSubscriptionId, subscriptionId))
+    .limit(1);
+
+  const contract = contractRows[0];
+  if (!contract) {
+    console.log(`[Stripe] subscription.updated: no contract found for subscription ${subscriptionId}`);
+    return;
+  }
+
+  // ── 1. Sync subscription status → contract status ──────────────────
+  const updates: Partial<typeof contracts.$inferInsert> = {};
+
+  switch (subscription.status) {
+    case "active":
+      // Only update if contract was in a degraded state
+      if (contract.status === "expiring_soon" || contract.status === "cancelled") {
+        updates.status = "active";
+      }
+      break;
+    case "past_due":
+      // Payment is overdue but subscription hasn't been cancelled yet
+      // Don't change contract status — invoice.payment_failed handles the customer flag
+      break;
+    case "canceled":
+      // Handled by customer.subscription.deleted
+      break;
+    case "unpaid":
+      updates.status = "expired";
+      break;
+  }
+
+  // ── 2. Detect plan changes via subscription metadata ───────────────
+  const newPackageTier = subscription.metadata?.package_tier as PackageKey | undefined;
+  if (newPackageTier && newPackageTier !== contract.packageTier && PACKAGES[newPackageTier]) {
+    updates.packageTier = newPackageTier;
+    updates.monthlyPrice = PACKAGES[newPackageTier].monthlyPrice.toFixed(2);
+    console.log(`[Stripe] subscription.updated: plan changed from ${contract.packageTier} to ${newPackageTier}`);
+  }
+
+  // ── 3. Sync period end date ────────────────────────────────────────
+  // Stripe v22 basil: current_period_end moved to subscription items
+  const periodEnd = subscription.items?.data?.[0]?.current_period_end;
+  if (periodEnd) {
+    const newEndDate = new Date(periodEnd * 1000);
+    // Only update if the end date changed significantly (more than 1 day difference)
+    const currentEnd = contract.endDate.getTime();
+    const newEnd = newEndDate.getTime();
+    if (Math.abs(currentEnd - newEnd) > 86_400_000) {
+      updates.endDate = newEndDate;
+    }
+  }
+
+  // Apply updates if any
+  if (Object.keys(updates).length > 0) {
+    await db.updateContract(contract.id, updates);
+    console.log(`[Stripe] subscription.updated: contract ${contract.id} updated:`, Object.keys(updates));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER.SUBSCRIPTION.DELETED
+   Fires when subscription is fully cancelled.
+   Marks contract cancelled, updates customer, cancels pending commissions.
+   ═══════════════════════════════════════════════════════ */
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const database = await getDb();
+  if (!database) return;
+
+  const subscriptionId = subscription.id;
+  console.log(`[Stripe] subscription.deleted: id=${subscriptionId}`);
+
+  // Find the contract
+  const contractRows = await database
+    .select()
+    .from(contracts)
+    .where(eq(contracts.stripeSubscriptionId, subscriptionId))
+    .limit(1);
+
+  const contract = contractRows[0];
+  if (!contract) {
+    console.log(`[Stripe] subscription.deleted: no contract found for subscription ${subscriptionId}`);
+    return;
+  }
+
+  // ── 1. Mark contract as cancelled ──────────────────────────────────
+  await db.updateContract(contract.id, { status: "cancelled" });
+  console.log(`[Stripe] subscription.deleted: contract ${contract.id} marked as cancelled`);
+
+  // ── 2. Update customer status to churned ───────────────────────────
+  // Only if they have no other active contracts
+  const otherActiveContracts = await database
+    .select()
+    .from(contracts)
+    .where(and(
+      eq(contracts.customerId, contract.customerId),
+      eq(contracts.status, "active"),
+    ))
+    .limit(1);
+
+  if (otherActiveContracts.length === 0) {
+    await db.updateCustomer(contract.customerId, { status: "churned" });
+    console.log(`[Stripe] subscription.deleted: customer ${contract.customerId} marked as churned`);
+  }
+
+  // ── 3. Cancel pending/approved commissions for this contract ───────
+  await db.cancelCommissionsByContract(contract.id);
+  console.log(`[Stripe] subscription.deleted: pending commissions cancelled for contract ${contract.id}`);
+
+  // ── 4. Create nurture log for retention tracking ───────────────────
+  try {
+    await db.createNurtureLog({
+      customerId: contract.customerId,
+      contractId: contract.id,
+      type: "renewal_outreach",
+      channel: "in_app",
+      subject: "Subscription cancelled",
+      content: `Customer's ${contract.packageTier} subscription (${subscriptionId}) was cancelled. Contract marked as cancelled.`,
+      status: "sent",
+      sentAt: new Date(),
+    });
+  } catch (err) {
+    console.error("[Stripe] Failed to create cancellation nurture log:", err);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   COMMISSION HELPERS
+   ═══════════════════════════════════════════════════════ */
+
 /**
- * When a customer payment succeeds, create a recurring commission for the rep.
- * This is the Uber/DoorDash instant payout model:
- * - Commission is auto-approved (not pending)
- * - Rep gets paid every time the customer pays
- * - If customer stops paying, no more commissions
+ * Create initial commission on first checkout (called from handleCheckoutCompleted).
+ * Renamed from createRecurringCommission to clarify its role.
  */
-async function createRecurringCommission(session: Stripe.Checkout.Session) {
+async function createInitialCommission(session: Stripe.Checkout.Session) {
   try {
     const database = await getDb();
     if (!database) return;
 
-    // Find the contract associated with this payment via metadata or customer email
     const customerEmail = session.customer_email || session.metadata?.customer_email;
     if (!customerEmail) return;
 
-    // Look up active contracts for this customer
     const customerRows = await database.select().from(users).where(eq(users.email, customerEmail)).limit(1);
     if (!customerRows.length) return;
 
-    // Find active contracts with a rep
     const activeContracts = await database.select().from(contracts)
       .where(and(eq(contracts.status, "active")))
       .orderBy(desc(contracts.createdAt));
 
     for (const contract of activeContracts) {
-      if (!contract.repId) continue;
+      if (!contract.repId || contract.repId === 0) continue;
 
-      // Check if this is a recurring payment (not the initial sale)
       const existingCommissions = await db.getActiveCommissionsByContract(contract.id);
       const hasInitialSale = existingCommissions.some(c => c.type === "initial_sale");
-      if (!hasInitialSale) continue; // Skip if no initial sale commission exists
+      if (hasInitialSale) continue; // Already has initial commission
 
-      // Check if we already created a recurring commission this month
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const recentRecurring = existingCommissions.find(
-        c => c.type === "recurring_monthly" && c.createdAt >= monthStart
-      );
-      if (recentRecurring) continue; // Already paid this month
-
-      // Calculate recurring commission based on monthly price and rep's rate
+      // This is the first payment — create initial_sale commission
       const monthlyPrice = parseFloat(contract.monthlyPrice);
-      const initialCommission = existingCommissions.find(c => c.type === "initial_sale");
-      const isSelfSourced = initialCommission?.selfSourced || false;
 
-      // Get rep's accountability tier for commission rate
       const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, contract.repId)).limit(1);
       const tierKey = (tierRows[0]?.tier || "bronze") as TierKey;
       let rate = TIER_CONFIG[tierKey].commissionRate / 100;
-      if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
+
+      // Self-sourced leads get 2x rate (capped at 40%)
+      // Check if the lead was self-sourced by checking the contract metadata
+      const isSelfSourced = false; // Initial checkout doesn't carry self-sourced flag
 
       const commissionAmount = (monthlyPrice * rate).toFixed(2);
 
-      // Create auto-approved recurring commission
       await db.createCommission({
         repId: contract.repId,
         contractId: contract.id,
         amount: commissionAmount,
-        type: "recurring_monthly",
-        status: "approved", // Instant payout — auto-approved
+        type: "initial_sale",
+        status: "approved",
         selfSourced: isSelfSourced,
       });
 
-      // Notify the rep
       await db.createRepNotification({
         repId: contract.repId,
         type: "commission_approved",
-        title: "💰 Monthly Commission Earned!",
-        message: `You earned $${commissionAmount} from a recurring payment on contract #${contract.id}${isSelfSourced ? " (2x self-sourced bonus!)" : ""}. Ready for instant payout!`,
+        title: "New Sale Commission!",
+        message: `You earned $${commissionAmount} from a new ${contract.packageTier} sale on contract #${contract.id}. Ready for instant payout!`,
         metadata: { contractId: contract.id, amount: commissionAmount },
       });
 
-      console.log(`[Stripe] Recurring commission created: rep=${contract.repId}, contract=${contract.id}, amount=$${commissionAmount}`);
+      console.log(`[Stripe] Initial commission created: rep=${contract.repId}, contract=${contract.id}, amount=$${commissionAmount}`);
     }
+  } catch (err) {
+    console.error("[Stripe] Error creating initial commission:", err);
+  }
+}
+
+/**
+ * Create recurring monthly commission for a specific contract.
+ * Called from handleInvoicePaid for each recurring payment.
+ * Idempotent: checks if commission already exists for this month.
+ */
+async function createRecurringCommissionForContract(contract: typeof contracts.$inferSelect) {
+  try {
+    const database = await getDb();
+    if (!database) return;
+
+    if (!contract.repId || contract.repId === 0) return;
+
+    const existingCommissions = await db.getActiveCommissionsByContract(contract.id);
+
+    // Check if we already created a recurring commission this month
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const recentRecurring = existingCommissions.find(
+      c => c.type === "recurring_monthly" && c.createdAt >= monthStart
+    );
+    if (recentRecurring) {
+      console.log(`[Stripe] Recurring commission already exists for contract ${contract.id} this month`);
+      return;
+    }
+
+    // Calculate commission based on monthly price and rep's tier rate
+    const monthlyPrice = parseFloat(contract.monthlyPrice);
+    const initialCommission = existingCommissions.find(c => c.type === "initial_sale");
+    const isSelfSourced = initialCommission?.selfSourced || false;
+
+    const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, contract.repId)).limit(1);
+    const tierKey = (tierRows[0]?.tier || "bronze") as TierKey;
+    let rate = TIER_CONFIG[tierKey].commissionRate / 100;
+    if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
+
+    const commissionAmount = (monthlyPrice * rate).toFixed(2);
+
+    await db.createCommission({
+      repId: contract.repId,
+      contractId: contract.id,
+      amount: commissionAmount,
+      type: "recurring_monthly",
+      status: "approved",
+      selfSourced: isSelfSourced,
+    });
+
+    await db.createRepNotification({
+      repId: contract.repId,
+      type: "commission_approved",
+      title: "Monthly Commission Earned!",
+      message: `You earned $${commissionAmount} from a recurring payment on contract #${contract.id}${isSelfSourced ? " (2x self-sourced bonus!)" : ""}. Ready for instant payout!`,
+      metadata: { contractId: contract.id, amount: commissionAmount },
+    });
+
+    console.log(`[Stripe] Recurring commission created: rep=${contract.repId}, contract=${contract.id}, amount=$${commissionAmount}`);
   } catch (err) {
     console.error("[Stripe] Error creating recurring commission:", err);
   }
 }
 
+/* ═══════════════════════════════════════════════════════
+   PAYMENT_INTENT.PAYMENT_FAILED (legacy — for one-time payments)
+   ═══════════════════════════════════════════════════════ */
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  const db = await getDb();
-  if (!db) return;
+  const database = await getDb();
+  if (!database) return;
 
   if (paymentIntent.id) {
-    await db
+    await database
       .update(orders)
       .set({ status: "failed" })
       .where(eq(orders.stripePaymentIntentId, paymentIntent.id));

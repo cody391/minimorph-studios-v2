@@ -149,6 +149,7 @@ export const contracts = mysqlTable("contracts", {
     .notNull(),
   websitePages: int("websitePages").default(5).notNull(),
   features: json("features"),
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

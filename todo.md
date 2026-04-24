@@ -1026,3 +1026,12 @@
 - [x] Fix 4: Add customers.me protectedProcedure for portal access
 - [x] Fix 5: Update CustomerPortal to use customers.me, remove demo logic
 - [x] Fix 6: Fix sendCustomerEmail TS error → use sendReferralInviteEmail
+
+### Phase B — Stripe Subscription Lifecycle
+- [x] B1: Add invoice.paid webhook handler (idempotent order creation, contract status update)
+- [x] B2: Add invoice.payment_failed webhook handler (flag contract/customer, create nurture log)
+- [x] B3: Add customer.subscription.updated webhook handler (sync contract status/dates)
+- [x] B4: Add customer.subscription.deleted webhook handler (mark contract cancelled, update customer status)
+- [x] B5: Add recurring commission creation on invoice.paid (idempotent, linked to rep)
+- [x] B6: Write vitest tests for Phase B handlers
+- [x] B7: Typecheck 0 errors, all tests passing
