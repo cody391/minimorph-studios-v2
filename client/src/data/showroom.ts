@@ -3,6 +3,8 @@
  * Each site has a unique visual personality, mapped to a specific package tier,
  * with add-ons showcased. These are the sites visitors can browse to see
  * what MiniMorph actually builds.
+ *
+ * ALL business names are fictional. They do not represent real businesses.
  */
 
 export interface ShowroomSite {
@@ -38,8 +40,8 @@ export interface ShowroomSite {
 
 export const showroomSites: ShowroomSite[] = [
   {
-    slug: "lakehouse-grill",
-    name: "The Lakehouse Grill",
+    slug: "driftwood-kitchen",
+    name: "Driftwood Kitchen",
     tagline: "Waterfront dining, done right.",
     industry: "Restaurant",
     location: "Whitehall, MI",
@@ -74,19 +76,19 @@ export const showroomSites: ShowroomSite[] = [
         sub: "Fresh-caught fish, Michigan craft beer, and sunsets you'll remember. Open year-round on White Lake.",
       },
       about:
-        "The Lakehouse Grill has been a Whitehall staple since 2008. What started as a small fish fry shack on the channel has grown into a full-service waterfront restaurant serving locally sourced Michigan ingredients. We still fry our perch the same way — one batch at a time.",
+        "Driftwood Kitchen has been a Whitehall staple since 2008. What started as a small fish fry shack on the channel has grown into a full-service waterfront restaurant serving locally sourced Michigan ingredients. We still fry our perch the same way — one batch at a time.",
       services: [
         { name: "Dine-In", desc: "Waterfront seating with views of White Lake. Reservations recommended on weekends." },
         { name: "Takeout", desc: "Call ahead or order online. Ready in 20 minutes." },
         { name: "Private Events", desc: "Host your rehearsal dinner, birthday, or company outing lakeside." },
-        { name: "Catering", desc: "We bring the Lakehouse to you. Full-service catering for 20 to 200 guests." },
+        { name: "Catering", desc: "We bring the kitchen to you. Full-service catering for 20 to 200 guests." },
       ],
       cta: "Make a Reservation",
     },
   },
   {
-    slug: "ironworks-renovations",
-    name: "Ironworks Renovations",
+    slug: "hammerstone-builds",
+    name: "Hammerstone Builds",
     tagline: "Built to last. Not to impress your neighbor.",
     industry: "General Contractor",
     location: "Muskegon, MI",
@@ -121,7 +123,7 @@ export const showroomSites: ShowroomSite[] = [
         sub: "Licensed general contractor serving Muskegon County. Kitchens, bathrooms, decks, and the stuff nobody else wants to touch.",
       },
       about:
-        "Ironworks Renovations has been serving Muskegon and the lakeshore since 2015. We're a small crew — three guys who actually show up when we say we will. We don't do free estimates that turn into two-hour sales pitches. We look at the job, tell you what it costs, and get to work.",
+        "Hammerstone Builds has been serving Muskegon and the lakeshore since 2015. We're a small crew — three guys who actually show up when we say we will. We don't do free estimates that turn into two-hour sales pitches. We look at the job, tell you what it costs, and get to work.",
       services: [
         { name: "Kitchen Remodels", desc: "Full gut jobs to cabinet refacing. We do it all." },
         { name: "Bathroom Renovations", desc: "Tile, plumbing, vanities, walk-in showers." },
@@ -132,8 +134,8 @@ export const showroomSites: ShowroomSite[] = [
     },
   },
   {
-    slug: "noir-beauty",
-    name: "Noir Beauty Collective",
+    slug: "velvet-vine-studio",
+    name: "Velvet & Vine Studio",
     tagline: "Where artistry meets intention.",
     industry: "Salon & Spa",
     location: "Grand Rapids, MI",
@@ -174,7 +176,7 @@ export const showroomSites: ShowroomSite[] = [
         sub: "Precision cuts, custom color, and intentional styling in the heart of Grand Rapids. Book your consultation.",
       },
       about:
-        "Noir Beauty Collective was founded in 2019 by Aisha Torres, a stylist with 12 years of experience and a belief that great hair starts with listening. We're a team of five stylists, each with their own specialty — from lived-in balayage to protective styling to editorial updos. We don't rush. We don't upsell. We just do really good hair.",
+        "Velvet & Vine Studio was founded in 2019 by Aisha Torres, a stylist with 12 years of experience and a belief that great hair starts with listening. We're a team of five stylists, each with their own specialty — from lived-in balayage to protective styling to editorial updos. We don't rush. We don't upsell. We just do really good hair.",
       services: [
         { name: "Precision Cuts", desc: "Tailored to your face shape, lifestyle, and how much time you actually spend styling." },
         { name: "Custom Color", desc: "Balayage, highlights, vivids, corrective color. Consultation required for first-timers." },
@@ -185,8 +187,8 @@ export const showroomSites: ShowroomSite[] = [
     },
   },
   {
-    slug: "forge-athletics",
-    name: "Forge Athletics",
+    slug: "gritmill-fitness",
+    name: "Gritmill Fitness",
     tagline: "Earn it.",
     industry: "Fitness Studio",
     location: "Holland, MI",
@@ -222,7 +224,7 @@ export const showroomSites: ShowroomSite[] = [
         sub: "Strength training, HIIT, and Olympic lifting in Holland, MI. First class is free.",
       },
       about:
-        "Forge Athletics opened in 2021 in a converted warehouse on 8th Street. We run small group classes — never more than 12 people — because coaching matters more than headcount. Our trainers are certified, our programming is structured, and our community is the kind that texts you when you miss a session.",
+        "Gritmill Fitness opened in 2021 in a converted warehouse on 8th Street. We run small group classes — never more than 12 people — because coaching matters more than headcount. Our trainers are certified, our programming is structured, and our community is the kind that texts you when you miss a session.",
       services: [
         { name: "Strength & Conditioning", desc: "Barbell-based programming. Squat, press, pull. Three days a week." },
         { name: "HIIT Classes", desc: "30-minute high-intensity sessions. No equipment experience needed." },
@@ -233,8 +235,8 @@ export const showroomSites: ShowroomSite[] = [
     },
   },
   {
-    slug: "wren-and-sparrow",
-    name: "Wren & Sparrow",
+    slug: "clover-and-thistle",
+    name: "Clover & Thistle",
     tagline: "Curated. Not mass-produced.",
     industry: "Boutique Retail",
     location: "Saugatuck, MI",
@@ -275,7 +277,7 @@ export const showroomSites: ShowroomSite[] = [
         sub: "Handpicked home goods, jewelry, and gifts in downtown Saugatuck. Open Thursday through Sunday.",
       },
       about:
-        "Wren & Sparrow started as a pop-up at the Saugatuck farmers market in 2018. Two sisters, a folding table, and a collection of handmade candles. Five years later, we have a storefront on Butler Street, relationships with over 40 independent makers, and a website that finally does our shop justice. Everything we carry is chosen with intention — we know the maker, the material, and the story behind it.",
+        "Clover & Thistle started as a pop-up at the Saugatuck farmers market in 2018. Two sisters, a folding table, and a collection of handmade candles. Five years later, we have a storefront on Butler Street, relationships with over 40 independent makers, and a website that finally does our shop justice. Everything we carry is chosen with intention — we know the maker, the material, and the story behind it.",
       services: [
         { name: "Home Goods", desc: "Ceramics, textiles, candles, and objects that make a house feel like yours." },
         { name: "Jewelry", desc: "Handcrafted pieces from independent designers. Gold-fill, sterling, and stones." },
@@ -286,8 +288,8 @@ export const showroomSites: ShowroomSite[] = [
     },
   },
   {
-    slug: "northshore-roasters",
-    name: "Northshore Roasters",
+    slug: "ember-oak-coffee",
+    name: "Ember & Oak Coffee Co.",
     tagline: "Small batch. Big flavor. No shortcuts.",
     industry: "Coffee Roaster / Ecommerce",
     location: "Traverse City, MI",
@@ -329,7 +331,7 @@ export const showroomSites: ShowroomSite[] = [
         sub: "Single-origin and custom blends from Traverse City, MI. Subscribe and never run out.",
       },
       about:
-        "Northshore Roasters started in a garage in 2017 with a secondhand drum roaster and a notebook full of flavor profiles. We're still small — just four people — but we ship to 38 states and roast every batch to order. We don't do dark-for-the-sake-of-dark. We roast to bring out what the bean already has. Every bag lists the origin, altitude, process, and roast date. No secrets.",
+        "Ember & Oak Coffee Co. started in a garage in 2017 with a secondhand drum roaster and a notebook full of flavor profiles. We're still small — just four people — but we ship to 38 states and roast every batch to order. We don't do dark-for-the-sake-of-dark. We roast to bring out what the bean already has. Every bag lists the origin, altitude, process, and roast date. No secrets.",
       services: [
         { name: "Single Origins", desc: "Rotating selections from Ethiopia, Colombia, Guatemala, and Kenya." },
         { name: "House Blends", desc: "Three signature blends — Morning Light, Lakeshore Dark, and Sleeping Bear." },

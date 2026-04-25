@@ -1139,3 +1139,15 @@
 - [x] Add personality/nuance/character to homepage copy (less corporate, more human)
 - [x] Add personality/nuance to sample site pages (micro-copy, easter eggs, realistic details)
 - [x] Update Demo Builds section to link to real sample pages instead of generic cards
+
+### Showroom Name Fix
+- [x] Rename all 6 showroom sample sites to fictional business names (not real businesses)
+### Showroom Turnkey Buildout — Make Every Sample Site 100% Complete Per Package Tier
+- [x] Build shared reusable showroom sections (Reviews, Blog, ContactForm, LocationHours, Newsletter, InstagramFeed, BookingWidget)
+- [x] Starter (Hammerstone Builds): ContactForm w/ file upload, ServiceAreaMap, Before/After gallery, Hours/Location
+- [x] Growth (Driftwood Kitchen): BlogPreview, GoogleReviews, ReservationForm, photo gallery, Analytics badge
+- [x] Growth (Gritmill Fitness): BlogPreview, GoogleReviews, LeadCapture/FreeTrial, TrainerBios, MembershipPricing
+- [x] Pro (Velvet & Vine Studio): BookingWidget, GoogleReviews, InstagramFeed, BlogPreview, ServicePricing, SMS badge
+- [x] Pro (Clover & Thistle): InstagramFeed, NewsletterSignup, GoogleReviews, BlogPreview, GiftCard, NewArrivals lookbook
+- [x] Commerce (Ember & Oak Coffee): ProductCatalog w/ cart, SubscriptionSignup, BlogPreview, Reviews, Newsletter, ShippingInfo
+- [x] Ensure each site visually demonstrates every feature its package tier promises
