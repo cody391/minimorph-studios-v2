@@ -1260,7 +1260,7 @@ Channel: ${log.channel}\n\n${log.content || "No content"}`,
       const cust = custs[0];
       const activeContracts = await db.listContractsByCustomer(cust.id);
       const activeContract = activeContracts?.find((c: any) => c.status === "active" || c.status === "expiring_soon");
-      return db.createNurtureLog({
+      const log = await db.createNurtureLog({
         customerId: cust.id,
         contractId: activeContract?.id ?? null,
         type: input.type,
@@ -1270,6 +1270,21 @@ Channel: ${log.channel}\n\n${log.content || "No content"}`,
         status: "sent",
         sentAt: new Date(),
       });
+
+      // Auto-acknowledgment email
+      try {
+        const { sendEmail } = await import("./services/email");
+        await sendEmail({
+          to: cust.email,
+          subject: `We received your ${input.type === "update_request" ? "update request" : "support request"}: ${input.subject}`,
+          html: `<p>Hi ${cust.contactName || "there"},</p><p>We've received your request and our team will review it within 1 business day. You can track the status in your Customer Portal.</p><p><strong>Subject:</strong> ${input.subject}</p><p>— The MiniMorph Studios Team</p>`,
+          transactional: true,
+        });
+      } catch (emailErr) {
+        console.error("[support] Failed to send auto-ack email:", emailErr);
+      }
+
+      return log;
     }),
 
   // Customer-safe: list own support requests (derives customerId from ctx.user)
@@ -1340,6 +1355,51 @@ const reportsRouter = router({
       const { id, ...data } = input;
       await db.updateReport(id, data);
       return { success: true };
+    }),
+
+  // AI-generated report summary for a customer
+  generateAiSummary: adminProcedure
+    .input(z.object({ reportId: z.number() }))
+    .mutation(async ({ input }) => {
+      const { invokeLLM } = await import("./_core/llm");
+      const { reports: reportsTable } = await import("../drizzle/schema");
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const reports = await database.select().from(reportsTable).where(eq(reportsTable.id, input.reportId)).limit(1);
+      if (!reports.length) throw new TRPCError({ code: "NOT_FOUND", message: "Report not found" });
+      const report = reports[0];
+
+      const customer = await db.getCustomerById(report.customerId);
+
+      const result = await invokeLLM({
+        messages: [
+          {
+            role: "system",
+            content: `You are a website performance analyst for MiniMorph Studios. Generate a concise, actionable monthly report summary for a small business customer. Be encouraging but honest. Use plain language, not jargon. Keep it under 200 words.`,
+          },
+          {
+            role: "user",
+            content: `Generate a monthly performance summary for ${customer?.businessName || "this business"}.
+
+Report Month: ${report.reportMonth}
+Page Views: ${report.pageViews ?? "N/A"}
+Unique Visitors: ${report.uniqueVisitors ?? "N/A"}
+Bounce Rate: ${report.bounceRate ?? "N/A"}
+Avg Session Duration: ${report.avgSessionDuration ? report.avgSessionDuration + "s" : "N/A"}
+Conversion Rate: ${report.conversionRate ?? "N/A"}
+
+Provide: 1) A 2-sentence performance overview, 2) One thing going well, 3) One actionable recommendation.`,
+          },
+        ],
+      });
+
+      const summary = result.choices[0].message.content as string;
+
+      // Save the AI summary as recommendations
+      await db.updateReport(input.reportId, { recommendations: summary });
+
+      return { summary };
     }),
 });
 
@@ -2123,6 +2183,9 @@ IMPORTANT RULES:
 - If they want to make a change, ask them to describe it and you'll log it as a support request
 - When you identify an upsell opportunity, include it in <upsell_suggestion> tags:
   <upsell_suggestion>{"widgetSlug":"...","reason":"..."}</upsell_suggestion>
+- When a customer wants to submit a support request or report an issue, include it in <support_ticket> tags:
+  <support_ticket>{"subject":"Brief summary","type":"support_request"}</support_ticket>
+  Valid types: "support_request" or "update_request"
 - Keep responses concise and action-oriented
 
 == GUARDRAILS ==
@@ -2164,6 +2227,26 @@ ${integrationContext}`;
         content: aiResponse,
       });
 
+      // Extract support ticket if the AI created one
+      const ticketMatch = aiResponse.match(/<support_ticket>([\s\S]*?)<\/support_ticket>/);
+      if (ticketMatch) {
+        try {
+          const ticketData = JSON.parse(ticketMatch[1]);
+          if (ticketData?.subject) {
+            await db.createNurtureLog({
+              customerId: input.customerId,
+              contractId: activeContract?.id ?? null,
+              type: ticketData.type || "support_request",
+              channel: "in_app",
+              subject: ticketData.subject,
+              content: `Auto-created from AI concierge conversation. Customer message: ${input.message}`,
+              status: "sent",
+              sentAt: new Date(),
+            });
+          }
+        } catch {}
+      }
+
       // Extract upsell suggestion if present
       let upsellSuggestion = null;
       const upsellMatch = aiResponse.match(/<upsell_suggestion>([\s\S]*?)<\/upsell_suggestion>/);
@@ -2189,7 +2272,10 @@ ${integrationContext}`;
       }
 
       return {
-        response: aiResponse.replace(/<upsell_suggestion>[\s\S]*?<\/upsell_suggestion>/, "").trim(),
+        response: aiResponse
+          .replace(/<upsell_suggestion>[\s\S]*?<\/upsell_suggestion>/g, "")
+          .replace(/<support_ticket>[\s\S]*?<\/support_ticket>/g, "")
+          .trim(),
         upsellSuggestion,
       };
     }),

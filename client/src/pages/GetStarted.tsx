@@ -441,8 +441,9 @@ export default function GetStarted() {
                   <span className="text-2xl font-serif text-forest">${pkg.price}</span>
                   <span className="text-sm text-forest/50 font-sans">/mo</span>
                 </div>
-                <p className="text-[10px] text-forest/40 font-sans mb-1">${pkg.setup} one-time setup fee</p>
-                <p className="text-[10px] text-forest/35 font-sans mb-4">12-month commitment, billed monthly</p>
+                <p className="text-[10px] text-forest/40 font-sans mb-0.5">${pkg.setup} one-time setup fee</p>
+                <p className="text-[10px] text-forest/35 font-sans mb-0.5">${pkg.price * 12} total over 12 months</p>
+                <p className="text-[10px] text-forest/30 font-sans mb-4">12-month contract, billed monthly</p>
                 <ul className="space-y-2">
                   {pkg.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-xs text-forest/60 font-sans">
@@ -554,6 +555,7 @@ export default function GetStarted() {
                         <div className="text-right">
                           <p className="text-xl font-serif text-forest">${pkg.price}<span className="text-sm text-forest/50">/mo</span></p>
                           <p className="text-[10px] text-forest/40 font-sans">+ ${pkg.setup} setup</p>
+                          <p className="text-[10px] text-forest/30 font-sans">${pkg.price * 12}/yr total</p>
                         </div>
                       </div>
                     ) : null;

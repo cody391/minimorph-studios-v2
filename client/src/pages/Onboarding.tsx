@@ -359,6 +359,7 @@ function AssetUploadStep({
                   <span className="text-[#2D5A3D] font-medium">Click to upload</span> or drag and drop
                 </p>
                 <p className="text-sm text-gray-400">Images, PDFs, and documents up to 5MB each</p>
+                <p className="text-[10px] text-gray-300 mt-1">Recommended: PNG or SVG for logos • JPG at 1200px+ for photos • PDF for brand guides</p>
               </div>
             )}
           </label>

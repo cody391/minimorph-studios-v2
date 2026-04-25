@@ -13,6 +13,7 @@ interface Tier {
   name: string;
   price: string;
   setup: string;
+  annual?: string;
   description: string;
   highlight?: boolean;
   badge?: string;
@@ -26,6 +27,7 @@ const tiers: Tier[] = [
     name: "Starter",
     price: "$150/mo",
     setup: "$500 setup",
+    annual: "$1,800",
     description: "For businesses that need a clean, professional website with ongoing support.",
     features: [
       "Up to 5 pages",
@@ -43,6 +45,7 @@ const tiers: Tier[] = [
     name: "Growth",
     price: "$250/mo",
     setup: "$750 setup",
+    annual: "$3,000",
     description: "For businesses ready to grow with more pages, features, and monthly support.",
     highlight: true,
     badge: "Most Popular",
@@ -62,6 +65,7 @@ const tiers: Tier[] = [
     name: "Pro",
     price: "$400/mo",
     setup: "$1,000 setup",
+    annual: "$4,800",
     description: "For businesses that need advanced features, more pages, and hands-on support.",
     features: [
       "Up to 20 pages",
@@ -192,11 +196,19 @@ export default function Pricing() {
 
               <div className="mb-6">
                 <h3 className="text-xl font-serif text-off-white mb-1">{tier.name}</h3>
-                <div className="flex items-baseline gap-1.5 mb-2">
+                <div className="flex items-baseline gap-1.5 mb-1">
                   <span className="text-3xl font-serif text-off-white">{tier.price}</span>
                   {tier.price !== "Custom" && <span className="text-sm text-off-white/40 font-sans">/month</span>}
                 </div>
+                {tier.annual && (
+                  <span className="text-xs font-sans text-off-white/40 block mb-1">
+                    {tier.annual} total over 12 months
+                  </span>
+                )}
                 <span className="text-xs font-sans text-off-white/40">{tier.setup}</span>
+                {tier.price !== "Custom" && (
+                  <span className="text-[10px] font-sans text-off-white/30 block mt-1">12-month contract</span>
+                )}
               </div>
 
               <p className="text-sm text-off-white/50 font-sans leading-relaxed mb-6">{tier.description}</p>

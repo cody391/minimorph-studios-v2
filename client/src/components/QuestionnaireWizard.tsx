@@ -385,6 +385,17 @@ export function QuestionnaireWizard({
       )}
 
       {/* Step progress bar */}
+      <div className="text-center mb-3">
+        <span className="text-xs font-medium text-[#2D5A3D]/60">
+          Step {step} of 5 — {Math.round((step / 5) * 100)}% complete
+        </span>
+        <div className="mt-1.5 h-1.5 w-full max-w-xs mx-auto bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#2D5A3D] rounded-full transition-all duration-500"
+            style={{ width: `${(step / 5) * 100}%` }}
+          />
+        </div>
+      </div>
       <div className="flex items-center justify-center mb-8 gap-1">
         {QUESTIONNAIRE_STEPS.map((s, i) => {
           const isActive = s.id === step;
