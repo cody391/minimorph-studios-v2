@@ -28,7 +28,7 @@ const tiers: Tier[] = [
     price: "$150/mo",
     setup: "$500 setup",
     annual: "$1,800",
-    description: "For businesses that need a clean, professional website with ongoing support.",
+    description: "You need a website that doesn't embarrass you. Clean, fast, professional. We handle the rest.",
     features: [
       "Up to 5 pages",
       "Mobile-responsive design",
@@ -46,7 +46,7 @@ const tiers: Tier[] = [
     price: "$250/mo",
     setup: "$750 setup",
     annual: "$3,000",
-    description: "For businesses ready to grow with more pages, features, and monthly support.",
+    description: "The sweet spot. More pages, a blog, AI recommendations, and enough updates to keep things fresh.",
     highlight: true,
     badge: "Most Popular",
     features: [
@@ -66,7 +66,7 @@ const tiers: Tier[] = [
     price: "$400/mo",
     setup: "$1,000 setup",
     annual: "$4,800",
-    description: "For businesses that need advanced features, more pages, and hands-on support.",
+    description: "For the business that's serious. Booking, reviews, SMS alerts, and the kind of SEO that actually moves the needle.",
     features: [
       "Up to 20 pages",
       "Everything in Growth",
@@ -83,7 +83,7 @@ const tiers: Tier[] = [
     name: "Commerce",
     price: "Custom",
     setup: "Custom setup",
-    description: "For ecommerce, complex integrations, product catalogs, or multi-language sites.",
+    description: "You're selling things online. That's a different animal. Let's talk about what you actually need.",
     features: [
       "Unlimited pages",
       "Everything in Pro",
@@ -156,8 +156,8 @@ export default function Pricing() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
           >
-            Simple, transparent{" "}
-            <span className="text-gradient-electric">pricing.</span>
+            No hidden fees.{" "}
+            <span className="text-gradient-electric">No surprises.</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -166,7 +166,7 @@ export default function Pricing() {
             transition={{ delay: 0.2 }}
             className="text-lg text-off-white/50 font-sans leading-relaxed"
           >
-            Every plan includes a custom website build, customer portal, monthly report, and ongoing human-backed support. Choose the tier that fits your business.
+            Every plan includes a custom build, your own portal, monthly reports, and a team that actually answers when you reach out. Pick the one that fits.
           </motion.p>
         </div>
 

@@ -1,7 +1,5 @@
 /*
- * Pain + Solution section — replaces old Services.
- * Top: Pain ("Most websites get built, launched, and abandoned")
- * Bottom: Solution pillars (Build, Launch, Maintain, Improve, Report, Renew)
+ * Pain + Solution section — with character.
  */
 import { motion } from "framer-motion";
 import {
@@ -10,54 +8,54 @@ import {
 } from "lucide-react";
 
 const painPoints = [
-  { icon: AlertTriangle, text: "Your website was built and never touched again" },
-  { icon: Clock, text: "Updates take weeks or never happen at all" },
-  { icon: Ban, text: "No one monitors if your site is actually working" },
-  { icon: Ghost, text: "Your web designer disappeared after launch" },
-  { icon: XCircle, text: "You have no idea how your website is performing" },
-  { icon: HelpCircle, text: "You do not know who to call when something breaks" },
+  { icon: AlertTriangle, text: "Your site hasn't been touched since the day it launched" },
+  { icon: Clock, text: "\"Quick update\" requests take three weeks and a follow-up email" },
+  { icon: Ban, text: "Nobody's checking if your contact form actually works" },
+  { icon: Ghost, text: "Your web designer ghosted you after the final invoice" },
+  { icon: XCircle, text: "You have no idea if anyone's even visiting your site" },
+  { icon: HelpCircle, text: "When something breaks, you Google \"how to fix website\"" },
 ];
 
 const pillars = [
   {
     icon: Globe,
     title: "Build",
-    description: "Custom website design tailored to your brand, audience, and business goals.",
+    description: "Not a template with your logo slapped on. A real site designed around your business, your customers, and your competitors' weaknesses.",
     color: "text-electric",
     bg: "bg-electric/10 border-electric/20",
   },
   {
     icon: Rocket,
     title: "Launch",
-    description: "We handle hosting, domain setup, and go-live so you are up and running fast.",
+    description: "Domain, hosting, SSL, analytics — we handle the technical alphabet soup so you can focus on the Instagram post.",
     color: "text-cyan",
     bg: "bg-cyan/10 border-cyan/20",
   },
   {
     icon: Wrench,
     title: "Maintain",
-    description: "Ongoing updates, fixes, and content changes handled by our team every month.",
+    description: "Content updates, bug fixes, seasonal changes. You ask, we do it. No \"that'll be extra\" surprises.",
     color: "text-violet",
     bg: "bg-violet/10 border-violet/20",
   },
   {
     icon: TrendingUp,
     title: "Improve",
-    description: "AI-assisted recommendations to make your site stronger over time.",
+    description: "Our AI spots what you'd miss — slow pages, dead links, missed keywords. We fix them before you even notice.",
     color: "text-gold",
     bg: "bg-gold/10 border-gold/20",
   },
   {
     icon: BarChart3,
     title: "Report",
-    description: "Clear monthly performance reports so you know exactly what is happening.",
+    description: "Monthly reports you'll actually read. Traffic, leads, what's working, what's not. In plain English.",
     color: "text-electric",
     bg: "bg-electric/10 border-electric/20",
   },
   {
     icon: RefreshCw,
     title: "Renew",
-    description: "Proactive renewal support so your online presence never skips a beat.",
+    description: "We reach out before your contract ends — not after. Proactive, not reactive. Like everything else we do.",
     color: "text-cyan",
     bg: "bg-cyan/10 border-cyan/20",
   },
@@ -77,7 +75,7 @@ export default function Services() {
               viewport={{ once: true }}
               className="text-sm font-sans font-medium text-red-400/80 uppercase tracking-widest mb-4 block"
             >
-              The Problem
+              Sound Familiar?
             </motion.span>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -86,8 +84,8 @@ export default function Services() {
               transition={{ delay: 0.1 }}
               className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
             >
-              Most websites get built, launched,{" "}
-              <span className="text-off-white/40">and abandoned.</span>
+              Built. Launched.{" "}
+              <span className="text-off-white/40">Forgotten.</span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -96,7 +94,9 @@ export default function Services() {
               transition={{ delay: 0.2 }}
               className="text-lg text-off-white/50 font-sans leading-relaxed"
             >
-              Sound familiar? You paid for a website, it launched, and then nothing happened. No updates. No reports. No one checking if it still works. That is the industry standard — and it is not good enough.
+              You paid good money for a website. It looked great on launch day. Then your
+              designer moved on, your plugin updates piled up, and your "modern site" started
+              feeling like a digital ghost town. That's the industry standard. We think it's broken.
             </motion.p>
           </div>
 
@@ -129,7 +129,7 @@ export default function Services() {
               viewport={{ once: true }}
               className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
             >
-              The MiniMorph System
+              The MiniMorph Way
             </motion.span>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
@@ -138,8 +138,8 @@ export default function Services() {
               transition={{ delay: 0.1 }}
               className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
             >
-              MiniMorph keeps your website{" "}
-              <span className="text-gradient-electric">moving.</span>
+              We don't hand you a website and{" "}
+              <span className="text-gradient-electric">wish you luck.</span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -148,7 +148,8 @@ export default function Services() {
               transition={{ delay: 0.2 }}
               className="text-lg text-off-white/50 font-sans leading-relaxed"
             >
-              Six connected pillars that work together — from design to support to growth. Your website is just the beginning of an ongoing partnership.
+              Six things we do, every month, for every client. Not a sales pitch — it's
+              literally what your subscription pays for.
             </motion.p>
           </div>
 

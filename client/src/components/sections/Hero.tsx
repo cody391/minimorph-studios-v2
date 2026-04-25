@@ -47,10 +47,8 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.1 }}
               className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-serif text-off-white leading-[1.08] tracking-tight mb-6"
             >
-              Your website should{" "}
-              <span className="text-gradient-electric">keep working</span>
-              <br />
-              after launch
+              We don't just build it.{" "}
+              <span className="text-gradient-electric">We stick around.</span>
             </motion.h1>
 
             <motion.p
@@ -59,7 +57,7 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-lg lg:text-xl text-off-white/60 font-sans leading-relaxed mb-10 max-w-lg"
             >
-              MiniMorph builds, launches, maintains, and improves your website every month — with a customer portal, monthly reports, and AI-assisted recommendations. Human-backed. Always on.
+              Most agencies hand you a website and disappear. We build yours, launch it, and then actually maintain it — every single month. Portal access, real reports, human support. The boring stuff that keeps your site working while you run your business.
             </motion.p>
 
             <motion.div
@@ -80,9 +78,9 @@ export default function Hero() {
                 size="lg"
                 variant="outline"
                 className="border-off-white/20 text-off-white hover:bg-off-white/5 font-sans text-base px-8 py-6 rounded-full transition-all duration-300"
-                onClick={() => scrollTo("#demo-builds")}
+                onClick={() => scrollTo("#showroom")}
               >
-                View Demo Builds
+                Browse the Showroom
               </Button>
             </motion.div>
 
@@ -94,15 +92,15 @@ export default function Hero() {
             >
               <div className="flex items-center gap-2">
                 <Shield size={14} className="text-electric/60" />
-                <span>Human-backed support</span>
+                <span>Real humans, not ticket queues</span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap size={14} className="text-electric/60" />
-                <span>AI-assisted recommendations</span>
+                <span>AI that spots what you'd miss</span>
               </div>
               <div className="flex items-center gap-2">
                 <BarChart3 size={14} className="text-electric/60" />
-                <span>Monthly reports</span>
+                <span>Reports you'll actually read</span>
               </div>
             </motion.div>
           </div>

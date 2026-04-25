@@ -1130,3 +1130,12 @@
 - [x] R23: Mobile responsiveness — mobile-first CTA placement, sticky CTA button, mobile layout audit
 - [x] R24: Legal page check — no phone numbers, Muskegon MI location, consistent contract language, no guaranteed claims
 - [x] R25: Validation — typecheck, tests, production build
+
+### Showroom Sample Sites & Character Overhaul
+- [x] Replace 6 generic demo cards with real browsable sample site pages (unique styles per industry)
+- [x] Create /showroom/:slug routes for each sample site with full-page mockup designs
+- [x] Add add-on showcases built into each sample site (booking widgets, review feeds, chat, etc.)
+- [x] Remove excessive redundant information across homepage (trim overlapping sections)
+- [x] Add personality/nuance/character to homepage copy (less corporate, more human)
+- [x] Add personality/nuance to sample site pages (micro-copy, easter eggs, realistic details)
+- [x] Update Demo Builds section to link to real sample pages instead of generic cards

@@ -1,18 +1,17 @@
 /*
- * Trust Strip — credibility bar below hero.
- * Muskegon-based, Human-backed, AI-assisted, Secure checkout, Customer portal, Monthly reports.
+ * Trust Strip — credibility bar below hero with character.
  */
 import { motion } from "framer-motion";
 import { MapPin, Shield, Zap, Lock, Users, BarChart3, RefreshCw } from "lucide-react";
 
 const trustItems = [
-  { icon: MapPin, label: "Muskegon, MI" },
-  { icon: Shield, label: "Human-Backed" },
-  { icon: Zap, label: "AI-Assisted" },
-  { icon: Lock, label: "Secure Checkout" },
-  { icon: Users, label: "Customer Portal" },
-  { icon: BarChart3, label: "Monthly Reports" },
-  { icon: RefreshCw, label: "Ongoing Updates" },
+  { icon: MapPin, label: "Made in Michigan" },
+  { icon: Shield, label: "Humans First" },
+  { icon: Zap, label: "AI-Powered" },
+  { icon: Lock, label: "Stripe-Secured" },
+  { icon: Users, label: "Your Own Portal" },
+  { icon: BarChart3, label: "Real Reports" },
+  { icon: RefreshCw, label: "Never Abandoned" },
 ];
 
 export default function Stats() {

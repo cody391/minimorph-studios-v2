@@ -11,7 +11,7 @@ import { useLocation } from "wouter";
 const navLinks = [
   { label: "Services", href: "#services" },
   { label: "How It Works", href: "#how-it-works" },
-  { label: "Demo Builds", href: "#demo-builds" },
+  { label: "Showroom", href: "#showroom" },
   { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
   { label: "Careers", href: "/careers", isRoute: true },
@@ -85,7 +85,7 @@ export default function Navbar() {
             className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-sm px-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300"
             onClick={() => setLocation("/get-started")}
           >
-            Start My Website Build
+            Let's Build Something
           </Button>
         </div>
 
@@ -131,7 +131,7 @@ export default function Navbar() {
                     setLocation("/get-started");
                   }}
                 >
-                  Start My Website Build
+                  Let's Build Something
                 </Button>
               </div>
             </div>

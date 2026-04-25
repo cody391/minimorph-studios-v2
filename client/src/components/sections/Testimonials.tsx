@@ -1,5 +1,5 @@
 /*
- * Social Proof section — realistic case studies with metrics.
+ * Social Proof section — realistic case studies with personality.
  * All names are fictional composites. Metrics are illustrative of typical outcomes.
  */
 import { motion } from "framer-motion";
@@ -8,7 +8,7 @@ import { Star, Quote, TrendingUp, Users, Clock } from "lucide-react";
 const caseStudies = [
   {
     quote:
-      "Before MiniMorph, our website was a template we set up ourselves three years ago. It loaded slowly, looked dated on phones, and we had no idea if anyone was even visiting. Within the first month of our new site going live, we saw a noticeable increase in online booking requests.",
+      "I built our old site on Wix at 2am after watching a YouTube tutorial. It showed. MiniMorph rebuilt the whole thing, set up online booking, and now I get texts when someone books instead of checking email like it's 2009. Three times the bookings in month one. I should've done this years ago.",
     name: "Sarah M.",
     role: "Owner, Lakeshore Auto Detailing",
     industry: "Auto Detailing — Muskegon, MI",
@@ -18,7 +18,7 @@ const caseStudies = [
   },
   {
     quote:
-      "The onboarding process surprised me. They asked about our competitors, what we liked and disliked about other restaurant websites, and what features we actually needed. The monthly reports show us which menu pages get the most views, and they suggested adding online ordering before we even asked.",
+      "They asked us what we hated about other restaurant websites. I said 'PDF menus and stock photos of food that isn't ours.' They laughed, agreed, and built us something completely different. Our menu page gets more views than the homepage now. Also, they suggested online ordering before we even thought of it.",
     name: "Marcus & Lisa G.",
     role: "Owners, G&L Chillidog",
     industry: "Restaurant — West Michigan",
@@ -28,7 +28,7 @@ const caseStudies = [
   },
   {
     quote:
-      "I do not have time to manage a website. That is exactly why MiniMorph works for us. They handle the updates, the security, the hosting — everything. When I need a change, I log into the portal and request it. Last month they proactively recommended we add a project gallery, and it has already generated leads.",
+      "I pour concrete. I don't do websites. MiniMorph handles everything — I just log into the portal when I need something changed. Last month they told me to add a project gallery before I even asked. Already got two leads from it. These people actually pay attention.",
     name: "James R.",
     role: "Owner, Shoreline Concrete & Masonry",
     industry: "Contractor — Grand Rapids, MI",
@@ -50,7 +50,7 @@ export default function Testimonials() {
             viewport={{ once: true }}
             className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
           >
-            Case Studies
+            From Our Clients
           </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -59,8 +59,8 @@ export default function Testimonials() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
           >
-            Real results for{" "}
-            <span className="text-gradient-electric">real businesses.</span>
+            Don't take our word for it.{" "}
+            <span className="text-gradient-electric">Take theirs.</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -69,8 +69,8 @@ export default function Testimonials() {
             transition={{ delay: 0.2 }}
             className="text-off-white/50 font-sans max-w-xl mx-auto"
           >
-            Every business is different. Here is how MiniMorph has helped local businesses
-            in West Michigan get more from their websites.
+            Real businesses in West Michigan. Real problems. Real results.
+            (And yes, they actually like talking to us.)
           </motion.p>
         </div>
 
@@ -115,8 +115,7 @@ export default function Testimonials() {
 
         <p className="text-center mt-8 text-[10px] font-sans text-off-white/20 max-w-lg mx-auto">
           Names are fictional composites to protect client privacy. Metrics are illustrative of typical outcomes
-          observed across similar engagements and are not guaranteed results. Individual results vary based on
-          industry, location, and engagement level.
+          observed across similar engagements and are not guaranteed results. Individual results vary.
         </p>
       </div>
     </section>

@@ -45,6 +45,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const RepAssessment = lazy(() => import("./pages/RepAssessment"));
 const TrustGate = lazy(() => import("./pages/TrustGate"));
+const ShowroomSite = lazy(() => import("./pages/ShowroomSite"));
 const OnboardingPaperwork = lazy(() => import("./pages/OnboardingPaperwork"));
 const RepValuesGate = lazy(() => import("./pages/RepValuesGate"));
 const PayoutSetup = lazy(() => import("./pages/PayoutSetup"));
@@ -115,6 +116,11 @@ function Router() {
       {/* Careers / recruitment */}
       <Route path="/careers">
         <LazyPage><Careers /></LazyPage>
+      </Route>
+
+      {/* Showroom sample sites */}
+      <Route path="/showroom/:slug">
+        <LazyPage><ShowroomSite /></LazyPage>
       </Route>
 
       {/* Free website audit (lead magnet) */}

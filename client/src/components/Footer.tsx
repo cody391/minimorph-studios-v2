@@ -1,5 +1,5 @@
 /*
- * Footer — Premium dark, Muskegon MI, no phone number.
+ * Footer — Premium dark, Muskegon MI, personality, no phone number.
  */
 import { MapPin, Mail } from "lucide-react";
 import { useLocation } from "wouter";
@@ -9,7 +9,7 @@ const footerLinks = [
     title: "Company",
     links: [
       { label: "About", href: "#services" },
-      { label: "Careers", href: "/careers", isRoute: true },
+      { label: "How It Works", href: "#how-it-works" },
       { label: "Privacy Policy", href: "/privacy", isRoute: true },
       { label: "Terms of Service", href: "/terms", isRoute: true },
     ],
@@ -18,16 +18,16 @@ const footerLinks = [
     title: "Services",
     links: [
       { label: "Website Design", href: "#services" },
-      { label: "Monthly Support", href: "#how-it-works" },
-      { label: "Demo Builds", href: "#demo-builds" },
+      { label: "Showroom", href: "#showroom" },
       { label: "Pricing", href: "#pricing" },
+      { label: "Free Audit", href: "/free-audit", isRoute: true },
     ],
   },
   {
     title: "Resources",
     links: [
       { label: "FAQ", href: "#faq" },
-      { label: "How It Works", href: "#how-it-works" },
+      { label: "Get Started", href: "/get-started", isRoute: true },
       { label: "Customer Portal", href: "/portal/dashboard", isRoute: true },
     ],
   },
@@ -58,7 +58,9 @@ export default function Footer() {
               <span className="font-serif text-xl text-off-white tracking-tight">MiniMorph</span>
             </div>
             <p className="text-sm font-sans text-off-white/40 leading-relaxed mb-6 max-w-sm">
-              MiniMorph Studios builds, launches, maintains, and improves small-business websites with monthly support, customer portals, reports, and AI-assisted recommendations.
+              We build websites for small businesses and then stick around to make sure
+              they keep working. Based on the shores of Lake Michigan, serving businesses
+              across the US.
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-sans text-off-white/40">
@@ -104,7 +106,7 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} MiniMorph Studios LLC. All rights reserved.
           </p>
           <p className="text-xs font-sans text-off-white/25">
-            Based in Muskegon, Michigan. Serving businesses across the United States.
+            Built with care in Muskegon, MI. Powered by lake-effect determination.
           </p>
         </div>
       </div>

@@ -1,96 +1,26 @@
-/*
- * Demo Builds section — 6 industry concept cards.
- * Each card: industry, recommended package, what it proves, possible add-ons, CTA.
- * Ecommerce labeled with custom quote note.
+/**
+ * Showroom — our "showroom floor models."
+ * Each card links to a full sample site page. Different visual styles,
+ * different packages, different add-ons. This is where visitors see
+ * what MiniMorph actually builds.
  */
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Car, Leaf, UtensilsCrossed, HardHat, Scissors, ShoppingBag } from "lucide-react";
+import { ArrowRight, Star, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
-
-const demos = [
-  {
-    icon: Car,
-    name: "Lakeshore Auto Detailing",
-    industry: "Auto Detailing",
-    style: "Premium dark automotive",
-    package: "Growth",
-    proves: "Booking/quote flow, before/after gallery, reviews, service packages",
-    addOns: "Booking integration, review widget, SMS lead alerts",
-    color: "from-electric/20 to-electric/5",
-    border: "border-electric/20",
-    iconColor: "text-electric",
-  },
-  {
-    icon: Leaf,
-    name: "Q's Landscaping",
-    industry: "Landscaping / Lawn Care",
-    style: "Earthy, clean, local, trustworthy",
-    package: "Growth",
-    proves: "Seasonal services, service area pages, quote form, gallery",
-    addOns: "Local SEO pages, Google Analytics, newsletter capture",
-    color: "from-cyan/20 to-cyan/5",
-    border: "border-cyan/20",
-    iconColor: "text-cyan",
-  },
-  {
-    icon: UtensilsCrossed,
-    name: "G&L Chillidog",
-    industry: "Restaurant / Food",
-    style: "Bright, playful, mobile-first, menu-focused",
-    package: "Starter",
-    proves: "Menu, hours, location, catering/event inquiry, social links",
-    addOns: "Google Maps embed, social links, Meta pixel",
-    color: "from-gold/20 to-gold/5",
-    border: "border-gold/20",
-    iconColor: "text-gold",
-  },
-  {
-    icon: HardHat,
-    name: "Shoreline Concrete & Coatings",
-    industry: "Contractor / Home Services",
-    style: "Rugged, professional, industrial, trust-heavy",
-    package: "Growth",
-    proves: "Estimate forms, project gallery, reviews, financing inquiry",
-    addOns: "Review widget, AI chat widget, SMS lead alerts",
-    color: "from-violet/20 to-violet/5",
-    border: "border-violet/20",
-    iconColor: "text-violet",
-  },
-  {
-    icon: Scissors,
-    name: "Salon / Spa Demo",
-    industry: "Salon / Spa / Beauty",
-    style: "Elegant, soft, appointment-driven",
-    package: "Growth",
-    proves: "Service menu, booking integration, gallery, reviews",
-    addOns: "Booking integration, review widget, newsletter capture",
-    color: "from-electric-light/20 to-electric-light/5",
-    border: "border-electric-light/20",
-    iconColor: "text-electric-light",
-  },
-  {
-    icon: ShoppingBag,
-    name: "Festival Hammock Supply Co.",
-    industry: "Ecommerce Store",
-    style: "Colorful, product-forward, lifestyle-driven",
-    package: "Commerce / Custom Quote",
-    proves: "Product catalog, categories, product detail, cart/checkout discussion",
-    addOns: "Shopify/WooCommerce review, product migration, inventory",
-    color: "from-gold/20 to-gold/5",
-    border: "border-gold/20",
-    iconColor: "text-gold",
-    isEcommerce: true,
-  },
-];
+import { showroomSites } from "@/data/showroom";
 
 export default function Portfolio() {
   const [, setLocation] = useLocation();
 
   return (
-    <section id="demo-builds" className="py-20 lg:py-28 bg-midnight relative overflow-hidden">
+    <section
+      id="showroom"
+      className="py-20 lg:py-28 bg-charcoal relative overflow-hidden"
+    >
       <div className="absolute inset-0 noise-texture opacity-30" />
       <div className="container relative z-10">
+        {/* Header */}
         <div className="max-w-3xl mx-auto text-center mb-16">
           <motion.span
             initial={{ opacity: 0, y: 10 }}
@@ -98,7 +28,7 @@ export default function Portfolio() {
             viewport={{ once: true }}
             className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
           >
-            Demo Builds
+            The Showroom
           </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -107,80 +37,133 @@ export default function Portfolio() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
           >
-            Imagine your business{" "}
-            <span className="text-gradient-electric">here.</span>
+            Don't imagine it.{" "}
+            <span className="text-gradient-electric">Browse it.</span>
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-off-white/50 font-sans leading-relaxed"
+            className="text-lg text-off-white/50 font-sans leading-relaxed max-w-xl mx-auto"
           >
-            These demo concepts show what MiniMorph can create for different types of businesses. Each one is built to prove real features — not just look pretty.
+            Six sample sites. Six industries. Six completely different styles.
+            Each one built on a MiniMorph package with add-ons you can actually
+            see working. Click through — they're our showroom floor models.
           </motion.p>
         </div>
 
+        {/* Showroom Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {demos.map((demo, idx) => (
+          {showroomSites.map((site, idx) => (
             <motion.div
-              key={demo.name}
+              key={site.slug}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: idx * 0.08 }}
-              className={`group relative p-6 rounded-2xl glass-card ${demo.border} hover:border-electric/40 transition-all duration-500`}
+              transition={{ delay: idx * 0.06 }}
+              className="group rounded-2xl overflow-hidden glass-card hover:border-electric/30 transition-all duration-500 cursor-pointer"
+              onClick={() => setLocation(`/showroom/${site.slug}`)}
             >
-              {/* Gradient top accent */}
-              <div className={`absolute inset-x-0 top-0 h-1 rounded-t-2xl bg-gradient-to-r ${demo.color}`} />
-
-              <div className={`w-10 h-10 rounded-lg bg-off-white/5 border border-off-white/10 flex items-center justify-center mb-4`}>
-                <demo.icon size={20} className={demo.iconColor} />
-              </div>
-
-              <h3 className="text-lg font-serif text-off-white mb-1">{demo.name}</h3>
-              <p className="text-xs font-sans text-off-white/40 mb-4">{demo.industry} &middot; {demo.style}</p>
-
-              <div className="space-y-3 mb-5">
-                <div>
-                  <span className="text-xs font-sans font-medium text-electric/80 uppercase tracking-wider">Recommended Package</span>
-                  <p className="text-sm font-sans text-off-white/70 mt-0.5">{demo.package}</p>
+              {/* Hero image */}
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={site.heroImage}
+                  alt={site.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                {/* Tier badge */}
+                <div className="absolute top-3 right-3">
+                  <span
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-sans font-bold backdrop-blur-sm"
+                    style={{
+                      backgroundColor: site.palette.accent + "30",
+                      color: site.palette.accent,
+                      border: `1px solid ${site.palette.accent}50`,
+                    }}
+                  >
+                    <Star size={8} />
+                    {site.tier}
+                  </span>
                 </div>
-                <div>
-                  <span className="text-xs font-sans font-medium text-electric/80 uppercase tracking-wider">What It Proves</span>
-                  <p className="text-sm font-sans text-off-white/50 mt-0.5">{demo.proves}</p>
-                </div>
-                <div>
-                  <span className="text-xs font-sans font-medium text-electric/80 uppercase tracking-wider">Possible Add-Ons</span>
-                  <p className="text-sm font-sans text-off-white/50 mt-0.5">{demo.addOns}</p>
-                </div>
-              </div>
-
-              {demo.isEcommerce && (
-                <div className="mb-4 p-2.5 rounded-lg bg-gold/5 border border-gold/15">
-                  <p className="text-xs font-sans text-gold/80">
-                    Ecommerce builds may require a Commerce package or custom quote.
+                {/* Name overlay */}
+                <div className="absolute bottom-3 left-4 right-4">
+                  <h3
+                    className="text-xl font-bold text-white"
+                    style={{ fontFamily: site.font.heading }}
+                  >
+                    {site.name}
+                  </h3>
+                  <p className="text-xs text-white/70 font-sans">
+                    {site.industry} — {site.location}
                   </p>
                 </div>
-              )}
+              </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-off-white/15 text-off-white/70 hover:text-off-white hover:bg-off-white/5 font-sans rounded-full group/btn transition-all"
-                onClick={() => setLocation("/get-started")}
-              >
-                Want This for Your Business?
-                <ArrowRight size={14} className="ml-1.5 group-hover/btn:translate-x-1 transition-transform" />
-              </Button>
+              {/* Card body */}
+              <div className="p-5">
+                <p className="text-sm font-sans text-off-white/50 leading-relaxed mb-4 line-clamp-2">
+                  {site.tagline} — {site.personality.split(".")[0]}.
+                </p>
 
-              {/* Disclaimer */}
-              <p className="mt-3 text-[10px] font-sans text-off-white/25 leading-relaxed">
-                Demo concept built by MiniMorph Studios to show what we can create for this type of business. Not a client website or performance claim.
-              </p>
+                {/* Add-ons */}
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {site.addOns.slice(0, 3).map((addon) => (
+                    <span
+                      key={addon}
+                      className="text-[10px] font-sans text-off-white/40 px-2 py-0.5 rounded-full border border-off-white/10 bg-off-white/5"
+                    >
+                      {addon}
+                    </span>
+                  ))}
+                  {site.addOns.length > 3 && (
+                    <span className="text-[10px] font-sans text-electric/60 px-2 py-0.5">
+                      +{site.addOns.length - 3} more
+                    </span>
+                  )}
+                </div>
+
+                {/* Price and CTA */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-sans text-off-white/40">
+                    {site.tierPrice}
+                  </span>
+                  <span className="text-sm font-sans text-electric flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Explore
+                    <ExternalLink size={12} />
+                  </span>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mt-14"
+        >
+          <p className="text-sm font-sans text-off-white/40 mb-4">
+            Like what you see? Every one of these was built on a MiniMorph plan.
+          </p>
+          <Button
+            className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-sm px-8 rounded-full"
+            onClick={() => setLocation("/get-started")}
+          >
+            Start My Build
+            <ArrowRight size={14} className="ml-1.5" />
+          </Button>
+        </motion.div>
+
+        <p className="text-center mt-8 text-[10px] font-sans text-off-white/20 max-w-lg mx-auto">
+          All sample sites are fictional demonstrations created to showcase
+          MiniMorph capabilities. Business names, locations, and details are
+          illustrative only. Actual results depend on your content, industry,
+          and engagement level.
+        </p>
       </div>
     </section>
   );

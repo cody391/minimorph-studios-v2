@@ -1,5 +1,5 @@
 /*
- * Final CTA section — strong conversion push, no phone number.
+ * Final CTA section — personality-driven conversion push.
  */
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export default function Contact() {
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-electric/10 border border-electric/20 text-electric text-sm font-sans font-medium mb-8">
               <Zap size={14} />
-              Ready to get started?
+              Enough scrolling
             </span>
           </motion.div>
 
@@ -48,7 +48,9 @@ export default function Contact() {
             transition={{ delay: 0.2 }}
             className="text-lg text-off-white/50 font-sans leading-relaxed mb-10 max-w-xl mx-auto"
           >
-            Start your MiniMorph build today. Choose a plan, complete onboarding, and let us take care of the rest — from design to launch to monthly support.
+            You've read this far, which means your current website situation probably
+            isn't cutting it. Pick a plan, answer some questions, and let us handle the
+            rest. First draft in 2–4 weeks. Monthly support forever after.
           </motion.p>
 
           <motion.div
@@ -63,19 +65,16 @@ export default function Contact() {
               className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-base px-10 py-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300 group"
               onClick={() => setLocation("/get-started")}
             >
-              Start My Website Build
+              Let's Build Something
               <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="border-off-white/20 text-off-white hover:bg-off-white/5 font-sans text-base px-10 py-6 rounded-full transition-all duration-300"
-              onClick={() => {
-                const el = document.querySelector("#pricing");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
+              onClick={() => setLocation("/free-audit")}
             >
-              View Pricing
+              Or Get a Free Audit First
             </Button>
           </motion.div>
 
@@ -86,10 +85,11 @@ export default function Contact() {
             transition={{ delay: 0.5 }}
             className="mt-8 text-sm text-off-white/30 font-sans"
           >
-            Questions? Email us at{" "}
+            Not ready yet? No pressure. Email us at{" "}
             <a href="mailto:hello@minimorphstudios.com" className="text-electric/60 hover:text-electric transition-colors underline underline-offset-2">
               hello@minimorphstudios.com
             </a>
+            {" "}whenever you're ready. We'll be here.
           </motion.p>
         </div>
       </div>

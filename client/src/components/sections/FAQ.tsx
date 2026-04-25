@@ -1,5 +1,5 @@
 /*
- * FAQ section — accordion-style, legal-safe answers.
+ * FAQ section — trimmed to 8 sharp questions with personality.
  */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,52 +7,36 @@ import { ChevronDown } from "lucide-react";
 
 const faqs = [
   {
-    q: "What is MiniMorph Studios?",
-    a: "MiniMorph Studios is a website design and care company based in Muskegon, Michigan. We build, launch, maintain, and improve small-business websites with monthly support, customer portals, reports, and AI-assisted recommendations.",
-  },
-  {
     q: "Do I own my website?",
-    a: "You own your content, branding, and domain. The website is built and maintained as part of your MiniMorph subscription. If you cancel, we can discuss options for transferring your site files.",
+    a: "You own your content, branding, and domain — always. The site itself is built and hosted as part of your MiniMorph subscription. If you ever cancel, we'll work with you on transferring your files. No hostage situations.",
   },
   {
-    q: "What does 'AI-assisted' mean?",
-    a: "We use AI tools to help analyze your website performance, suggest improvements, and streamline our workflow. All recommendations are reviewed by a human before being applied. AI does not replace our team — it helps us work smarter.",
+    q: "What does \"AI-assisted\" actually mean?",
+    a: "It means our AI tools analyze your site performance, spot broken links, flag slow pages, and suggest improvements. But a real human reviews everything before it touches your site. Think of it as a really diligent intern that never sleeps.",
   },
   {
-    q: "How long does it take to build my website?",
-    a: "Most websites are ready for first draft review within 2 to 4 weeks after onboarding is complete. Timeline depends on how quickly you provide content and feedback.",
+    q: "How long until I see my first draft?",
+    a: "Usually 2–4 weeks after you finish onboarding. The biggest variable is you — the faster you upload your content and answer our questionnaire, the faster we start building. We won't start guessing what your business does.",
   },
   {
-    q: "What if I need ecommerce or a product catalog?",
-    a: "Ecommerce builds, product catalogs, product migration, and complex integrations may require a Commerce package or custom quote. We review your needs during onboarding and provide a clear recommendation.",
+    q: "What if I need ecommerce?",
+    a: "Online stores, product catalogs, and payment integrations need our Commerce package or a custom quote. We'll figure out the right fit during onboarding — no surprise invoices after you've already committed.",
   },
   {
-    q: "Can I cancel my subscription?",
-    a: "MiniMorph plans are 12-month agreements. If you need to cancel early, please contact us to discuss your options. We want to make sure you are taken care of.",
+    q: "Can I cancel early?",
+    a: "Plans are 12-month agreements. If something changes, reach out and we'll talk through your options like adults. Setup fees are non-refundable once work begins, and monthly fees are billed in advance.",
   },
   {
-    q: "Do you offer refunds?",
-    a: "Setup fees are non-refundable once work has begun. Monthly fees are billed in advance. Please review our terms of service for full details.",
+    q: "What's the customer portal?",
+    a: "It's your home base — project status, support tickets, monthly reports, file uploads, AI recommendations, and direct communication with our team. Every plan includes it. You'll use it more than you think.",
   },
   {
-    q: "What is the customer portal?",
-    a: "Your customer portal is where you can view your project status, request changes, see monthly reports, upload files, and communicate with our team. It is included with every plan.",
-  },
-  {
-    q: "Do you work with businesses outside of Michigan?",
-    a: "Yes. While we are based in Muskegon, Michigan, we work with small businesses across the United States. Everything is handled online through your customer portal.",
-  },
-  {
-    q: "What happens after my 12-month agreement ends?",
-    a: "We will reach out before your agreement ends to discuss renewal options. If you choose to continue, your plan renews at the current rate. If not, we will help you with next steps.",
+    q: "Do you work outside Michigan?",
+    a: "We're based in Muskegon, but we work with businesses across the entire US. Everything runs through your portal — no in-person meetings required (though we're always up for coffee if you're local).",
   },
   {
     q: "Do you guarantee results?",
-    a: "We do not guarantee specific traffic, revenue, or ranking outcomes. What we do guarantee is a professionally built website, ongoing support, monthly reports, and AI-assisted recommendations to help your site improve over time.",
-  },
-  {
-    q: "What if I already have a website?",
-    a: "We can review your existing website during onboarding and recommend whether to redesign, migrate, or start fresh. We will work with you to find the best path forward.",
+    a: "We don't promise specific traffic numbers or revenue targets — anyone who does is lying. What we do guarantee: a professionally built site, monthly maintenance, real reports, and AI-powered recommendations that get smarter over time.",
   },
 ];
 
@@ -79,8 +63,8 @@ export default function FAQ() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
           >
-            Common{" "}
-            <span className="text-gradient-electric">questions.</span>
+            The stuff you're{" "}
+            <span className="text-gradient-electric">actually wondering.</span>
           </motion.h2>
         </div>
 
