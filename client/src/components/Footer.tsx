@@ -28,7 +28,7 @@ const footerLinks = [
     links: [
       { label: "FAQ", href: "#faq" },
       { label: "Get Started", href: "/get-started", isRoute: true },
-      { label: "Customer Portal", href: "/portal/dashboard", isRoute: true },
+      { label: "Customer Portal", href: "/portal", isRoute: true },
     ],
   },
 ];

@@ -1212,3 +1212,14 @@
 - [x] FIX 3: Accessibility micro-pass — focus states, aria-labels, form labels, contrast, disabled states
 - [x] Validation: typecheck + build + tests pass (33 test files, 844 tests passing)
 - [x] Final report
+
+### Phase 46: Dev Access + Route Access Repair
+- [x] Route inventory — mapped all 40+ routes in App.tsx with auth requirements
+- [x] Auth/role audit — documented admin/user roles, record-linking for rep/customer access
+- [x] Created devAccessRouter (admin-only) with getDevStatus, seedTestData, unlinkAll, linkAsRep, linkAsCustomer
+- [x] Created /dev-access page with status panel, seed button, unlink button, quick navigation
+- [x] Fixed broken Footer link (/portal/dashboard → /portal)
+- [x] Registered devAccessRouter in appRouter
+- [x] Added /dev-access route to App.tsx
+- [x] Created docs/dev-access.md with full route map and API reference
+- [x] Validation: typecheck + build + tests pass (33 test files, 844 tests passing)

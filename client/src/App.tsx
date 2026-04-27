@@ -50,6 +50,7 @@ const ShowroomSite = lazy(() => import("./pages/ShowroomSite"));
 const OnboardingPaperwork = lazy(() => import("./pages/OnboardingPaperwork"));
 const RepValuesGate = lazy(() => import("./pages/RepValuesGate"));
 const PayoutSetup = lazy(() => import("./pages/PayoutSetup"));
+const DevAccess = lazy(() => import("./pages/DevAccess"));
 
 // Admin layout wrapper
 const AdminLayout = lazy(() => import("./components/AdminLayout"));
@@ -226,6 +227,9 @@ function Router() {
       </Route>
       <Route path="/admin/social">
         <AdminPage><AdminSocialMedia /></AdminPage>
+      </Route>
+      <Route path="/dev-access">
+        <LazyPage><DevAccess /></LazyPage>
       </Route>
 
       <Route path={"/404"} component={NotFound} />

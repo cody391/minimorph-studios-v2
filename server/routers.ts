@@ -17,6 +17,7 @@ import { localAuthRouter } from "./localAuth";
 import { assessmentRouter } from "./assessmentRouter";
 import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
+import { devAccessRouter } from "./devAccessRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
 import { repTiers, customers, contracts, reps, nurtureLogs } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -2843,6 +2844,7 @@ export const appRouter = router({
   accountability: accountabilityRouter,
   teamFeed: teamFeedRouter,
   retention: retentionRouter,
+  devAccess: devAccessRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))
