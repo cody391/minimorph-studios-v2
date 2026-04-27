@@ -8,8 +8,8 @@ export default function Analytics() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-forest">Analytics</h1>
-          <p className="text-sm text-forest/60 font-sans mt-1">
+          <h1 className="text-2xl font-serif text-off-white">Analytics</h1>
+          <p className="text-sm text-soft-gray font-sans mt-1">
             Website performance metrics and traffic insights
           </p>
         </div>
@@ -27,13 +27,13 @@ export default function Analytics() {
       <Card className="border-border/50">
         <CardContent className="py-20">
           <div className="text-center max-w-md mx-auto">
-            <div className="w-16 h-16 rounded-2xl bg-forest/8 flex items-center justify-center mx-auto mb-6">
-              <BarChart3 className="w-8 h-8 text-forest/40" />
+            <div className="w-16 h-16 rounded-2xl bg-electric/8 flex items-center justify-center mx-auto mb-6">
+              <BarChart3 className="w-8 h-8 text-soft-gray/60" />
             </div>
-            <h3 className="text-lg font-serif text-forest mb-3">
+            <h3 className="text-lg font-serif text-off-white mb-3">
               No Analytics Data Yet
             </h3>
-            <p className="text-sm text-forest/50 font-sans leading-relaxed mb-6">
+            <p className="text-sm text-soft-gray font-sans leading-relaxed mb-6">
               Connect your Google Analytics 4 property to see real-time traffic data,
               conversion metrics, and customer website performance reports.
             </p>

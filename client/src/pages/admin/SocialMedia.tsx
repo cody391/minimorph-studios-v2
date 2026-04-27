@@ -72,7 +72,7 @@ export default function SocialMedia() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Share2 className="w-6 h-6 text-forest" />
+            <Share2 className="w-6 h-6 text-off-white" />
             Social Media Command Center
           </h1>
           <p className="text-gray-500 mt-1">Manage all your social media from one place</p>
@@ -108,7 +108,7 @@ export default function SocialMedia() {
             <StatCard
               title="Published Posts"
               value={analytics?.publishedPosts ?? 0}
-              icon={<CheckCircle className="w-5 h-5 text-green-600" />}
+              icon={<CheckCircle className="w-5 h-5 text-emerald-400" />}
               loading={analyticsLoading}
               subtitle={`${analytics?.scheduledPosts ?? 0} scheduled`}
             />
@@ -429,7 +429,7 @@ function PostCard({ post, detailed }: { post: any; detailed?: boolean }) {
 
   return (
     <>
-    <div className="p-4 rounded-lg border bg-white hover:shadow-sm transition-shadow">
+    <div className="p-4 rounded-lg border bg-charcoal hover:shadow-sm transition-shadow">
       <div className="flex items-start gap-3">
         <div className={`w-8 h-8 rounded-lg ${meta?.bg || "bg-gray-500"} flex items-center justify-center text-white shrink-0`}>
           {meta?.icon || <Globe className="w-3 h-3" />}
@@ -663,7 +663,7 @@ function AccountCard({ account, onRefetch }: { account: any; onRefetch: () => vo
           </Button>
         </div>
         {account.status === "pending" && (
-          <div className="mt-3 p-2 rounded-lg bg-amber-50 border border-amber-200">
+          <div className="mt-3 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <p className="text-xs text-amber-700">
               <AlertCircle className="w-3 h-3 inline mr-1" />
               API not connected yet. Provide API keys to enable auto-posting and analytics sync.
@@ -907,7 +907,7 @@ function CreateCampaignDialog({ open, onOpenChange, onSuccess }: { open: boolean
                   key={key}
                   onClick={() => togglePlatform(key)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    platforms.includes(key) ? "bg-forest text-white border-forest" : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                    platforms.includes(key) ? "bg-charcoal text-off-white border-electric" : "bg-charcoal text-gray-600 border-gray-200 hover:border-gray-300"
                   }`}
                 >
                   <span className="capitalize">{key}</span>

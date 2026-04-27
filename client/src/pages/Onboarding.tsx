@@ -130,7 +130,7 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen" style={{ background: "#FAF6F1" }}>
       {/* Header */}
-      <header className="border-b border-[#2D5A3D]/10 bg-white/60 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-[#2D5A3D]/10 bg-charcoal/60 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer">
@@ -365,7 +365,7 @@ function AssetUploadStep({
           </label>
 
           {!projectId && (
-            <p className="text-sm text-amber-600 mt-3 text-center">
+            <p className="text-sm text-amber-400 mt-3 text-center">
               Please complete the questionnaire first to start uploading assets.
             </p>
           )}
@@ -549,7 +549,7 @@ function DomainStep({
                 We'll help you find the perfect domain name for your business. After your website design is approved,
                 we'll present you with available options and handle the registration.
               </p>
-              <div className="bg-white rounded-lg p-4 border border-[#2D5A3D]/10">
+              <div className="bg-charcoal rounded-lg p-4 border border-[#2D5A3D]/10">
                 <h4 className="font-medium text-[#2D5A3D] mb-3 text-sm">Domain Pricing</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
@@ -805,7 +805,7 @@ function ProjectStatusStep({
                 Revisions so far: {project.revisionsCount}
               </p>
             )}
-            <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <p className="text-xs text-amber-800 font-sans">
                 <strong>Revision Policy:</strong> Your package includes <strong>3 rounds of revisions</strong> at no extra cost.
                 {project.revisionsCount >= 3
@@ -822,7 +822,7 @@ function ProjectStatusStep({
       {(project.stage === "launch" || project.stage === "complete") && project.liveUrl && (
         <Card className="border-green-200 bg-green-50 mb-6">
           <CardContent className="p-6 text-center">
-            <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-3" />
+            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
             <h3 className="text-xl font-serif text-green-800 mb-2">Your Website is Live!</h3>
             <a
               href={project.liveUrl}

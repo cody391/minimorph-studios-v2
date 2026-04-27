@@ -98,23 +98,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (user && user.role !== "admin") {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-cream">
+      <div className="flex items-center justify-center min-h-screen bg-midnight">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-6">
-            <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-serif text-lg font-bold">!</span>
+            <div className="w-12 h-12 bg-red-500/20 border border-red-500/30 rounded-xl flex items-center justify-center">
+              <span className="text-red-400 font-serif text-lg font-bold">!</span>
             </div>
-            <h1 className="text-2xl font-serif text-forest text-center">
+            <h1 className="text-2xl font-serif text-off-white text-center">
               Access Denied
             </h1>
-            <p className="text-sm text-forest/60 text-center max-w-sm font-sans">
+            <p className="text-sm text-soft-gray text-center max-w-sm font-sans">
               You do not have admin privileges. Contact the site owner if you believe this is an error.
             </p>
           </div>
           <Button
             onClick={() => { window.location.href = "/"; }}
             size="lg"
-            className="w-full bg-forest hover:bg-forest-light text-cream shadow-lg hover:shadow-xl transition-all font-sans"
+            className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans"
           >
             Return to Home
           </Button>
@@ -124,23 +124,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-cream">
+      <div className="flex items-center justify-center min-h-screen bg-midnight">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-6">
-            <div className="w-12 h-12 bg-forest rounded-xl flex items-center justify-center">
-              <span className="text-cream font-serif text-lg font-bold">M</span>
+            <div className="w-12 h-12 bg-electric/20 border border-electric/30 rounded-xl flex items-center justify-center">
+              <span className="text-electric font-serif text-lg font-bold">M</span>
             </div>
-            <h1 className="text-2xl font-serif text-forest text-center">
+            <h1 className="text-2xl font-serif text-off-white text-center">
               Admin Access Required
             </h1>
-            <p className="text-sm text-forest/60 text-center max-w-sm font-sans">
+            <p className="text-sm text-soft-gray text-center max-w-sm font-sans">
               Sign in with your admin account to access the MiniMorph Studios platform.
             </p>
           </div>
           <Button
             onClick={() => { window.location.href = getLoginUrl(); }}
             size="lg"
-            className="w-full bg-forest hover:bg-forest-light text-cream shadow-lg hover:shadow-xl transition-all font-sans"
+            className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans"
           >
             Sign in
           </Button>
@@ -201,21 +201,21 @@ function AdminLayoutContent({
   return (
     <>
       <div className="relative" ref={sidebarRef}>
-        <Sidebar collapsible="icon" className="border-r-0 bg-white" disableTransition={isResizing}>
-          <SidebarHeader className="h-16 justify-center border-b border-border/50">
+        <Sidebar collapsible="icon" className="border-r-0 bg-charcoal" disableTransition={isResizing}>
+          <SidebarHeader className="h-16 justify-center border-b border-border/30">
             <div className="flex items-center gap-3 px-2 transition-all w-full">
               <button
                 onClick={toggleSidebar}
-                className="h-8 w-8 flex items-center justify-center hover:bg-sage-light/50 rounded-lg transition-colors focus:outline-none shrink-0"
+                className="h-8 w-8 flex items-center justify-center hover:bg-graphite rounded-lg transition-colors focus:outline-none shrink-0"
               >
-                <PanelLeft className="h-4 w-4 text-forest/60" />
+                <PanelLeft className="h-4 w-4 text-soft-gray" />
               </button>
               {!isCollapsed && (
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-7 h-7 bg-forest rounded-lg flex items-center justify-center shrink-0">
-                    <span className="text-cream font-serif text-xs font-bold">M</span>
+                  <div className="w-7 h-7 bg-electric rounded-lg flex items-center justify-center shrink-0">
+                    <span className="text-midnight font-serif text-xs font-bold">M</span>
                   </div>
-                  <span className="font-serif text-forest font-semibold tracking-tight truncate text-sm">
+                  <span className="font-serif text-off-white font-semibold tracking-tight truncate text-sm">
                     MiniMorph Admin
                   </span>
                 </div>
@@ -235,11 +235,11 @@ function AdminLayoutContent({
                       tooltip={item.label}
                       className={`h-9 transition-all font-sans text-sm ${
                         isActive
-                          ? "bg-forest/10 text-forest font-medium"
-                          : "text-forest/70 hover:bg-sage-light/40 hover:text-forest"
+                          ? "bg-electric/15 text-electric font-medium"
+                          : "text-soft-gray hover:bg-graphite hover:text-off-white"
                       }`}
                     >
-                      <item.icon className={`h-4 w-4 ${isActive ? "text-forest" : "text-forest/50"}`} />
+                      <item.icon className={`h-4 w-4 ${isActive ? "text-electric" : "text-soft-gray"}`} />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -248,10 +248,10 @@ function AdminLayoutContent({
             </SidebarMenu>
 
             {/* Back to website link */}
-            <div className="px-3 mt-4 pt-4 border-t border-border/50">
+            <div className="px-3 mt-4 pt-4 border-t border-border/30">
               <button
                 onClick={() => setLocation("/")}
-                className="flex items-center gap-2 text-xs text-forest/50 hover:text-forest transition-colors font-sans w-full group-data-[collapsible=icon]:justify-center"
+                className="flex items-center gap-2 text-xs text-soft-gray hover:text-electric transition-colors font-sans w-full group-data-[collapsible=icon]:justify-center"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span className="group-data-[collapsible=icon]:hidden">Back to website</span>
@@ -259,20 +259,20 @@ function AdminLayoutContent({
             </div>
           </SidebarContent>
 
-          <SidebarFooter className="p-3 border-t border-border/50">
+          <SidebarFooter className="p-3 border-t border-border/30">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-sage-light/40 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none">
-                  <Avatar className="h-8 w-8 border border-forest/10 shrink-0">
-                    <AvatarFallback className="text-xs font-medium bg-forest/10 text-forest">
+                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-graphite transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none">
+                  <Avatar className="h-8 w-8 border border-electric/20 shrink-0">
+                    <AvatarFallback className="text-xs font-medium bg-electric/10 text-electric">
                       {user?.name?.charAt(0).toUpperCase() ?? "A"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium truncate leading-none text-forest font-sans">
+                    <p className="text-sm font-medium truncate leading-none text-off-white font-sans">
                       {user?.name || "Admin"}
                     </p>
-                    <p className="text-xs text-forest/50 truncate mt-1 font-sans">
+                    <p className="text-xs text-soft-gray truncate mt-1 font-sans">
                       {user?.email || "-"}
                     </p>
                   </div>
@@ -291,18 +291,18 @@ function AdminLayoutContent({
           </SidebarFooter>
         </Sidebar>
         <div
-          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-forest/20 transition-colors ${isCollapsed ? "hidden" : ""}`}
+          className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-electric/20 transition-colors ${isCollapsed ? "hidden" : ""}`}
           onMouseDown={() => { if (!isCollapsed) setIsResizing(true); }}
           style={{ zIndex: 50 }}
         />
       </div>
 
-      <SidebarInset className="bg-cream/50">
+      <SidebarInset className="bg-midnight">
         {isMobile && (
-          <div className="flex border-b h-14 items-center justify-between bg-white/95 px-2 backdrop-blur sticky top-0 z-40">
+          <div className="flex border-b border-border/30 h-14 items-center justify-between bg-charcoal/95 px-2 backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="h-9 w-9 rounded-lg" />
-              <span className="font-serif text-forest text-sm">{activeMenuItem?.label ?? "Admin"}</span>
+              <span className="font-serif text-off-white text-sm">{activeMenuItem?.label ?? "Admin"}</span>
             </div>
           </div>
         )}

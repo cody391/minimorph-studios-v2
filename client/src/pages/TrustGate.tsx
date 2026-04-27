@@ -138,8 +138,8 @@ export default function TrustGate() {
   // Loading
   if (authLoading || statusLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-midnight flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -147,15 +147,15 @@ export default function TrustGate() {
   // Not logged in
   if (!user) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <Lock className="w-12 h-12 text-forest mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-forest mb-2">Account Required</h2>
+            <Lock className="w-12 h-12 text-electric mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-off-white mb-2">Account Required</h2>
             <p className="text-muted-foreground mb-4">
               Please create your account first.
             </p>
-            <Button onClick={() => navigate("/become-rep")} className="bg-forest hover:bg-forest-light text-white">
+            <Button onClick={() => navigate("/become-rep")} className="bg-electric hover:bg-electric-light text-white">
               Create Account
             </Button>
           </CardContent>
@@ -167,27 +167,27 @@ export default function TrustGate() {
   // Complete state
   if (step === "complete") {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-8 pb-8 text-center">
             <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+              <CheckCircle className="w-10 h-10 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-bold text-forest mb-2 font-serif">
+            <h2 className="text-2xl font-bold text-off-white mb-2 font-serif">
               Verification Complete
             </h2>
             <p className="text-muted-foreground mb-2">
               Your identity has been verified and the NDA is signed.
               You're ready to take the MiniMorph Rep Assessment.
             </p>
-            <p className="text-xs text-forest/50 mb-6">
+            <p className="text-xs text-soft-gray mb-6">
               {trustGateStatus?.ndaSignedAt && (
                 <>NDA signed on {new Date(trustGateStatus.ndaSignedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</>
               )}
             </p>
             <Button
               onClick={() => navigate("/rep-assessment")}
-              className="bg-terracotta hover:bg-terracotta/90 text-white w-full rounded-full py-5"
+              className="bg-electric hover:bg-electric/90 text-white w-full rounded-full py-5"
               size="lg"
             >
               Take the Assessment <ArrowRight className="w-4 h-4 ml-2" />
@@ -199,10 +199,10 @@ export default function TrustGate() {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-midnight">
       <OnboardingProgress currentStep={3} />
       {/* Header */}
-      <div className="bg-forest text-white py-8 px-4">
+      <div className="bg-charcoal text-off-white py-8 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <button
             onClick={() => navigate("/become-rep")}
@@ -221,18 +221,18 @@ export default function TrustGate() {
       {/* Step indicator */}
       <div className="max-w-2xl mx-auto px-4 mt-6 mb-4">
         <div className="flex items-center justify-center gap-4">
-          <div className={`flex items-center gap-2 ${step === "nda" ? "text-forest" : "text-forest/40"}`}>
+          <div className={`flex items-center gap-2 ${step === "nda" ? "text-off-white" : "text-soft-gray/60"}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              step === "nda" ? "bg-terracotta text-white" : step === "identity" ? "bg-forest text-white" : "bg-forest text-white"
+              step === "nda" ? "bg-electric text-white" : step === "identity" ? "bg-charcoal text-off-white" : "bg-charcoal text-off-white"
             }`}>
               {step !== "nda" ? <CheckCircle className="w-4 h-4" /> : "1"}
             </div>
             <span className="text-sm font-sans">NDA</span>
           </div>
-          <div className={`w-12 h-0.5 ${step === "identity" ? "bg-forest" : "bg-sage/20"}`} />
-          <div className={`flex items-center gap-2 ${step === "identity" ? "text-forest" : "text-forest/40"}`}>
+          <div className={`w-12 h-0.5 ${step === "identity" ? "bg-electric" : "bg-graphite/20"}`} />
+          <div className={`flex items-center gap-2 ${step === "identity" ? "text-off-white" : "text-soft-gray/60"}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-              step === "identity" ? "bg-terracotta text-white" : "bg-sage/20 text-forest/40"
+              step === "identity" ? "bg-electric text-white" : "bg-graphite/20 text-soft-gray/60"
             }`}>
               2
             </div>
@@ -261,34 +261,34 @@ export default function TrustGate() {
       {/* Form */}
       <div className="max-w-2xl mx-auto px-4 pb-12">
         {step === "nda" && (
-          <Card className="border-sage/20 shadow-lg">
+          <Card className="border-border/50 shadow-lg">
             <CardHeader>
-              <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
-                <FileText className="w-5 h-5 text-terracotta" />
+              <CardTitle className="font-serif text-off-white text-xl flex items-center gap-2">
+                <FileText className="w-5 h-5 text-electric" />
                 Confidentiality & Non-Disclosure Agreement
               </CardTitle>
-              <CardDescription className="text-forest/60">
+              <CardDescription className="text-soft-gray">
                 Please read the entire agreement carefully. You must scroll to the bottom before accepting.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* NDA text in scrollable container */}
               <div
-                className="bg-white border border-sage/20 rounded-lg p-6 max-h-[400px] overflow-y-auto text-sm text-forest/80 font-sans leading-relaxed whitespace-pre-line"
+                className="bg-charcoal border border-border/50 rounded-lg p-6 max-h-[400px] overflow-y-auto text-sm text-off-white/80 font-sans leading-relaxed whitespace-pre-line"
                 onScroll={handleNdaScroll}
               >
                 {ndaData?.text || "Loading NDA..."}
               </div>
 
               {!ndaScrolledToBottom && (
-                <p className="text-xs text-amber-600 flex items-center gap-1">
+                <p className="text-xs text-amber-400 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
                   Please scroll to the bottom of the agreement to continue
                 </p>
               )}
 
               <div className={`flex items-start gap-3 p-3 rounded-lg border ${
-                ndaScrolledToBottom ? "border-sage/20 bg-white" : "border-sage/10 bg-gray-50 opacity-60"
+                ndaScrolledToBottom ? "border-border/50 bg-charcoal" : "border-border/10 bg-gray-50 opacity-60"
               }`}>
                 <Checkbox
                   id="nda-accept"
@@ -297,8 +297,8 @@ export default function TrustGate() {
                   disabled={!ndaScrolledToBottom}
                   className="mt-0.5"
                 />
-                <label htmlFor="nda-accept" className="text-sm text-forest/70 font-sans leading-relaxed cursor-pointer">
-                  I have read and agree to the <span className="text-forest font-medium">MiniMorph Studios Confidentiality & Non-Disclosure Agreement</span>.
+                <label htmlFor="nda-accept" className="text-sm text-soft-gray font-sans leading-relaxed cursor-pointer">
+                  I have read and agree to the <span className="text-off-white font-medium">MiniMorph Studios Confidentiality & Non-Disclosure Agreement</span>.
                   I understand that violation of this agreement may result in legal action.
                 </label>
               </div>
@@ -306,7 +306,7 @@ export default function TrustGate() {
               <Button
                 onClick={handleNdaContinue}
                 disabled={!ndaAccepted || !ndaScrolledToBottom}
-                className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans"
+                className="w-full bg-electric hover:bg-electric/90 text-white rounded-full py-5 font-sans"
               >
                 Accept & Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -315,13 +315,13 @@ export default function TrustGate() {
         )}
 
         {step === "identity" && (
-          <Card className="border-sage/20 shadow-lg">
+          <Card className="border-border/50 shadow-lg">
             <CardHeader>
-              <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-terracotta" />
+              <CardTitle className="font-serif text-off-white text-xl flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-electric" />
                 Identity Verification
               </CardTitle>
-              <CardDescription className="text-forest/60">
+              <CardDescription className="text-soft-gray">
                 This information will be securely stored and used to auto-fill your onboarding paperwork.
                 You won't need to enter it again.
               </CardDescription>
@@ -330,46 +330,46 @@ export default function TrustGate() {
               {/* Legal Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-forest/80 text-sm">Legal First Name *</Label>
+                  <Label className="text-off-white/80 text-sm">Legal First Name *</Label>
                   <Input
                     value={legalFirstName}
                     onChange={(e) => setLegalFirstName(e.target.value)}
                     placeholder="First name (as on ID)"
-                    className="mt-1 border-sage/30 focus:border-forest"
+                    className="mt-1 border-border focus:border-electric"
                   />
                   {legalFirstName && user?.name?.includes(legalFirstName) && (
-                    <p className="text-[10px] text-green-600 mt-0.5 flex items-center gap-1">
+                    <p className="text-[10px] text-emerald-400 mt-0.5 flex items-center gap-1">
                       <Sparkles className="w-3 h-3" /> Auto-filled from your account
                     </p>
                   )}
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm">Legal Last Name *</Label>
+                  <Label className="text-off-white/80 text-sm">Legal Last Name *</Label>
                   <Input
                     value={legalLastName}
                     onChange={(e) => setLegalLastName(e.target.value)}
                     placeholder="Last name (as on ID)"
-                    className="mt-1 border-sage/30 focus:border-forest"
+                    className="mt-1 border-border focus:border-electric"
                   />
                 </div>
               </div>
 
               {/* DOB */}
               <div>
-                <Label className="text-forest/80 text-sm">Date of Birth *</Label>
+                <Label className="text-off-white/80 text-sm">Date of Birth *</Label>
                 <Input
                   type="date"
                   value={dateOfBirth}
                   onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="mt-1 border-sage/30 focus:border-forest"
+                  className="mt-1 border-border focus:border-electric"
                   max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split("T")[0]}
                 />
-                <p className="text-[10px] text-forest/40 mt-0.5">Must be 18 or older</p>
+                <p className="text-[10px] text-soft-gray/60 mt-0.5">Must be 18 or older</p>
               </div>
 
               {/* SSN Last 4 */}
               <div>
-                <Label className="text-forest/80 text-sm flex items-center gap-1.5">
+                <Label className="text-off-white/80 text-sm flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5" /> SSN Last 4 Digits *
                 </Label>
                 <Input
@@ -381,9 +381,9 @@ export default function TrustGate() {
                   }}
                   placeholder="••••"
                   maxLength={4}
-                  className="mt-1 border-sage/30 focus:border-forest w-32"
+                  className="mt-1 border-border focus:border-electric w-32"
                 />
-                <p className="text-[10px] text-forest/40 mt-0.5">
+                <p className="text-[10px] text-soft-gray/60 mt-0.5">
                   Used for tax form (W-9) auto-fill. Stored securely.
                 </p>
               </div>
@@ -391,9 +391,9 @@ export default function TrustGate() {
               {/* Government ID */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-forest/80 text-sm">Government ID Type *</Label>
+                  <Label className="text-off-white/80 text-sm">Government ID Type *</Label>
                   <Select value={idType} onValueChange={(v: any) => setIdType(v)}>
-                    <SelectTrigger className="mt-1 border-sage/30">
+                    <SelectTrigger className="mt-1 border-border">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -404,7 +404,7 @@ export default function TrustGate() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm flex items-center gap-1.5">
+                  <Label className="text-off-white/80 text-sm flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5" /> ID Last 4 Digits *
                   </Label>
                   <Input
@@ -416,40 +416,40 @@ export default function TrustGate() {
                     }}
                     placeholder="••••"
                     maxLength={4}
-                    className="mt-1 border-sage/30 focus:border-forest"
+                    className="mt-1 border-border focus:border-electric"
                   />
                 </div>
               </div>
 
               {/* Address section */}
-              <div className="pt-2 border-t border-sage/10">
-                <Label className="text-forest/80 text-sm flex items-center gap-1.5 mb-3">
-                  <MapPin className="w-3.5 h-3.5 text-terracotta" /> Mailing Address
+              <div className="pt-2 border-t border-border/10">
+                <Label className="text-off-white/80 text-sm flex items-center gap-1.5 mb-3">
+                  <MapPin className="w-3.5 h-3.5 text-electric" /> Mailing Address
                 </Label>
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-forest/80 text-xs">Street Address *</Label>
+                    <Label className="text-off-white/80 text-xs">Street Address *</Label>
                     <Input
                       value={streetAddress}
                       onChange={(e) => setStreetAddress(e.target.value)}
                       placeholder="123 Main St, Apt 4B"
-                      className="mt-1 border-sage/30 focus:border-forest"
+                      className="mt-1 border-border focus:border-electric"
                     />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label className="text-forest/80 text-xs">City *</Label>
+                      <Label className="text-off-white/80 text-xs">City *</Label>
                       <Input
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
                         placeholder="City"
-                        className="mt-1 border-sage/30 focus:border-forest"
+                        className="mt-1 border-border focus:border-electric"
                       />
                     </div>
                     <div>
-                      <Label className="text-forest/80 text-xs">State *</Label>
+                      <Label className="text-off-white/80 text-xs">State *</Label>
                       <Select value={state} onValueChange={setState}>
-                        <SelectTrigger className="mt-1 border-sage/30">
+                        <SelectTrigger className="mt-1 border-border">
                           <SelectValue placeholder="State" />
                         </SelectTrigger>
                         <SelectContent>
@@ -460,12 +460,12 @@ export default function TrustGate() {
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-forest/80 text-xs">ZIP Code *</Label>
+                      <Label className="text-off-white/80 text-xs">ZIP Code *</Label>
                       <Input
                         value={zipCode}
                         onChange={(e) => setZipCode(e.target.value)}
                         placeholder="12345"
-                        className="mt-1 border-sage/30 focus:border-forest"
+                        className="mt-1 border-border focus:border-electric"
                       />
                     </div>
                   </div>
@@ -473,9 +473,9 @@ export default function TrustGate() {
               </div>
 
               {/* Smart messaging */}
-              <div className="bg-forest/5 rounded-lg p-3 border border-forest/10">
-                <p className="text-xs text-forest/70 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-terracotta shrink-0" />
+              <div className="bg-electric/10 rounded-lg p-3 border border-electric/10">
+                <p className="text-xs text-soft-gray flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-electric shrink-0" />
                   <span>
                     <strong>One-time entry.</strong> This data will auto-populate your W-9 tax form,
                     HR employment docs, payroll setup, and rep agreement — no retyping.
@@ -487,14 +487,14 @@ export default function TrustGate() {
                 <Button
                   variant="outline"
                   onClick={() => setStep("nda")}
-                  className="flex-1 rounded-full border-sage/30 text-forest"
+                  className="flex-1 rounded-full border-border text-off-white"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" /> Back
                 </Button>
                 <Button
                   onClick={handleIdentitySubmit}
                   disabled={submitMutation.isPending}
-                  className="flex-1 bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans"
+                  className="flex-1 bg-electric hover:bg-electric/90 text-white rounded-full font-sans"
                 >
                   {submitMutation.isPending ? (
                     <>

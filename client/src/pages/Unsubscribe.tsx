@@ -28,7 +28,7 @@ export default function Unsubscribe() {
         <CardHeader className="text-center">
           {status === "success" ? (
             <>
-              <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-2" />
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-2" />
               <CardTitle>Unsubscribed</CardTitle>
               <CardDescription>
                 You have been successfully unsubscribed from MiniMorph Studios marketing emails.

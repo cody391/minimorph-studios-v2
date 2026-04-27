@@ -41,7 +41,7 @@ export default function AIContentStudio() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-forest" />
+          <Sparkles className="w-6 h-6 text-off-white" />
           AI Content Studio
         </h1>
         <p className="text-gray-500 mt-1">Generate platform-optimized social media content with AI</p>
@@ -99,7 +99,7 @@ function SinglePostGenerator() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Wand2 className="w-5 h-5 text-forest" /> Generate a Post
+            <Wand2 className="w-5 h-5 text-off-white" /> Generate a Post
           </CardTitle>
           <CardDescription>Describe what you want to post and AI will craft it for the platform</CardDescription>
         </CardHeader>
@@ -334,7 +334,7 @@ function BulkGenerator() {
                   key={p}
                   onClick={() => togglePlatform(p)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center gap-1 ${
-                    platforms.includes(p) ? "bg-forest text-white border-forest" : "bg-white text-gray-600 border-gray-200"
+                    platforms.includes(p) ? "bg-charcoal text-off-white border-electric" : "bg-charcoal text-gray-600 border-gray-200"
                   }`}
                 >
                   {PLATFORM_ICONS[p]} <span className="capitalize">{p}</span>
@@ -395,7 +395,7 @@ function BulkGenerator() {
         <Card>
           <CardContent className="p-8">
             <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-forest" />
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-off-white" />
               <p className="font-medium">Generating content...</p>
               <p className="text-sm text-gray-500 mt-1">This may take 15-30 seconds</p>
             </div>

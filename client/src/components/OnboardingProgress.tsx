@@ -29,10 +29,10 @@ export function OnboardingProgress({ currentStep }: OnboardingProgressProps) {
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold transition-all ${
                   currentStep > step.id
-                    ? "bg-forest text-white"
+                    ? "bg-charcoal text-off-white"
                     : currentStep === step.id
-                    ? "bg-terracotta text-white ring-2 ring-terracotta/30 ring-offset-1"
-                    : "bg-sage/20 text-forest/40"
+                    ? "bg-electric text-white ring-2 ring-electric/30 ring-offset-1"
+                    : "bg-graphite/20 text-soft-gray/60"
                 }`}
               >
                 {currentStep > step.id ? (
@@ -43,7 +43,7 @@ export function OnboardingProgress({ currentStep }: OnboardingProgressProps) {
               </div>
               <span
                 className={`text-[9px] sm:text-[10px] font-sans whitespace-nowrap ${
-                  currentStep >= step.id ? "text-forest font-medium" : "text-forest/40"
+                  currentStep >= step.id ? "text-off-white font-medium" : "text-soft-gray/60"
                 }`}
               >
                 {step.label}
@@ -52,7 +52,7 @@ export function OnboardingProgress({ currentStep }: OnboardingProgressProps) {
             {i < ONBOARDING_STEPS.length - 1 && (
               <div
                 className={`flex-1 h-0.5 mx-1 sm:mx-2 transition-colors mt-[-14px] ${
-                  currentStep > step.id ? "bg-forest" : "bg-sage/20"
+                  currentStep > step.id ? "bg-electric" : "bg-graphite/20"
                 }`}
               />
             )}

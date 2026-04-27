@@ -15,13 +15,13 @@ import {
 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
-  open: "bg-blue-100 text-blue-700",
-  ai_reviewed: "bg-purple-100 text-purple-700",
-  pending_approval: "bg-yellow-100 text-yellow-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+  open: "badge-info",
+  ai_reviewed: "badge-purple",
+  pending_approval: "badge-pending",
+  approved: "badge-success",
+  rejected: "badge-danger",
   resolved: "bg-emerald-100 text-emerald-700",
-  closed: "bg-gray-100 text-gray-700",
+  closed: "badge-neutral",
 };
 
 const statusIcons: Record<string, any> = {
@@ -84,38 +84,38 @@ export default function SupportTicketsPanel({ repId }: { repId: number }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-serif text-forest flex items-center gap-2">
-            <LifeBuoy className="h-5 w-5 text-terracotta" /> Support Tickets
+          <h3 className="text-lg font-serif text-off-white flex items-center gap-2">
+            <LifeBuoy className="h-5 w-5 text-electric" /> Support Tickets
           </h3>
-          <p className="text-xs text-forest/50 font-sans mt-1">
+          <p className="text-xs text-soft-gray font-sans mt-1">
             Submit a ticket and our AI will analyze it and propose a solution. The owner will approve or reject.
           </p>
         </div>
         <Dialog open={showNew} onOpenChange={setShowNew}>
           <DialogTrigger asChild>
-            <Button className="bg-terracotta hover:bg-terracotta/90 text-white font-sans text-sm rounded-full">
+            <Button className="bg-electric hover:bg-electric/90 text-white font-sans text-sm rounded-full">
               <Plus className="h-4 w-4 mr-1" /> New Ticket
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle className="font-serif text-forest">Submit Support Ticket</DialogTitle>
+              <DialogTitle className="font-serif text-off-white">Submit Support Ticket</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-2">
               <div>
-                <Label className="text-forest/80 text-sm">Subject *</Label>
+                <Label className="text-off-white/80 text-sm">Subject *</Label>
                 <Input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Brief description of your issue"
-                  className="mt-1 border-sage/30"
+                  className="mt-1 border-border"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-forest/80 text-sm">Category</Label>
+                  <Label className="text-off-white/80 text-sm">Category</Label>
                   <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="mt-1 border-sage/30">
+                    <SelectTrigger className="mt-1 border-border">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -129,9 +129,9 @@ export default function SupportTicketsPanel({ repId }: { repId: number }) {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm">Priority</Label>
+                  <Label className="text-off-white/80 text-sm">Priority</Label>
                   <Select value={priority} onValueChange={setPriority}>
-                    <SelectTrigger className="mt-1 border-sage/30">
+                    <SelectTrigger className="mt-1 border-border">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -144,19 +144,19 @@ export default function SupportTicketsPanel({ repId }: { repId: number }) {
                 </div>
               </div>
               <div>
-                <Label className="text-forest/80 text-sm">Description *</Label>
+                <Label className="text-off-white/80 text-sm">Description *</Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe your issue in detail. The more context you provide, the better our AI can help."
                   rows={5}
-                  className="mt-1 border-sage/30"
+                  className="mt-1 border-border"
                 />
               </div>
               <Button
                 onClick={handleSubmit}
                 disabled={submitTicket.isPending}
-                className="w-full bg-forest hover:bg-forest/90 text-white font-sans rounded-full"
+                className="w-full bg-electric hover:bg-electric-light text-white font-sans rounded-full"
               >
                 {submitTicket.isPending ? (
                   <span className="flex items-center gap-2">
@@ -175,14 +175,14 @@ export default function SupportTicketsPanel({ repId }: { repId: number }) {
 
       {isLoading ? (
         <div className="text-center py-12">
-          <div className="animate-spin w-6 h-6 border-2 border-forest border-t-transparent rounded-full mx-auto" />
+          <div className="animate-spin w-6 h-6 border-2 border-electric border-t-transparent rounded-full mx-auto" />
         </div>
       ) : !tickets?.length ? (
         <Card className="border-border/50">
           <CardContent className="py-12 text-center">
-            <LifeBuoy className="h-10 w-10 text-forest/20 mx-auto mb-3" />
-            <p className="text-sm text-forest/50 font-sans">No support tickets yet.</p>
-            <p className="text-xs text-forest/30 font-sans mt-1">Click "New Ticket" to get help from our AI-powered support system.</p>
+            <LifeBuoy className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+            <p className="text-sm text-soft-gray font-sans">No support tickets yet.</p>
+            <p className="text-xs text-soft-gray/40 font-sans mt-1">Click "New Ticket" to get help from our AI-powered support system.</p>
           </CardContent>
         </Card>
       ) : (
@@ -199,8 +199,8 @@ export default function SupportTicketsPanel({ repId }: { repId: number }) {
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <StatusIcon className="h-4 w-4 text-forest/50" />
-                        <span className="text-sm font-medium text-forest font-sans">
+                        <StatusIcon className="h-4 w-4 text-soft-gray" />
+                        <span className="text-sm font-medium text-off-white font-sans">
                           #{ticket.id} — {ticket.subject}
                         </span>
                       </div>
@@ -211,23 +211,23 @@ export default function SupportTicketsPanel({ repId }: { repId: number }) {
                         <Badge className={`text-[10px] ${priorityColors[ticket.priority] || ""}`}>
                           {ticket.priority}
                         </Badge>
-                        <span className="text-[10px] text-forest/40 font-sans">
+                        <span className="text-[10px] text-soft-gray/60 font-sans">
                           {new Date(ticket.createdAt).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
                     {isExpanded ? (
-                      <ChevronUp className="h-4 w-4 text-forest/30" />
+                      <ChevronUp className="h-4 w-4 text-soft-gray/40" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 text-forest/30" />
+                      <ChevronDown className="h-4 w-4 text-soft-gray/40" />
                     )}
                   </div>
 
                   {isExpanded && (
                     <div className="mt-4 space-y-3 border-t border-border/30 pt-3">
                       <div>
-                        <p className="text-xs font-medium text-forest/60 font-sans mb-1">Description</p>
-                        <p className="text-sm text-forest/80 font-sans">{ticket.description}</p>
+                        <p className="text-xs font-medium text-soft-gray font-sans mb-1">Description</p>
+                        <p className="text-sm text-off-white/80 font-sans">{ticket.description}</p>
                       </div>
                       {ticket.aiAnalysis && (
                         <div className="bg-purple-50 rounded-lg p-3">
@@ -242,20 +242,20 @@ export default function SupportTicketsPanel({ repId }: { repId: number }) {
                           <p className="text-xs font-medium text-green-700 font-sans mb-1">Proposed Solution</p>
                           <p className="text-sm text-green-800 font-sans">{ticket.aiSolution}</p>
                           {ticket.aiConfidence && (
-                            <p className="text-[10px] text-green-600 font-sans mt-1">
+                            <p className="text-[10px] text-emerald-400 font-sans mt-1">
                               Confidence: {(parseFloat(ticket.aiConfidence) * 100).toFixed(0)}%
                             </p>
                           )}
                         </div>
                       )}
                       {ticket.ownerNotes && (
-                        <div className="bg-amber-50 rounded-lg p-3">
+                        <div className="bg-amber-500/10 rounded-lg p-3">
                           <p className="text-xs font-medium text-amber-700 font-sans mb-1">Owner Notes</p>
                           <p className="text-sm text-amber-800 font-sans">{ticket.ownerNotes}</p>
                         </div>
                       )}
                       {ticket.resolvedAt && (
-                        <p className="text-[10px] text-forest/40 font-sans">
+                        <p className="text-[10px] text-soft-gray/60 font-sans">
                           Resolved: {new Date(ticket.resolvedAt).toLocaleString()}
                         </p>
                       )}

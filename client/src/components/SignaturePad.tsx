@@ -151,7 +151,7 @@ export function SignaturePad({ onSignatureChange, signerName }: SignaturePadProp
         </TabsList>
 
         <TabsContent value="draw" className="mt-3">
-          <div className="relative rounded-lg border-2 border-dashed border-muted-foreground/25 bg-white">
+          <div className="relative rounded-lg border-2 border-dashed border-muted-foreground/25 bg-charcoal">
             <canvas
               ref={canvasRef}
               className="w-full h-28 cursor-crosshair touch-none"
@@ -193,7 +193,7 @@ export function SignaturePad({ onSignatureChange, signerName }: SignaturePadProp
             className="text-lg"
           />
           {typedName.trim().length >= 2 && (
-            <div className="mt-3 p-4 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-white">
+            <div className="mt-3 p-4 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-charcoal">
               <p
                 className="text-2xl text-center text-gray-800"
                 style={{ fontFamily: "'Dancing Script', cursive, serif" }}

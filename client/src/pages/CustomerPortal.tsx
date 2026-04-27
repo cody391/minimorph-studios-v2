@@ -20,12 +20,12 @@ import { Bot } from "lucide-react";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  active: "bg-green-100 text-green-700",
-  expiring_soon: "bg-yellow-100 text-yellow-700",
-  expired: "bg-red-100 text-red-700",
-  renewed: "bg-blue-100 text-blue-700",
-  cancelled: "bg-gray-100 text-gray-700",
-  pending_payment: "bg-amber-100 text-amber-700",
+  active: "badge-success",
+  expiring_soon: "badge-pending",
+  expired: "badge-danger",
+  renewed: "badge-info",
+  cancelled: "badge-neutral",
+  pending_payment: "badge-pending-payment",
 };
 
 export default function CustomerPortal() {
@@ -85,23 +85,23 @@ export default function CustomerPortal() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-midnight flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
         <Card className="max-w-md w-full border-border/50">
           <CardContent className="p-8 text-center">
-            <Shield className="h-12 w-12 text-forest/30 mx-auto mb-4" />
-            <h2 className="text-xl font-serif text-forest mb-2">Customer Portal</h2>
-            <p className="text-sm text-forest/60 font-sans mb-6">Sign in to view your website contract, performance reports, and manage your account.</p>
+            <Shield className="h-12 w-12 text-soft-gray/40 mx-auto mb-4" />
+            <h2 className="text-xl font-serif text-off-white mb-2">Customer Portal</h2>
+            <p className="text-sm text-soft-gray font-sans mb-6">Sign in to view your website contract, performance reports, and manage your account.</p>
             <Button
               onClick={() => { setLocation("/login"); }}
-              className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8"
+              className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
             >
               Sign In
             </Button>
@@ -113,7 +113,7 @@ export default function CustomerPortal() {
 
   if (custLoading) {
     return (
-      <div className="min-h-screen bg-cream p-6">
+      <div className="min-h-screen bg-midnight p-6">
         <div className="max-w-5xl mx-auto space-y-6">
           <Skeleton className="h-10 w-64" />
           <div className="grid grid-cols-3 gap-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
@@ -125,17 +125,17 @@ export default function CustomerPortal() {
 
   if (!customer) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
         <Card className="max-w-md w-full border-border/50">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-terracotta/50 mx-auto mb-4" />
-            <h2 className="text-xl font-serif text-forest mb-2">No Account Found</h2>
-            <p className="text-sm text-forest/60 font-sans mb-6">
+            <AlertCircle className="h-12 w-12 text-electric/50 mx-auto mb-4" />
+            <h2 className="text-xl font-serif text-off-white mb-2">No Account Found</h2>
+            <p className="text-sm text-soft-gray font-sans mb-6">
               We couldn't find a customer account linked to your profile. If you recently purchased, it may take a moment to set up.
             </p>
             <Button
               onClick={() => setLocation("/")}
-              className="bg-forest hover:bg-forest/90 text-white font-sans rounded-full px-8"
+              className="bg-electric hover:bg-electric-light text-white font-sans rounded-full px-8"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
@@ -151,15 +151,15 @@ export default function CustomerPortal() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-midnight">
       {/* Header */}
-      <div className="bg-forest text-white">
+      <div className="bg-charcoal text-off-white">
         <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-serif mb-1">{customer.businessName}</h1>
-            <p className="text-sm text-white/60 font-sans">Your MiniMorph website dashboard</p>
+            <p className="text-sm text-off-white/50 font-sans">Your MiniMorph website dashboard</p>
           </div>
-          <Button variant="outline" onClick={() => setLocation("/")} className="text-white border-white/20 hover:bg-white/10 font-sans text-sm rounded-full">
+          <Button variant="outline" onClick={() => setLocation("/")} className="text-off-white border-off-white/20 hover:bg-off-white/10 font-sans text-sm rounded-full">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Site
           </Button>
@@ -168,15 +168,15 @@ export default function CustomerPortal() {
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-8 bg-cream-dark/30 rounded-full p-1">
-            <TabsTrigger value="overview" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Overview</TabsTrigger>
-            <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Reports</TabsTrigger>
-            <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Support</TabsTrigger>
-            <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Upgrades</TabsTrigger>
-            <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Onboarding</TabsTrigger>
-            <TabsTrigger value="billing" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Billing</TabsTrigger>
-            <TabsTrigger value="referrals" className="rounded-full font-sans text-sm data-[state=active]:bg-white">Referrals</TabsTrigger>
-            <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-white">
+          <TabsList className="mb-8 bg-midnight-dark/30 rounded-full p-1">
+            <TabsTrigger value="overview" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Overview</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Reports</TabsTrigger>
+            <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Support</TabsTrigger>
+            <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Upgrades</TabsTrigger>
+            <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Onboarding</TabsTrigger>
+            <TabsTrigger value="billing" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Billing</TabsTrigger>
+            <TabsTrigger value="referrals" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Referrals</TabsTrigger>
+            <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">
               <Bot className="h-3 w-3 mr-1" /> AI Assistant
             </TabsTrigger>
           </TabsList>
@@ -188,10 +188,10 @@ export default function CustomerPortal() {
               <Card className="border-border/50">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-forest/50 font-sans uppercase tracking-wide">Health Score</span>
+                    <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">Health Score</span>
                     <CheckCircle className={`h-4 w-4 ${customer.healthScore >= 70 ? "text-green-500" : customer.healthScore >= 40 ? "text-yellow-500" : "text-red-500"}`} />
                   </div>
-                  <div className="text-3xl font-serif text-forest mb-2">{customer.healthScore}/100</div>
+                  <div className="text-3xl font-serif text-off-white mb-2">{customer.healthScore}/100</div>
                   <Progress value={customer.healthScore} className="h-1.5" />
                 </CardContent>
               </Card>
@@ -199,16 +199,16 @@ export default function CustomerPortal() {
               <Card className="border-border/50">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-forest/50 font-sans uppercase tracking-wide">Contract</span>
+                    <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">Contract</span>
                     {activeContract && <Badge className={`text-[10px] font-sans ${statusColors[activeContract.status] ?? ""}`}>{activeContract.status.replace(/_/g, " ")}</Badge>}
                   </div>
-                  <div className="text-lg font-serif text-forest capitalize">{activeContract?.packageTier ?? pendingPaymentContract?.packageTier ?? "No active"} Plan</div>
+                  <div className="text-lg font-serif text-off-white capitalize">{activeContract?.packageTier ?? pendingPaymentContract?.packageTier ?? "No active"} Plan</div>
                   {activeContract ? (
-                    <p className="text-xs text-forest/50 font-sans mt-1">{daysRemaining} days remaining</p>
+                    <p className="text-xs text-soft-gray font-sans mt-1">{daysRemaining} days remaining</p>
                   ) : pendingPaymentContract ? (
-                    <p className="text-xs text-amber-600 font-sans mt-1 font-medium">Awaiting payment</p>
+                    <p className="text-xs text-amber-400 font-sans mt-1 font-medium">Awaiting payment</p>
                   ) : (
-                    <p className="text-xs text-forest/50 font-sans mt-1">No contract</p>
+                    <p className="text-xs text-soft-gray font-sans mt-1">No contract</p>
                   )}
                 </CardContent>
               </Card>
@@ -216,16 +216,16 @@ export default function CustomerPortal() {
               <Card className="border-border/50">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-forest/50 font-sans uppercase tracking-wide">Latest Report</span>
-                    <BarChart3 className="h-4 w-4 text-terracotta" />
+                    <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">Latest Report</span>
+                    <BarChart3 className="h-4 w-4 text-electric" />
                   </div>
                   {latestReport ? (
                     <>
-                      <div className="text-lg font-serif text-forest">{latestReport.reportMonth}</div>
-                      <p className="text-xs text-forest/50 font-sans mt-1">{(latestReport.pageViews ?? 0).toLocaleString()} page views</p>
+                      <div className="text-lg font-serif text-off-white">{latestReport.reportMonth}</div>
+                      <p className="text-xs text-soft-gray font-sans mt-1">{(latestReport.pageViews ?? 0).toLocaleString()} page views</p>
                     </>
                   ) : (
-                    <p className="text-sm text-forest/50 font-sans">No reports yet</p>
+                    <p className="text-sm text-soft-gray font-sans">No reports yet</p>
                   )}
                 </CardContent>
               </Card>
@@ -233,17 +233,17 @@ export default function CustomerPortal() {
 
             {/* Pending Payment Banner */}
             {!activeContract && pendingPaymentContract && (
-              <Card className="border-amber-200 bg-amber-50/50">
+              <Card className="border-amber-500/20 bg-amber-500/10">
                 <CardContent className="p-5">
                   <div className="flex items-start gap-3">
-                    <Clock className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                    <Clock className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />
                     <div>
-                      <h3 className="text-sm font-serif text-forest font-medium">Payment Pending</h3>
-                      <p className="text-xs text-forest/70 font-sans mt-1">
+                      <h3 className="text-sm font-serif text-off-white font-medium">Payment Pending</h3>
+                      <p className="text-xs text-soft-gray font-sans mt-1">
                         Your <span className="capitalize font-medium">{pendingPaymentContract.packageTier}</span> package is reserved.
                         Please complete payment using the link sent to your email to activate your contract and begin onboarding.
                       </p>
-                      <p className="text-xs text-forest/50 font-sans mt-2">
+                      <p className="text-xs text-soft-gray font-sans mt-2">
                         Can't find the email? Use the Support tab and we'll resend your payment link.
                       </p>
                     </div>
@@ -255,28 +255,28 @@ export default function CustomerPortal() {
             {activeContract && (
               <Card className="border-border/50">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-terracotta" />
+                  <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-electric" />
                     Contract Details
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div>
-                      <p className="text-xs text-forest/50 font-sans uppercase tracking-wide mb-1">Package</p>
-                      <p className="text-sm font-medium text-forest font-sans capitalize">{activeContract.packageTier}</p>
+                      <p className="text-xs text-soft-gray font-sans uppercase tracking-wide mb-1">Package</p>
+                      <p className="text-sm font-medium text-off-white font-sans capitalize">{activeContract.packageTier}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-forest/50 font-sans uppercase tracking-wide mb-1">Monthly Price</p>
-                      <p className="text-sm font-medium text-forest font-sans">${parseFloat(activeContract.monthlyPrice).toLocaleString()}/mo</p>
+                      <p className="text-xs text-soft-gray font-sans uppercase tracking-wide mb-1">Monthly Price</p>
+                      <p className="text-sm font-medium text-off-white font-sans">${parseFloat(activeContract.monthlyPrice).toLocaleString()}/mo</p>
                     </div>
                     <div>
-                      <p className="text-xs text-forest/50 font-sans uppercase tracking-wide mb-1">Start Date</p>
-                      <p className="text-sm font-medium text-forest font-sans">{new Date(activeContract.startDate).toLocaleDateString()}</p>
+                      <p className="text-xs text-soft-gray font-sans uppercase tracking-wide mb-1">Start Date</p>
+                      <p className="text-sm font-medium text-off-white font-sans">{new Date(activeContract.startDate).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-forest/50 font-sans uppercase tracking-wide mb-1">End Date</p>
-                      <p className="text-sm font-medium text-forest font-sans">{new Date(activeContract.endDate).toLocaleDateString()}</p>
+                      <p className="text-xs text-soft-gray font-sans uppercase tracking-wide mb-1">End Date</p>
+                      <p className="text-sm font-medium text-off-white font-sans">{new Date(activeContract.endDate).toLocaleDateString()}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -286,24 +286,24 @@ export default function CustomerPortal() {
             {/* Recent Activity */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-electric" />
                   Recent Activity
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {!nurtureLogs?.length ? (
-                  <p className="text-sm text-forest/50 font-sans text-center py-6">No recent activity</p>
+                  <p className="text-sm text-soft-gray font-sans text-center py-6">No recent activity</p>
                 ) : (
                   <div className="space-y-3">
                     {nurtureLogs.slice(0, 5).map((log: any) => (
                       <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg border border-border/20">
-                        <div className="w-2 h-2 rounded-full bg-terracotta mt-1.5 shrink-0" />
+                        <div className="w-2 h-2 rounded-full bg-electric mt-1.5 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-forest font-sans">{log.subject || log.type.replace(/_/g, " ")}</p>
-                          {log.content && <p className="text-xs text-forest/50 font-sans mt-0.5 line-clamp-2">{log.content}</p>}
+                          <p className="text-sm font-medium text-off-white font-sans">{log.subject || log.type.replace(/_/g, " ")}</p>
+                          {log.content && <p className="text-xs text-soft-gray font-sans mt-0.5 line-clamp-2">{log.content}</p>}
                         </div>
-                        <span className="text-[10px] text-forest/40 font-sans shrink-0">
+                        <span className="text-[10px] text-soft-gray/60 font-sans shrink-0">
                           {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : ""}
                         </span>
                       </div>
@@ -318,53 +318,53 @@ export default function CustomerPortal() {
           <TabsContent value="reports" className="space-y-6">
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-electric" />
                   Performance Reports
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {!reportsData?.length ? (
                   <div className="text-center py-12">
-                    <BarChart3 className="h-10 w-10 text-forest/15 mx-auto mb-3" />
-                    <p className="text-sm text-forest/50 font-sans">No reports generated yet. Your first monthly report will appear here.</p>
+                    <BarChart3 className="h-10 w-10 text-soft-gray/20 mx-auto mb-3" />
+                    <p className="text-sm text-soft-gray font-sans">No reports generated yet. Your first monthly report will appear here.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {reportsData.map((report: any) => (
                       <div key={report.id} className="p-5 rounded-xl border border-border/30 hover:border-border/50 transition-colors">
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-sm font-medium text-forest font-sans">{report.reportMonth} Report</h3>
-                          <Badge className={`text-[10px] font-sans ${report.status === "delivered" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                          <h3 className="text-sm font-medium text-off-white font-sans">{report.reportMonth} Report</h3>
+                          <Badge className={`text-[10px] font-sans ${report.status === "delivered" ? "badge-success" : "badge-pending"}`}>
                             {report.status}
                           </Badge>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="text-center p-3 bg-cream-dark/20 rounded-lg">
-                            <Eye className="h-4 w-4 text-forest/40 mx-auto mb-1" />
-                            <p className="text-lg font-serif text-forest">{(report.pageViews ?? 0).toLocaleString()}</p>
-                            <p className="text-[10px] text-forest/50 font-sans">Page Views</p>
+                          <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
+                            <Eye className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
+                            <p className="text-lg font-serif text-off-white">{(report.pageViews ?? 0).toLocaleString()}</p>
+                            <p className="text-[10px] text-soft-gray font-sans">Page Views</p>
                           </div>
-                          <div className="text-center p-3 bg-cream-dark/20 rounded-lg">
-                            <UsersIcon className="h-4 w-4 text-forest/40 mx-auto mb-1" />
-                            <p className="text-lg font-serif text-forest">{(report.uniqueVisitors ?? 0).toLocaleString()}</p>
-                            <p className="text-[10px] text-forest/50 font-sans">Visitors</p>
+                          <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
+                            <UsersIcon className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
+                            <p className="text-lg font-serif text-off-white">{(report.uniqueVisitors ?? 0).toLocaleString()}</p>
+                            <p className="text-[10px] text-soft-gray font-sans">Visitors</p>
                           </div>
-                          <div className="text-center p-3 bg-cream-dark/20 rounded-lg">
-                            <TrendingUp className="h-4 w-4 text-forest/40 mx-auto mb-1" />
-                            <p className="text-lg font-serif text-forest">{report.bounceRate ?? "N/A"}%</p>
-                            <p className="text-[10px] text-forest/50 font-sans">Bounce Rate</p>
+                          <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
+                            <TrendingUp className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
+                            <p className="text-lg font-serif text-off-white">{report.bounceRate ?? "N/A"}%</p>
+                            <p className="text-[10px] text-soft-gray font-sans">Bounce Rate</p>
                           </div>
-                          <div className="text-center p-3 bg-cream-dark/20 rounded-lg">
-                            <Calendar className="h-4 w-4 text-forest/40 mx-auto mb-1" />
-                            <p className="text-lg font-serif text-forest">{report.conversionRate ?? "N/A"}%</p>
-                            <p className="text-[10px] text-forest/50 font-sans">Conversion</p>
+                          <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
+                            <Calendar className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
+                            <p className="text-lg font-serif text-off-white">{report.conversionRate ?? "N/A"}%</p>
+                            <p className="text-[10px] text-soft-gray font-sans">Conversion</p>
                           </div>
                         </div>
                         {report.recommendations && (
-                          <div className="mt-4 p-3 bg-sage/10 rounded-lg">
-                            <p className="text-xs font-medium text-forest font-sans mb-1">Recommendations</p>
-                            <p className="text-xs text-forest/60 font-sans">{report.recommendations}</p>
+                          <div className="mt-4 p-3 bg-electric/5 rounded-lg">
+                            <p className="text-xs font-medium text-off-white font-sans mb-1">Recommendations</p>
+                            <p className="text-xs text-soft-gray font-sans">{report.recommendations}</p>
                           </div>
                         )}
                       </div>
@@ -386,24 +386,24 @@ export default function CustomerPortal() {
             {(upsells?.length ?? 0) > 0 && (
               <Card className="border-border/50">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-terracotta" />
+                  <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-electric" />
                     Recommended for You
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {(upsells ?? []).map((u: any) => (
-                      <div key={u.id} className="p-5 rounded-xl border border-border/30 hover:border-terracotta/30 transition-colors">
+                      <div key={u.id} className="p-5 rounded-xl border border-border/30 hover:border-electric/30 transition-colors">
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-sm font-medium text-forest font-sans">{u.title}</h3>
-                          <Badge className={`text-[10px] font-sans ${u.status === "accepted" ? "bg-green-100 text-green-700" : u.status === "proposed" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}>
+                          <h3 className="text-sm font-medium text-off-white font-sans">{u.title}</h3>
+                          <Badge className={`text-[10px] font-sans ${u.status === "accepted" ? "badge-success" : u.status === "proposed" ? "badge-info" : "badge-neutral"}`}>
                             {u.status}
                           </Badge>
                         </div>
-                        {u.description && <p className="text-xs text-forest/60 font-sans mb-3">{u.description}</p>}
+                        {u.description && <p className="text-xs text-soft-gray font-sans mb-3">{u.description}</p>}
                         {u.estimatedValue && (
-                          <p className="text-xs text-terracotta font-sans font-medium">Estimated value: ${parseFloat(u.estimatedValue).toLocaleString()}/mo</p>
+                          <p className="text-xs text-electric font-sans font-medium">Estimated value: ${parseFloat(u.estimatedValue).toLocaleString()}/mo</p>
                         )}
                       </div>
                     ))}
@@ -415,11 +415,11 @@ export default function CustomerPortal() {
             {/* Widget & Add-On Catalog */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-electric" />
                   Grow Your Site
                 </CardTitle>
-                <p className="text-xs text-forest/50 font-sans mt-1">AI-powered widgets and add-ons to supercharge your website</p>
+                <p className="text-xs text-soft-gray font-sans mt-1">AI-powered widgets and add-ons to supercharge your website</p>
               </CardHeader>
               <CardContent>
                 <WidgetCatalogBrowser customerId={customer?.id} />
@@ -431,21 +431,21 @@ export default function CustomerPortal() {
           <TabsContent value="onboarding" className="space-y-6">
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <Rocket className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <Rocket className="h-4 w-4 text-electric" />
                   Your Onboarding
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
-                  <Rocket className="h-12 w-12 text-forest/15 mx-auto mb-4" />
-                  <h3 className="text-lg font-serif text-forest mb-2">Website Onboarding Portal</h3>
-                  <p className="text-sm text-forest/60 font-sans mb-6 max-w-md mx-auto">
+                  <Rocket className="h-12 w-12 text-soft-gray/20 mx-auto mb-4" />
+                  <h3 className="text-lg font-serif text-off-white mb-2">Website Onboarding Portal</h3>
+                  <p className="text-sm text-soft-gray font-sans mb-6 max-w-md mx-auto">
                     Complete your brand questionnaire, upload your assets (logo, photos, brand guidelines), set up your domain, and track your project from design to launch.
                   </p>
                   <Button
                     onClick={() => setLocation("/onboarding")}
-                    className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8"
+                    className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
                   >
                     <Rocket className="h-4 w-4 mr-2" />
                     Go to Onboarding Portal
@@ -469,13 +469,13 @@ export default function CustomerPortal() {
           <TabsContent value="ai-assistant" className="space-y-6">
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-electric" />
                   AI Concierge
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-forest/60 font-sans mb-4">
+                <p className="text-xs text-soft-gray font-sans mb-4">
                   Your personal AI assistant can help you navigate your website project, suggest improvements, answer questions about your plan, and guide you through available upgrades.
                 </p>
                 <div className="h-[500px] border border-border/30 rounded-lg overflow-hidden">
@@ -516,7 +516,7 @@ function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-32 bg-cream-dark/20 rounded-lg animate-pulse" />
+          <div key={i} className="h-32 bg-midnight-dark/20 rounded-lg animate-pulse" />
         ))}
       </div>
     );
@@ -525,8 +525,8 @@ function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
   if (!widgets?.length) {
     return (
       <div className="text-center py-8">
-        <Bot className="h-8 w-8 text-forest/15 mx-auto mb-2" />
-        <p className="text-sm text-forest/50 font-sans">No add-ons available yet. Check back soon!</p>
+        <Bot className="h-8 w-8 text-soft-gray/20 mx-auto mb-2" />
+        <p className="text-sm text-soft-gray font-sans">No add-ons available yet. Check back soon!</p>
       </div>
     );
   }
@@ -536,26 +536,26 @@ function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
       {widgets.map((widget: any) => (
         <div
           key={widget.id}
-          className="p-4 rounded-xl border border-border/30 hover:border-terracotta/30 hover:shadow-sm transition-all group"
+          className="p-4 rounded-xl border border-border/30 hover:border-electric/30 hover:shadow-sm transition-all group"
         >
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-terracotta/10 flex items-center justify-center shrink-0">
-              <Bot className="h-5 w-5 text-terracotta" />
+            <div className="w-10 h-10 rounded-lg bg-electric/10 flex items-center justify-center shrink-0">
+              <Bot className="h-5 w-5 text-electric" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-medium text-forest font-sans">{widget.name}</h4>
-              <p className="text-xs text-forest/50 font-sans mt-0.5 line-clamp-2">{widget.description}</p>
+              <h4 className="text-sm font-medium text-off-white font-sans">{widget.name}</h4>
+              <p className="text-xs text-soft-gray font-sans mt-0.5 line-clamp-2">{widget.description}</p>
               <div className="flex items-center justify-between mt-3">
                 <div>
-                  <span className="text-base font-serif text-forest">${Number(widget.monthlyPrice).toLocaleString()}</span>
-                  <span className="text-[10px] text-forest/40 font-sans">/mo</span>
+                  <span className="text-base font-serif text-off-white">${Number(widget.monthlyPrice).toLocaleString()}</span>
+                  <span className="text-[10px] text-soft-gray/60 font-sans">/mo</span>
                   {widget.setupFee && Number(widget.setupFee) > 0 && (
-                    <span className="text-[10px] text-forest/40 font-sans ml-2">+ ${Number(widget.setupFee)} setup</span>
+                    <span className="text-[10px] text-soft-gray/60 font-sans ml-2">+ ${Number(widget.setupFee)} setup</span>
                   )}
                 </div>
                 <Button
                   size="sm"
-                  className="bg-terracotta hover:bg-terracotta-light text-white text-xs font-sans rounded-full px-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="bg-electric hover:bg-electric-light text-midnight text-xs font-sans rounded-full px-4 opacity-0 group-hover:opacity-100 transition-opacity"
                   disabled={requestWidget.isPending || !customerId}
                   onClick={() => {
                     if (customerId) {
@@ -584,20 +584,20 @@ function BillingTab() {
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
-      paid: "bg-green-100 text-green-700",
-      pending: "bg-yellow-100 text-yellow-700",
-      failed: "bg-red-100 text-red-700",
-      refunded: "bg-gray-100 text-gray-700",
+      paid: "badge-success",
+      pending: "badge-pending",
+      failed: "badge-danger",
+      refunded: "badge-neutral",
     };
-    return map[status] || "bg-gray-100 text-gray-700";
+    return map[status] || "badge-neutral";
   };
 
   return (
     <div className="space-y-6">
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <FileText className="h-4 w-4 text-terracotta" />
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <FileText className="h-4 w-4 text-electric" />
             Payment History
           </CardTitle>
         </CardHeader>
@@ -610,26 +610,26 @@ function BillingTab() {
             </div>
           ) : !orders?.length ? (
             <div className="text-center py-12">
-              <FileText className="h-8 w-8 text-forest/15 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No payments yet.</p>
-              <p className="text-xs text-forest/30 font-sans mt-1">Your payment history will appear here once you subscribe.</p>
+              <FileText className="h-8 w-8 text-soft-gray/20 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No payments yet.</p>
+              <p className="text-xs text-soft-gray/40 font-sans mt-1">Your payment history will appear here once you subscribe.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {orders.map((order: any) => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between p-4 rounded-xl border border-border/30 hover:border-terracotta/10 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-xl border border-border/30 hover:border-electric/20 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-forest/5 flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-forest/40" />
+                    <div className="w-10 h-10 rounded-lg bg-electric/10 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-soft-gray/60" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-forest font-sans capitalize">
+                      <p className="text-sm font-medium text-off-white font-sans capitalize">
                         {order.packageTier} Plan
                       </p>
-                      <p className="text-xs text-forest/40 font-sans">
+                      <p className="text-xs text-soft-gray/60 font-sans">
                         {new Date(order.createdAt).toLocaleDateString("en-US", {
                           month: "long",
                           day: "numeric",
@@ -640,7 +640,7 @@ function BillingTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-serif text-forest">
+                    <span className="text-sm font-serif text-off-white">
                       ${(order.amount / 100).toFixed(2)}
                     </span>
                     <Badge className={`text-[10px] font-sans ${statusBadge(order.status)}`}>
@@ -656,14 +656,14 @@ function BillingTab() {
 
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <Shield className="h-4 w-4 text-terracotta" />
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <Shield className="h-4 w-4 text-electric" />
             Billing Information
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="p-4 rounded-xl bg-cream-dark/20 border border-border/20">
-            <p className="text-sm text-forest/70 font-sans leading-relaxed">
+          <div className="p-4 rounded-xl bg-midnight-dark/20 border border-border/20">
+            <p className="text-sm text-soft-gray font-sans leading-relaxed">
               All payments are processed securely through Stripe. To update your payment method, manage your subscription, or download invoices, please contact your account manager through the Support tab.
             </p>
           </div>
@@ -714,13 +714,13 @@ function SupportTab({ customerId }: { customerId: number }) {
   return (
     <div className="space-y-6">
       {/* Revision Policy Card */}
-      <Card className="border-amber-200/50 bg-amber-50/30">
+      <Card className="border-amber-500/20 bg-amber-500/10">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <Shield className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-forest font-sans mb-1">Revision Policy</h4>
-              <p className="text-xs text-forest/60 font-sans leading-relaxed">
+              <h4 className="text-sm font-medium text-off-white font-sans mb-1">Revision Policy</h4>
+              <p className="text-xs text-soft-gray font-sans leading-relaxed">
                 Your package includes <strong>3 rounds of revisions</strong> at no extra cost. Small tweaks (text changes, image swaps) are always free.
                 Layout redesigns or new page additions are available as add-ons. Additional revision rounds are <strong>$149 per round</strong>.
               </p>
@@ -732,8 +732,8 @@ function SupportTab({ customerId }: { customerId: number }) {
       {/* Support Request Form */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-terracotta" />
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-electric" />
             Submit a Request
           </CardTitle>
         </CardHeader>
@@ -745,8 +745,8 @@ function SupportTab({ customerId }: { customerId: number }) {
                 onClick={() => setRequestType("support_request")}
                 className={`px-3 py-1.5 text-xs font-sans rounded-full border transition-colors ${
                   requestType === "support_request"
-                    ? "bg-terracotta text-white border-terracotta"
-                    : "bg-white text-forest/60 border-border/40 hover:border-border/60"
+                    ? "bg-electric text-midnight border-electric"
+                    : "bg-graphite text-soft-gray border-border/40 hover:border-border/60"
                 }`}
               >
                 Support Request
@@ -756,40 +756,40 @@ function SupportTab({ customerId }: { customerId: number }) {
                 onClick={() => setRequestType("update_request")}
                 className={`px-3 py-1.5 text-xs font-sans rounded-full border transition-colors ${
                   requestType === "update_request"
-                    ? "bg-terracotta text-white border-terracotta"
-                    : "bg-white text-forest/60 border-border/40 hover:border-border/60"
+                    ? "bg-electric text-midnight border-electric"
+                    : "bg-graphite text-soft-gray border-border/40 hover:border-border/60"
                 }`}
               >
                 Website Update
               </button>
             </div>
             <div>
-              <label className="text-xs text-forest/60 font-sans block mb-1.5">Subject <span className="text-terracotta">*</span></label>
+              <label className="text-xs text-soft-gray font-sans block mb-1.5">Subject <span className="text-electric">*</span></label>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder={requestType === "support_request" ? "Describe your issue briefly" : "What would you like changed?"}
                 required
-                className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-white text-forest placeholder:text-forest/30 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta/50"
+                className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white placeholder:text-soft-gray/40 focus:outline-none focus:ring-2 focus:ring-electric/30 focus:border-electric/50"
               />
             </div>
             <div>
-              <label className="text-xs text-forest/60 font-sans block mb-1.5">Message <span className="text-terracotta">*</span></label>
+              <label className="text-xs text-soft-gray font-sans block mb-1.5">Message <span className="text-electric">*</span></label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Provide details about your request..."
                 required
                 rows={4}
-                className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-white text-forest placeholder:text-forest/30 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta/50 resize-none"
+                className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white placeholder:text-soft-gray/40 focus:outline-none focus:ring-2 focus:ring-electric/30 focus:border-electric/50 resize-none"
               />
             </div>
             <div className="flex items-center gap-3">
               <Button
                 type="submit"
                 disabled={createRequest.isPending || !subject.trim() || !message.trim()}
-                className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-6 text-sm"
+                className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-6 text-sm"
               >
                 {createRequest.isPending ? (
                   <span className="flex items-center gap-2">
@@ -804,7 +804,7 @@ function SupportTab({ customerId }: { customerId: number }) {
                 )}
               </Button>
               {submitted && (
-                <span className="text-xs text-green-600 font-sans flex items-center gap-1">
+                <span className="text-xs text-emerald-400 font-sans flex items-center gap-1">
                   <CheckCircle className="h-3.5 w-3.5" /> Submitted!
                 </span>
               )}
@@ -816,8 +816,8 @@ function SupportTab({ customerId }: { customerId: number }) {
       {/* Support History */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <HeadphonesIcon className="h-4 w-4 text-terracotta" />
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <HeadphonesIcon className="h-4 w-4 text-electric" />
             Support History
           </CardTitle>
         </CardHeader>
@@ -828,26 +828,26 @@ function SupportTab({ customerId }: { customerId: number }) {
             </div>
           ) : !supportLogs?.length ? (
             <div className="text-center py-12">
-              <HeadphonesIcon className="h-10 w-10 text-forest/15 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No support requests yet.</p>
-              <p className="text-xs text-forest/30 font-sans mt-1">Submit a request above and track its status here.</p>
+              <HeadphonesIcon className="h-10 w-10 text-soft-gray/20 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No support requests yet.</p>
+              <p className="text-xs text-soft-gray/40 font-sans mt-1">Submit a request above and track its status here.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {supportLogs.map((log: any) => (
                 <div key={log.id} className="p-4 rounded-lg border border-border/30">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-forest font-sans">{log.subject || "Support Request"}</span>
+                    <span className="text-sm font-medium text-off-white font-sans">{log.subject || "Support Request"}</span>
                     <Badge className={`text-[10px] font-sans ${
-                      log.status === "resolved" ? "bg-green-100 text-green-700" :
-                      log.status === "responded" ? "bg-blue-100 text-blue-700" :
-                      "bg-yellow-100 text-yellow-700"
+                      log.status === "resolved" ? "badge-success" :
+                      log.status === "responded" ? "badge-info" :
+                      "badge-pending"
                     }`}>
                       {log.status}
                     </Badge>
                   </div>
-                  {log.content && <p className="text-xs text-forest/60 font-sans">{log.content}</p>}
-                  <p className="text-[10px] text-forest/40 font-sans mt-2">
+                  {log.content && <p className="text-xs text-soft-gray font-sans">{log.content}</p>}
+                  <p className="text-[10px] text-soft-gray/60 font-sans mt-2">
                     {log.createdAt ? new Date(log.createdAt).toLocaleDateString() : ""}
                     {" · "}
                     {log.type === "update_request" ? "Website Update" : "Support"}
@@ -899,9 +899,9 @@ function ReferralsTab() {
   };
 
   const statusColors: Record<string, string> = {
-    invited: "bg-blue-100 text-blue-700",
-    signed_up: "bg-yellow-100 text-yellow-700",
-    converted: "bg-green-100 text-green-700",
+    invited: "badge-info",
+    signed_up: "badge-pending",
+    converted: "badge-success",
   };
 
   return (
@@ -909,11 +909,11 @@ function ReferralsTab() {
       {/* Referral Invite Form */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <Gift className="h-4 w-4 text-terracotta" />
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <Gift className="h-4 w-4 text-electric" />
             Refer a Business
           </CardTitle>
-          <p className="text-xs text-forest/50 font-sans mt-1">
+          <p className="text-xs text-soft-gray font-sans mt-1">
             Know someone who needs a great website? Refer them and earn rewards when they sign up.
           </p>
         </CardHeader>
@@ -921,24 +921,24 @@ function ReferralsTab() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-forest/60 font-sans block mb-1.5">Their Name <span className="text-forest/30">(optional)</span></label>
+                <label className="text-xs text-soft-gray font-sans block mb-1.5">Their Name <span className="text-soft-gray/40">(optional)</span></label>
                 <input
                   type="text"
                   value={referredName}
                   onChange={(e) => setReferredName(e.target.value)}
                   placeholder="Jane Smith"
-                  className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-white text-forest placeholder:text-forest/30 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta/50"
+                  className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white placeholder:text-soft-gray/40 focus:outline-none focus:ring-2 focus:ring-electric/30 focus:border-electric/50"
                 />
               </div>
               <div>
-                <label className="text-xs text-forest/60 font-sans block mb-1.5">Their Email <span className="text-terracotta">*</span></label>
+                <label className="text-xs text-soft-gray font-sans block mb-1.5">Their Email <span className="text-electric">*</span></label>
                 <input
                   type="email"
                   value={referredEmail}
                   onChange={(e) => setReferredEmail(e.target.value)}
                   placeholder="jane@theirbusiness.com"
                   required
-                  className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-white text-forest placeholder:text-forest/30 focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta/50"
+                  className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white placeholder:text-soft-gray/40 focus:outline-none focus:ring-2 focus:ring-electric/30 focus:border-electric/50"
                 />
               </div>
             </div>
@@ -946,7 +946,7 @@ function ReferralsTab() {
               <Button
                 type="submit"
                 disabled={submitReferral.isPending || !referredEmail.trim()}
-                className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-6 text-sm"
+                className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-6 text-sm"
               >
                 {submitReferral.isPending ? (
                   <span className="flex items-center gap-2">
@@ -961,7 +961,7 @@ function ReferralsTab() {
                 )}
               </Button>
               {submitted && (
-                <span className="text-xs text-green-600 font-sans flex items-center gap-1">
+                <span className="text-xs text-emerald-400 font-sans flex items-center gap-1">
                   <CheckCircle className="h-3.5 w-3.5" /> Sent!
                 </span>
               )}
@@ -973,8 +973,8 @@ function ReferralsTab() {
       {/* Referrals List */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <UsersIcon className="h-4 w-4 text-terracotta" />
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <UsersIcon className="h-4 w-4 text-electric" />
             Your Referrals
           </CardTitle>
         </CardHeader>
@@ -985,33 +985,33 @@ function ReferralsTab() {
             </div>
           ) : !referrals?.length ? (
             <div className="text-center py-12">
-              <Gift className="h-10 w-10 text-forest/15 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No referrals yet.</p>
-              <p className="text-xs text-forest/30 font-sans mt-1">Refer another business using the form above and track their status here.</p>
+              <Gift className="h-10 w-10 text-soft-gray/20 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No referrals yet.</p>
+              <p className="text-xs text-soft-gray/40 font-sans mt-1">Refer another business using the form above and track their status here.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {referrals.map((ref: any) => (
                 <div key={ref.id} className="flex items-center justify-between p-4 rounded-xl border border-border/30 hover:border-border/50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-terracotta/10 flex items-center justify-center">
-                      <Mail className="h-4 w-4 text-terracotta" />
+                    <div className="w-9 h-9 rounded-full bg-electric/10 flex items-center justify-center">
+                      <Mail className="h-4 w-4 text-electric" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-forest font-sans">{ref.referredName || ref.referredEmail}</p>
-                      {ref.referredName && <p className="text-xs text-forest/40 font-sans">{ref.referredEmail}</p>}
+                      <p className="text-sm font-medium text-off-white font-sans">{ref.referredName || ref.referredEmail}</p>
+                      {ref.referredName && <p className="text-xs text-soft-gray/60 font-sans">{ref.referredEmail}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     {ref.rewardGiven && (
-                      <span className="text-xs text-green-600 font-sans flex items-center gap-1">
+                      <span className="text-xs text-emerald-400 font-sans flex items-center gap-1">
                         <Gift className="h-3 w-3" /> Reward earned
                       </span>
                     )}
-                    <Badge className={`text-[10px] font-sans ${statusColors[ref.status] || "bg-gray-100 text-gray-700"}`}>
+                    <Badge className={`text-[10px] font-sans ${statusColors[ref.status] || "badge-neutral"}`}>
                       {ref.status.replace(/_/g, " ")}
                     </Badge>
-                    <span className="text-[10px] text-forest/40 font-sans">
+                    <span className="text-[10px] text-soft-gray/60 font-sans">
                       {new Date(ref.createdAt).toLocaleDateString()}
                     </span>
                   </div>

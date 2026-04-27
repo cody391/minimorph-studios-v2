@@ -11,10 +11,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
-  generated: "bg-blue-100 text-blue-700",
-  sent: "bg-green-100 text-green-700",
-  viewed: "bg-purple-100 text-purple-700",
+  draft: "badge-neutral",
+  generated: "badge-info",
+  sent: "badge-success",
+  viewed: "badge-purple",
 };
 
 export default function Reports() {
@@ -31,10 +31,10 @@ export default function Reports() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-forest">Reporting & Analytics</h1>
-          <p className="text-sm text-forest/60 font-sans mt-1">Monthly Google Analytics reports and performance updates for customers</p>
+          <h1 className="text-2xl font-serif text-off-white">Reporting & Analytics</h1>
+          <p className="text-sm text-soft-gray font-sans mt-1">Monthly Google Analytics reports and performance updates for customers</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="bg-forest hover:bg-forest-light text-cream font-sans text-sm">
+        <Button onClick={() => setShowCreate(true)} className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm">
           <Plus className="h-4 w-4 mr-1" /> Create Report
         </Button>
       </div>
@@ -48,43 +48,43 @@ export default function Reports() {
         ].map((s) => (
           <Card key={s.label} className="border-border/50">
             <CardContent className="p-4">
-              <div className="text-lg font-serif text-forest">{s.value}</div>
-              <div className="text-xs text-forest/50 font-sans">{s.label}</div>
+              <div className="text-lg font-serif text-off-white">{s.value}</div>
+              <div className="text-xs text-soft-gray font-sans">{s.label}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <Card className="border-border/50">
-        <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-forest">All Reports</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">All Reports</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !reports?.length ? (
             <div className="text-center py-12">
-              <BarChart3 className="h-10 w-10 text-forest/20 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No reports yet. Reports are generated monthly for active customers.</p>
+              <BarChart3 className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No reports yet. Reports are generated monthly for active customers.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Customer</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Type</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Period</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Status</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Created</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Customer</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Type</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Period</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Status</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Created</th>
                   </tr>
                 </thead>
                 <tbody>
                   {reports.map((r: any) => (
-                    <tr key={r.id} className="border-b border-border/30 hover:bg-cream-dark/20 transition-colors">
-                      <td className="py-3 px-2 font-medium text-forest">Customer #{r.customerId}</td>
-                      <td className="py-3 px-2 text-forest/70">{r.reportMonth}</td>
-                      <td className="py-3 px-2 text-forest/50">{r.pageViews ?? "—"} views</td>
+                    <tr key={r.id} className="border-b border-border/30 hover:bg-midnight-dark/20 transition-colors">
+                      <td className="py-3 px-2 font-medium text-off-white">Customer #{r.customerId}</td>
+                      <td className="py-3 px-2 text-soft-gray">{r.reportMonth}</td>
+                      <td className="py-3 px-2 text-soft-gray">{r.pageViews ?? "—"} views</td>
                       <td className="py-3 px-2"><Badge className={`text-xs font-sans ${statusColors[r.status] ?? ""}`}>{r.status}</Badge></td>
-                      <td className="py-3 px-2 text-forest/50 text-xs">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
+                      <td className="py-3 px-2 text-soft-gray text-xs">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -96,14 +96,14 @@ export default function Reports() {
 
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle className="font-serif text-forest">Create Report</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-serif text-off-white">Create Report</DialogTitle></DialogHeader>
           <div className="space-y-3 font-sans">
             <div>
-              <label className="text-xs text-forest/50">Customer ID *</label>
+              <label className="text-xs text-soft-gray">Customer ID *</label>
               <Input type="number" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs text-forest/50">Report Month (e.g., "2026-03") *</label>
+              <label className="text-xs text-soft-gray">Report Month (e.g., "2026-03") *</label>
               <Input value={form.reportMonth} onChange={(e) => setForm({ ...form, reportMonth: e.target.value })} placeholder="YYYY-MM" />
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function Reports() {
             <Button
               onClick={() => createReport.mutate({ customerId: parseInt(form.customerId), reportMonth: form.reportMonth })}
               disabled={!form.customerId || !form.reportMonth}
-              className="bg-forest hover:bg-forest-light text-cream font-sans text-sm"
+              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm"
             >
               Create Report
             </Button>

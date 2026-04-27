@@ -56,7 +56,7 @@ const AdminLayout = lazy(() => import("./components/AdminLayout"));
 
 function AdminPage({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-cream flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" /></div>}>
       <AdminLayout>{children}</AdminLayout>
     </Suspense>
   );
@@ -64,7 +64,7 @@ function AdminPage({ children }: { children: React.ReactNode }) {
 
 function LazyPage({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-cream flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" /></div>}>
       {children}
     </Suspense>
   );
@@ -237,7 +237,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
           <Router />

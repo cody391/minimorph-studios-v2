@@ -12,10 +12,10 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  identified: "bg-blue-100 text-blue-700",
-  proposed: "bg-purple-100 text-purple-700",
-  accepted: "bg-green-100 text-green-700",
-  declined: "bg-red-100 text-red-700",
+  identified: "badge-info",
+  proposed: "badge-purple",
+  accepted: "badge-success",
+  declined: "badge-danger",
 };
 
 export default function Upsells() {
@@ -44,10 +44,10 @@ export default function Upsells() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-forest">Upsells & Upgrades</h1>
-          <p className="text-sm text-forest/60 font-sans mt-1">AI-detected upgrade opportunities, add-on proposals, and conversion tracking</p>
+          <h1 className="text-2xl font-serif text-off-white">Upsells & Upgrades</h1>
+          <p className="text-sm text-soft-gray font-sans mt-1">AI-detected upgrade opportunities, add-on proposals, and conversion tracking</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="bg-forest hover:bg-forest-light text-cream font-sans text-sm">
+        <Button onClick={() => setShowCreate(true)} className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm">
           <Plus className="h-4 w-4 mr-1" /> Add Opportunity
         </Button>
       </div>
@@ -61,50 +61,50 @@ export default function Upsells() {
         ].map((s) => (
           <Card key={s.label} className="border-border/50">
             <CardContent className="p-4">
-              <div className="text-lg font-serif text-forest">{s.value}</div>
-              <div className="text-xs text-forest/50 font-sans">{s.label}</div>
+              <div className="text-lg font-serif text-off-white">{s.value}</div>
+              <div className="text-xs text-soft-gray font-sans">{s.label}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <Card className="border-border/50">
-        <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-forest">All Upsell Opportunities</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">All Upsell Opportunities</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !upsells?.length ? (
             <div className="text-center py-12">
-              <TrendingUp className="h-10 w-10 text-forest/20 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No upsell opportunities yet. AI will detect them during customer nurture.</p>
+              <TrendingUp className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No upsell opportunities yet. AI will detect them during customer nurture.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Customer</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Type</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Value</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Status</th>
-                    <th className="text-right py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Actions</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Customer</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Type</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Value</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Status</th>
+                    <th className="text-right py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {upsells.map((u: any) => (
-                    <tr key={u.id} className="border-b border-border/30 hover:bg-cream-dark/20 transition-colors">
-                      <td className="py-3 px-2 font-medium text-forest">Customer #{u.customerId}</td>
-                      <td className="py-3 px-2 text-forest/70 capitalize">{(u.type || "—").replace(/_/g, " ")}</td>
-                      <td className="py-3 px-2 text-forest font-medium">${Number(u.estimatedValue || 0).toLocaleString()}</td>
+                    <tr key={u.id} className="border-b border-border/30 hover:bg-midnight-dark/20 transition-colors">
+                      <td className="py-3 px-2 font-medium text-off-white">Customer #{u.customerId}</td>
+                      <td className="py-3 px-2 text-soft-gray capitalize">{(u.type || "—").replace(/_/g, " ")}</td>
+                      <td className="py-3 px-2 text-off-white font-medium">${Number(u.estimatedValue || 0).toLocaleString()}</td>
                       <td className="py-3 px-2"><Badge className={`text-xs font-sans ${statusColors[u.status] ?? ""}`}>{u.status}</Badge></td>
                       <td className="py-3 px-2 text-right flex gap-1 justify-end">
                         {u.status === "identified" && (
-                          <Button variant="ghost" size="sm" className="text-xs text-forest/60 hover:text-forest"
+                          <Button variant="ghost" size="sm" className="text-xs text-soft-gray hover:text-off-white"
                             onClick={() => updateUpsell.mutate({ id: u.id, status: "proposed" })}>Propose</Button>
                         )}
                         {u.status === "proposed" && (
                           <>
-                            <Button variant="ghost" size="sm" className="text-xs text-green-600 hover:text-green-700"
+                            <Button variant="ghost" size="sm" className="text-xs text-emerald-400 hover:text-green-700"
                               onClick={() => updateUpsell.mutate({ id: u.id, status: "accepted" })}>Accept</Button>
                             <Button variant="ghost" size="sm" className="text-xs text-red-600 hover:text-red-700"
                               onClick={() => updateUpsell.mutate({ id: u.id, status: "declined" })}>Decline</Button>
@@ -122,14 +122,14 @@ export default function Upsells() {
 
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle className="font-serif text-forest">Add Upsell Opportunity</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-serif text-off-white">Add Upsell Opportunity</DialogTitle></DialogHeader>
           <div className="space-y-3 font-sans">
             <div>
-              <label className="text-xs text-forest/50">Customer ID *</label>
+              <label className="text-xs text-soft-gray">Customer ID *</label>
               <Input type="number" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs text-forest/50">Upsell Type</label>
+              <label className="text-xs text-soft-gray">Upsell Type</label>
               <Select value={form.type} onValueChange={(val: any) => setForm({ ...form, type: val })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -140,15 +140,15 @@ export default function Upsells() {
               </Select>
             </div>
             <div>
-              <label className="text-xs text-forest/50">Title *</label>
+              <label className="text-xs text-soft-gray">Title *</label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs text-forest/50">Estimated Value ($)</label>
+              <label className="text-xs text-soft-gray">Estimated Value ($)</label>
               <Input type="number" value={form.estimatedValue} onChange={(e) => setForm({ ...form, estimatedValue: e.target.value })} />
             </div>
             <div>
-              <label className="text-xs text-forest/50">Description</label>
+              <label className="text-xs text-soft-gray">Description</label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
           </div>
@@ -157,7 +157,7 @@ export default function Upsells() {
             <Button
               onClick={() => createUpsell.mutate({ customerId: parseInt(form.customerId), type: form.type, title: form.title, estimatedValue: form.estimatedValue || undefined, description: form.description || undefined })}
               disabled={!form.customerId || !form.title}
-              className="bg-forest hover:bg-forest-light text-cream font-sans text-sm"
+              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm"
             >
               Create
             </Button>

@@ -39,9 +39,9 @@ const tierIcons: Record<string, any> = {
 };
 
 const tierBadgeColors: Record<string, string> = {
-  bronze: "bg-amber-100 text-amber-700 border-amber-200",
+  bronze: "badge-pending-payment border-amber-500/20",
   silver: "bg-slate-100 text-slate-600 border-slate-200",
-  gold: "bg-yellow-100 text-amber-600 border-amber-200",
+  gold: "bg-yellow-100 text-amber-400 border-amber-500/20",
   platinum: "bg-violet-100 text-violet-600 border-violet-200",
 };
 
@@ -52,10 +52,10 @@ const severityColors: Record<string, string> = {
 };
 
 const strikeStatusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-700",
-  confirmed: "bg-red-100 text-red-700",
-  dismissed: "bg-green-100 text-green-700",
-  appealed: "bg-blue-100 text-blue-700",
+  pending: "badge-pending",
+  confirmed: "badge-danger",
+  dismissed: "badge-success",
+  appealed: "badge-info",
 };
 
 export default function GovernancePanel() {
@@ -208,10 +208,10 @@ export default function GovernancePanel() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-serif text-forest flex items-center gap-2">
-            <Gavel className="h-5 w-5 text-terracotta" /> Governance Panel
+          <h2 className="text-xl font-serif text-off-white flex items-center gap-2">
+            <Gavel className="h-5 w-5 text-electric" /> Governance Panel
           </h2>
-          <p className="text-sm text-forest/60 font-sans mt-1">
+          <p className="text-sm text-soft-gray font-sans mt-1">
             AI-managed accountability system — scores, tiers, strikes, and lead allocation
           </p>
         </div>
@@ -220,7 +220,7 @@ export default function GovernancePanel() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Avg Score", value: avgScore, icon: Activity, color: avgScore >= 60 ? "text-green-600" : "text-amber-600" },
+          { label: "Avg Score", value: avgScore, icon: Activity, color: avgScore >= 60 ? "text-emerald-400" : "text-amber-400" },
           { label: "At Risk", value: atRiskReps.length, icon: AlertTriangle, color: "text-red-600" },
           { label: "Active Strikes", value: totalStrikes, icon: AlertCircle, color: "text-orange-600" },
           { label: "Pending Review", value: pendingStrikes.length, icon: Eye, color: "text-blue-600" },
@@ -229,8 +229,8 @@ export default function GovernancePanel() {
             <CardContent className="p-3 flex items-center gap-3">
               <m.icon className={`h-5 w-5 ${m.color}`} />
               <div>
-                <div className="text-lg font-serif text-forest">{m.value}</div>
-                <div className="text-[10px] text-forest/50 font-sans">{m.label}</div>
+                <div className="text-lg font-serif text-off-white">{m.value}</div>
+                <div className="text-[10px] text-soft-gray font-sans">{m.label}</div>
               </div>
             </CardContent>
           </Card>
@@ -239,10 +239,10 @@ export default function GovernancePanel() {
 
       {/* Flag Queue — Pending Strikes */}
       {pendingStrikes.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/50">
+        <Card className="border-amber-500/20 bg-amber-500/10/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-              <Eye className="h-4 w-4 text-amber-600" /> Flag Queue ({pendingStrikes.length} pending)
+            <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+              <Eye className="h-4 w-4 text-amber-400" /> Flag Queue ({pendingStrikes.length} pending)
             </CardTitle>
             <CardDescription className="text-xs font-sans">
               AI-flagged interactions awaiting your review
@@ -253,10 +253,10 @@ export default function GovernancePanel() {
               {pendingStrikes.slice(0, 10).map((strike: any) => {
                 const repInfo = allScores?.find((s: any) => s.rep.id === strike.repId);
                 return (
-                  <div key={strike.id} className="flex items-center justify-between p-3 rounded-lg border border-amber-200 bg-white">
+                  <div key={strike.id} className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-charcoal">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-sans text-forest font-medium">
+                        <span className="text-sm font-sans text-off-white font-medium">
                           {repInfo?.rep.fullName || `Rep #${strike.repId}`}
                         </span>
                         <Badge className={`text-[10px] font-sans ${severityColors[strike.severity] || ""}`}>
@@ -266,7 +266,7 @@ export default function GovernancePanel() {
                           {strike.category.replace(/_/g, " ")}
                         </Badge>
                       </div>
-                      <p className="text-xs text-forest/50 font-sans truncate">{strike.description}</p>
+                      <p className="text-xs text-soft-gray font-sans truncate">{strike.description}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-4">
                       <Button
@@ -305,7 +305,7 @@ export default function GovernancePanel() {
       {/* Controls Bar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-forest/30" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-soft-gray/40" />
           <Input
             placeholder="Search reps..."
             value={searchQuery}
@@ -330,15 +330,15 @@ export default function GovernancePanel() {
       {/* Rep Roster with Scores */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest">Rep Roster — Performance Scores</CardTitle>
+          <CardTitle className="text-base font-serif text-off-white">Rep Roster — Performance Scores</CardTitle>
         </CardHeader>
         <CardContent>
           {scoresLoading ? (
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
           ) : !filteredAndSorted.length ? (
             <div className="text-center py-12">
-              <Shield className="h-8 w-8 text-forest/20 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No reps found</p>
+              <Shield className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No reps found</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -353,27 +353,27 @@ export default function GovernancePanel() {
                   <div key={entry.rep.id} className={`p-4 rounded-lg border transition-colors ${
                     isFrozen ? "border-red-200 bg-red-50/30" :
                     entry.activeStrikes >= 2 ? "border-orange-200 bg-orange-50/30" :
-                    "border-border/30 hover:border-forest/20"
+                    "border-border/30 hover:border-electric/20"
                   }`}>
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       {/* Rep Info */}
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-sage/20 flex items-center justify-center text-forest/40 text-sm font-bold shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-graphite/20 flex items-center justify-center text-soft-gray/60 text-sm font-bold shrink-0">
                           {(entry.rep.fullName || "?").charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-sm font-sans text-forest font-medium truncate">{entry.rep.fullName || "Unknown"}</span>
+                            <span className="text-sm font-sans text-off-white font-medium truncate">{entry.rep.fullName || "Unknown"}</span>
                             <Badge className={`text-[10px] font-sans ${tierBadgeColors[tier]}`}>
                               <TIcon className="w-2.5 h-2.5 mr-0.5" /> {TIER_CONFIG[tier].name}
                             </Badge>
                             {isFrozen && (
-                              <Badge className="bg-red-100 text-red-700 text-[10px] font-sans">
+                              <Badge className="badge-danger text-[10px] font-sans">
                                 <Ban className="w-2.5 h-2.5 mr-0.5" /> Frozen
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-forest/40 font-sans">{entry.rep.email}</p>
+                          <p className="text-xs text-soft-gray/60 font-sans">{entry.rep.email}</p>
                         </div>
                       </div>
 
@@ -382,29 +382,29 @@ export default function GovernancePanel() {
                         {/* Score */}
                         <div className="text-center">
                           <div className={`text-lg font-serif font-bold ${
-                            rating.color === "green" ? "text-green-600" :
+                            rating.color === "green" ? "text-emerald-400" :
                             rating.color === "blue" ? "text-blue-600" :
-                            rating.color === "yellow" ? "text-amber-600" :
+                            rating.color === "yellow" ? "text-amber-400" :
                             rating.color === "orange" ? "text-orange-600" :
                             "text-red-600"
                           }`}>{Math.round(score)}</div>
-                          <p className="text-[10px] text-forest/40 font-sans">score</p>
+                          <p className="text-[10px] text-soft-gray/60 font-sans">score</p>
                         </div>
 
                         {/* Strikes */}
                         <div className="text-center">
                           <div className={`text-lg font-serif font-bold ${
-                            entry.activeStrikes === 0 ? "text-green-600" :
+                            entry.activeStrikes === 0 ? "text-emerald-400" :
                             entry.activeStrikes < STRIKE_RULES.maxStrikesBeforeDeactivation ? "text-orange-600" :
                             "text-red-600"
                           }`}>{entry.activeStrikes}</div>
-                          <p className="text-[10px] text-forest/40 font-sans">strikes</p>
+                          <p className="text-[10px] text-soft-gray/60 font-sans">strikes</p>
                         </div>
 
                         {/* Commission Rate */}
                         <div className="text-center hidden sm:block">
-                          <div className="text-lg font-serif text-forest">{TIER_CONFIG[tier].commissionRate}%</div>
-                          <p className="text-[10px] text-forest/40 font-sans">rate</p>
+                          <div className="text-lg font-serif text-off-white">{TIER_CONFIG[tier].commissionRate}%</div>
+                          <p className="text-[10px] text-soft-gray/60 font-sans">rate</p>
                         </div>
 
                         {/* Actions */}
@@ -421,7 +421,7 @@ export default function GovernancePanel() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-[10px] font-sans h-7 px-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+                            className="text-[10px] font-sans h-7 px-2 border-amber-300 text-amber-700 hover:bg-amber-500/10"
                             onClick={() => { setSelectedRepId(entry.rep.id); setShowStrikeDialog(true); }}
                             title="Issue Strike"
                           >
@@ -450,11 +450,11 @@ export default function GovernancePanel() {
                           { label: "Val", value: Number(entry.latestScore.valuesComplianceScore), color: "bg-amber-400" },
                         ].map((s) => (
                           <div key={s.label} className="flex items-center gap-1 flex-1">
-                            <span className="text-[9px] text-forest/30 font-sans w-8 shrink-0">{s.label}</span>
+                            <span className="text-[9px] text-soft-gray/40 font-sans w-8 shrink-0">{s.label}</span>
                             <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                               <div className={`h-full ${s.color} rounded-full`} style={{ width: `${s.value}%` }} />
                             </div>
-                            <span className="text-[9px] text-forest/40 font-sans w-5 text-right">{Math.round(s.value)}</span>
+                            <span className="text-[9px] text-soft-gray/60 font-sans w-5 text-right">{Math.round(s.value)}</span>
                           </div>
                         ))}
                       </div>
@@ -470,7 +470,7 @@ export default function GovernancePanel() {
       {/* Strike History */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-red-500" /> All Strikes ({allStrikes?.length ?? 0})
           </CardTitle>
         </CardHeader>
@@ -493,7 +493,7 @@ export default function GovernancePanel() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-sm font-sans text-forest font-medium">
+                          <span className="text-sm font-sans text-off-white font-medium">
                             {repInfo?.rep.fullName || `Rep #${strike.repId}`}
                           </span>
                           <Badge className={`text-[10px] font-sans ${severityColors[strike.severity] || ""}`}>
@@ -506,13 +506,13 @@ export default function GovernancePanel() {
                             {strike.status}
                           </Badge>
                         </div>
-                        <p className="text-xs text-forest/50 font-sans">{strike.description}</p>
+                        <p className="text-xs text-soft-gray font-sans">{strike.description}</p>
                         {strike.evidence && (
-                          <p className="text-[10px] text-forest/30 font-sans mt-1 italic">Evidence: {strike.evidence}</p>
+                          <p className="text-[10px] text-soft-gray/40 font-sans mt-1 italic">Evidence: {strike.evidence}</p>
                         )}
                       </div>
                       <div className="text-right shrink-0 ml-4">
-                        <p className="text-[10px] text-forest/40 font-sans">
+                        <p className="text-[10px] text-soft-gray/60 font-sans">
                           {strike.createdAt ? new Date(strike.createdAt).toLocaleDateString() : ""}
                         </p>
                         {strike.status === "pending" && (
@@ -538,8 +538,8 @@ export default function GovernancePanel() {
       <Dialog open={showStrikeDialog} onOpenChange={setShowStrikeDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600" /> Issue Strike
+            <DialogTitle className="font-serif text-off-white flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-400" /> Issue Strike
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -627,8 +627,8 @@ export default function GovernancePanel() {
       <Dialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest flex items-center gap-2">
-              <Zap className="h-5 w-5 text-terracotta" /> Override Performance Score
+            <DialogTitle className="font-serif text-off-white flex items-center gap-2">
+              <Zap className="h-5 w-5 text-electric" /> Override Performance Score
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -658,7 +658,7 @@ export default function GovernancePanel() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowOverrideDialog(false)} className="font-sans text-sm">Cancel</Button>
             <Button
-              className="bg-terracotta hover:bg-terracotta/90 text-white font-sans text-sm"
+              className="bg-electric hover:bg-electric/90 text-white font-sans text-sm"
               disabled={!overrideScoreValue || !overrideReasonText || overrideReasonText.length < 5 || overrideScoreMutation.isPending}
               onClick={() => {
                 if (!selectedRepId) return;
@@ -721,13 +721,13 @@ export default function GovernancePanel() {
       <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest flex items-center gap-2">
+            <DialogTitle className="font-serif text-off-white flex items-center gap-2">
               <Eye className="h-5 w-5 text-blue-600" /> Review Strike
             </DialogTitle>
           </DialogHeader>
           {selectedStrike && (
             <div className="space-y-4">
-              <div className="p-3 bg-cream-dark/30 rounded-lg space-y-2">
+              <div className="p-3 bg-midnight-dark/30 rounded-lg space-y-2">
                 <div className="flex items-center gap-2">
                   <Badge className={`text-[10px] font-sans ${severityColors[selectedStrike.severity] || ""}`}>
                     {selectedStrike.severity.replace(/_/g, " ")}
@@ -736,14 +736,14 @@ export default function GovernancePanel() {
                     {selectedStrike.category.replace(/_/g, " ")}
                   </Badge>
                 </div>
-                <p className="text-sm text-forest font-sans">{selectedStrike.description}</p>
+                <p className="text-sm text-off-white font-sans">{selectedStrike.description}</p>
                 {selectedStrike.evidence && (
-                  <div className="p-2 bg-white rounded border border-border/20">
-                    <p className="text-[10px] text-forest/40 font-sans uppercase mb-1">Evidence</p>
-                    <p className="text-xs text-forest/60 font-sans">{selectedStrike.evidence}</p>
+                  <div className="p-2 bg-charcoal rounded border border-border/20">
+                    <p className="text-[10px] text-soft-gray/60 font-sans uppercase mb-1">Evidence</p>
+                    <p className="text-xs text-soft-gray font-sans">{selectedStrike.evidence}</p>
                   </div>
                 )}
-                <p className="text-[10px] text-forest/30 font-sans">
+                <p className="text-[10px] text-soft-gray/40 font-sans">
                   Source: {selectedStrike.source} &bull; {selectedStrike.createdAt ? new Date(selectedStrike.createdAt).toLocaleString() : ""}
                 </p>
               </div>

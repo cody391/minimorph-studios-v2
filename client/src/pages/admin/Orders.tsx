@@ -25,71 +25,71 @@ export default function AdminOrders() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-serif text-forest mb-2">Orders</h1>
-        <p className="text-forest/60 font-sans text-sm">
+        <h1 className="text-2xl font-serif text-off-white mb-2">Orders</h1>
+        <p className="text-soft-gray font-sans text-sm">
           Stripe payment records and checkout sessions
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-xl p-5 border border-forest/10">
+        <div className="bg-charcoal rounded-xl p-5 border border-electric/10">
           <div className="flex items-center gap-3 mb-2">
-            <DollarSign className="w-5 h-5 text-forest/40" />
-            <span className="text-sm font-sans text-forest/60">Total Revenue</span>
+            <DollarSign className="w-5 h-5 text-soft-gray/60" />
+            <span className="text-sm font-sans text-soft-gray">Total Revenue</span>
           </div>
-          <p className="text-2xl font-serif text-forest">${(totalRevenue / 100).toLocaleString()}</p>
+          <p className="text-2xl font-serif text-off-white">${(totalRevenue / 100).toLocaleString()}</p>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-forest/10">
+        <div className="bg-charcoal rounded-xl p-5 border border-electric/10">
           <div className="flex items-center gap-3 mb-2">
-            <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className="text-sm font-sans text-forest/60">Paid Orders</span>
+            <CheckCircle className="w-5 h-5 text-emerald-400" />
+            <span className="text-sm font-sans text-soft-gray">Paid Orders</span>
           </div>
-          <p className="text-2xl font-serif text-forest">{paidCount}</p>
+          <p className="text-2xl font-serif text-off-white">{paidCount}</p>
         </div>
-        <div className="bg-white rounded-xl p-5 border border-forest/10">
+        <div className="bg-charcoal rounded-xl p-5 border border-electric/10">
           <div className="flex items-center gap-3 mb-2">
             <Clock className="w-5 h-5 text-yellow-500" />
-            <span className="text-sm font-sans text-forest/60">Pending</span>
+            <span className="text-sm font-sans text-soft-gray">Pending</span>
           </div>
-          <p className="text-2xl font-serif text-forest">{pendingCount}</p>
+          <p className="text-2xl font-serif text-off-white">{pendingCount}</p>
         </div>
       </div>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-xl border border-forest/10 overflow-hidden">
-        <div className="p-5 border-b border-forest/10">
-          <h2 className="font-sans font-medium text-forest flex items-center gap-2">
+      <div className="bg-charcoal rounded-xl border border-electric/10 overflow-hidden">
+        <div className="p-5 border-b border-electric/10">
+          <h2 className="font-sans font-medium text-off-white flex items-center gap-2">
             <Package className="w-4 h-4" />
             All Orders
           </h2>
         </div>
         {isLoading ? (
-          <div className="p-10 text-center text-forest/40 font-sans">Loading orders...</div>
+          <div className="p-10 text-center text-soft-gray/60 font-sans">Loading orders...</div>
         ) : !orders || orders.length === 0 ? (
-          <div className="p-10 text-center text-forest/40 font-sans">
+          <div className="p-10 text-center text-soft-gray/60 font-sans">
             No orders yet. Orders will appear here after customers complete Stripe checkout.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-forest/10">
-                  <th className="text-left p-4 text-xs font-sans font-medium text-forest/50 uppercase tracking-wider">Customer</th>
-                  <th className="text-left p-4 text-xs font-sans font-medium text-forest/50 uppercase tracking-wider">Package</th>
-                  <th className="text-left p-4 text-xs font-sans font-medium text-forest/50 uppercase tracking-wider">Amount</th>
-                  <th className="text-left p-4 text-xs font-sans font-medium text-forest/50 uppercase tracking-wider">Status</th>
-                  <th className="text-left p-4 text-xs font-sans font-medium text-forest/50 uppercase tracking-wider">Date</th>
+                <tr className="border-b border-electric/10">
+                  <th className="text-left p-4 text-xs font-sans font-medium text-soft-gray uppercase tracking-wider">Customer</th>
+                  <th className="text-left p-4 text-xs font-sans font-medium text-soft-gray uppercase tracking-wider">Package</th>
+                  <th className="text-left p-4 text-xs font-sans font-medium text-soft-gray uppercase tracking-wider">Amount</th>
+                  <th className="text-left p-4 text-xs font-sans font-medium text-soft-gray uppercase tracking-wider">Status</th>
+                  <th className="text-left p-4 text-xs font-sans font-medium text-soft-gray uppercase tracking-wider">Date</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((order) => (
-                  <tr key={order.id} className="border-b border-forest/5 hover:bg-forest/[0.02]">
+                  <tr key={order.id} className="border-b border-electric/5 hover:bg-electric/[0.02]">
                     <td className="p-4">
-                      <div className="font-sans text-sm text-forest font-medium">{order.customerName || "—"}</div>
-                      <div className="font-sans text-xs text-forest/50">{order.customerEmail || "—"}</div>
+                      <div className="font-sans text-sm text-off-white font-medium">{order.customerName || "—"}</div>
+                      <div className="font-sans text-xs text-soft-gray">{order.customerEmail || "—"}</div>
                       {order.businessName && (
-                        <div className="font-sans text-xs text-forest/40">{order.businessName}</div>
+                        <div className="font-sans text-xs text-soft-gray/60">{order.businessName}</div>
                       )}
                     </td>
                     <td className="p-4">
@@ -97,7 +97,7 @@ export default function AdminOrders() {
                         {order.packageTier}
                       </Badge>
                     </td>
-                    <td className="p-4 font-sans text-sm text-forest font-medium">
+                    <td className="p-4 font-sans text-sm text-off-white font-medium">
                       ${(order.amount / 100).toFixed(2)}
                     </td>
                     <td className="p-4">
@@ -105,7 +105,7 @@ export default function AdminOrders() {
                         {order.status}
                       </Badge>
                     </td>
-                    <td className="p-4 font-sans text-xs text-forest/50">
+                    <td className="p-4 font-sans text-xs text-soft-gray">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </td>
                   </tr>

@@ -100,7 +100,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
     id: "leads-pipeline",
     title: "Leads & Pipeline",
     icon: Target,
-    color: "text-green-600 bg-green-50",
+    color: "text-emerald-400 bg-green-50",
     summary: "How leads flow to you, how to work them, and how to move them through the pipeline.",
     details: [
       "Leads are automatically assigned to you based on your capacity, service area, and performance score.",
@@ -304,11 +304,11 @@ export default function AppGuide() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-serif text-forest flex items-center gap-2">
-            <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-terracotta" />
+          <h2 className="text-xl sm:text-2xl font-serif text-off-white flex items-center gap-2">
+            <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-electric" />
             Platform Guide
           </h2>
-          <p className="text-sm text-forest/60 font-sans mt-1">
+          <p className="text-sm text-soft-gray font-sans mt-1">
             Everything you need to know about every function in the app
           </p>
         </div>
@@ -325,7 +325,7 @@ export default function AppGuide() {
       {/* Quick Navigation */}
       <Card className="border-border/50">
         <CardContent className="p-3 sm:p-4">
-          <p className="text-xs font-sans text-forest/60 mb-2">Jump to section:</p>
+          <p className="text-xs font-sans text-soft-gray mb-2">Jump to section:</p>
           <div className="flex flex-wrap gap-1.5">
             {GUIDE_SECTIONS.map(section => (
               <Button
@@ -355,25 +355,25 @@ export default function AppGuide() {
           <Card key={section.id} id={`guide-${section.id}`} className="border-border/50 overflow-hidden">
             <button
               onClick={() => toggleSection(section.id)}
-              className="w-full text-left p-4 sm:p-5 flex items-start gap-3 sm:gap-4 hover:bg-cream/50 transition-colors"
+              className="w-full text-left p-4 sm:p-5 flex items-start gap-3 sm:gap-4 hover:bg-midnight/50 transition-colors"
             >
               <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${section.color} flex items-center justify-center shrink-0`}>
                 <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-serif text-forest">{section.title}</h3>
+                  <h3 className="text-base sm:text-lg font-serif text-off-white">{section.title}</h3>
                   {section.rank && (
-                    <Badge className="text-[10px] bg-terracotta/10 text-terracotta">{section.rank}</Badge>
+                    <Badge className="text-[10px] bg-electric/10 text-electric">{section.rank}</Badge>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm text-forest/60 font-sans mt-0.5">{section.summary}</p>
+                <p className="text-xs sm:text-sm text-soft-gray font-sans mt-0.5">{section.summary}</p>
               </div>
               <div className="shrink-0 mt-1">
                 {isExpanded ? (
-                  <ChevronUp className="w-5 h-5 text-forest/40" />
+                  <ChevronUp className="w-5 h-5 text-soft-gray/60" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-forest/40" />
+                  <ChevronDown className="w-5 h-5 text-soft-gray/60" />
                 )}
               </div>
             </button>
@@ -383,12 +383,12 @@ export default function AppGuide() {
                 {/* Details */}
                 <div className="mt-4 space-y-2">
                   {section.details.map((detail, i) => (
-                    <div key={i} className="flex gap-2 text-sm text-forest/80 font-sans">
+                    <div key={i} className="flex gap-2 text-sm text-off-white/80 font-sans">
                       {detail.startsWith("•") ? (
                         <span className="ml-4">{detail}</span>
                       ) : (
                         <>
-                          <ArrowRight className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
+                          <ArrowRight className="w-4 h-4 text-electric shrink-0 mt-0.5" />
                           <span>{detail}</span>
                         </>
                       )}
@@ -398,7 +398,7 @@ export default function AppGuide() {
 
                 {/* Tips */}
                 {section.tips.length > 0 && (
-                  <div className="mt-4 bg-amber-50 rounded-lg p-3 sm:p-4">
+                  <div className="mt-4 bg-amber-500/10 rounded-lg p-3 sm:p-4">
                     <p className="text-xs font-sans font-semibold text-amber-800 mb-2 flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5" /> Pro Tips
                     </p>
@@ -419,15 +419,15 @@ export default function AppGuide() {
       })}
 
       {/* Bottom CTA */}
-      <Card className="border-terracotta/20 bg-terracotta/5">
+      <Card className="border-electric/20 bg-electric/5">
         <CardContent className="p-4 sm:p-6 text-center">
-          <Award className="w-10 h-10 text-terracotta mx-auto mb-3" />
-          <h3 className="text-lg font-serif text-forest mb-2">Ready to Start Closing?</h3>
-          <p className="text-sm text-forest/60 font-sans mb-4 max-w-md mx-auto">
+          <Award className="w-10 h-10 text-electric mx-auto mb-3" />
+          <h3 className="text-lg font-serif text-off-white mb-2">Ready to Start Closing?</h3>
+          <p className="text-sm text-soft-gray font-sans mb-4 max-w-md mx-auto">
             Complete your Academy certification, review your daily coaching, and start turning leads into revenue.
             The platform does the heavy lifting — you bring the human touch.
           </p>
-          <Badge className="bg-forest text-white text-xs font-sans">
+          <Badge className="bg-charcoal text-off-white text-xs font-sans">
             Remember: Consistency beats intensity. Show up every day.
           </Badge>
         </CardContent>

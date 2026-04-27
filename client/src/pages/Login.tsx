@@ -48,31 +48,31 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+    <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Back to home */}
         <div className="mb-6 text-center">
           <button
             onClick={() => setLocation("/")}
-            className="inline-flex items-center gap-2 text-forest/60 hover:text-forest text-sm font-sans transition-colors"
+            className="inline-flex items-center gap-2 text-soft-gray hover:text-electric text-sm font-sans transition-colors"
           >
             <ArrowLeft size={16} /> Back to MiniMorph Studios
           </button>
         </div>
 
-        <Card className="border-sage/20 shadow-lg">
+        <Card className="border-border/50 shadow-lg">
           <CardHeader className="text-center pb-2">
-            <div className="w-14 h-14 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Sparkles className="w-7 h-7 text-forest" />
+            <div className="w-14 h-14 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-3">
+              <Sparkles className="w-7 h-7 text-off-white" />
             </div>
-            <CardTitle className="font-serif text-forest text-2xl">Welcome Back</CardTitle>
-            <CardDescription className="text-forest/60 font-sans">
+            <CardTitle className="font-serif text-off-white text-2xl">Welcome Back</CardTitle>
+            <CardDescription className="text-soft-gray font-sans">
               Sign in to your MiniMorph Studios account
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
             <div>
-              <Label className="text-forest/80 text-sm flex items-center gap-1.5">
+              <Label className="text-off-white/80 text-sm flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5" /> Email
               </Label>
               <Input
@@ -81,12 +81,12 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="you@example.com"
-                className="mt-1 border-sage/30 focus:border-forest"
+                className="mt-1 border-border focus:border-electric"
                 autoFocus
               />
             </div>
             <div>
-              <Label className="text-forest/80 text-sm flex items-center gap-1.5">
+              <Label className="text-off-white/80 text-sm flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5" /> Password
               </Label>
               <div className="relative mt-1">
@@ -96,12 +96,12 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Your password"
-                  className="border-sage/30 focus:border-forest pr-10"
+                  className="border-border focus:border-electric pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 hover:text-forest/70"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-soft-gray/60 hover:text-soft-gray"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -111,17 +111,17 @@ export default function Login() {
             <Button
               onClick={handleLogin}
               disabled={loginMutation.isPending}
-              className="w-full bg-forest hover:bg-forest/90 text-white rounded-full py-5 font-sans mt-2"
+              className="w-full bg-electric hover:bg-electric-light text-white rounded-full py-5 font-sans mt-2"
             >
               {loginMutation.isPending ? "Signing in..." : "Sign In"}
             </Button>
 
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-sage/20"></div>
+                <div className="w-full border-t border-border/50"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-3 text-forest/40 font-sans">Don't have an account?</span>
+                <span className="bg-charcoal px-3 text-soft-gray/60 font-sans">Don't have an account?</span>
               </div>
             </div>
 
@@ -129,11 +129,11 @@ export default function Login() {
               <Button
                 variant="outline"
                 onClick={() => setLocation("/become-rep")}
-                className="w-full rounded-full border-sage/30 text-forest font-sans"
+                className="w-full rounded-full border-border text-off-white font-sans"
               >
                 Apply as a Sales Rep
               </Button>
-              <p className="text-center text-[11px] text-forest/40 font-sans">
+              <p className="text-center text-[11px] text-soft-gray/60 font-sans">
                 Customers: Your account is created during the checkout process.
               </p>
             </div>

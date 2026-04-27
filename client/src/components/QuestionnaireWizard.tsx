@@ -386,7 +386,7 @@ export function QuestionnaireWizard({
           className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all border-2 ${
             showAiChat
               ? "bg-[#C4704B] text-white border-[#C4704B] shadow-md"
-              : "bg-white text-[#2D5A3D] border-[#2D5A3D]/20 hover:border-[#C4704B]/50 hover:bg-[#C4704B]/5"
+              : "bg-charcoal text-[#2D5A3D] border-[#2D5A3D]/20 hover:border-[#C4704B]/50 hover:bg-[#C4704B]/5"
           }`}
         >
           <MessageSquare className="w-4 h-4" />
@@ -447,7 +447,7 @@ export function QuestionnaireWizard({
       <div className={`grid gap-6 ${showAiChat ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
         {/* AI Chat Panel */}
         {showAiChat && (
-          <Card className="border-[#C4704B]/20 bg-white overflow-hidden">
+          <Card className="border-[#C4704B]/20 bg-charcoal overflow-hidden">
             <CardHeader className="pb-2 bg-gradient-to-r from-[#C4704B]/5 to-transparent">
               <CardTitle className="text-base font-serif text-[#C4704B] flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" />
@@ -850,8 +850,8 @@ export function QuestionnaireWizard({
                 {websiteType === "ecommerce" && (
                   <div className="space-y-4">
                     {/* Ecommerce guardrail banner */}
-                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <div className="rounded-lg border border-amber-300 bg-amber-500/10 p-3 flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
                       <p className="text-xs text-amber-800">
                         <strong>Ecommerce projects require a custom Commerce quote.</strong> Please fill out the details below so we can scope your project accurately. Our team will follow up with tailored pricing.
                       </p>
@@ -890,10 +890,10 @@ export function QuestionnaireWizard({
                       </Select>
                     </div>
                     {eExistingPlatform !== "None" && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-200">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                         <div>
                           <Label className="text-amber-800 font-medium">Need migration from {eExistingPlatform}?</Label>
-                          <p className="text-xs text-amber-600">We can transfer your products and data</p>
+                          <p className="text-xs text-amber-400">We can transfer your products and data</p>
                         </div>
                         <Switch checked={eNeedsMigration} onCheckedChange={setENeedsMigration} />
                       </div>

@@ -21,11 +21,11 @@ import {
 const CONTENT_TYPES = ["post", "story", "reel", "video", "carousel", "article", "poll", "event"] as const;
 const STATUS_COLORS: Record<string, string> = {
   idea: "bg-gray-200 text-gray-700",
-  planned: "bg-blue-100 text-blue-700",
-  in_progress: "bg-amber-100 text-amber-700",
-  ready: "bg-green-100 text-green-700",
+  planned: "badge-info",
+  in_progress: "badge-pending-payment",
+  ready: "badge-success",
   published: "bg-emerald-100 text-emerald-800",
-  skipped: "bg-red-100 text-red-700",
+  skipped: "badge-danger",
 };
 
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
@@ -96,7 +96,7 @@ export default function ContentCalendarPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-forest" />
+            <Calendar className="w-6 h-6 text-off-white" />
             Content Calendar
           </h1>
           <p className="text-gray-500 mt-1">Plan and schedule your social media content</p>
@@ -162,7 +162,7 @@ export default function ContentCalendarPage() {
                       onClick={() => { setSelectedDate(dateStr); setShowCreate(true); }}
                     >
                       <div className={`text-xs font-medium mb-1 px-1 ${
-                        isToday ? "bg-forest text-white rounded-full w-6 h-6 flex items-center justify-center" : "text-gray-600"
+                        isToday ? "bg-charcoal text-off-white rounded-full w-6 h-6 flex items-center justify-center" : "text-gray-600"
                       }`}>
                         {day}
                       </div>
@@ -320,7 +320,7 @@ function CalendarEntryDialog({ open, onOpenChange, date, onSuccess }: {
                   key={p}
                   onClick={() => togglePlatform(p)}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    platforms.includes(p) ? "bg-forest text-white border-forest" : "bg-white text-gray-600 border-gray-200"
+                    platforms.includes(p) ? "bg-charcoal text-off-white border-electric" : "bg-charcoal text-gray-600 border-gray-200"
                   }`}
                 >
                   {p}

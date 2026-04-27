@@ -1181,3 +1181,17 @@
 - [x] FIX 3: Update CustomerPortal to show pending payment state with payment link or request-new-link message
 - [x] FIX 4: Write focused tests for resend, expiration check, and portal pending state
 - [x] Validation: typecheck + tests + production build
+
+### Phase 43: Full Platform Brand + UX Consistency Polish Pass
+- [x] Audit and document current design system (CSS tokens, colors, typography, components)
+- [x] Establish unified design system: standardize CSS variables, status badges, empty/loading/error states
+- [x] Polish Group A: Public website (Home, Pricing, Showroom, GetStarted, BecomeRep, Footer, Nav)
+- [x] Polish Group B: Get Started / Checkout flow + success page
+- [x] Polish Group C: Customer Portal (dashboard, billing, support, referrals, reports, upsells)
+- [x] Polish Group D: Onboarding experience (QuestionnaireWizard, progress, review)
+- [x] Polish Group E+F: Rep Dashboard + Academy/Training
+- [x] Polish Group G+H: Admin Dashboard + Governance Panel
+- [x] Polish Group I: Legal/Utility pages (Privacy, Terms, Unsubscribe, 404, Login, Checkout Success)
+- [x] Navigation consistency + SEO metadata + mobile responsiveness audit
+- [x] Validation: typecheck + tests + production build (33 test files, 844 tests passing)
+- [x] Final report

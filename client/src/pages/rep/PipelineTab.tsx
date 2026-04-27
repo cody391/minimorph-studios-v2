@@ -24,15 +24,15 @@ import { toast } from "sonner";
 
 /* ─── Constants ─── */
 const PIPELINE_STAGES = [
-  { key: "assigned", label: "Assigned", color: "bg-purple-100 text-purple-700 border-purple-200", headerBg: "bg-purple-50" },
-  { key: "contacted", label: "Contacted", color: "bg-blue-100 text-blue-700 border-blue-200", headerBg: "bg-blue-50" },
-  { key: "proposal_sent", label: "Proposal Sent", color: "bg-yellow-100 text-yellow-700 border-yellow-200", headerBg: "bg-yellow-50" },
-  { key: "negotiating", label: "Negotiating", color: "bg-orange-100 text-orange-700 border-orange-200", headerBg: "bg-orange-50" },
+  { key: "assigned", label: "Assigned", color: "badge-purple border-purple-200", headerBg: "bg-purple-50" },
+  { key: "contacted", label: "Contacted", color: "badge-info border-blue-200", headerBg: "bg-blue-50" },
+  { key: "proposal_sent", label: "Proposal Sent", color: "badge-pending border-yellow-200", headerBg: "bg-yellow-50" },
+  { key: "negotiating", label: "Negotiating", color: "badge-pending-payment border-orange-200", headerBg: "bg-orange-50" },
 ] as const;
 
 const CLOSED_STAGES = [
-  { key: "closed_won", label: "Won", color: "bg-green-100 text-green-700 border-green-200" },
-  { key: "closed_lost", label: "Lost", color: "bg-red-100 text-red-700 border-red-200" },
+  { key: "closed_won", label: "Won", color: "badge-success border-green-200" },
+  { key: "closed_lost", label: "Lost", color: "badge-danger border-red-200" },
 ];
 
 const tempMeta: Record<string, { icon: any; color: string; bg: string }> = {
@@ -199,10 +199,10 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 bg-sage/20 animate-pulse rounded" />
+        <div className="h-8 w-48 bg-graphite/20 animate-pulse rounded" />
         <div className="grid grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-64 bg-sage/10 animate-pulse rounded-xl" />
+            <div key={i} className="h-64 bg-electric/5 animate-pulse rounded-xl" />
           ))}
         </div>
       </div>
@@ -214,22 +214,22 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
       {/* Pipeline Summary */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-serif text-forest">My Pipeline</h2>
-          <p className="text-xs text-forest/50 font-sans mt-0.5">
+          <h2 className="text-lg font-serif text-off-white">My Pipeline</h2>
+          <p className="text-xs text-soft-gray font-sans mt-0.5">
             {activeCount} active &bull; {wonCount} won &bull; {lostCount} lost
           </p>
         </div>
         <div className="flex gap-2">
           <Button
             onClick={() => setShowAddLead(true)}
-            className="bg-terracotta hover:bg-terracotta/90 text-white font-sans text-sm rounded-full"
+            className="bg-electric hover:bg-electric/90 text-white font-sans text-sm rounded-full"
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" /> Add My Lead
           </Button>
           <Button
             onClick={() => setShowPool(true)}
             variant="outline"
-            className="text-forest border-forest/20 hover:bg-forest/5 font-sans text-sm rounded-full"
+            className="text-off-white border-electric/20 hover:bg-electric/10 font-sans text-sm rounded-full"
           >
             <Plus className="h-3.5 w-3.5 mr-1.5" /> Claim Lead
           </Button>
@@ -244,18 +244,18 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
             <div
               key={stage.key}
               className={`rounded-xl border border-border/40 overflow-hidden transition-all ${
-                draggedLeadId ? "ring-2 ring-terracotta/20" : ""
+                draggedLeadId ? "ring-2 ring-electric/20" : ""
               }`}
-              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("ring-2", "ring-terracotta/50"); }}
-              onDragLeave={(e) => { e.currentTarget.classList.remove("ring-2", "ring-terracotta/50"); }}
-              onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("ring-2", "ring-terracotta/50"); handleDrop(stage.key); }}
+              onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("ring-2", "ring-electric/50"); }}
+              onDragLeave={(e) => { e.currentTarget.classList.remove("ring-2", "ring-electric/50"); }}
+              onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("ring-2", "ring-electric/50"); handleDrop(stage.key); }}
             >
               {/* Column header */}
               <div className={`${stage.headerBg} px-4 py-3 border-b border-border/30`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge className={`text-[10px] font-sans ${stage.color}`}>{stage.label}</Badge>
-                    <span className="text-xs text-forest/40 font-sans">{leads.length}</span>
+                    <span className="text-xs text-soft-gray/60 font-sans">{leads.length}</span>
                   </div>
                 </div>
               </div>
@@ -264,7 +264,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
               <ScrollArea className="h-[400px]">
                 <div className="p-2 space-y-2">
                   {leads.length === 0 ? (
-                    <div className="text-center py-8 text-forest/30">
+                    <div className="text-center py-8 text-soft-gray/40">
                       <Target className="h-6 w-6 mx-auto mb-2 opacity-40" />
                       <p className="text-xs font-sans">No leads</p>
                     </div>
@@ -278,30 +278,30 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                           draggable
                           onDragStart={() => handleDragStart(lead.id)}
                           onDragEnd={handleDragEnd}
-                          className={`p-3 rounded-lg border border-border/30 bg-white hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${
+                          className={`p-3 rounded-lg border border-border/30 bg-charcoal hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${
                             draggedLeadId === lead.id ? "opacity-40 scale-95" : ""
                           }`}
                           onClick={() => { setSelectedLead(lead); setShowDetail(true); }}
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-forest font-sans truncate">{lead.businessName}</p>
-                              <p className="text-[11px] text-forest/50 font-sans truncate">{lead.contactName}</p>
+                              <p className="text-sm font-medium text-off-white font-sans truncate">{lead.businessName}</p>
+                              <p className="text-[11px] text-soft-gray font-sans truncate">{lead.contactName}</p>
                             </div>
-                            <GripVertical className="h-4 w-4 text-forest/20 shrink-0" />
+                            <GripVertical className="h-4 w-4 text-soft-gray/30 shrink-0" />
                           </div>
                           <div className="flex items-center gap-1.5">
                             <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] ${ti.bg}`}>
                               <TempIcon className={`h-2.5 w-2.5 ${ti.color}`} />
                               <span className={ti.color}>{lead.temperature}</span>
                             </div>
-                            <span className="text-[10px] text-forest/30 font-sans">{lead.qualificationScore}/100</span>
+                            <span className="text-[10px] text-soft-gray/40 font-sans">{lead.qualificationScore}/100</span>
                             {lead.enrichmentData && Object.keys(lead.enrichmentData).length > 0 && (
-                              <Sparkles className="h-3 w-3 text-terracotta/50" />
+                              <Sparkles className="h-3 w-3 text-electric/50" />
                             )}
                           </div>
                           {lead.lastTouchAt && (
-                            <p className="text-[10px] text-forest/30 font-sans mt-1.5">
+                            <p className="text-[10px] text-soft-gray/40 font-sans mt-1.5">
                               Last touch: {new Date(lead.lastTouchAt).toLocaleDateString()}
                             </p>
                           )}
@@ -310,7 +310,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                             {lead.email && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${lead.email}`; }}
-                                className="p-1.5 rounded-md hover:bg-blue-50 text-forest/40 hover:text-blue-600 transition-colors" title="Send Email"
+                                className="p-1.5 rounded-md hover:bg-blue-50 text-soft-gray/60 hover:text-blue-600 transition-colors" title="Send Email"
                               >
                                 <Mail className="h-3.5 w-3.5" />
                               </button>
@@ -319,13 +319,13 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                               <>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${lead.phone}`; }}
-                                  className="p-1.5 rounded-md hover:bg-green-50 text-forest/40 hover:text-green-600 transition-colors" title="Call"
+                                  className="p-1.5 rounded-md hover:bg-green-50 text-soft-gray/60 hover:text-emerald-400 transition-colors" title="Call"
                                 >
                                   <Phone className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); window.location.href = `sms:${lead.phone}`; }}
-                                  className="p-1.5 rounded-md hover:bg-purple-50 text-forest/40 hover:text-purple-600 transition-colors" title="Send SMS"
+                                  className="p-1.5 rounded-md hover:bg-purple-50 text-soft-gray/60 hover:text-purple-600 transition-colors" title="Send SMS"
                                 >
                                   <Send className="h-3.5 w-3.5" />
                                 </button>
@@ -333,7 +333,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                             )}
                             <button
                               onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setShowDetail(true); }}
-                              className="p-1.5 rounded-md hover:bg-forest/5 text-forest/40 hover:text-forest transition-colors ml-auto" title="View Details"
+                              className="p-1.5 rounded-md hover:bg-electric/10 text-soft-gray/60 hover:text-electric transition-colors ml-auto" title="View Details"
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </button>
@@ -355,20 +355,20 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
           {CLOSED_STAGES.map((cs) => (
             <Card key={cs.key} className="border-border/50">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-serif text-forest flex items-center gap-2">
-                  {cs.key === "closed_won" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
+                <CardTitle className="text-sm font-serif text-off-white flex items-center gap-2">
+                  {cs.key === "closed_won" ? <CheckCircle className="h-4 w-4 text-emerald-400" /> : <XCircle className="h-4 w-4 text-red-500" />}
                   {cs.label} ({leadsByStage[cs.key]?.length || 0})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {(leadsByStage[cs.key] || []).length === 0 ? (
-                  <p className="text-xs text-forest/40 font-sans">None yet</p>
+                  <p className="text-xs text-soft-gray/60 font-sans">None yet</p>
                 ) : (
                   <div className="space-y-1.5">
                     {(leadsByStage[cs.key] || []).slice(0, 5).map((lead) => (
                       <div key={lead.id} className="flex items-center justify-between text-sm font-sans p-2 rounded border border-border/20">
-                        <span className="text-forest">{lead.businessName}</span>
-                        <span className="text-xs text-forest/40">{lead.contactName}</span>
+                        <span className="text-off-white">{lead.businessName}</span>
+                        <span className="text-xs text-soft-gray/60">{lead.contactName}</span>
                       </div>
                     ))}
                   </div>
@@ -383,18 +383,18 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
       <Dialog open={showDetail} onOpenChange={(open) => { setShowDetail(open); if (!open) setSelectedLead(null); }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest">{selectedLead?.businessName}</DialogTitle>
+            <DialogTitle className="font-serif text-off-white">{selectedLead?.businessName}</DialogTitle>
           </DialogHeader>
           {selectedLead && (
             <div className="space-y-4 font-sans">
               {/* Contact info */}
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-forest/50 text-xs">Contact</span><p className="text-forest">{selectedLead.contactName}</p></div>
-                <div><span className="text-forest/50 text-xs">Email</span><p className="text-forest">{selectedLead.email}</p></div>
-                <div><span className="text-forest/50 text-xs">Phone</span><p className="text-forest">{selectedLead.phone || "—"}</p></div>
-                <div><span className="text-forest/50 text-xs">Industry</span><p className="text-forest">{selectedLead.industry || "—"}</p></div>
-                <div><span className="text-forest/50 text-xs">Score</span><p className="text-forest">{selectedLead.qualificationScore}/100</p></div>
-                <div><span className="text-forest/50 text-xs">Website</span><p className="text-forest truncate">{selectedLead.website || "—"}</p></div>
+                <div><span className="text-soft-gray text-xs">Contact</span><p className="text-off-white">{selectedLead.contactName}</p></div>
+                <div><span className="text-soft-gray text-xs">Email</span><p className="text-off-white">{selectedLead.email}</p></div>
+                <div><span className="text-soft-gray text-xs">Phone</span><p className="text-off-white">{selectedLead.phone || "—"}</p></div>
+                <div><span className="text-soft-gray text-xs">Industry</span><p className="text-off-white">{selectedLead.industry || "—"}</p></div>
+                <div><span className="text-soft-gray text-xs">Score</span><p className="text-off-white">{selectedLead.qualificationScore}/100</p></div>
+                <div><span className="text-soft-gray text-xs">Website</span><p className="text-off-white truncate">{selectedLead.website || "—"}</p></div>
               </div>
 
               <Separator />
@@ -402,7 +402,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
               {/* Stage & Temperature controls */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-forest/50">Stage</label>
+                  <label className="text-xs text-soft-gray">Stage</label>
                   <Select
                     value={selectedLead.stage}
                     onValueChange={(val) => {
@@ -419,7 +419,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                   </Select>
                 </div>
                 <div>
-                  <label className="text-xs text-forest/50">Temperature</label>
+                  <label className="text-xs text-soft-gray">Temperature</label>
                   <Select
                     value={selectedLead.temperature}
                     onValueChange={(val) => {
@@ -438,23 +438,23 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
               {/* Notes */}
               {selectedLead.notes && (
                 <div>
-                  <span className="text-xs text-forest/50">Notes</span>
-                  <p className="text-sm text-forest/80 mt-1">{selectedLead.notes}</p>
+                  <span className="text-xs text-soft-gray">Notes</span>
+                  <p className="text-sm text-off-white/80 mt-1">{selectedLead.notes}</p>
                 </div>
               )}
 
               {/* Enrichment */}
               {selectedLead.enrichmentData && Object.keys(selectedLead.enrichmentData).length > 0 && (
-                <div className="border border-terracotta/20 rounded-lg p-3 bg-terracotta/5">
+                <div className="border border-electric/20 rounded-lg p-3 bg-electric/5">
                   <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="h-3.5 w-3.5 text-terracotta" />
-                    <span className="text-xs font-medium text-forest">AI Enrichment</span>
+                    <Sparkles className="h-3.5 w-3.5 text-electric" />
+                    <span className="text-xs font-medium text-off-white">AI Enrichment</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-forest/50">Size</span><p className="text-forest">{selectedLead.enrichmentData.companySize}</p></div>
-                    <div><span className="text-forest/50">Revenue</span><p className="text-forest">{selectedLead.enrichmentData.estimatedRevenue}</p></div>
-                    <div><span className="text-forest/50">Rec. Package</span><Badge className="text-[10px] bg-forest/10 text-forest capitalize">{selectedLead.enrichmentData.recommendedPackage}</Badge></div>
-                    <div><span className="text-forest/50">Online Presence</span><p className="text-forest capitalize">{selectedLead.enrichmentData.onlinePresence}</p></div>
+                    <div><span className="text-soft-gray">Size</span><p className="text-off-white">{selectedLead.enrichmentData.companySize}</p></div>
+                    <div><span className="text-soft-gray">Revenue</span><p className="text-off-white">{selectedLead.enrichmentData.estimatedRevenue}</p></div>
+                    <div><span className="text-soft-gray">Rec. Package</span><Badge className="text-[10px] bg-electric/10 text-off-white capitalize">{selectedLead.enrichmentData.recommendedPackage}</Badge></div>
+                    <div><span className="text-soft-gray">Online Presence</span><p className="text-off-white capitalize">{selectedLead.enrichmentData.onlinePresence}</p></div>
                   </div>
                 </div>
               )}
@@ -512,13 +512,13 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
       <Dialog open={showPool} onOpenChange={setShowPool}>
         <DialogContent className="max-w-lg max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest">Lead Pool — Claim a Lead</DialogTitle>
+            <DialogTitle className="font-serif text-off-white">Lead Pool — Claim a Lead</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-[400px] pr-2">
             {(leadPool as Lead[]).length === 0 ? (
               <div className="text-center py-12">
-                <Target className="h-8 w-8 text-forest/20 mx-auto mb-3" />
-                <p className="text-sm text-forest/50 font-sans">No unassigned leads available right now.</p>
+                <Target className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" />
+                <p className="text-sm text-soft-gray font-sans">No unassigned leads available right now.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -526,22 +526,22 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                   const ti = tempMeta[lead.temperature] || tempMeta.cold;
                   const TempIcon = ti.icon;
                   return (
-                    <div key={lead.id} className="p-4 rounded-lg border border-border/30 hover:bg-cream-dark/20 transition-colors">
+                    <div key={lead.id} className="p-4 rounded-lg border border-border/30 hover:bg-midnight-dark/20 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-forest font-sans">{lead.businessName}</span>
+                            <span className="text-sm font-medium text-off-white font-sans">{lead.businessName}</span>
                             <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] ${ti.bg}`}>
                               <TempIcon className={`h-2.5 w-2.5 ${ti.color}`} />
                               <span className={ti.color}>{lead.temperature}</span>
                             </div>
                           </div>
-                          <p className="text-xs text-forest/50 font-sans">{lead.contactName} &bull; {lead.industry || "Unknown industry"}</p>
-                          <p className="text-[10px] text-forest/30 font-sans mt-1">Score: {lead.qualificationScore}/100</p>
+                          <p className="text-xs text-soft-gray font-sans">{lead.contactName} &bull; {lead.industry || "Unknown industry"}</p>
+                          <p className="text-[10px] text-soft-gray/40 font-sans mt-1">Score: {lead.qualificationScore}/100</p>
                         </div>
                         <Button
                           size="sm"
-                          className="shrink-0 bg-terracotta hover:bg-terracotta/90 text-white font-sans text-xs rounded-full"
+                          className="shrink-0 bg-electric hover:bg-electric/90 text-white font-sans text-xs rounded-full"
                           onClick={() => claimLead.mutate({ leadId: lead.id })}
                           disabled={claimLead.isPending}
                         >
@@ -561,18 +561,18 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
       <Dialog open={showProposal} onOpenChange={(open) => { setShowProposal(open); if (!open) setProposalResult(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-terracotta" /> AI Proposal Generator
+            <DialogTitle className="font-serif text-off-white flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-electric" /> AI Proposal Generator
             </DialogTitle>
           </DialogHeader>
           {!proposalResult ? (
             <div className="space-y-4 font-sans">
-              <p className="text-sm text-forest/60">
+              <p className="text-sm text-soft-gray">
                 Generate a personalized proposal for <strong>{selectedLead?.businessName}</strong>.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-forest/50">Package Tier</label>
+                  <label className="text-xs text-soft-gray">Package Tier</label>
                   <Select value={proposalTier} onValueChange={setProposalTier}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -584,7 +584,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-forest/50">Custom Notes (optional)</label>
+                <label className="text-xs text-soft-gray">Custom Notes (optional)</label>
                 <Textarea
                   value={proposalNotes}
                   onChange={(e) => setProposalNotes(e.target.value)}
@@ -595,7 +595,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
               <Button
                 onClick={handleGenerateProposal}
                 disabled={generateProposal.isPending}
-                className="w-full bg-terracotta hover:bg-terracotta/90 text-white font-sans rounded-full"
+                className="w-full bg-electric hover:bg-electric/90 text-white font-sans rounded-full"
               >
                 {generateProposal.isPending ? (
                   <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Generating with AI...</span>
@@ -606,19 +606,19 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
             </div>
           ) : (
             <div className="space-y-4 font-sans">
-              <div className="border border-terracotta/20 rounded-xl p-4 bg-terracotta/5">
-                <h3 className="text-sm font-medium text-forest mb-2">{proposalResult.subject}</h3>
-                <div className="text-sm text-forest/80 whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto">
+              <div className="border border-electric/20 rounded-xl p-4 bg-electric/5">
+                <h3 className="text-sm font-medium text-off-white mb-2">{proposalResult.subject}</h3>
+                <div className="text-sm text-off-white/80 whitespace-pre-wrap leading-relaxed max-h-[300px] overflow-y-auto">
                   {proposalResult.plainTextContent}
                 </div>
               </div>
               {proposalResult.keySellingPoints?.length > 0 && (
                 <div>
-                  <span className="text-xs text-forest/50 font-medium">Key Selling Points</span>
+                  <span className="text-xs text-soft-gray font-medium">Key Selling Points</span>
                   <ul className="mt-1 space-y-1">
                     {proposalResult.keySellingPoints.map((point: string, i: number) => (
-                      <li key={i} className="text-xs text-forest/70 flex items-start gap-1.5">
-                        <CheckCircle className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />
+                      <li key={i} className="text-xs text-soft-gray flex items-start gap-1.5">
+                        <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
                         {point}
                       </li>
                     ))}
@@ -650,7 +650,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                 </Button>
                 <Button
                   size="sm"
-                  className="flex-1 font-sans text-xs bg-terracotta hover:bg-terracotta/90 text-white"
+                  className="flex-1 font-sans text-xs bg-electric hover:bg-electric/90 text-white"
                   onClick={() => { setProposalResult(null); }}
                 >
                   Generate Another
@@ -665,17 +665,17 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
       <AlertDialog open={showCloseDeal} onOpenChange={setShowCloseDeal}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-serif text-forest flex items-center gap-2">
-              <Handshake className="h-5 w-5 text-green-600" /> Close Deal — {selectedLead?.businessName}
+            <AlertDialogTitle className="font-serif text-off-white flex items-center gap-2">
+              <Handshake className="h-5 w-5 text-emerald-400" /> Close Deal — {selectedLead?.businessName}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-forest/60 font-sans text-sm">
+            <AlertDialogDescription className="text-soft-gray font-sans text-sm">
               This will create a customer, contract, and commission record. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 font-sans py-2">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-forest/50">Package</label>
+                <label className="text-xs text-soft-gray">Package</label>
                 <Select value={closeForm.packageTier} onValueChange={(val) => setCloseForm({ ...closeForm, packageTier: val, monthlyPrice: PACKAGE_PRICES[val] || "99", discountPercent: closeForm.discountPercent })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -686,7 +686,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                 </Select>
               </div>
               <div>
-                <label className="text-xs text-forest/50">Monthly Price ($)</label>
+                <label className="text-xs text-soft-gray">Monthly Price ($)</label>
                 <Input
                   value={closeForm.monthlyPrice}
                   onChange={(e) => setCloseForm({ ...closeForm, monthlyPrice: e.target.value })}
@@ -696,7 +696,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
               </div>
             </div>
             <div>
-              <label className="text-xs text-forest/50">Discount (0-5%)</label>
+              <label className="text-xs text-soft-gray">Discount (0-5%)</label>
               <div className="flex items-center gap-3">
                 <input
                   type="range"
@@ -705,26 +705,26 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                   step={1}
                   value={closeForm.discountPercent}
                   onChange={(e) => setCloseForm({ ...closeForm, discountPercent: parseInt(e.target.value) })}
-                  className="flex-1 accent-terracotta"
+                  className="flex-1 accent-electric"
                 />
-                <span className="text-sm font-medium text-forest min-w-[40px] text-right">
+                <span className="text-sm font-medium text-off-white min-w-[40px] text-right">
                   {closeForm.discountPercent}%
                 </span>
               </div>
               {closeForm.discountPercent > 0 && (
-                <p className="text-xs text-terracotta mt-1">
+                <p className="text-xs text-electric mt-1">
                   Final price: ${(parseFloat(closeForm.monthlyPrice) * (1 - closeForm.discountPercent / 100)).toFixed(2)}/mo
                 </p>
               )}
             </div>
             {(selectedLead as any)?.selfSourced && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-600" />
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-400" />
                 <span className="text-xs text-amber-800 font-medium">Self-sourced lead — you'll earn 2x commission!</span>
               </div>
             )}
             <div>
-              <label className="text-xs text-forest/50">Notes (optional)</label>
+              <label className="text-xs text-soft-gray">Notes (optional)</label>
               <Textarea
                 value={closeForm.notes}
                 onChange={(e) => setCloseForm({ ...closeForm, notes: e.target.value })}
@@ -754,47 +754,47 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
       <Dialog open={showAddLead} onOpenChange={setShowAddLead}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-terracotta" /> Add Your Own Lead
+            <DialogTitle className="font-serif text-off-white flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-electric" /> Add Your Own Lead
             </DialogTitle>
-            <p className="text-xs text-forest/60 font-sans">Know someone who needs a website? Add them here for double commission!</p>
+            <p className="text-xs text-soft-gray font-sans">Know someone who needs a website? Add them here for double commission!</p>
           </DialogHeader>
           <div className="space-y-3 font-sans">
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
               <p className="text-xs text-amber-800 font-medium flex items-center gap-1.5">
                 <DollarSign className="h-3.5 w-3.5" /> Self-sourced leads earn 2x commission rate
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-forest/50">Business Name *</label>
+                <label className="text-xs text-soft-gray">Business Name *</label>
                 <Input value={newLeadForm.businessName} onChange={(e) => setNewLeadForm({ ...newLeadForm, businessName: e.target.value })} placeholder="Acme Corp" />
               </div>
               <div>
-                <label className="text-xs text-forest/50">Contact Name *</label>
+                <label className="text-xs text-soft-gray">Contact Name *</label>
                 <Input value={newLeadForm.contactName} onChange={(e) => setNewLeadForm({ ...newLeadForm, contactName: e.target.value })} placeholder="John Smith" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-forest/50">Email *</label>
+              <label className="text-xs text-soft-gray">Email *</label>
               <Input value={newLeadForm.email} onChange={(e) => setNewLeadForm({ ...newLeadForm, email: e.target.value })} placeholder="john@acme.com" type="email" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-forest/50">Phone</label>
+                <label className="text-xs text-soft-gray">Phone</label>
                 <Input value={newLeadForm.phone} onChange={(e) => setNewLeadForm({ ...newLeadForm, phone: e.target.value })} placeholder="(555) 123-4567" />
               </div>
               <div>
-                <label className="text-xs text-forest/50">Industry</label>
+                <label className="text-xs text-soft-gray">Industry</label>
                 <Input value={newLeadForm.industry} onChange={(e) => setNewLeadForm({ ...newLeadForm, industry: e.target.value })} placeholder="Restaurant" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-forest/50">Website (if any)</label>
+              <label className="text-xs text-soft-gray">Website (if any)</label>
               <Input value={newLeadForm.website} onChange={(e) => setNewLeadForm({ ...newLeadForm, website: e.target.value })} placeholder="https://acme.com" />
             </div>
             <div>
-              <label className="text-xs text-forest/50">Notes</label>
+              <label className="text-xs text-soft-gray">Notes</label>
               <Textarea value={newLeadForm.notes} onChange={(e) => setNewLeadForm({ ...newLeadForm, notes: e.target.value })} placeholder="How do you know them? What do they need?" className="h-16" />
             </div>
           </div>
@@ -803,7 +803,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
             <Button
               onClick={handleAddMyLead}
               disabled={createMyLead.isPending || !newLeadForm.businessName || !newLeadForm.contactName || !newLeadForm.email}
-              className="bg-terracotta hover:bg-terracotta/90 text-white font-sans text-sm"
+              className="bg-electric hover:bg-electric/90 text-white font-sans text-sm"
             >
               {createMyLead.isPending ? (
                 <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Adding...</span>

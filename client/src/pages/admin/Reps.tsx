@@ -34,7 +34,7 @@ const statusColors: Record<string, string> = {
   onboarding: "bg-blue-100 text-blue-800 border-blue-200",
   training: "bg-purple-100 text-purple-800 border-purple-200",
   certified: "bg-green-100 text-green-800 border-green-200",
-  active: "bg-forest/10 text-forest border-forest/20",
+  active: "bg-electric/10 text-off-white border-electric/20",
   suspended: "bg-red-100 text-red-800 border-red-200",
   inactive: "bg-gray-100 text-gray-600 border-gray-200",
 };
@@ -97,8 +97,8 @@ export default function Reps() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-forest">Rep Command Center</h1>
-          <p className="text-sm text-forest/60 font-sans mt-1">
+          <h1 className="text-2xl font-serif text-off-white">Rep Command Center</h1>
+          <p className="text-sm text-soft-gray font-sans mt-1">
             Recruit, train, monitor, and pay your sales force
           </p>
         </div>
@@ -113,16 +113,16 @@ export default function Reps() {
         {[
           { label: "Applied", key: "applied", icon: Clock, color: "text-yellow-600", count: repsByStatus["applied"] ?? 0 },
           { label: "Training", key: "training", icon: GraduationCap, color: "text-purple-600", count: repsByStatus["training"] ?? 0 },
-          { label: "Active", key: "active", icon: CheckCircle, color: "text-forest", count: (repsByStatus["active"] ?? 0) + (repsByStatus["certified"] ?? 0) },
-          { label: "At Risk", key: "atrisk", icon: AlertTriangle, color: "text-amber-600", count: atRiskReps.length },
+          { label: "Active", key: "active", icon: CheckCircle, color: "text-off-white", count: (repsByStatus["active"] ?? 0) + (repsByStatus["certified"] ?? 0) },
+          { label: "At Risk", key: "atrisk", icon: AlertTriangle, color: "text-amber-400", count: atRiskReps.length },
           { label: "Suspended", key: "suspended", icon: XCircle, color: "text-red-600", count: repsByStatus["suspended"] ?? 0 },
         ].map((s) => (
           <Card key={s.key} className="border-border/50">
             <CardContent className="p-3 flex items-center gap-3">
               <s.icon className={`h-5 w-5 ${s.color}`} />
               <div>
-                <div className="text-lg font-serif text-forest">{s.count}</div>
-                <div className="text-[10px] text-forest/50 font-sans">{s.label}</div>
+                <div className="text-lg font-serif text-off-white">{s.count}</div>
+                <div className="text-[10px] text-soft-gray font-sans">{s.label}</div>
               </div>
             </CardContent>
           </Card>
@@ -130,13 +130,13 @@ export default function Reps() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-cream-dark/30">
+        <TabsList className="bg-midnight-dark/30">
           <TabsTrigger value="overview" className="font-sans text-xs">All Reps</TabsTrigger>
           <TabsTrigger value="applications" className="font-sans text-xs">
             Applications {pendingApps.length > 0 && <Badge className="ml-1 bg-yellow-500 text-white text-[9px] px-1">{pendingApps.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="payouts" className="font-sans text-xs">
-            Payouts {(pendingCommissions.length + approvedCommissions.length) > 0 && <Badge className="ml-1 bg-forest text-white text-[9px] px-1">{pendingCommissions.length + approvedCommissions.length}</Badge>}
+            Payouts {(pendingCommissions.length + approvedCommissions.length) > 0 && <Badge className="ml-1 bg-charcoal text-off-white text-[9px] px-1">{pendingCommissions.length + approvedCommissions.length}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="performance" className="font-sans text-xs">Performance</TabsTrigger>
           <TabsTrigger value="recruitment" className="font-sans text-xs">Recruitment</TabsTrigger>
@@ -146,7 +146,7 @@ export default function Reps() {
           <TabsTrigger value="pipeline" className="font-sans text-xs">
             Pipeline
           </TabsTrigger>
-          <TabsTrigger value="governance" className="font-sans text-xs data-[state=active]:bg-terracotta data-[state=active]:text-white">
+          <TabsTrigger value="governance" className="font-sans text-xs data-[state=active]:bg-electric data-[state=active]:text-white">
             Governance
           </TabsTrigger>
         </TabsList>
@@ -155,36 +155,36 @@ export default function Reps() {
         <TabsContent value="overview">
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-serif text-forest">All Representatives</CardTitle>
+              <CardTitle className="text-base font-serif text-off-white">All Representatives</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
               ) : !reps?.length ? (
                 <div className="text-center py-12">
-                  <Users className="h-10 w-10 text-forest/20 mx-auto mb-3" />
-                  <p className="text-sm text-forest/50 font-sans">No reps yet.</p>
+                  <Users className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+                  <p className="text-sm text-soft-gray font-sans">No reps yet.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm font-sans">
                     <thead>
                       <tr className="border-b border-border/50">
-                        <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Name</th>
-                        <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Status</th>
-                        <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Training</th>
-                        <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Deals</th>
-                        <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Revenue</th>
-                        <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Stripe</th>
-                        <th className="text-right py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Actions</th>
+                        <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Name</th>
+                        <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Status</th>
+                        <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Training</th>
+                        <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Deals</th>
+                        <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Revenue</th>
+                        <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Stripe</th>
+                        <th className="text-right py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {reps.map((rep: any) => (
-                        <tr key={rep.id} className="border-b border-border/30 hover:bg-cream-dark/20 transition-colors">
+                        <tr key={rep.id} className="border-b border-border/30 hover:bg-midnight-dark/20 transition-colors">
                           <td className="py-3 px-2">
-                            <div className="font-medium text-forest">{rep.fullName}</div>
-                            <div className="text-xs text-forest/40">{rep.email}</div>
+                            <div className="font-medium text-off-white">{rep.fullName}</div>
+                            <div className="text-xs text-soft-gray/60">{rep.email}</div>
                           </td>
                           <td className="py-3 px-2">
                             <Badge className={`text-xs font-sans border ${statusColors[rep.status] ?? ""}`}>{rep.status}</Badge>
@@ -192,11 +192,11 @@ export default function Reps() {
                           <td className="py-3 px-2">
                             <div className="flex items-center gap-2">
                               <Progress value={rep.trainingProgress} className="h-1.5 w-16" />
-                              <span className="text-xs text-forest/50">{rep.trainingProgress}%</span>
+                              <span className="text-xs text-soft-gray">{rep.trainingProgress}%</span>
                             </div>
                           </td>
-                          <td className="py-3 px-2 text-forest/70">{rep.totalDeals}</td>
-                          <td className="py-3 px-2 text-forest/70">${Number(rep.totalRevenue).toLocaleString()}</td>
+                          <td className="py-3 px-2 text-soft-gray">{rep.totalDeals}</td>
+                          <td className="py-3 px-2 text-soft-gray">${Number(rep.totalRevenue).toLocaleString()}</td>
                           <td className="py-3 px-2">
                             {rep.stripeConnectOnboarded ? (
                               <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]"><CreditCard className="h-3 w-3 mr-1" />Connected</Badge>
@@ -207,7 +207,7 @@ export default function Reps() {
                             )}
                           </td>
                           <td className="py-3 px-2 text-right">
-                            <Button variant="ghost" size="sm" className="text-xs text-forest/60 hover:text-forest"
+                            <Button variant="ghost" size="sm" className="text-xs text-soft-gray hover:text-off-white"
                               onClick={() => { setSelectedRep(rep); setShowDialog(true); }}>
                               Manage
                             </Button>
@@ -226,17 +226,17 @@ export default function Reps() {
         <TabsContent value="applications">
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+              <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
                 <FileText className="h-4 w-4" /> Applications (Autonomous)
               </CardTitle>
-              <p className="text-xs text-forest/50 font-sans">All applications are processed autonomously. Reps who pass the assessment are auto-approved. This is a read-only audit log.</p>
+              <p className="text-xs text-soft-gray font-sans">All applications are processed autonomously. Reps who pass the assessment are auto-approved. This is a read-only audit log.</p>
             </CardHeader>
             <CardContent>
               {pendingApps.length === 0 ? (
                 <div className="text-center py-12">
-                  <CheckCircle className="h-10 w-10 text-green-500/30 mx-auto mb-3" />
-                  <p className="text-sm text-forest/50 font-sans">All applications auto-processed. No manual action needed.</p>
-                  <p className="text-[10px] text-forest/30 font-sans mt-1">The system handles approvals, rejections, and onboarding automatically.</p>
+                  <CheckCircle className="h-10 w-10 text-emerald-400/30 mx-auto mb-3" />
+                  <p className="text-sm text-soft-gray font-sans">All applications auto-processed. No manual action needed.</p>
+                  <p className="text-[10px] text-soft-gray/40 font-sans mt-1">The system handles approvals, rejections, and onboarding automatically.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -249,12 +249,12 @@ export default function Reps() {
                     <div key={rep.id} className="border border-border/50 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="font-serif text-forest font-medium">{rep.fullName}</h3>
-                          <p className="text-xs text-forest/50 font-sans">{rep.email} {rep.phone ? `| ${rep.phone}` : ""}</p>
-                          <p className="text-xs text-forest/40 font-sans mt-1">Status: {rep.status} | Applied: {new Date(rep.createdAt).toLocaleDateString()}</p>
-                          {rep.bio && <p className="text-sm text-forest/70 font-sans mt-2 italic">"{rep.bio}"</p>}
+                          <h3 className="font-serif text-off-white font-medium">{rep.fullName}</h3>
+                          <p className="text-xs text-soft-gray font-sans">{rep.email} {rep.phone ? `| ${rep.phone}` : ""}</p>
+                          <p className="text-xs text-soft-gray/60 font-sans mt-1">Status: {rep.status} | Applied: {new Date(rep.createdAt).toLocaleDateString()}</p>
+                          {rep.bio && <p className="text-sm text-soft-gray font-sans mt-2 italic">"{rep.bio}"</p>}
                         </div>
-                        <Badge className="bg-yellow-100 text-yellow-700 text-[10px]">In Pipeline</Badge>
+                        <Badge className="badge-pending text-[10px]">In Pipeline</Badge>
                       </div>
                     </div>
                   ))}
@@ -270,23 +270,23 @@ export default function Reps() {
             {/* Pending Approval */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
                   <Clock className="h-4 w-4" /> Pending Approval ({pendingCommissions.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {pendingCommissions.length === 0 ? (
-                  <p className="text-sm text-forest/50 font-sans text-center py-6">No commissions pending approval.</p>
+                  <p className="text-sm text-soft-gray font-sans text-center py-6">No commissions pending approval.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm font-sans">
                       <thead>
                         <tr className="border-b border-border/50">
-                          <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Rep</th>
-                          <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Type</th>
-                          <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Amount</th>
-                          <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Date</th>
-                          <th className="text-right py-2 px-2 text-xs text-forest/50 uppercase font-medium">Action</th>
+                          <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Rep</th>
+                          <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Type</th>
+                          <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Amount</th>
+                          <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Date</th>
+                          <th className="text-right py-2 px-2 text-xs text-soft-gray uppercase font-medium">Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -294,12 +294,12 @@ export default function Reps() {
                           const rep = reps?.find((r: any) => r.id === c.repId);
                           return (
                             <tr key={c.id} className="border-b border-border/30">
-                              <td className="py-2 px-2 text-forest">{rep?.fullName || `Rep #${c.repId}`}</td>
-                              <td className="py-2 px-2 text-forest/60">{c.type}</td>
-                              <td className="py-2 px-2 font-medium text-forest">${Number(c.amount).toFixed(2)}</td>
-                              <td className="py-2 px-2 text-forest/50 text-xs">{new Date(c.createdAt).toLocaleDateString()}</td>
+                              <td className="py-2 px-2 text-off-white">{rep?.fullName || `Rep #${c.repId}`}</td>
+                              <td className="py-2 px-2 text-soft-gray">{c.type}</td>
+                              <td className="py-2 px-2 font-medium text-off-white">${Number(c.amount).toFixed(2)}</td>
+                              <td className="py-2 px-2 text-soft-gray text-xs">{new Date(c.createdAt).toLocaleDateString()}</td>
                               <td className="py-2 px-2 text-right">
-                                <Button size="sm" className="bg-forest text-white hover:bg-forest/90 text-xs font-sans"
+                                <Button size="sm" className="bg-charcoal text-off-white hover:bg-electric/90 text-xs font-sans"
                                   onClick={() => approveCommission.mutate({ commissionId: c.id })}>
                                   Approve
                                 </Button>
@@ -317,22 +317,22 @@ export default function Reps() {
             {/* Ready for Payout */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
                   <DollarSign className="h-4 w-4" /> Ready for Payout ({approvedCommissions.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {approvedCommissions.length === 0 ? (
-                  <p className="text-sm text-forest/50 font-sans text-center py-6">No commissions ready for payout.</p>
+                  <p className="text-sm text-soft-gray font-sans text-center py-6">No commissions ready for payout.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm font-sans">
                       <thead>
                         <tr className="border-b border-border/50">
-                          <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Rep</th>
-                          <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Amount</th>
-                          <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Stripe</th>
-                          <th className="text-right py-2 px-2 text-xs text-forest/50 uppercase font-medium">Action</th>
+                          <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Rep</th>
+                          <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Amount</th>
+                          <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Stripe</th>
+                          <th className="text-right py-2 px-2 text-xs text-soft-gray uppercase font-medium">Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -341,8 +341,8 @@ export default function Reps() {
                           const canPay = rep?.stripeConnectOnboarded;
                           return (
                             <tr key={c.id} className="border-b border-border/30">
-                              <td className="py-2 px-2 text-forest">{rep?.fullName || `Rep #${c.repId}`}</td>
-                              <td className="py-2 px-2 font-medium text-forest">${Number(c.amount).toFixed(2)}</td>
+                              <td className="py-2 px-2 text-off-white">{rep?.fullName || `Rep #${c.repId}`}</td>
+                              <td className="py-2 px-2 font-medium text-off-white">${Number(c.amount).toFixed(2)}</td>
                               <td className="py-2 px-2">
                                 {canPay ? (
                                   <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]">Ready</Badge>
@@ -373,24 +373,24 @@ export default function Reps() {
         <TabsContent value="performance">
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+              <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
                 <Trophy className="h-4 w-4" /> Performance Leaderboard
               </CardTitle>
             </CardHeader>
             <CardContent>
               {!activeReps.length ? (
-                <p className="text-sm text-forest/50 font-sans text-center py-6">No active reps to rank.</p>
+                <p className="text-sm text-soft-gray font-sans text-center py-6">No active reps to rank.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm font-sans">
                     <thead>
                       <tr className="border-b border-border/50">
-                        <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Rank</th>
-                        <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Rep</th>
-                        <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Deals</th>
-                        <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Revenue</th>
-                        <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Score</th>
-                        <th className="text-left py-2 px-2 text-xs text-forest/50 uppercase font-medium">Health</th>
+                        <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Rank</th>
+                        <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Rep</th>
+                        <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Deals</th>
+                        <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Revenue</th>
+                        <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Score</th>
+                        <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Health</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -399,24 +399,24 @@ export default function Reps() {
                         .map((rep: any, idx: number) => {
                           const score = Number(rep.performanceScore || 0);
                           const health = score >= 7 ? "Excellent" : score >= 4 ? "Good" : score > 0 ? "At Risk" : "New";
-                          const healthColor = score >= 7 ? "text-green-600" : score >= 4 ? "text-forest" : score > 0 ? "text-amber-600" : "text-gray-400";
+                          const healthColor = score >= 7 ? "text-emerald-400" : score >= 4 ? "text-off-white" : score > 0 ? "text-amber-400" : "text-gray-400";
                           return (
                             <tr key={rep.id} className="border-b border-border/30">
                               <td className="py-3 px-2">
-                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? "bg-amber-100 text-amber-700" : idx === 1 ? "bg-gray-100 text-gray-600" : idx === 2 ? "bg-orange-100 text-orange-700" : "bg-cream-dark/30 text-forest/50"}`}>
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? "badge-pending-payment" : idx === 1 ? "bg-gray-100 text-gray-600" : idx === 2 ? "badge-pending-payment" : "bg-midnight-dark/30 text-soft-gray"}`}>
                                   {idx + 1}
                                 </div>
                               </td>
                               <td className="py-3 px-2">
-                                <div className="font-medium text-forest">{rep.fullName}</div>
-                                <div className="text-[10px] text-forest/40">{rep.status}</div>
+                                <div className="font-medium text-off-white">{rep.fullName}</div>
+                                <div className="text-[10px] text-soft-gray/60">{rep.status}</div>
                               </td>
-                              <td className="py-3 px-2 text-forest/70">{rep.totalDeals}</td>
-                              <td className="py-3 px-2 font-medium text-forest">${Number(rep.totalRevenue).toLocaleString()}</td>
+                              <td className="py-3 px-2 text-soft-gray">{rep.totalDeals}</td>
+                              <td className="py-3 px-2 font-medium text-off-white">${Number(rep.totalRevenue).toLocaleString()}</td>
                               <td className="py-3 px-2">
                                 <div className="flex items-center gap-2">
                                   <Progress value={score * 10} className="h-1.5 w-12" />
-                                  <span className="text-xs text-forest/50">{score}/10</span>
+                                  <span className="text-xs text-soft-gray">{score}/10</span>
                                 </div>
                               </td>
                               <td className={`py-3 px-2 text-xs font-medium ${healthColor}`}>{health}</td>
@@ -430,9 +430,9 @@ export default function Reps() {
 
               {/* At-Risk Alert */}
               {atRiskReps.length > 0 && (
-                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertTriangle className="h-4 w-4 text-amber-400" />
                     <h4 className="font-serif text-sm text-amber-800">At-Risk Reps ({atRiskReps.length})</h4>
                   </div>
                   <p className="text-xs text-amber-700 font-sans mb-3">
@@ -456,8 +456,8 @@ export default function Reps() {
           <div className="space-y-4">
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest">Social Media Recruitment Templates</CardTitle>
-                <p className="text-xs text-forest/50 font-sans">Ready-to-post templates for recruiting quality sales reps across platforms.</p>
+                <CardTitle className="text-base font-serif text-off-white">Social Media Recruitment Templates</CardTitle>
+                <p className="text-xs text-soft-gray font-sans">Ready-to-post templates for recruiting quality sales reps across platforms.</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
@@ -471,11 +471,11 @@ export default function Reps() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <span className={`${t.color} text-white text-xs font-bold w-7 h-7 rounded flex items-center justify-center`}>{t.icon}</span>
-                        <span className="font-sans font-medium text-forest text-sm">{t.platform}</span>
+                        <span className="font-sans font-medium text-off-white text-sm">{t.platform}</span>
                       </div>
                       <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { navigator.clipboard.writeText(t.post); toast.success(`${t.platform} post copied!`); }}>Copy Post</Button>
                     </div>
-                    <pre className="text-xs text-forest/70 font-sans whitespace-pre-wrap bg-cream-dark/20 rounded p-3 max-h-40 overflow-y-auto">{t.post}</pre>
+                    <pre className="text-xs text-soft-gray font-sans whitespace-pre-wrap bg-midnight-dark/20 rounded p-3 max-h-40 overflow-y-auto">{t.post}</pre>
                   </div>
                 ))}
               </CardContent>
@@ -483,15 +483,15 @@ export default function Reps() {
 
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest">Posting Strategy</CardTitle>
+                <CardTitle className="text-base font-serif text-off-white">Posting Strategy</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm font-sans text-forest/70">
-                  <p><strong className="text-forest">Frequency:</strong> Post 2-3x per week across platforms. Rotate between recruitment posts and success stories.</p>
-                  <p><strong className="text-forest">Best Times:</strong> LinkedIn (Tue-Thu 8-10am), Instagram (Mon-Fri 11am-1pm), Facebook (Wed-Fri 1-4pm), X (Mon-Fri 12-3pm).</p>
-                  <p><strong className="text-forest">Hashtags:</strong> Always include #RemoteWork #SalesJobs #Hiring #WebDesign #CommissionBased</p>
-                  <p><strong className="text-forest">Visuals:</strong> Use branded graphics showing earnings potential, team photos, or testimonial screenshots.</p>
-                  <p><strong className="text-forest">Engagement:</strong> Reply to every comment within 2 hours. DM interested candidates with the application link.</p>
+                <div className="space-y-2 text-sm font-sans text-soft-gray">
+                  <p><strong className="text-off-white">Frequency:</strong> Post 2-3x per week across platforms. Rotate between recruitment posts and success stories.</p>
+                  <p><strong className="text-off-white">Best Times:</strong> LinkedIn (Tue-Thu 8-10am), Instagram (Mon-Fri 11am-1pm), Facebook (Wed-Fri 1-4pm), X (Mon-Fri 12-3pm).</p>
+                  <p><strong className="text-off-white">Hashtags:</strong> Always include #RemoteWork #SalesJobs #Hiring #WebDesign #CommissionBased</p>
+                  <p><strong className="text-off-white">Visuals:</strong> Use branded graphics showing earnings potential, team photos, or testimonial screenshots.</p>
+                  <p><strong className="text-off-white">Engagement:</strong> Reply to every comment within 2 hours. DM interested candidates with the application link.</p>
                 </div>
               </CardContent>
             </Card>
@@ -510,7 +510,7 @@ export default function Reps() {
 
         {/* GOVERNANCE TAB */}
         <TabsContent value="governance">
-          <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+          <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
             <GovernancePanel />
           </Suspense>
         </TabsContent>
@@ -520,7 +520,7 @@ export default function Reps() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest flex items-center gap-2">
+            <DialogTitle className="font-serif text-off-white flex items-center gap-2">
               <Shield className="h-4 w-4" /> Manage: {selectedRep?.fullName}
             </DialogTitle>
           </DialogHeader>
@@ -528,30 +528,30 @@ export default function Reps() {
             <div className="space-y-4 font-sans">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-forest/50 text-xs">Email</span>
-                  <p className="text-forest text-sm">{selectedRep.email}</p>
+                  <span className="text-soft-gray text-xs">Email</span>
+                  <p className="text-off-white text-sm">{selectedRep.email}</p>
                 </div>
                 <div>
-                  <span className="text-forest/50 text-xs">Phone</span>
-                  <p className="text-forest text-sm">{selectedRep.phone || "—"}</p>
+                  <span className="text-soft-gray text-xs">Phone</span>
+                  <p className="text-off-white text-sm">{selectedRep.phone || "—"}</p>
                 </div>
                 <div>
-                  <span className="text-forest/50 text-xs">Total Deals</span>
-                  <p className="text-forest text-sm font-medium">{selectedRep.totalDeals}</p>
+                  <span className="text-soft-gray text-xs">Total Deals</span>
+                  <p className="text-off-white text-sm font-medium">{selectedRep.totalDeals}</p>
                 </div>
                 <div>
-                  <span className="text-forest/50 text-xs">Revenue</span>
-                  <p className="text-forest text-sm font-medium">${Number(selectedRep.totalRevenue).toLocaleString()}</p>
+                  <span className="text-soft-gray text-xs">Revenue</span>
+                  <p className="text-off-white text-sm font-medium">${Number(selectedRep.totalRevenue).toLocaleString()}</p>
                 </div>
                 <div>
-                  <span className="text-forest/50 text-xs">Training</span>
+                  <span className="text-soft-gray text-xs">Training</span>
                   <div className="flex items-center gap-2 mt-0.5">
                     <Progress value={selectedRep.trainingProgress} className="h-1.5 w-16" />
-                    <span className="text-xs text-forest/50">{selectedRep.trainingProgress}%</span>
+                    <span className="text-xs text-soft-gray">{selectedRep.trainingProgress}%</span>
                   </div>
                 </div>
                 <div>
-                  <span className="text-forest/50 text-xs">Stripe Connect</span>
+                  <span className="text-soft-gray text-xs">Stripe Connect</span>
                   <p className="text-sm">
                     {selectedRep.stripeConnectOnboarded ? (
                       <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]"><CreditCard className="h-3 w-3 mr-1" />Connected</Badge>
@@ -566,13 +566,13 @@ export default function Reps() {
 
               {selectedRep.bio && (
                 <div>
-                  <span className="text-xs text-forest/50">Bio</span>
-                  <p className="text-sm text-forest/80 mt-1 italic">"{selectedRep.bio}"</p>
+                  <span className="text-xs text-soft-gray">Bio</span>
+                  <p className="text-sm text-off-white/80 mt-1 italic">"{selectedRep.bio}"</p>
                 </div>
               )}
 
               <div>
-                <label className="text-xs text-forest/50 block mb-1">Change Status</label>
+                <label className="text-xs text-soft-gray block mb-1">Change Status</label>
                 <Select value={selectedRep.status} onValueChange={(val) => handleStatusChange(selectedRep.id, val)}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -642,7 +642,7 @@ function AssessmentsTab() {
     if (override === "rejected") return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px]">Rejected (Override)</Badge>;
     switch (status) {
       case "passed": return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px]"><CheckCircle className="h-3 w-3 mr-1" />Passed</Badge>;
-      case "borderline": return <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]"><AlertTriangle className="h-3 w-3 mr-1" />Borderline</Badge>;
+      case "borderline": return <Badge className="bg-amber-100 text-amber-800 border-amber-500/20 text-[10px]"><AlertTriangle className="h-3 w-3 mr-1" />Borderline</Badge>;
       case "failed": return <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px]"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>;
       default: return <Badge className="bg-gray-100 text-gray-600 text-[10px]">{status}</Badge>;
     }
@@ -659,17 +659,17 @@ function AssessmentsTab() {
       {/* KPI row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Total", count: counts.total, icon: ClipboardCheck, color: "text-forest" },
-          { label: "Passed", count: counts.passed, icon: CheckCircle, color: "text-green-600" },
-          { label: "Borderline", count: counts.borderline, icon: AlertTriangle, color: "text-amber-600" },
+          { label: "Total", count: counts.total, icon: ClipboardCheck, color: "text-off-white" },
+          { label: "Passed", count: counts.passed, icon: CheckCircle, color: "text-emerald-400" },
+          { label: "Borderline", count: counts.borderline, icon: AlertTriangle, color: "text-amber-400" },
           { label: "Failed", count: counts.failed, icon: XCircle, color: "text-red-600" },
         ].map((s) => (
           <Card key={s.label} className="border-border/50">
             <CardContent className="p-3 flex items-center gap-3">
               <s.icon className={`h-5 w-5 ${s.color}`} />
               <div>
-                <div className="text-lg font-serif text-forest">{s.count}</div>
-                <div className="text-[10px] text-forest/50 font-sans">{s.label}</div>
+                <div className="text-lg font-serif text-off-white">{s.count}</div>
+                <div className="text-[10px] text-soft-gray font-sans">{s.label}</div>
               </div>
             </CardContent>
           </Card>
@@ -678,13 +678,13 @@ function AssessmentsTab() {
 
       {/* Filter */}
       <div className="flex items-center gap-2">
-        <span className="text-xs text-forest/50 font-sans">Filter:</span>
+        <span className="text-xs text-soft-gray font-sans">Filter:</span>
         {["all", "passed", "borderline", "failed"].map((f) => (
           <Button
             key={f}
             size="sm"
             variant={statusFilter === f ? "default" : "outline"}
-            className={`text-xs h-7 ${statusFilter === f ? "bg-forest text-white" : ""}`}
+            className={`text-xs h-7 ${statusFilter === f ? "bg-charcoal text-off-white" : ""}`}
             onClick={() => setStatusFilter(f)}
           >
             {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
@@ -695,7 +695,7 @@ function AssessmentsTab() {
       {/* Table */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
             <ClipboardCheck className="h-4 w-4" /> Assessment Results
           </CardTitle>
         </CardHeader>
@@ -704,29 +704,29 @@ function AssessmentsTab() {
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !filtered.length ? (
             <div className="text-center py-12">
-              <ClipboardCheck className="h-10 w-10 text-forest/20 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No assessments yet.</p>
+              <ClipboardCheck className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No assessments yet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/30">
-                    <th className="text-left py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Candidate</th>
-                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Character</th>
-                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Sales</th>
-                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Total</th>
-                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Status</th>
-                    <th className="text-center py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Date</th>
-                    <th className="text-right py-2 px-3 text-[10px] uppercase text-forest/50 font-medium">Actions</th>
+                    <th className="text-left py-2 px-3 text-[10px] uppercase text-soft-gray font-medium">Candidate</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-soft-gray font-medium">Character</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-soft-gray font-medium">Sales</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-soft-gray font-medium">Total</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-soft-gray font-medium">Status</th>
+                    <th className="text-center py-2 px-3 text-[10px] uppercase text-soft-gray font-medium">Date</th>
+                    <th className="text-right py-2 px-3 text-[10px] uppercase text-soft-gray font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((a: any) => (
-                    <tr key={a.id} className="border-b border-border/10 hover:bg-cream-dark/20 transition-colors">
+                    <tr key={a.id} className="border-b border-border/10 hover:bg-midnight-dark/20 transition-colors">
                       <td className="py-2.5 px-3">
-                        <div className="font-medium text-forest text-sm">{a.userName || "Unknown"}</div>
-                        <div className="text-[10px] text-forest/40">{a.userEmail || ""}</div>
+                        <div className="font-medium text-off-white text-sm">{a.userName || "Unknown"}</div>
+                        <div className="text-[10px] text-soft-gray/60">{a.userEmail || ""}</div>
                       </td>
                       <td className={`py-2.5 px-3 text-center font-medium ${scoreColor(parseFloat(a.gate1Score))}`}>
                         {parseFloat(a.gate1Score).toFixed(0)}%
@@ -740,7 +740,7 @@ function AssessmentsTab() {
                       <td className="py-2.5 px-3 text-center">
                         {statusBadge(a.status, a.adminOverride)}
                       </td>
-                      <td className="py-2.5 px-3 text-center text-[10px] text-forest/50">
+                      <td className="py-2.5 px-3 text-center text-[10px] text-soft-gray">
                         {a.completedAt ? new Date(a.completedAt).toLocaleDateString() : "—"}
                       </td>
                       <td className="py-2.5 px-3 text-right">
@@ -766,7 +766,7 @@ function AssessmentsTab() {
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest flex items-center gap-2">
+            <DialogTitle className="font-serif text-off-white flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4" />
               Assessment Review: {selectedAssessment?.userName || "Unknown"}
             </DialogTitle>
@@ -774,7 +774,7 @@ function AssessmentsTab() {
 
           {detailLoading ? (
             <div className="py-8 text-center">
-              <div className="animate-spin w-6 h-6 border-2 border-forest border-t-transparent rounded-full mx-auto" />
+              <div className="animate-spin w-6 h-6 border-2 border-electric border-t-transparent rounded-full mx-auto" />
             </div>
           ) : detail ? (
             <div className="space-y-4 font-sans">
@@ -792,8 +792,8 @@ function AssessmentsTab() {
                     {detail.gate2Score.toFixed(0)}%
                   </div>
                 </div>
-                <div className="bg-forest/5 rounded-lg p-3 text-center">
-                  <div className="text-xs text-forest/60 mb-1">Weighted Total</div>
+                <div className="bg-electric/10 rounded-lg p-3 text-center">
+                  <div className="text-xs text-soft-gray mb-1">Weighted Total</div>
                   <div className={`text-2xl font-bold ${scoreColor(detail.totalScore)}`}>
                     {detail.totalScore.toFixed(0)}%
                   </div>
@@ -802,13 +802,13 @@ function AssessmentsTab() {
 
               {/* Current status */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-forest/50">Status:</span>
+                <span className="text-xs text-soft-gray">Status:</span>
                 {statusBadge(detail.status, detail.adminOverride)}
               </div>
 
               {/* Per-question breakdown */}
               <div>
-                <h4 className="text-sm font-medium text-forest mb-2">Response Breakdown</h4>
+                <h4 className="text-sm font-medium text-off-white mb-2">Response Breakdown</h4>
                 <div className="space-y-2">
                   {detail.enrichedAnswers.map((ans: any, idx: number) => (
                     <div key={ans.questionId} className={`border rounded-lg p-3 ${
@@ -819,9 +819,9 @@ function AssessmentsTab() {
                     }`}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-medium text-forest/50">Q{idx + 1}</span>
+                          <span className="text-[10px] font-medium text-soft-gray">Q{idx + 1}</span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                            ans.gate === 1 ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                            ans.gate === 1 ? "badge-purple" : "badge-info"
                           }`}>
                             {ans.category}
                           </span>
@@ -836,15 +836,15 @@ function AssessmentsTab() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-forest/70 mb-1 line-clamp-2">{ans.scenario}</p>
+                      <p className="text-xs text-soft-gray mb-1 line-clamp-2">{ans.scenario}</p>
                       {ans.isFreeText ? (
-                        <div className="mt-1 p-2 bg-white rounded border border-blue-100">
+                        <div className="mt-1 p-2 bg-charcoal rounded border border-blue-100">
                           <span className="text-[10px] text-blue-600 block mb-1">Free-text response:</span>
-                          <p className="text-xs text-forest italic">"{ans.freeTextResponse || "No response"}"</p>
+                          <p className="text-xs text-off-white/70 italic">"{ans.freeTextResponse || "No response"}"</p>
                         </div>
                       ) : (
-                        <p className="text-xs text-forest">
-                          <span className="text-forest/50">Selected:</span> {ans.selectedOptionText || "No answer"}
+                        <p className="text-xs text-off-white">
+                          <span className="text-soft-gray">Selected:</span> {ans.selectedOptionText || "No answer"}
                         </p>
                       )}
                     </div>
@@ -855,7 +855,7 @@ function AssessmentsTab() {
               {/* Admin review section (for borderline candidates) */}
               {(detail.status === "borderline" || detail.status === "failed") && !detail.adminOverride && (
                 <div className="border-t pt-4 mt-4">
-                  <h4 className="text-sm font-medium text-forest mb-2">Admin Decision</h4>
+                  <h4 className="text-sm font-medium text-off-white mb-2">Admin Decision</h4>
                   <Textarea
                     value={reviewNotes}
                     onChange={(e) => setReviewNotes(e.target.value)}
@@ -895,7 +895,7 @@ function AssessmentsTab() {
 
               {detail.adminOverride && (
                 <div className="border-t pt-3 mt-3">
-                  <div className="text-xs text-forest/50">
+                  <div className="text-xs text-soft-gray">
                     <strong>Admin Decision:</strong> {detail.adminOverride === "approved" ? "✅ Approved" : "❌ Rejected"}
                     {detail.reviewNotes && <span className="block mt-1 italic">Notes: "{detail.reviewNotes}"</span>}
                     {detail.reviewedAt && <span className="block mt-1">Reviewed: {new Date(detail.reviewedAt).toLocaleString()}</span>}
@@ -919,10 +919,10 @@ function AssessmentsTab() {
 const PIPELINE_STAGES = [
   { key: "account", label: "Account Created", icon: Users, color: "bg-blue-500" },
   { key: "trust_gate", label: "Trust Gate", icon: Shield, color: "bg-purple-500" },
-  { key: "assessment", label: "Assessment", icon: ClipboardCheck, color: "bg-amber-500" },
-  { key: "application", label: "Application", icon: FileText, color: "bg-terracotta" },
+  { key: "assessment", label: "Assessment", icon: ClipboardCheck, color: "bg-amber-500/100" },
+  { key: "application", label: "Application", icon: FileText, color: "bg-electric" },
   { key: "paperwork", label: "Paperwork", icon: FileText, color: "bg-green-500" },
-  { key: "complete", label: "Complete", icon: CheckCircle, color: "bg-forest" },
+  { key: "complete", label: "Complete", icon: CheckCircle, color: "bg-electric" },
 ] as const;
 
 type PipelineStage = typeof PIPELINE_STAGES[number]["key"];
@@ -1017,7 +1017,7 @@ function OnboardingPipelineTab() {
       {/* Pipeline overview */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="font-serif text-forest text-base flex items-center gap-2">
+          <CardTitle className="font-serif text-off-white text-base flex items-center gap-2">
             <Users className="h-4 w-4" /> Onboarding Pipeline
           </CardTitle>
         </CardHeader>
@@ -1046,12 +1046,12 @@ function OnboardingPipelineTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-sage/20 text-left">
-                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Candidate</th>
-                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Current Stage</th>
-                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Assessment</th>
-                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Status</th>
-                  <th className="pb-2 font-sans text-forest/60 text-xs font-medium">Applied</th>
+                <tr className="border-b border-border/50 text-left">
+                  <th className="pb-2 font-sans text-soft-gray text-xs font-medium">Candidate</th>
+                  <th className="pb-2 font-sans text-soft-gray text-xs font-medium">Current Stage</th>
+                  <th className="pb-2 font-sans text-soft-gray text-xs font-medium">Assessment</th>
+                  <th className="pb-2 font-sans text-soft-gray text-xs font-medium">Status</th>
+                  <th className="pb-2 font-sans text-soft-gray text-xs font-medium">Applied</th>
                 </tr>
               </thead>
               <tbody>
@@ -1067,20 +1067,20 @@ function OnboardingPipelineTab() {
                     const StageIcon = stageConfig?.icon || Users;
 
                     return (
-                      <tr key={candidate.id} className="border-b border-sage/10 hover:bg-cream/50">
+                      <tr key={candidate.id} className="border-b border-border/10 hover:bg-midnight/50">
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             {candidate.photo ? (
                               <img src={candidate.photo} alt="" className="w-7 h-7 rounded-full object-cover" />
                             ) : (
-                              <div className="w-7 h-7 rounded-full bg-forest/10 flex items-center justify-center">
-                                <span className="text-[10px] font-bold text-forest">
+                              <div className="w-7 h-7 rounded-full bg-electric/10 flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-off-white">
                                   {candidate.name?.charAt(0) || "?"}
                                 </span>
                               </div>
                             )}
                             <div>
-                              <p className="font-medium text-forest text-xs">{candidate.name}</p>
+                              <p className="font-medium text-off-white text-xs">{candidate.name}</p>
                               <p className="text-[10px] text-muted-foreground">{candidate.email}</p>
                             </div>
                           </div>
@@ -1088,7 +1088,7 @@ function OnboardingPipelineTab() {
                         <td className="py-3">
                           <div className="flex items-center gap-1.5">
                             <div className={`w-2 h-2 rounded-full ${stageConfig?.color || "bg-gray-400"}`} />
-                            <span className="text-xs font-medium text-forest/80">{stageConfig?.label || "Unknown"}</span>
+                            <span className="text-xs font-medium text-off-white/80">{stageConfig?.label || "Unknown"}</span>
                           </div>
                           {/* Progress dots */}
                           <div className="flex gap-0.5 mt-1">
@@ -1109,8 +1109,8 @@ function OnboardingPipelineTab() {
                           {candidate.assessmentScore !== null ? (
                             <div>
                               <span className={`text-xs font-bold ${
-                                candidate.assessmentStatus === "passed" ? "text-green-600" :
-                                candidate.assessmentStatus === "borderline" ? "text-amber-600" :
+                                candidate.assessmentStatus === "passed" ? "text-emerald-400" :
+                                candidate.assessmentStatus === "borderline" ? "text-amber-400" :
                                 "text-red-600"
                               }`}>
                                 {candidate.assessmentScore.toFixed(0)}%
@@ -1119,7 +1119,7 @@ function OnboardingPipelineTab() {
                                 variant="outline"
                                 className={`ml-1 text-[9px] px-1 ${
                                   candidate.assessmentStatus === "passed" ? "border-green-200 text-green-700" :
-                                  candidate.assessmentStatus === "borderline" ? "border-amber-200 text-amber-700" :
+                                  candidate.assessmentStatus === "borderline" ? "border-amber-500/20 text-amber-700" :
                                   "border-red-200 text-red-700"
                                 }`}
                               >
@@ -1156,10 +1156,10 @@ function OnboardingPipelineTab() {
         const daysSinceApply = c.createdAt ? (Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24) : 0;
         return daysSinceApply > 7;
       }).length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/50">
+        <Card className="border-amber-500/20 bg-amber-500/10/50">
           <CardHeader className="pb-2">
             <CardTitle className="font-serif text-amber-800 text-sm flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600" /> Stalled Candidates
+              <AlertTriangle className="h-4 w-4 text-amber-400" /> Stalled Candidates
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1177,14 +1177,14 @@ function OnboardingPipelineTab() {
                   const days = c.createdAt ? Math.floor((Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
                   const stageConfig = PIPELINE_STAGES.find((s) => s.key === c.stage);
                   return (
-                    <div key={c.id} className="flex items-center justify-between p-2 bg-white rounded border border-amber-200">
+                    <div key={c.id} className="flex items-center justify-between p-2 bg-charcoal rounded border border-amber-500/20">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-amber-900">{c.name}</span>
                         <Badge variant="outline" className="text-[9px] border-amber-300 text-amber-700">
                           Stuck at: {stageConfig?.label}
                         </Badge>
                       </div>
-                      <span className="text-[10px] text-amber-600 font-medium">{days} days ago</span>
+                      <span className="text-[10px] text-amber-400 font-medium">{days} days ago</span>
                     </div>
                   );
                 })}

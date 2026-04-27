@@ -199,8 +199,8 @@ export default function RepAssessment() {
   // Loading states
   if (authLoading || questionsLoading || resultLoading || eligibilityLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-midnight flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -208,17 +208,17 @@ export default function RepAssessment() {
   // Not logged in
   if (!user) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <Shield className="w-12 h-12 text-forest mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-forest mb-2">
+            <Shield className="w-12 h-12 text-electric mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-off-white mb-2">
               Assessment Required
             </h2>
             <p className="text-muted-foreground mb-4">
               Please create your account first before taking the assessment.
             </p>
-            <Button onClick={() => navigate("/become-rep")} className="bg-forest hover:bg-forest-light text-white">
+            <Button onClick={() => navigate("/become-rep")} className="bg-electric hover:bg-electric-light text-white">
               Create Account
             </Button>
           </CardContent>
@@ -247,15 +247,15 @@ export default function RepAssessment() {
     const canRetake = isFailed && !retakeAvailableAt;
 
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-lg w-full">
           <CardContent className="pt-8 pb-8 text-center">
             {isPassed && (
               <>
                 <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle className="w-10 h-10 text-green-600" />
+                  <CheckCircle className="w-10 h-10 text-emerald-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-forest mb-2 font-serif">
+                <h2 className="text-2xl font-bold text-off-white mb-2 font-serif">
                   You Passed!
                 </h2>
                 <p className="text-muted-foreground mb-6">
@@ -283,7 +283,7 @@ export default function RepAssessment() {
                 </div>
                 <Button
                   onClick={() => navigate("/become-rep?step=2")}
-                  className="bg-forest hover:bg-forest-light text-white w-full"
+                  className="bg-electric hover:bg-electric-light text-white w-full"
                   size="lg"
                 >
                   Continue Application
@@ -295,7 +295,7 @@ export default function RepAssessment() {
             {isBorderline && (
               <>
                 <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle className="w-10 h-10 text-green-600" />
+                  <CheckCircle className="w-10 h-10 text-emerald-400" />
                 </div>
                 <h2 className="text-2xl font-bold text-green-800 mb-2 font-serif">
                   You Passed!
@@ -325,7 +325,7 @@ export default function RepAssessment() {
                 </div>
                 <Button
                   onClick={() => navigate("/become-rep?step=2")}
-                  className="bg-forest hover:bg-forest-light text-white w-full"
+                  className="bg-electric hover:bg-electric-light text-white w-full"
                   size="lg"
                 >
                   Continue Application
@@ -399,7 +399,7 @@ export default function RepAssessment() {
                       setFreeTextAnswer("");
                       setCurrentIndex(0);
                     }}
-                    className="bg-forest hover:bg-forest-light text-white w-full mb-3"
+                    className="bg-electric hover:bg-electric-light text-white w-full mb-3"
                   >
                     Retake Assessment
                   </Button>
@@ -423,18 +423,18 @@ export default function RepAssessment() {
   // NDA not signed — redirect to trust gate
   if (eligibility && eligibility.reason === "nda_required") {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <Lock className="w-12 h-12 text-forest mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-forest mb-2">
+            <Lock className="w-12 h-12 text-electric mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-off-white mb-2">
               Trust Verification Required
             </h2>
             <p className="text-muted-foreground mb-4">
               Before accessing the assessment, you need to complete our trust verification step.
               This protects our proprietary training materials and IP.
             </p>
-            <Button onClick={() => navigate("/become-rep/trust-gate")} className="bg-forest hover:bg-forest-light text-white">
+            <Button onClick={() => navigate("/become-rep/trust-gate")} className="bg-electric hover:bg-electric-light text-white">
               Complete Verification
             </Button>
           </CardContent>
@@ -446,16 +446,16 @@ export default function RepAssessment() {
   // Cooldown active — show waiting message
   if (eligibility && eligibility.reason === "cooldown" && eligibility.retakeAvailableAt) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <CalendarClock className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-forest mb-2">
+            <h2 className="text-xl font-bold text-off-white mb-2">
               Retake Available Soon
             </h2>
             <p className="text-muted-foreground mb-4">
               You can retake the assessment on{" "}
-              <span className="font-semibold text-forest">
+              <span className="font-semibold text-off-white">
                 {new Date(eligibility.retakeAvailableAt).toLocaleDateString("en-US", {
                   month: "long",
                   day: "numeric",
@@ -476,14 +476,14 @@ export default function RepAssessment() {
   // Pre-assessment start screen (before timer starts)
   if (!assessmentStarted) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-lg w-full">
           <CardContent className="pt-8 pb-8">
             <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-full bg-forest/10 flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-forest" />
+              <div className="w-16 h-16 rounded-full bg-electric/10 flex items-center justify-center mx-auto mb-4">
+                <Shield className="w-8 h-8 text-off-white" />
               </div>
-              <h2 className="text-2xl font-bold text-forest font-serif mb-2">
+              <h2 className="text-2xl font-bold text-off-white font-serif mb-2">
                 MiniMorph Rep Assessment
               </h2>
               <p className="text-muted-foreground">
@@ -497,39 +497,39 @@ export default function RepAssessment() {
             </div>
 
             <div className="space-y-4 mb-8">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-forest/5 border border-forest/10">
-                <Timer className="w-5 h-5 text-terracotta mt-0.5 shrink-0" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-electric/10 border border-electric/10">
+                <Timer className="w-5 h-5 text-electric mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-forest">20-Minute Time Limit</p>
-                  <p className="text-xs text-forest/60">
+                  <p className="text-sm font-medium text-off-white">20-Minute Time Limit</p>
+                  <p className="text-xs text-soft-gray">
                     Once you start, you have 20 minutes to complete all 12 questions.
                     The timer cannot be paused. Your answers will auto-submit when time expires.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-forest/5 border border-forest/10">
-                <Shield className="w-5 h-5 text-terracotta mt-0.5 shrink-0" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-electric/10 border border-electric/10">
+                <Shield className="w-5 h-5 text-electric mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-forest">Part 1: Situational Judgment (6 questions)</p>
-                  <p className="text-xs text-forest/60">
+                  <p className="text-sm font-medium text-off-white">Part 1: Situational Judgment (6 questions)</p>
+                  <p className="text-xs text-soft-gray">
                     Tests your character, integrity, and professionalism. Weighted 2x in scoring.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-forest/5 border border-forest/10">
-                <Target className="w-5 h-5 text-terracotta mt-0.5 shrink-0" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-electric/10 border border-electric/10">
+                <Target className="w-5 h-5 text-electric mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-forest">Part 2: Sales Aptitude (6 questions)</p>
-                  <p className="text-xs text-forest/60">
+                  <p className="text-sm font-medium text-off-white">Part 2: Sales Aptitude (6 questions)</p>
+                  <p className="text-xs text-soft-gray">
                     Tests objection handling, discovery skills, and prioritization. Includes one free-text pitch.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-amber-800">Answer Honestly</p>
                   <p className="text-xs text-amber-700">
@@ -543,7 +543,7 @@ export default function RepAssessment() {
             <Button
               onClick={() => startMutation.mutate()}
               disabled={startMutation.isPending}
-              className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 text-base font-sans"
+              className="w-full bg-electric hover:bg-electric/90 text-white rounded-full py-5 text-base font-sans"
               size="lg"
             >
               {startMutation.isPending ? (
@@ -566,10 +566,10 @@ export default function RepAssessment() {
 
   // Assessment UI (timer active)
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-midnight">
       <OnboardingProgress currentStep={4} />
       {/* Header with timer */}
-      <div className="bg-forest text-white py-4">
+      <div className="bg-charcoal text-off-white py-4">
         <div className="container max-w-3xl mx-auto px-4">
           <div className="flex items-center justify-between">
             <div>
@@ -590,10 +590,10 @@ export default function RepAssessment() {
       </div>
 
       {/* Progress bar */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-charcoal border-b sticky top-0 z-10">
         <div className="container max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-forest">
+            <div className="flex items-center gap-2 text-sm font-medium text-off-white">
               {currentGateIcon}
               {currentGateLabel}
             </div>
@@ -604,7 +604,7 @@ export default function RepAssessment() {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-forest h-2 rounded-full transition-all duration-300"
+              className="bg-electric h-2 rounded-full transition-all duration-300"
               style={{
                 width: `${((currentIndex + 1) / totalQuestions) * 100}%`,
               }}
@@ -641,15 +641,15 @@ export default function RepAssessment() {
           <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                <span className="px-2 py-0.5 bg-forest/10 text-forest rounded-full text-xs font-medium">
+                <span className="px-2 py-0.5 bg-electric/10 text-electric rounded-full text-xs font-medium">
                   {currentQuestion.category}
                 </span>
                 {isGate1 ? (
-                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                  <span className="px-2 py-0.5 badge-purple rounded-full text-xs font-medium">
                     Character
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                  <span className="px-2 py-0.5 badge-info rounded-full text-xs font-medium">
                     Sales
                   </span>
                 )}
@@ -681,10 +681,10 @@ export default function RepAssessment() {
                   {currentQuestion.options.map((option) => (
                     <div
                       key={option.id}
-                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer hover:border-forest/50 ${
+                      className={`flex items-start space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer hover:border-electric/50 ${
                         answers[currentQuestion.id] === option.id
-                          ? "border-forest bg-forest/5"
-                          : "border-gray-200 bg-white"
+                          ? "border-electric bg-electric/10"
+                          : "border-gray-200 bg-charcoal"
                       }`}
                       onClick={() => handleAnswer(option.id)}
                     >
@@ -722,7 +722,7 @@ export default function RepAssessment() {
           {currentIndex < totalQuestions - 1 ? (
             <Button
               onClick={handleNext}
-              className="bg-forest hover:bg-forest-light text-white gap-2"
+              className="bg-electric hover:bg-electric-light text-white gap-2"
               disabled={
                 !currentQuestion?.freeText && !answers[currentQuestion?.id || ""]
               }
@@ -733,7 +733,7 @@ export default function RepAssessment() {
           ) : (
             <Button
               onClick={handleSubmit}
-              className="bg-terracotta hover:bg-terracotta-light text-white gap-2"
+              className="bg-electric hover:bg-electric-light text-midnight gap-2"
               disabled={submitMutation.isPending}
               size="lg"
             >
@@ -767,7 +767,7 @@ export default function RepAssessment() {
                 onClick={() => setCurrentIndex(idx)}
                 className={`w-8 h-8 rounded-full text-xs font-medium transition-all ${
                   isCurrent
-                    ? "bg-forest text-white ring-2 ring-forest ring-offset-2"
+                    ? "bg-charcoal text-off-white ring-2 ring-electric ring-offset-2"
                     : isAnswered
                       ? isG1
                         ? "bg-purple-200 text-purple-800"

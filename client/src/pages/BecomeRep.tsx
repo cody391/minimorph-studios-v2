@@ -272,14 +272,14 @@ export default function BecomeRep() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full border-sage/20 shadow-lg">
+      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
+        <Card className="max-w-lg w-full border-border/50 shadow-lg">
           <CardContent className="pt-10 pb-10 text-center">
-            <div className="w-20 h-20 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Sparkles className="w-10 h-10 text-forest" />
+            <div className="w-20 h-20 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Sparkles className="w-10 h-10 text-off-white" />
             </div>
-            <h2 className="text-2xl font-serif text-forest mb-3">You're In! Welcome to MiniMorph!</h2>
-            <p className="text-forest/60 font-sans mb-4 leading-relaxed max-w-md mx-auto">
+            <h2 className="text-2xl font-serif text-off-white mb-3">You're In! Welcome to MiniMorph!</h2>
+            <p className="text-soft-gray font-sans mb-4 leading-relaxed max-w-md mx-auto">
               Your application has been approved. Just a few more steps to get you fully set up — we need your HR and tax paperwork, then you'll head straight to the Sales Academy.
             </p>
             <div className="space-y-2 max-w-sm mx-auto mb-8 text-left">
@@ -288,16 +288,16 @@ export default function BecomeRep() {
                 { num: "2", label: "Set up your payout account", desc: "Connect Stripe to receive commissions" },
                 { num: "3", label: "Sales Academy training", desc: "Learn the company, products, and how to sell" },
               ].map((item) => (
-                <div key={item.num} className="flex items-start gap-3 p-3 rounded-lg bg-forest/5">
-                  <div className="w-6 h-6 rounded-full bg-terracotta text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{item.num}</div>
+                <div key={item.num} className="flex items-start gap-3 p-3 rounded-lg bg-electric/10">
+                  <div className="w-6 h-6 rounded-full bg-electric text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{item.num}</div>
                   <div>
-                    <span className="text-sm font-medium font-sans text-forest">{item.label}</span>
-                    <p className="text-xs text-forest/50 font-sans">{item.desc}</p>
+                    <span className="text-sm font-medium font-sans text-off-white">{item.label}</span>
+                    <p className="text-xs text-soft-gray font-sans">{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <Button onClick={() => setLocation("/become-rep/paperwork")} className="bg-forest text-white hover:bg-forest/90 rounded-full px-8 w-full" size="lg">
+            <Button onClick={() => setLocation("/become-rep/paperwork")} className="bg-charcoal text-off-white hover:bg-electric/90 rounded-full px-8 w-full" size="lg">
               Continue to Paperwork <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -307,17 +307,17 @@ export default function BecomeRep() {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-midnight">
       <OnboardingProgress currentStep={step === 1 ? 2 : 5} />
       {/* Hero */}
-      <div className="bg-forest text-white py-12 px-4">
+      <div className="bg-charcoal text-off-white py-12 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-white/70 hover:text-white mb-4 font-sans text-sm transition-colors">
             <ArrowLeft size={16} /> Back to MiniMorph
           </button>
           <h1 className="text-3xl sm:text-4xl font-serif mb-3">Become a MiniMorph Rep</h1>
           <p className="text-lg text-white/80 font-sans max-w-2xl mx-auto">
-            Join our network of sales professionals. Earn <span className="text-terracotta font-medium">10-20% commission</span> on every sale. Part-timers earn <span className="text-terracotta font-medium">$500-2,000/mo</span>. Full-timers? <span className="text-terracotta font-medium">$5,000-15,000+/mo</span>. No cap.
+            Join our network of sales professionals. Earn <span className="text-electric font-medium">10-20% commission</span> on every sale. Part-timers earn <span className="text-electric font-medium">$500-2,000/mo</span>. Full-timers? <span className="text-electric font-medium">$5,000-15,000+/mo</span>. No cap.
           </p>
         </div>
       </div>
@@ -331,11 +331,11 @@ export default function BecomeRep() {
             { icon: TrendingUp, label: "Recurring Revenue", desc: "Earn on renewals too" },
             { icon: Zap, label: "We Handle Delivery", desc: "You sell, we build" },
           ].map((b, i) => (
-            <Card key={i} className="border-sage/20 bg-white shadow-sm">
+            <Card key={i} className="border-border/50 bg-charcoal shadow-sm">
               <CardContent className="pt-4 pb-4 text-center">
-                <b.icon className="w-5 h-5 text-terracotta mx-auto mb-2" />
-                <p className="text-sm font-medium text-forest">{b.label}</p>
-                <p className="text-[11px] text-forest/50 mt-0.5">{b.desc}</p>
+                <b.icon className="w-5 h-5 text-electric mx-auto mb-2" />
+                <p className="text-sm font-medium text-off-white">{b.label}</p>
+                <p className="text-[11px] text-soft-gray mt-0.5">{b.desc}</p>
               </CardContent>
             </Card>
           ))}
@@ -347,16 +347,16 @@ export default function BecomeRep() {
         <div className="flex items-center justify-between">
           {STEPS.map((s, i) => (
             <div key={s.id} className="flex items-center">
-              <div className={`flex items-center gap-1.5 ${step >= s.id ? "text-forest" : "text-forest/30"}`}>
+              <div className={`flex items-center gap-1.5 ${step >= s.id ? "text-off-white" : "text-soft-gray/40"}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  step > s.id ? "bg-forest text-white" : step === s.id ? "bg-terracotta text-white" : "bg-sage/20 text-forest/40"
+                  step > s.id ? "bg-charcoal text-off-white" : step === s.id ? "bg-electric text-white" : "bg-graphite/20 text-soft-gray/60"
                 }`}>
                   {step > s.id ? <CheckCircle className="w-4 h-4" /> : s.id}
                 </div>
                 <span className="text-xs font-sans hidden sm:inline">{s.title}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-8 sm:w-16 h-0.5 mx-2 transition-colors ${step > s.id ? "bg-forest" : "bg-sage/20"}`} />
+                <div className={`w-8 sm:w-16 h-0.5 mx-2 transition-colors ${step > s.id ? "bg-electric" : "bg-graphite/20"}`} />
               )}
             </div>
           ))}
@@ -366,9 +366,9 @@ export default function BecomeRep() {
       {/* Already have an account? */}
       {step === 1 && (
         <div className="max-w-lg mx-auto px-4 mb-4">
-          <p className="text-center text-sm text-forest/50 font-sans">
+          <p className="text-center text-sm text-soft-gray font-sans">
             Already have an account?{" "}
-            <button onClick={() => setLocation("/login")} className="text-terracotta hover:underline font-medium">
+            <button onClick={() => setLocation("/login")} className="text-electric hover:underline font-medium">
               Log in here
             </button>
           </p>
@@ -377,26 +377,26 @@ export default function BecomeRep() {
 
       {/* Form Card */}
       <div className="max-w-lg mx-auto px-4 pb-12">
-        <Card className="border-sage/20 shadow-lg">
+        <Card className="border-border/50 shadow-lg">
           {step === 1 && (
             <>
               <CardHeader>
-                <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
-                  <User className="w-5 h-5 text-terracotta" /> Create Your Account
+                <CardTitle className="font-serif text-off-white text-xl flex items-center gap-2">
+                  <User className="w-5 h-5 text-electric" /> Create Your Account
                 </CardTitle>
-                <CardDescription className="text-forest/60">Set up your account and tell us about yourself.</CardDescription>
+                <CardDescription className="text-soft-gray">Set up your account and tell us about yourself.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-forest/80 text-sm">Full Name *</Label>
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" className="mt-1 border-sage/30 focus:border-forest" />
+                  <Label className="text-off-white/80 text-sm">Full Name *</Label>
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" className="mt-1 border-border focus:border-electric" />
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm">Email *</Label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="mt-1 border-sage/30 focus:border-forest" />
+                  <Label className="text-off-white/80 text-sm">Email *</Label>
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className="mt-1 border-border focus:border-electric" />
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm flex items-center gap-1.5">
+                  <Label className="text-off-white/80 text-sm flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5" /> Password *
                   </Label>
                   <div className="relative mt-1">
@@ -405,12 +405,12 @@ export default function BecomeRep() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="At least 8 characters"
-                      className="border-sage/30 focus:border-forest pr-10"
+                      className="border-border focus:border-electric pr-10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 hover:text-forest/70"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-soft-gray/60 hover:text-soft-gray"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -420,7 +420,7 @@ export default function BecomeRep() {
                   )}
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm flex items-center gap-1.5">
+                  <Label className="text-off-white/80 text-sm flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5" /> Confirm Password *
                   </Label>
                   <div className="relative mt-1">
@@ -429,12 +429,12 @@ export default function BecomeRep() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirm your password"
-                      className="border-sage/30 focus:border-forest pr-10"
+                      className="border-border focus:border-electric pr-10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 hover:text-forest/70"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-soft-gray/60 hover:text-soft-gray"
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -444,27 +444,27 @@ export default function BecomeRep() {
                   )}
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm">Phone</Label>
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 123-4567" className="mt-1 border-sage/30 focus:border-forest" />
+                  <Label className="text-off-white/80 text-sm">Phone</Label>
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(555) 123-4567" className="mt-1 border-border focus:border-electric" />
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm">LinkedIn Profile (optional)</Label>
-                  <Input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="mt-1 border-sage/30 focus:border-forest" />
+                  <Label className="text-off-white/80 text-sm">LinkedIn Profile (optional)</Label>
+                  <Input value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="mt-1 border-border focus:border-electric" />
                 </div>
                 {/* Professional Photo — MANDATORY */}
-                <div className="border border-terracotta/20 rounded-lg p-4 bg-terracotta/5">
+                <div className="border border-electric/20 rounded-lg p-4 bg-electric/5">
                   <div className="flex items-center gap-2 mb-1">
-                    <Label className="text-forest text-sm font-medium">Professional Photo *</Label>
-                    <Badge variant="outline" className="text-[10px] border-terracotta/30 text-terracotta">Required</Badge>
+                    <Label className="text-off-white text-sm font-medium">Professional Photo *</Label>
+                    <Badge variant="outline" className="text-[10px] border-electric/30 text-electric">Required</Badge>
                   </div>
-                  <p className="text-[11px] text-forest/60 font-sans mb-3 leading-relaxed">
+                  <p className="text-[11px] text-soft-gray font-sans mb-3 leading-relaxed">
                     This photo will appear on your <strong>official MiniMorph email signature</strong> and rep profile.
                     Please use a professional headshot — good lighting, neutral background, no sunglasses or hats.
                   </p>
 
                   {/* Photo Cropper overlay */}
                   {showCropper && cropperSrc && (
-                    <div className="mb-3 border border-sage/30 rounded-lg p-3 bg-cream">
+                    <div className="mb-3 border border-border rounded-lg p-3 bg-midnight">
                       <PhotoCropper
                         imageSrc={cropperSrc}
                         onConfirm={handleCropConfirm}
@@ -475,7 +475,7 @@ export default function BecomeRep() {
 
                   {/* Camera capture modal */}
                   {showCamera && !showCropper && (
-                    <div className="mb-3 rounded-lg overflow-hidden border border-sage/30 bg-black">
+                    <div className="mb-3 rounded-lg overflow-hidden border border-border bg-black">
                       <div className="relative">
                         <video
                           ref={(el) => {
@@ -504,12 +504,12 @@ export default function BecomeRep() {
                           {isMirrored ? "Mirror (selfie)" : "True view (how others see you)"}
                         </div>
                       </div>
-                      <div className="flex gap-2 p-2 bg-forest/90">
+                      <div className="flex gap-2 p-2 bg-electric/90">
                         <Button
                           type="button"
                           size="sm"
                           onClick={capturePhoto}
-                          className="flex-1 bg-terracotta hover:bg-terracotta/90 text-white text-xs rounded-full"
+                          className="flex-1 bg-electric hover:bg-electric/90 text-white text-xs rounded-full"
                         >
                           <Camera className="w-3.5 h-3.5 mr-1" /> Take Photo
                         </Button>
@@ -518,7 +518,7 @@ export default function BecomeRep() {
                           variant="outline"
                           size="sm"
                           onClick={stopCamera}
-                          className="text-xs rounded-full border-white/30 text-white hover:bg-white/10"
+                          className="text-xs rounded-full border-white/30 text-white hover:bg-charcoal/10"
                         >
                           Cancel
                         </Button>
@@ -528,13 +528,13 @@ export default function BecomeRep() {
 
                   <div className="flex items-center gap-4">
                     <div
-                      className="relative w-20 h-20 rounded-full border-2 border-dashed border-terracotta/40 flex items-center justify-center cursor-pointer hover:border-terracotta/60 transition-colors overflow-hidden group"
+                      className="relative w-20 h-20 rounded-full border-2 border-dashed border-electric/40 flex items-center justify-center cursor-pointer hover:border-electric/60 transition-colors overflow-hidden group"
                       onClick={() => photoInputRef.current?.click()}
                     >
                       {photoPreview ? (
                         <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <Camera className="w-6 h-6 text-terracotta/40 group-hover:text-terracotta/60 transition-colors" />
+                        <Camera className="w-6 h-6 text-electric/40 group-hover:text-electric/60 transition-colors" />
                       )}
                       {photoPreview && (
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -563,11 +563,11 @@ export default function BecomeRep() {
                           <Camera className="w-3.5 h-3.5 mr-1" /> Use Camera
                         </Button>
                       </div>
-                      <p className="text-[10px] text-forest/40">JPG or PNG, max 5MB. Professional headshot recommended.</p>
+                      <p className="text-[10px] text-soft-gray/60">JPG or PNG, max 5MB. Professional headshot recommended.</p>
                     </div>
                     {/* AI Quality Feedback */}
                     {isCheckingQuality && (
-                      <div className="mt-2 flex items-center gap-2 text-xs text-forest/60">
+                      <div className="mt-2 flex items-center gap-2 text-xs text-soft-gray">
                         <Loader2 className="w-3 h-3 animate-spin" />
                         <span>AI is checking photo quality...</span>
                       </div>
@@ -576,27 +576,27 @@ export default function BecomeRep() {
                       <div className={`mt-2 p-2.5 rounded-lg text-xs ${
                         qualityFeedback.passed
                           ? "bg-green-50 border border-green-200"
-                          : "bg-amber-50 border border-amber-200"
+                          : "bg-amber-500/10 border border-amber-500/20"
                       }`}>
                         <p className={`font-medium mb-1 ${qualityFeedback.passed ? "text-green-700" : "text-amber-700"}`}>
                           {qualityFeedback.passed ? "✓ Photo looks great!" : "⚠ Photo quality suggestions:"}
                         </p>
                         {qualityFeedback.issues.length > 0 && (
-                          <ul className="text-amber-600 space-y-0.5 mb-1">
+                          <ul className="text-amber-400 space-y-0.5 mb-1">
                             {qualityFeedback.issues.map((issue: string, i: number) => (
                               <li key={i}>• {issue}</li>
                             ))}
                           </ul>
                         )}
                         {qualityFeedback.suggestions.length > 0 && !qualityFeedback.passed && (
-                          <ul className="text-forest/60 space-y-0.5">
+                          <ul className="text-soft-gray space-y-0.5">
                             {qualityFeedback.suggestions.map((s: string, i: number) => (
                               <li key={i}>💡 {s}</li>
                             ))}
                           </ul>
                         )}
                         {!qualityFeedback.passed && (
-                          <p className="text-[10px] text-forest/40 mt-1">You can still proceed — these are suggestions, not requirements.</p>
+                          <p className="text-[10px] text-soft-gray/60 mt-1">You can still proceed — these are suggestions, not requirements.</p>
                         )}
                       </div>
                     )}
@@ -614,7 +614,7 @@ export default function BecomeRep() {
                     />
                   </div>
                 </div>
-                <Button onClick={handleStep1} disabled={isStep1Loading} className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans">
+                <Button onClick={handleStep1} disabled={isStep1Loading} className="w-full bg-electric hover:bg-electric/90 text-white rounded-full py-5 font-sans">
                   {isStep1Loading ? "Creating Account..." : "Create Account & Continue"} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </CardContent>
@@ -624,16 +624,16 @@ export default function BecomeRep() {
           {step === 2 && (
             <>
               <CardHeader>
-                <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-terracotta" /> Sales Experience
+                <CardTitle className="font-serif text-off-white text-xl flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-electric" /> Sales Experience
                 </CardTitle>
-                <CardDescription className="text-forest/60">Help us understand your background so we can set you up for success.</CardDescription>
+                <CardDescription className="text-soft-gray">Help us understand your background so we can set you up for success.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div>
-                  <Label className="text-forest/80 text-sm">Availability *</Label>
+                  <Label className="text-off-white/80 text-sm">Availability *</Label>
                   <Select value={availability} onValueChange={(v: any) => setAvailability(v)}>
-                    <SelectTrigger className="mt-1 border-sage/30"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="mt-1 border-border"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="full_time">Full-Time (30-40+ hrs/week)</SelectItem>
                       <SelectItem value="part_time">Part-Time (10-25 hrs/week)</SelectItem>
@@ -641,14 +641,14 @@ export default function BecomeRep() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm">Hours Per Week: {hoursPerWeek}</Label>
-                  <input type="range" min={5} max={60} value={hoursPerWeek} onChange={(e) => setHoursPerWeek(Number(e.target.value))} className="w-full mt-2 accent-terracotta" />
-                  <div className="flex justify-between text-[10px] text-forest/40 font-sans"><span>5 hrs</span><span>60 hrs</span></div>
+                  <Label className="text-off-white/80 text-sm">Hours Per Week: {hoursPerWeek}</Label>
+                  <input type="range" min={5} max={60} value={hoursPerWeek} onChange={(e) => setHoursPerWeek(Number(e.target.value))} className="w-full mt-2 accent-electric" />
+                  <div className="flex justify-between text-[10px] text-soft-gray/60 font-sans"><span>5 hrs</span><span>60 hrs</span></div>
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm">Sales Experience *</Label>
+                  <Label className="text-off-white/80 text-sm">Sales Experience *</Label>
                   <Select value={salesExperience} onValueChange={(v: any) => setSalesExperience(v)}>
-                    <SelectTrigger className="mt-1 border-sage/30"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="mt-1 border-border"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No formal sales experience</SelectItem>
                       <SelectItem value="1_2_years">1-2 years</SelectItem>
@@ -658,12 +658,12 @@ export default function BecomeRep() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm mb-2 block">Industries You've Worked In</Label>
+                  <Label className="text-off-white/80 text-sm mb-2 block">Industries You've Worked In</Label>
                   <div className="flex flex-wrap gap-2">
                     {INDUSTRIES.map((ind) => (
                       <Badge key={ind} variant={selectedIndustries.includes(ind) ? "default" : "outline"}
                         className={`cursor-pointer text-xs font-sans transition-colors ${
-                          selectedIndustries.includes(ind) ? "bg-forest text-white hover:bg-forest/90" : "border-sage/30 text-forest/60 hover:bg-sage/10"
+                          selectedIndustries.includes(ind) ? "bg-charcoal text-off-white hover:bg-electric/90" : "border-border text-soft-gray hover:bg-electric/5"
                         }`}
                         onClick={() => toggleIndustry(ind)}>
                         {ind}
@@ -672,10 +672,10 @@ export default function BecomeRep() {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-full border-sage/30 text-forest">
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1 rounded-full border-border text-off-white">
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back
                   </Button>
-                  <Button onClick={handleStep2} className="flex-1 bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans">
+                  <Button onClick={handleStep2} className="flex-1 bg-electric hover:bg-electric/90 text-white rounded-full font-sans">
                     Continue <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -686,57 +686,57 @@ export default function BecomeRep() {
           {step === 3 && (
             <>
               <CardHeader>
-                <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-terracotta" /> Why MiniMorph?
+                <CardTitle className="font-serif text-off-white text-xl flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-electric" /> Why MiniMorph?
                 </CardTitle>
-                <CardDescription className="text-forest/60">Quality reps who care about small businesses thrive here.</CardDescription>
+                <CardDescription className="text-soft-gray">Quality reps who care about small businesses thrive here.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div>
-                  <Label className="text-forest/80 text-sm">Why do you want to join MiniMorph Studios? *</Label>
+                  <Label className="text-off-white/80 text-sm">Why do you want to join MiniMorph Studios? *</Label>
                   <Textarea value={motivation} onChange={(e) => setMotivation(e.target.value)}
                     placeholder="Tell us what excites you about helping small businesses get online with AI-powered websites. What makes you a great fit? (minimum 50 characters)"
-                    className="mt-1 border-sage/30 focus:border-forest min-h-[140px]" />
-                  <p className={`text-[11px] mt-1 font-sans ${motivation.length >= 50 ? "text-green-600" : "text-forest/40"}`}>
+                    className="mt-1 border-border focus:border-electric min-h-[140px]" />
+                  <p className={`text-[11px] mt-1 font-sans ${motivation.length >= 50 ? "text-emerald-400" : "text-soft-gray/60"}`}>
                     {motivation.length}/50 minimum characters
                   </p>
                 </div>
                 <div>
-                  <Label className="text-forest/80 text-sm">Referred by someone? (optional)</Label>
-                  <Input value={referredBy} onChange={(e) => setReferredBy(e.target.value)} placeholder="Name or email of the person who referred you" className="mt-1 border-sage/30 focus:border-forest" />
-                  <p className="text-[11px] text-forest/40 mt-1 font-sans">Referrers earn a $200 bonus when you close your first deal.</p>
+                  <Label className="text-off-white/80 text-sm">Referred by someone? (optional)</Label>
+                  <Input value={referredBy} onChange={(e) => setReferredBy(e.target.value)} placeholder="Name or email of the person who referred you" className="mt-1 border-border focus:border-electric" />
+                  <p className="text-[11px] text-soft-gray/60 mt-1 font-sans">Referrers earn a $200 bonus when you close your first deal.</p>
                 </div>
-                <div className="bg-forest/5 rounded-xl p-4 border border-forest/10">
-                  <p className="text-sm font-serif text-forest mb-3 flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-terracotta" /> Earnings Potential
+                <div className="bg-electric/10 rounded-xl p-4 border border-electric/10">
+                  <p className="text-sm font-serif text-off-white mb-3 flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-electric" /> Earnings Potential
                   </p>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-sans text-forest/60">Part-Time (5 hrs/wk)</span>
-                      <span className="text-sm font-serif text-forest">$500 - $2,000/mo</span>
+                      <span className="text-xs font-sans text-soft-gray">Part-Time (5 hrs/wk)</span>
+                      <span className="text-sm font-serif text-off-white">$500 - $2,000/mo</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-sans text-forest/60">Side Hustle (15 hrs/wk)</span>
-                      <span className="text-sm font-serif text-forest">$2,000 - $5,000/mo</span>
+                      <span className="text-xs font-sans text-soft-gray">Side Hustle (15 hrs/wk)</span>
+                      <span className="text-sm font-serif text-off-white">$2,000 - $5,000/mo</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-sans text-forest/60">Full-Time (40 hrs/wk)</span>
-                      <span className="text-sm font-serif text-forest font-medium">$5,000 - $15,000/mo</span>
+                      <span className="text-xs font-sans text-soft-gray">Full-Time (40 hrs/wk)</span>
+                      <span className="text-sm font-serif text-off-white font-medium">$5,000 - $15,000/mo</span>
                     </div>
-                    <div className="flex justify-between items-center border-t border-forest/10 pt-2">
-                      <span className="text-xs font-sans text-terracotta font-medium">Top Performers</span>
-                      <span className="text-sm font-serif text-terracotta font-bold">$20,000+/mo</span>
+                    <div className="flex justify-between items-center border-t border-electric/10 pt-2">
+                      <span className="text-xs font-sans text-electric font-medium">Top Performers</span>
+                      <span className="text-sm font-serif text-electric font-bold">$20,000+/mo</span>
                     </div>
                   </div>
-                  <p className="text-[10px] text-forest/40 font-sans mt-2">
+                  <p className="text-[10px] text-soft-gray/60 font-sans mt-2">
                     Based on 10% base commission. Legend tier reps earn 20%, doubling these figures. No cap on earnings.
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-full border-sage/30 text-forest">
+                  <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-full border-border text-off-white">
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back
                   </Button>
-                  <Button onClick={handleStep3} className="flex-1 bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans">
+                  <Button onClick={handleStep3} className="flex-1 bg-electric hover:bg-electric/90 text-white rounded-full font-sans">
                     Continue <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -747,41 +747,41 @@ export default function BecomeRep() {
           {step === 4 && (
             <>
               <CardHeader>
-                <CardTitle className="font-serif text-forest text-xl flex items-center gap-2">
-                  <FileCheck className="w-5 h-5 text-terracotta" /> Review & Agreement
+                <CardTitle className="font-serif text-off-white text-xl flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-electric" /> Review & Agreement
                 </CardTitle>
-                <CardDescription className="text-forest/60">Almost there! Review the terms and submit.</CardDescription>
+                <CardDescription className="text-soft-gray">Almost there! Review the terms and submit.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
-                <div className="bg-cream-dark/30 rounded-xl p-4 space-y-2">
-                  <p className="text-xs font-sans text-forest/50 uppercase tracking-wide">Application Summary</p>
+                <div className="bg-midnight-dark/30 rounded-xl p-4 space-y-2">
+                  <p className="text-xs font-sans text-soft-gray uppercase tracking-wide">Application Summary</p>
                   <div className="grid grid-cols-2 gap-2 text-sm font-sans">
-                    <div><span className="text-forest/50">Name:</span> <span className="text-forest font-medium">{fullName}</span></div>
-                    <div><span className="text-forest/50">Email:</span> <span className="text-forest font-medium">{email}</span></div>
-                    <div><span className="text-forest/50">Availability:</span> <span className="text-forest font-medium">{availability === "full_time" ? "Full-Time" : "Part-Time"}</span></div>
-                    <div><span className="text-forest/50">Experience:</span> <span className="text-forest font-medium">{salesExperience.replace(/_/g, " ")}</span></div>
+                    <div><span className="text-soft-gray">Name:</span> <span className="text-off-white font-medium">{fullName}</span></div>
+                    <div><span className="text-soft-gray">Email:</span> <span className="text-off-white font-medium">{email}</span></div>
+                    <div><span className="text-soft-gray">Availability:</span> <span className="text-off-white font-medium">{availability === "full_time" ? "Full-Time" : "Part-Time"}</span></div>
+                    <div><span className="text-soft-gray">Experience:</span> <span className="text-off-white font-medium">{salesExperience.replace(/_/g, " ")}</span></div>
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-3 rounded-lg border border-sage/20 bg-white">
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-charcoal">
                     <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(v) => setAgreedToTerms(!!v)} className="mt-0.5" />
-                    <label htmlFor="terms" className="text-sm text-forest/70 font-sans leading-relaxed cursor-pointer">
-                      I agree to the <span className="text-forest font-medium">MiniMorph Rep Agreement</span>, including the 10% commission structure, brand representation guidelines, and code of conduct. I understand that I am an independent contractor, not an employee.
+                    <label htmlFor="terms" className="text-sm text-soft-gray font-sans leading-relaxed cursor-pointer">
+                      I agree to the <span className="text-off-white font-medium">MiniMorph Rep Agreement</span>, including the 10% commission structure, brand representation guidelines, and code of conduct. I understand that I am an independent contractor, not an employee.
                     </label>
                   </div>
-                  <div className="flex items-start gap-3 p-3 rounded-lg border border-sage/20 bg-white">
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-charcoal">
                     <Checkbox id="tax" checked={agreedToTaxInfo} onCheckedChange={(v) => setAgreedToTaxInfo(!!v)} className="mt-0.5" />
-                    <label htmlFor="tax" className="text-sm text-forest/70 font-sans leading-relaxed cursor-pointer">
-                      I agree to provide my <span className="text-forest font-medium">tax information and bank account details</span> via Stripe's secure platform for commission payouts. I understand I am responsible for reporting my own taxes as an independent contractor.
+                    <label htmlFor="tax" className="text-sm text-soft-gray font-sans leading-relaxed cursor-pointer">
+                      I agree to provide my <span className="text-off-white font-medium">tax information and bank account details</span> via Stripe's secure platform for commission payouts. I understand I am responsible for reporting my own taxes as an independent contractor.
                     </label>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-full border-sage/30 text-forest">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1 rounded-full border-border text-off-white">
                     <ArrowLeft className="w-4 h-4 mr-2" /> Back
                   </Button>
                   <Button onClick={handleStep4} disabled={submitExtended.isPending || !agreedToTerms || !agreedToTaxInfo}
-                    className="flex-1 bg-forest hover:bg-forest/90 text-white rounded-full font-sans">
+                    className="flex-1 bg-electric hover:bg-electric-light text-white rounded-full font-sans">
                     {submitExtended.isPending ? "Submitting..." : "Submit Application"} <CheckCircle className="w-4 h-4 ml-2" />
                   </Button>
                 </div>

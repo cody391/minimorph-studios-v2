@@ -30,16 +30,16 @@ const tempIcons: Record<string, any> = {
 };
 
 const stageColors: Record<string, string> = {
-  new: "bg-gray-100 text-gray-700",
-  enriched: "bg-blue-100 text-blue-700",
-  warming: "bg-yellow-100 text-yellow-700",
-  warm: "bg-orange-100 text-orange-700",
-  assigned: "bg-purple-100 text-purple-700",
+  new: "badge-neutral",
+  enriched: "badge-info",
+  warming: "badge-pending",
+  warm: "badge-pending-payment",
+  assigned: "badge-purple",
   contacted: "bg-indigo-100 text-indigo-700",
   proposal_sent: "bg-cyan-100 text-cyan-700",
   negotiating: "bg-teal-100 text-teal-700",
-  closed_won: "bg-green-100 text-green-700",
-  closed_lost: "bg-red-100 text-red-700",
+  closed_won: "badge-success",
+  closed_lost: "badge-danger",
 };
 
 export default function Leads() {
@@ -88,14 +88,14 @@ export default function Leads() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-forest">Lead Pipeline</h1>
-          <p className="text-sm text-forest/60 font-sans mt-1">AI-sourced and manual leads, warming pipeline, and rep assignment</p>
+          <h1 className="text-2xl font-serif text-off-white">Lead Pipeline</h1>
+          <p className="text-sm text-soft-gray font-sans mt-1">AI-sourced and manual leads, warming pipeline, and rep assignment</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowTransfer(true)} variant="outline" className="text-forest border-forest/20 hover:bg-forest/5 font-sans text-sm">
+          <Button onClick={() => setShowTransfer(true)} variant="outline" className="text-off-white border-electric/20 hover:bg-electric/10 font-sans text-sm">
             <ArrowRightLeft className="h-4 w-4 mr-1" /> Transfer Leads
           </Button>
-          <Button onClick={() => setShowCreate(true)} className="bg-forest hover:bg-forest-light text-cream font-sans text-sm">
+          <Button onClick={() => setShowCreate(true)} className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm">
             <Plus className="h-4 w-4 mr-1" /> Add Lead
           </Button>
         </div>
@@ -113,8 +113,8 @@ export default function Leads() {
                   <info.icon className={`h-4 w-4 ${info.color}`} />
                 </div>
                 <div>
-                  <div className="text-lg font-serif text-forest">{count}</div>
-                  <div className="text-xs text-forest/50 font-sans capitalize">{t} leads</div>
+                  <div className="text-lg font-serif text-off-white">{count}</div>
+                  <div className="text-xs text-soft-gray font-sans capitalize">{t} leads</div>
                 </div>
               </CardContent>
             </Card>
@@ -125,28 +125,28 @@ export default function Leads() {
       {/* Leads Table */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest">All Leads</CardTitle>
+          <CardTitle className="text-base font-serif text-off-white">All Leads</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !leads?.length ? (
             <div className="text-center py-12">
-              <Target className="h-10 w-10 text-forest/20 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No leads yet. Add your first lead or let AI source them.</p>
+              <Target className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No leads yet. Add your first lead or let AI source them.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Business</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Contact</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Temp</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Stage</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Score</th>
-                    <th className="text-left py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Source</th>
-                    <th className="text-right py-3 px-2 text-xs text-forest/50 uppercase tracking-wider font-medium">Actions</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Business</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Contact</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Temp</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Stage</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Score</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Source</th>
+                    <th className="text-right py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -154,16 +154,16 @@ export default function Leads() {
                     const ti = tempIcons[lead.temperature] ?? tempIcons.cold;
                     const hasEnrichment = lead.enrichmentData && Object.keys(lead.enrichmentData).length > 0;
                     return (
-                      <tr key={lead.id} className="border-b border-border/30 hover:bg-cream-dark/20 transition-colors">
+                      <tr key={lead.id} className="border-b border-border/30 hover:bg-midnight-dark/20 transition-colors">
                         <td className="py-3 px-2">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-forest">{lead.businessName}</span>
+                            <span className="font-medium text-off-white">{lead.businessName}</span>
                             {hasEnrichment && (
-                              <span title="AI Enriched"><Sparkles className="h-3.5 w-3.5 text-terracotta/60" /></span>
+                              <span title="AI Enriched"><Sparkles className="h-3.5 w-3.5 text-electric/60" /></span>
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-2 text-forest/60">{lead.contactName}</td>
+                        <td className="py-3 px-2 text-soft-gray">{lead.contactName}</td>
                         <td className="py-3 px-2">
                           <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${ti.bg}`}>
                             <ti.icon className={`h-3 w-3 ${ti.color}`} />
@@ -175,14 +175,14 @@ export default function Leads() {
                             {lead.stage.replace(/_/g, " ")}
                           </Badge>
                         </td>
-                        <td className="py-3 px-2 text-forest/70">{lead.qualificationScore}/100</td>
-                        <td className="py-3 px-2 text-forest/50 text-xs">{lead.source.replace(/_/g, " ")}</td>
+                        <td className="py-3 px-2 text-soft-gray">{lead.qualificationScore}/100</td>
+                        <td className="py-3 px-2 text-soft-gray text-xs">{lead.source.replace(/_/g, " ")}</td>
                         <td className="py-3 px-2 text-right space-x-1">
                           {!hasEnrichment && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-xs text-terracotta hover:text-terracotta hover:bg-terracotta/10"
+                              className="text-xs text-electric hover:text-electric hover:bg-electric/10"
                               onClick={() => handleEnrich(lead.id)}
                               disabled={enrichingId === lead.id}
                             >
@@ -193,7 +193,7 @@ export default function Leads() {
                               )}
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm" className="text-xs text-forest/60 hover:text-forest"
+                          <Button variant="ghost" size="sm" className="text-xs text-soft-gray hover:text-off-white"
                             onClick={() => { setSelectedLead(lead); setShowDetail(true); }}>
                             View
                           </Button>
@@ -212,41 +212,41 @@ export default function Leads() {
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest">Add New Lead</DialogTitle>
+            <DialogTitle className="font-serif text-off-white">Add New Lead</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 font-sans">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-forest/50">Business Name *</label>
+                <label className="text-xs text-soft-gray">Business Name *</label>
                 <Input value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-forest/50">Contact Name *</label>
+                <label className="text-xs text-soft-gray">Contact Name *</label>
                 <Input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-forest/50">Email *</label>
+                <label className="text-xs text-soft-gray">Email *</label>
                 <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-forest/50">Phone</label>
+                <label className="text-xs text-soft-gray">Phone</label>
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-forest/50">Industry</label>
+                <label className="text-xs text-soft-gray">Industry</label>
                 <Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} />
               </div>
               <div>
-                <label className="text-xs text-forest/50">Website</label>
+                <label className="text-xs text-soft-gray">Website</label>
                 <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
               </div>
             </div>
             <div>
-              <label className="text-xs text-forest/50">Notes</label>
+              <label className="text-xs text-soft-gray">Notes</label>
               <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function Leads() {
             <Button
               onClick={() => createLead.mutate(form)}
               disabled={!form.businessName || !form.contactName || !form.email}
-              className="bg-forest hover:bg-forest-light text-cream font-sans text-sm"
+              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm"
             >
               Create Lead
             </Button>
@@ -267,12 +267,12 @@ export default function Leads() {
       <Dialog open={showTransfer} onOpenChange={setShowTransfer}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest">Transfer Leads Between Reps</DialogTitle>
+            <DialogTitle className="font-serif text-off-white">Transfer Leads Between Reps</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 font-sans">
-            <p className="text-sm text-forest/60">Move all active leads from one rep to another. This will notify the receiving rep.</p>
+            <p className="text-sm text-soft-gray">Move all active leads from one rep to another. This will notify the receiving rep.</p>
             <div>
-              <label className="text-xs text-forest/50">From Rep</label>
+              <label className="text-xs text-soft-gray">From Rep</label>
               <Select value={transferFrom} onValueChange={setTransferFrom}>
                 <SelectTrigger><SelectValue placeholder="Select source rep" /></SelectTrigger>
                 <SelectContent>
@@ -283,7 +283,7 @@ export default function Leads() {
               </Select>
             </div>
             <div>
-              <label className="text-xs text-forest/50">To Rep</label>
+              <label className="text-xs text-soft-gray">To Rep</label>
               <Select value={transferTo} onValueChange={setTransferTo}>
                 <SelectTrigger><SelectValue placeholder="Select target rep" /></SelectTrigger>
                 <SelectContent>
@@ -299,7 +299,7 @@ export default function Leads() {
             <Button
               onClick={() => transferLeads.mutate({ fromRepId: Number(transferFrom), toRepId: Number(transferTo) })}
               disabled={!transferFrom || !transferTo || transferLeads.isPending}
-              className="bg-forest hover:bg-forest-light text-cream font-sans text-sm"
+              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm"
             >
               {transferLeads.isPending ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Transferring...</> : <><ArrowRightLeft className="h-4 w-4 mr-1" /> Transfer All Leads</>}
             </Button>
@@ -311,19 +311,19 @@ export default function Leads() {
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-forest">{selectedLead?.businessName}</DialogTitle>
+            <DialogTitle className="font-serif text-off-white">{selectedLead?.businessName}</DialogTitle>
           </DialogHeader>
           {selectedLead && (
             <div className="space-y-4 font-sans">
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-forest/50 text-xs">Contact</span><p className="text-forest">{selectedLead.contactName}</p></div>
-                <div><span className="text-forest/50 text-xs">Email</span><p className="text-forest">{selectedLead.email}</p></div>
-                <div><span className="text-forest/50 text-xs">Industry</span><p className="text-forest">{selectedLead.industry || "—"}</p></div>
-                <div><span className="text-forest/50 text-xs">Score</span><p className="text-forest">{selectedLead.qualificationScore}/100</p></div>
+                <div><span className="text-soft-gray text-xs">Contact</span><p className="text-off-white">{selectedLead.contactName}</p></div>
+                <div><span className="text-soft-gray text-xs">Email</span><p className="text-off-white">{selectedLead.email}</p></div>
+                <div><span className="text-soft-gray text-xs">Industry</span><p className="text-off-white">{selectedLead.industry || "—"}</p></div>
+                <div><span className="text-soft-gray text-xs">Score</span><p className="text-off-white">{selectedLead.qualificationScore}/100</p></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-forest/50">Stage</label>
+                  <label className="text-xs text-soft-gray">Stage</label>
                   <Select value={selectedLead.stage} onValueChange={(val) => { updateLead.mutate({ id: selectedLead.id, stage: val as any }); setSelectedLead({ ...selectedLead, stage: val }); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -334,7 +334,7 @@ export default function Leads() {
                   </Select>
                 </div>
                 <div>
-                  <label className="text-xs text-forest/50">Temperature</label>
+                  <label className="text-xs text-soft-gray">Temperature</label>
                   <Select value={selectedLead.temperature} onValueChange={(val) => { updateLead.mutate({ id: selectedLead.id, temperature: val as any }); setSelectedLead({ ...selectedLead, temperature: val }); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -346,58 +346,58 @@ export default function Leads() {
 
               {/* AI Enrichment Data */}
               {selectedLead.enrichmentData && Object.keys(selectedLead.enrichmentData).length > 0 ? (
-                <div className="border border-terracotta/20 rounded-xl p-4 bg-terracotta/5">
+                <div className="border border-electric/20 rounded-xl p-4 bg-electric/5">
                   <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="h-4 w-4 text-terracotta" />
-                    <span className="text-sm font-medium text-forest">AI Enrichment Profile</span>
+                    <Sparkles className="h-4 w-4 text-electric" />
+                    <span className="text-sm font-medium text-off-white">AI Enrichment Profile</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-forest/50 text-xs">Company Size</span>
-                      <p className="text-forest">{selectedLead.enrichmentData.companySize}</p>
+                      <span className="text-soft-gray text-xs">Company Size</span>
+                      <p className="text-off-white">{selectedLead.enrichmentData.companySize}</p>
                     </div>
                     <div>
-                      <span className="text-forest/50 text-xs">Est. Revenue</span>
-                      <p className="text-forest">{selectedLead.enrichmentData.estimatedRevenue}</p>
+                      <span className="text-soft-gray text-xs">Est. Revenue</span>
+                      <p className="text-off-white">{selectedLead.enrichmentData.estimatedRevenue}</p>
                     </div>
                     <div>
-                      <span className="text-forest/50 text-xs">Online Presence</span>
+                      <span className="text-soft-gray text-xs">Online Presence</span>
                       <Badge className={`text-xs ${
-                        selectedLead.enrichmentData.onlinePresence === "poor" ? "bg-red-100 text-red-700" :
-                        selectedLead.enrichmentData.onlinePresence === "fair" ? "bg-yellow-100 text-yellow-700" :
-                        selectedLead.enrichmentData.onlinePresence === "good" ? "bg-green-100 text-green-700" :
+                        selectedLead.enrichmentData.onlinePresence === "poor" ? "badge-danger" :
+                        selectedLead.enrichmentData.onlinePresence === "fair" ? "badge-pending" :
+                        selectedLead.enrichmentData.onlinePresence === "good" ? "badge-success" :
                         "bg-emerald-100 text-emerald-700"
                       }`}>{selectedLead.enrichmentData.onlinePresence}</Badge>
                     </div>
                     <div>
-                      <span className="text-forest/50 text-xs">Recommended Package</span>
-                      <Badge className="text-xs bg-forest/10 text-forest capitalize">{selectedLead.enrichmentData.recommendedPackage}</Badge>
+                      <span className="text-soft-gray text-xs">Recommended Package</span>
+                      <Badge className="text-xs bg-electric/10 text-off-white capitalize">{selectedLead.enrichmentData.recommendedPackage}</Badge>
                     </div>
                   </div>
                   {selectedLead.enrichmentData.websiteNeeds?.length > 0 && (
                     <div className="mt-3">
-                      <span className="text-forest/50 text-xs">Website Needs</span>
+                      <span className="text-soft-gray text-xs">Website Needs</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {selectedLead.enrichmentData.websiteNeeds.map((need: string, i: number) => (
-                          <Badge key={i} variant="outline" className="text-xs border-forest/20 text-forest/70">{need}</Badge>
+                          <Badge key={i} variant="outline" className="text-xs border-electric/20 text-soft-gray">{need}</Badge>
                         ))}
                       </div>
                     </div>
                   )}
                   {selectedLead.enrichmentData.enrichmentSummary && (
                     <div className="mt-3">
-                      <span className="text-forest/50 text-xs">Summary</span>
-                      <p className="text-sm text-forest/80 mt-1">{selectedLead.enrichmentData.enrichmentSummary}</p>
+                      <span className="text-soft-gray text-xs">Summary</span>
+                      <p className="text-sm text-off-white/80 mt-1">{selectedLead.enrichmentData.enrichmentSummary}</p>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="border border-dashed border-terracotta/30 rounded-xl p-4 text-center">
-                  <Sparkles className="h-5 w-5 text-terracotta/40 mx-auto mb-2" />
-                  <p className="text-xs text-forest/50 mb-2">No AI enrichment data yet</p>
+                <div className="border border-dashed border-electric/30 rounded-xl p-4 text-center">
+                  <Sparkles className="h-5 w-5 text-electric/40 mx-auto mb-2" />
+                  <p className="text-xs text-soft-gray mb-2">No AI enrichment data yet</p>
                   <Button
                     size="sm"
-                    className="bg-terracotta hover:bg-terracotta-light text-white font-sans text-xs"
+                    className="bg-electric hover:bg-electric-light text-midnight font-sans text-xs"
                     onClick={() => handleEnrich(selectedLead.id)}
                     disabled={enrichingId === selectedLead.id}
                   >
@@ -411,7 +411,7 @@ export default function Leads() {
               )}
 
               {selectedLead.notes && (
-                <div><span className="text-xs text-forest/50">Notes</span><p className="text-sm text-forest/80 mt-1">{selectedLead.notes}</p></div>
+                <div><span className="text-xs text-soft-gray">Notes</span><p className="text-sm text-off-white/80 mt-1">{selectedLead.notes}</p></div>
               )}
             </div>
           )}

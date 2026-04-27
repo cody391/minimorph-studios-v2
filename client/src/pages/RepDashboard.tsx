@@ -32,14 +32,14 @@ import { useLocation } from "wouter";
 
 import { toast } from "sonner";
 
-const tempColors: Record<string, string> = { cold: "bg-blue-100 text-blue-700", warm: "bg-yellow-100 text-yellow-700", hot: "bg-red-100 text-red-700" };
+const tempColors: Record<string, string> = { cold: "badge-info", warm: "badge-pending", hot: "badge-danger" };
 const stageColors: Record<string, string> = {
-  assigned: "bg-purple-100 text-purple-700", contacted: "bg-blue-100 text-blue-700",
-  proposal_sent: "bg-yellow-100 text-yellow-700", negotiating: "bg-orange-100 text-orange-700",
-  closed_won: "bg-green-100 text-green-700", closed_lost: "bg-red-100 text-red-700",
+  assigned: "badge-purple", contacted: "badge-info",
+  proposal_sent: "badge-pending", negotiating: "badge-pending-payment",
+  closed_won: "badge-success", closed_lost: "badge-danger",
 };
-const commissionStatusColors: Record<string, string> = { pending: "bg-yellow-100 text-yellow-700", approved: "bg-blue-100 text-blue-700", paid: "bg-green-100 text-green-700", cancelled: "bg-red-100 text-red-700" };
-const tierColors: Record<string, string> = { bronze: "bg-amber-100 text-amber-700", silver: "bg-slate-100 text-slate-700", gold: "bg-yellow-100 text-yellow-700", platinum: "bg-violet-100 text-violet-700" };
+const commissionStatusColors: Record<string, string> = { pending: "badge-pending", approved: "badge-info", paid: "badge-success", cancelled: "badge-danger" };
+const tierColors: Record<string, string> = { bronze: "badge-pending-payment", silver: "bg-slate-100 text-slate-700", gold: "badge-pending", platinum: "bg-violet-100 text-violet-700" };
 const tierIcons: Record<string, any> = { bronze: Shield, silver: Award, gold: Trophy, platinum: Sparkles };
 
 export default function RepDashboard() {
@@ -75,28 +75,28 @@ export default function RepDashboard() {
   const approvedPayouts = useMemo(() => commissions?.filter((c: any) => c.status === "approved").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
   const recurringCount = useMemo(() => commissions?.filter((c: any) => c.type === "recurring_monthly" && c.status !== "cancelled").length ?? 0, [commissions]);
 
-  if (authLoading) return <div className="min-h-screen bg-cream flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" /></div>;
+  if (authLoading) return <div className="min-h-screen bg-midnight flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" /></div>;
   if (!isAuthenticated) return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+    <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-forest/60 hover:text-forest text-sm font-sans transition-colors">
+          <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-soft-gray hover:text-electric text-sm font-sans transition-colors">
             <ArrowLeft size={16} /> Back to MiniMorph Studios
           </button>
         </div>
         <Card className="max-w-md w-full border-border/50 shadow-lg">
           <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-forest/10 rounded-full flex items-center justify-center mx-auto mb-5">
-              <Briefcase className="h-8 w-8 text-forest" />
+            <div className="w-16 h-16 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-5">
+              <Briefcase className="h-8 w-8 text-off-white" />
             </div>
-            <h2 className="text-2xl font-serif text-forest mb-2">Rep Portal</h2>
-            <p className="text-sm text-forest/60 font-sans mb-6">Sign in to access your sales dashboard, leads, training, and earnings.</p>
-            <Button onClick={() => { setLocation("/login"); }} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8 py-5 w-full" size="lg">Sign In</Button>
+            <h2 className="text-2xl font-serif text-off-white mb-2">Rep Portal</h2>
+            <p className="text-sm text-soft-gray font-sans mb-6">Sign in to access your sales dashboard, leads, training, and earnings.</p>
+            <Button onClick={() => { setLocation("/login"); }} className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8 py-5 w-full" size="lg">Sign In</Button>
             <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-sage/20" /></div>
-              <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-forest/40 font-sans">New to MiniMorph?</span></div>
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/50" /></div>
+              <div className="relative flex justify-center text-xs"><span className="bg-charcoal px-3 text-soft-gray/60 font-sans">New to MiniMorph?</span></div>
             </div>
-            <Button variant="outline" onClick={() => setLocation("/become-rep/values")} className="w-full rounded-full border-sage/30 text-forest font-sans">
+            <Button variant="outline" onClick={() => setLocation("/become-rep/values")} className="w-full rounded-full border-border text-off-white font-sans">
               Apply to Become a Rep
             </Button>
           </CardContent>
@@ -104,32 +104,32 @@ export default function RepDashboard() {
       </div>
     </div>
   );
-  if (repLoading) return <div className="min-h-screen bg-cream p-4 sm:p-6"><div className="max-w-6xl mx-auto space-y-6"><Skeleton className="h-10 w-64" /><div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div><Skeleton className="h-64" /></div></div>;
+  if (repLoading) return <div className="min-h-screen bg-midnight p-4 sm:p-6"><div className="max-w-6xl mx-auto space-y-6"><Skeleton className="h-10 w-64" /><div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div><Skeleton className="h-64" /></div></div>;
   if (!repProfile) return (
-    <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+    <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-forest/60 hover:text-forest text-sm font-sans transition-colors">
+          <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-soft-gray hover:text-electric text-sm font-sans transition-colors">
             <ArrowLeft size={16} /> Back to MiniMorph Studios
           </button>
         </div>
         <Card className="max-w-md w-full border-border/50 shadow-lg">
           <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-terracotta/10 rounded-full flex items-center justify-center mx-auto mb-5">
-              <Briefcase className="h-8 w-8 text-terracotta" />
+            <div className="w-16 h-16 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-5">
+              <Briefcase className="h-8 w-8 text-electric" />
             </div>
-            <h2 className="text-2xl font-serif text-forest mb-2">Welcome, {user?.name?.split(' ')[0] || 'there'}!</h2>
-            <p className="text-sm text-forest/60 font-sans mb-6">
+            <h2 className="text-2xl font-serif text-off-white mb-2">Welcome, {user?.name?.split(' ')[0] || 'there'}!</h2>
+            <p className="text-sm text-soft-gray font-sans mb-6">
               You're signed in but don't have a rep profile yet. Start your application to join our sales team and begin earning commissions.
             </p>
-            <Button onClick={() => setLocation("/become-rep/values")} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8 py-5 w-full" size="lg">
+            <Button onClick={() => setLocation("/become-rep/values")} className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8 py-5 w-full" size="lg">
               <Sparkles className="w-4 h-4 mr-2" /> Start Your Application
             </Button>
             <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-sage/20" /></div>
-              <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-forest/40 font-sans">Wrong account?</span></div>
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/50" /></div>
+              <div className="relative flex justify-center text-xs"><span className="bg-charcoal px-3 text-soft-gray/60 font-sans">Wrong account?</span></div>
             </div>
-            <Button variant="outline" onClick={() => setLocation("/login")} className="w-full rounded-full border-sage/30 text-forest font-sans">
+            <Button variant="outline" onClick={() => setLocation("/login")} className="w-full rounded-full border-border text-off-white font-sans">
               Sign In with a Different Account
             </Button>
           </CardContent>
@@ -142,15 +142,15 @@ export default function RepDashboard() {
   // 1. If paperwork not completed, redirect to paperwork
   if (!repProfile.paperworkCompletedAt && repProfile.status === "training") {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
         <Card className="max-w-md w-full border-border/50 shadow-lg">
           <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-terracotta/10 rounded-full flex items-center justify-center mx-auto mb-5">
-              <FileText className="h-8 w-8 text-terracotta" />
+            <div className="w-16 h-16 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-5">
+              <FileText className="h-8 w-8 text-electric" />
             </div>
-            <h2 className="text-xl font-serif text-forest mb-2">Complete Your Paperwork</h2>
-            <p className="text-sm text-forest/60 font-sans mb-6">Before you can access your dashboard, you need to complete your HR & accounting paperwork.</p>
-            <Button onClick={() => setLocation("/become-rep/paperwork")} className="bg-terracotta hover:bg-terracotta-light text-white font-sans rounded-full px-8 py-5 w-full" size="lg">
+            <h2 className="text-xl font-serif text-off-white mb-2">Complete Your Paperwork</h2>
+            <p className="text-sm text-soft-gray font-sans mb-6">Before you can access your dashboard, you need to complete your HR & accounting paperwork.</p>
+            <Button onClick={() => setLocation("/become-rep/paperwork")} className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8 py-5 w-full" size="lg">
               <FileText className="w-4 h-4 mr-2" /> Complete Paperwork
             </Button>
           </CardContent>
@@ -162,18 +162,18 @@ export default function RepDashboard() {
   // 2. If Stripe Connect not set up, redirect to payout setup
   if (!repProfile.stripeConnectOnboarded && repProfile.status === "training") {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
         <Card className="max-w-md w-full border-border/50 shadow-lg">
           <CardContent className="p-8 text-center">
             <div className="w-16 h-16 bg-[#635BFF]/10 rounded-full flex items-center justify-center mx-auto mb-5">
               <DollarSign className="h-8 w-8 text-[#635BFF]" />
             </div>
-            <h2 className="text-xl font-serif text-forest mb-2">Set Up Your Payouts</h2>
-            <p className="text-sm text-forest/60 font-sans mb-6">Connect your bank account through Stripe so you can receive commission payouts.</p>
+            <h2 className="text-xl font-serif text-off-white mb-2">Set Up Your Payouts</h2>
+            <p className="text-sm text-soft-gray font-sans mb-6">Connect your bank account through Stripe so you can receive commission payouts.</p>
             <Button onClick={() => setLocation("/become-rep/payout-setup")} className="bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans rounded-full px-8 py-5 w-full" size="lg">
               <DollarSign className="w-4 h-4 mr-2" /> Set Up Payouts
             </Button>
-            <button onClick={() => setLocation("/rep?tab=training")} className="mt-4 text-xs text-forest/40 hover:text-forest/60 font-sans underline transition-colors block mx-auto">Skip for now</button>
+            <button onClick={() => setLocation("/rep?tab=training")} className="mt-4 text-xs text-soft-gray/60 hover:text-soft-gray font-sans underline transition-colors block mx-auto">Skip for now</button>
           </CardContent>
         </Card>
       </div>
@@ -184,9 +184,9 @@ export default function RepDashboard() {
   const TierIcon = tierIcons[currentTier] || Shield;
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-midnight">
       {/* Header */}
-      <div className="bg-forest text-white">
+      <div className="bg-charcoal text-off-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -194,7 +194,7 @@ export default function RepDashboard() {
               {repProfile.profilePhotoUrl ? (
                 <img src={repProfile.profilePhotoUrl} alt={repProfile.fullName} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white/30 shrink-0" />
               ) : (
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-terracotta flex items-center justify-center text-white font-bold text-base sm:text-lg border-2 border-white/30 shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-electric flex items-center justify-center text-white font-bold text-base sm:text-lg border-2 border-white/30 shrink-0">
                   {repProfile.fullName?.charAt(0) || "?"}
                 </div>
               )}
@@ -205,8 +205,8 @@ export default function RepDashboard() {
                     {repProfile.status}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/60 font-sans flex-wrap">
-                  <span className="flex items-center gap-1"><TierIcon className="w-3.5 h-3.5 text-terracotta" /> {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} Tier</span>
+                <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-off-white/50 font-sans flex-wrap">
+                  <span className="flex items-center gap-1"><TierIcon className="w-3.5 h-3.5 text-electric" /> {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} Tier</span>
                   <span className="flex items-center gap-1"><BarChart3 className="w-3.5 h-3.5 text-orange-400" /> Score: {accountabilityScore?.latestScore ? parseFloat(accountabilityScore.latestScore.overallScore).toFixed(0) : "--"}</span>
                   <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5 text-yellow-400" /> {gamification?.totalPoints?.toLocaleString() || 0} pts</span>
                 </div>
@@ -214,7 +214,7 @@ export default function RepDashboard() {
             </div>
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <NotificationsBell />
-              <Button variant="outline" onClick={() => setLocation("/")} className="text-white border-white/20 hover:bg-white/10 font-sans text-xs sm:text-sm rounded-full px-2 sm:px-3">
+              <Button variant="outline" onClick={() => setLocation("/")} className="text-white border-white/20 hover:bg-charcoal/10 font-sans text-xs sm:text-sm rounded-full px-2 sm:px-3">
                 <ArrowLeft className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Home</span>
               </Button>
             </div>
@@ -225,25 +225,25 @@ export default function RepDashboard() {
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-4 sm:mb-6">
-            <TabsList className="bg-white border border-sage/20 flex-wrap h-auto gap-0.5 sm:gap-1 p-1 w-max sm:w-auto">
-              <TabsTrigger value="performance" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-terracotta data-[state=active]:text-white">Performance</TabsTrigger>
-              <TabsTrigger value="overview" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Overview</TabsTrigger>
-              <TabsTrigger value="training" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Training</TabsTrigger>
-              <TabsTrigger value="activity" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Activity</TabsTrigger>
-              <TabsTrigger value="comms" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Comms</TabsTrigger>
-              <TabsTrigger value="earnings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Earnings</TabsTrigger>
-              <TabsTrigger value="pipeline" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Pipeline</TabsTrigger>
-              <TabsTrigger value="leaderboard" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Board</TabsTrigger>
-              <TabsTrigger value="team" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Team</TabsTrigger>
-              <TabsTrigger value="support" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Support</TabsTrigger>
-              <TabsTrigger value="settings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Settings</TabsTrigger>
-              <TabsTrigger value="guide" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-forest data-[state=active]:text-white">Guide</TabsTrigger>
+            <TabsList className="bg-charcoal border border-border/50 flex-wrap h-auto gap-0.5 sm:gap-1 p-1 w-max sm:w-auto">
+              <TabsTrigger value="performance" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Performance</TabsTrigger>
+              <TabsTrigger value="overview" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Overview</TabsTrigger>
+              <TabsTrigger value="training" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Training</TabsTrigger>
+              <TabsTrigger value="activity" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Activity</TabsTrigger>
+              <TabsTrigger value="comms" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Comms</TabsTrigger>
+              <TabsTrigger value="earnings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Earnings</TabsTrigger>
+              <TabsTrigger value="pipeline" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Pipeline</TabsTrigger>
+              <TabsTrigger value="leaderboard" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Board</TabsTrigger>
+              <TabsTrigger value="team" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Team</TabsTrigger>
+              <TabsTrigger value="support" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Support</TabsTrigger>
+              <TabsTrigger value="settings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Settings</TabsTrigger>
+              <TabsTrigger value="guide" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Guide</TabsTrigger>
             </TabsList>
           </div>
 
           {/* ═══════ PERFORMANCE HUB TAB ═══════ */}
           <TabsContent value="performance" className="space-y-6">
-            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+            <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
               <PerformanceHub repProfile={repProfile} />
             </Suspense>
           </TabsContent>
@@ -254,17 +254,17 @@ export default function RepDashboard() {
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {[
                 { label: "Active Leads", value: activeLeads.length, icon: Target, color: "text-blue-600" },
-                { label: "Deals Won", value: wonLeads.length, icon: CheckCircle, color: "text-green-600" },
-                { label: "Total Earnings", value: `$${totalEarnings.toLocaleString()}`, icon: DollarSign, color: "text-forest" },
-                { label: "Today's Activities", value: activityStats?.todayActivities || 0, icon: Zap, color: "text-terracotta" },
+                { label: "Deals Won", value: wonLeads.length, icon: CheckCircle, color: "text-emerald-400" },
+                { label: "Total Earnings", value: `$${totalEarnings.toLocaleString()}`, icon: DollarSign, color: "text-off-white" },
+                { label: "Today's Activities", value: activityStats?.todayActivities || 0, icon: Zap, color: "text-electric" },
               ].map((m) => (
                 <Card key={m.label} className="border-border/50">
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-forest/50 font-sans uppercase tracking-wide">{m.label}</span>
+                      <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">{m.label}</span>
                       <m.icon className={`h-4 w-4 ${m.color}`} />
                     </div>
-                    <div className="text-2xl font-serif text-forest">{m.value}</div>
+                    <div className="text-2xl font-serif text-off-white">{m.value}</div>
                   </CardContent>
                 </Card>
               ))}
@@ -274,22 +274,22 @@ export default function RepDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="border-border/50">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                    <Trophy className="h-4 w-4 text-terracotta" /> Tier Progress
+                  <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-electric" /> Tier Progress
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4 mb-4">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center ${tierColors[currentTier] || "bg-amber-100 text-amber-700"}`}>
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center ${tierColors[currentTier] || "badge-pending-payment"}`}>
                       <TierIcon className="w-7 h-7" />
                     </div>
                     <div>
-                      <p className="text-lg font-serif text-forest capitalize">{currentTier} Tier</p>
-                      <p className="text-xs text-forest/50 font-sans">Performance Score: {accountabilityScore?.latestScore ? parseFloat(accountabilityScore.latestScore.overallScore).toFixed(0) : "--"}/100</p>
+                      <p className="text-lg font-serif text-off-white capitalize">{currentTier} Tier</p>
+                      <p className="text-xs text-soft-gray font-sans">Performance Score: {accountabilityScore?.latestScore ? parseFloat(accountabilityScore.latestScore.overallScore).toFixed(0) : "--"}/100</p>
                     </div>
                   </div>
                   <Progress value={accountabilityScore?.latestScore ? parseFloat(accountabilityScore.latestScore.overallScore) : 0} className="h-2 mb-2" />
-                  <p className="text-[11px] text-forest/40 font-sans">
+                  <p className="text-[11px] text-soft-gray/60 font-sans">
                     {currentTier === "platinum" ? "Highest tier achieved!" : `Keep improving to reach ${currentTier === "bronze" ? "Silver" : currentTier === "silver" ? "Gold" : "Platinum"}`}
                   </p>
                   {(() => {
@@ -298,7 +298,7 @@ export default function RepDashboard() {
                     return (
                       <div className="flex flex-wrap gap-1.5 mt-3">
                         {(badges as string[]).map((b: string) => (
-                          <Badge key={b} className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">{b}</Badge>
+                          <Badge key={b} className="bg-amber-500/10 text-amber-700 border-amber-500/20 text-[10px]">{b}</Badge>
                         ))}
                       </div>
                     );
@@ -308,19 +308,19 @@ export default function RepDashboard() {
 
               <Card className="border-border/50">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-terracotta" /> Upcoming Follow-ups
+                  <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-electric" /> Upcoming Follow-ups
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {!followUps?.length ? (
-                    <div className="text-center py-6"><Calendar className="h-8 w-8 text-forest/20 mx-auto mb-2" /><p className="text-sm text-forest/50 font-sans">No upcoming follow-ups</p></div>
+                    <div className="text-center py-6"><Calendar className="h-8 w-8 text-soft-gray/30 mx-auto mb-2" /><p className="text-sm text-soft-gray font-sans">No upcoming follow-ups</p></div>
                   ) : (
                     <div className="space-y-2">
                       {followUps.slice(0, 5).map((f: any) => (
                         <div key={f.id} className="flex items-center justify-between p-3 rounded-lg border border-border/30 text-sm">
-                          <div><p className="font-sans text-forest font-medium">{f.subject || "Follow-up"}</p><p className="text-xs text-forest/50 font-sans">{f.notes?.slice(0, 60)}</p></div>
-                          <span className="text-xs text-forest/40 font-sans shrink-0 ml-2">{f.followUpAt ? new Date(f.followUpAt).toLocaleDateString() : ""}</span>
+                          <div><p className="font-sans text-off-white font-medium">{f.subject || "Follow-up"}</p><p className="text-xs text-soft-gray font-sans">{f.notes?.slice(0, 60)}</p></div>
+                          <span className="text-xs text-soft-gray/60 font-sans shrink-0 ml-2">{f.followUpAt ? new Date(f.followUpAt).toLocaleDateString() : ""}</span>
                         </div>
                       ))}
                     </div>
@@ -331,18 +331,18 @@ export default function RepDashboard() {
 
             {/* Referral Code */}
             {repProfile?.referralCode && (
-              <Card className="border-border/50 bg-gradient-to-r from-amber-50/50 to-cream">
+              <Card className="border-border/50 bg-gradient-to-r from-graphite to-charcoal">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-sans text-forest/60 mb-1">Your Referral Code</p>
-                      <p className="text-2xl font-mono font-bold text-forest tracking-wider">{repProfile.referralCode}</p>
-                      <p className="text-xs text-forest/40 font-sans mt-1">Share this code with potential reps. Earn $200 when they close their first deal.</p>
+                      <p className="text-sm font-sans text-soft-gray mb-1">Your Referral Code</p>
+                      <p className="text-2xl font-mono font-bold text-off-white tracking-wider">{repProfile.referralCode}</p>
+                      <p className="text-xs text-soft-gray/60 font-sans mt-1">Share this code with potential reps. Earn $200 when they close their first deal.</p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="shrink-0 text-forest border-forest/20 hover:bg-forest/5"
+                      className="shrink-0 text-off-white border-electric/20 hover:bg-electric/10"
                       onClick={() => {
                         navigator.clipboard.writeText(repProfile.referralCode!);
                         toast.success("Referral code copied to clipboard!");
@@ -358,31 +358,31 @@ export default function RepDashboard() {
             {/* My Leads */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <Users className="h-4 w-4 text-terracotta" /> My Leads ({(myLeads ?? []).length})
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <Users className="h-4 w-4 text-electric" /> My Leads ({(myLeads ?? []).length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {(myLeads ?? []).length === 0 ? (
-                  <div className="text-center py-8"><Target className="h-8 w-8 text-forest/20 mx-auto mb-3" /><p className="text-sm text-forest/50 font-sans">No leads assigned yet.</p></div>
+                  <div className="text-center py-8"><Target className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No leads assigned yet.</p></div>
                 ) : (
                   <div className="space-y-2">
                     {(myLeads ?? []).slice(0, 10).map((lead: any) => (
-                      <div key={lead.id} className="flex items-center justify-between p-4 rounded-lg border border-border/30 hover:bg-cream-dark/20 transition-colors">
+                      <div key={lead.id} className="flex items-center justify-between p-4 rounded-lg border border-border/30 hover:bg-midnight-dark/20 transition-colors">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-forest font-sans">{lead.businessName}</span>
+                            <span className="text-sm font-medium text-off-white font-sans">{lead.businessName}</span>
                             <Badge className={`text-[10px] font-sans ${tempColors[lead.temperature] ?? ""}`}>{lead.temperature}</Badge>
-                            <Badge className={`text-[10px] font-sans ${stageColors[lead.stage] ?? "bg-gray-100 text-gray-700"}`}>{lead.stage.replace(/_/g, " ")}</Badge>
+                            <Badge className={`text-[10px] font-sans ${stageColors[lead.stage] ?? "badge-neutral"}`}>{lead.stage.replace(/_/g, " ")}</Badge>
                           </div>
-                          <p className="text-xs text-forest/50 font-sans">{lead.contactName} &bull; {lead.email}</p>
+                          <p className="text-xs text-soft-gray font-sans">{lead.contactName} &bull; {lead.email}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-4">
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setActiveTab("activity"); toast.info("Log your activity from the Activity tab"); }}>
-                            <Phone className="h-3.5 w-3.5 text-forest/50" />
+                            <Phone className="h-3.5 w-3.5 text-soft-gray" />
                           </Button>
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setActiveTab("comms"); toast.info("Send an email from the Communications tab"); }}>
-                            <Mail className="h-3.5 w-3.5 text-forest/50" />
+                            <Mail className="h-3.5 w-3.5 text-soft-gray" />
                           </Button>
                         </div>
                       </div>
@@ -395,7 +395,7 @@ export default function RepDashboard() {
 
           {/* ═══════ TRAINING TAB ═══════ */}
           <TabsContent value="training" className="space-y-6">
-            <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" /></div>}>
               <SalesAcademy />
             </Suspense>
           </TabsContent>
@@ -408,18 +408,18 @@ export default function RepDashboard() {
           {/* ═══════ COMMS TAB ═══════ */}
           <TabsContent value="comms" className="space-y-6">
             {accessCheck && !accessCheck.allowed ? (
-              <Card className="border-amber-200 bg-amber-50/50">
+              <Card className="border-amber-500/20 bg-amber-500/10/50">
                 <CardContent className="py-8 text-center">
                   <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-                  <h3 className="text-base font-serif text-forest mb-2">Daily Training Required</h3>
-                  <p className="text-sm text-forest/60 font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
-                  <Button onClick={() => setActiveTab("training")} className="bg-forest text-white hover:bg-forest/90 font-sans text-sm">
+                  <h3 className="text-base font-serif text-off-white mb-2">Daily Training Required</h3>
+                  <p className="text-sm text-soft-gray font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
+                  <Button onClick={() => setActiveTab("training")} className="bg-charcoal text-off-white hover:bg-electric/90 font-sans text-sm">
                     <BookOpen className="h-4 w-4 mr-2" /> Go to Training
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <Suspense fallback={<div className="p-8 text-center"><p className="text-sm text-forest/40">Loading communications...</p></div>}>
+              <Suspense fallback={<div className="p-8 text-center"><p className="text-sm text-soft-gray/60">Loading communications...</p></div>}>
                 <CommsHub templates={emailTemplates ?? []} sentEmails={sentEmails ?? []} leads={myLeads ?? []} />
               </Suspense>
             )}
@@ -429,23 +429,23 @@ export default function RepDashboard() {
           <TabsContent value="earnings" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { label: "Total Earned", value: `$${totalEarnings.toLocaleString()}`, icon: DollarSign, color: "text-green-600" },
-                { label: "Ready for Payout", value: `$${approvedPayouts.toLocaleString()}`, icon: Zap, color: "text-terracotta" },
+                { label: "Total Earned", value: `$${totalEarnings.toLocaleString()}`, icon: DollarSign, color: "text-emerald-400" },
+                { label: "Ready for Payout", value: `$${approvedPayouts.toLocaleString()}`, icon: Zap, color: "text-electric" },
                 { label: "Recurring", value: `${recurringCount} active`, icon: RefreshCw, color: "text-blue-600" },
               ].map((m) => (
                 <Card key={m.label} className="border-border/50"><CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-2"><span className="text-xs text-forest/50 font-sans uppercase tracking-wide">{m.label}</span><m.icon className={`h-4 w-4 ${m.color}`} /></div>
-                  <div className="text-2xl font-serif text-forest">{m.value}</div>
+                  <div className="flex items-center justify-between mb-2"><span className="text-xs text-soft-gray font-sans uppercase tracking-wide">{m.label}</span><m.icon className={`h-4 w-4 ${m.color}`} /></div>
+                  <div className="text-2xl font-serif text-off-white">{m.value}</div>
                 </CardContent></Card>
               ))}
             </div>
 
             {/* Projected Earnings from Pipeline */}
             {activeLeads.length > 0 && (
-              <Card className="border-border/50 bg-gradient-to-r from-forest/5 to-terracotta/5">
+              <Card className="border-border/50 bg-gradient-to-r from-electric/5 to-gold/5">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                    <Target className="h-4 w-4 text-terracotta" /> Projected Earnings
+                  <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                    <Target className="h-4 w-4 text-electric" /> Projected Earnings
                   </CardTitle>
                   <CardDescription className="text-xs font-sans">Estimated commissions if your active pipeline leads close</CardDescription>
                 </CardHeader>
@@ -465,21 +465,21 @@ export default function RepDashboard() {
                       return (
                         <>
                           {rows.slice(0, 5).map((r: any, i: number) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-white/60">
+                            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-charcoal/60">
                               <div>
-                                <p className="text-sm font-medium text-forest font-sans">{r.name}</p>
-                                <p className="text-[10px] text-forest/40 font-sans capitalize">{r.tier} — ${r.monthly}/mo x 12</p>
+                                <p className="text-sm font-medium text-off-white font-sans">{r.name}</p>
+                                <p className="text-[10px] text-soft-gray/60 font-sans capitalize">{r.tier} — ${r.monthly}/mo x 12</p>
                               </div>
-                              <span className="text-sm font-serif text-green-600">${r.commission.toLocaleString()}</span>
+                              <span className="text-sm font-serif text-emerald-400">${r.commission.toLocaleString()}</span>
                             </div>
                           ))}
-                          {rows.length > 5 && <p className="text-xs text-forest/40 font-sans text-center">+ {rows.length - 5} more leads in pipeline</p>}
-                          <div className="flex items-center justify-between p-4 rounded-lg bg-forest/10 mt-2">
+                          {rows.length > 5 && <p className="text-xs text-soft-gray/60 font-sans text-center">+ {rows.length - 5} more leads in pipeline</p>}
+                          <div className="flex items-center justify-between p-4 rounded-lg bg-electric/10 mt-2">
                             <div>
-                              <p className="text-sm font-semibold text-forest font-sans">Total Projected</p>
-                              <p className="text-[10px] text-forest/50 font-sans">At your {accountabilityTier?.tier || "bronze"} tier rate ({(tierRate * 100).toFixed(0)}%)</p>
+                              <p className="text-sm font-semibold text-off-white font-sans">Total Projected</p>
+                              <p className="text-[10px] text-soft-gray font-sans">At your {accountabilityTier?.tier || "bronze"} tier rate ({(tierRate * 100).toFixed(0)}%)</p>
                             </div>
-                            <span className="text-xl font-serif text-forest">${totalProjected.toLocaleString()}</span>
+                            <span className="text-xl font-serif text-off-white">${totalProjected.toLocaleString()}</span>
                           </div>
                         </>
                       );
@@ -490,25 +490,25 @@ export default function RepDashboard() {
             )}
 
             <Card className="border-border/50">
-              <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-forest">Commission History</CardTitle></CardHeader>
+              <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">Commission History</CardTitle></CardHeader>
               <CardContent>
                 {!commissions?.length ? (
-                  <div className="text-center py-8"><DollarSign className="h-8 w-8 text-forest/20 mx-auto mb-3" /><p className="text-sm text-forest/50 font-sans">No commissions yet. Close your first deal to start earning.</p></div>
+                  <div className="text-center py-8"><DollarSign className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No commissions yet. Close your first deal to start earning.</p></div>
                 ) : (
                   <div className="space-y-2">
                     {commissions.map((c: any) => (
                       <div key={c.id} className="flex items-center justify-between p-4 rounded-lg border border-border/30">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-forest font-sans">${parseFloat(c.amount).toLocaleString()}</span>
+                            <span className="text-sm font-medium text-off-white font-sans">${parseFloat(c.amount).toLocaleString()}</span>
                             <Badge className={`text-[10px] font-sans ${commissionStatusColors[c.status] ?? ""}`}>{c.status}</Badge>
                           </div>
-                          <p className="text-xs text-forest/50 font-sans capitalize">
+                          <p className="text-xs text-soft-gray font-sans capitalize">
                             {c.type?.replace(/_/g, " ")} &bull; Contract #{c.contractId}
-                            {c.selfSourced && <span className="ml-1 text-amber-600">⭐ 2x</span>}
+                            {c.selfSourced && <span className="ml-1 text-amber-400">⭐ 2x</span>}
                           </p>
                         </div>
-                        <div className="text-xs text-forest/40 font-sans">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ""}</div>
+                        <div className="text-xs text-soft-gray/60 font-sans">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : ""}</div>
                       </div>
                     ))}
                   </div>
@@ -518,8 +518,8 @@ export default function RepDashboard() {
             {/* Stripe Connect Setup */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-terracotta" /> Payout Setup
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-electric" /> Payout Setup
                 </CardTitle>
                 <CardDescription className="text-xs font-sans">Set up your bank account to receive commission payouts via Stripe</CardDescription>
               </CardHeader>
@@ -531,8 +531,8 @@ export default function RepDashboard() {
             {/* Commission Tier Info */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-terracotta" /> Commission Tiers
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-electric" /> Commission Tiers
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -549,15 +549,15 @@ export default function RepDashboard() {
                           <Award className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-forest font-sans">{tier.level}</p>
-                          <p className="text-[10px] text-forest/40 font-sans">{tier.requirement}</p>
+                          <p className="text-sm font-medium text-off-white font-sans">{tier.level}</p>
+                          <p className="text-[10px] text-soft-gray/60 font-sans">{tier.requirement}</p>
                         </div>
                       </div>
-                      <span className="text-lg font-serif text-forest">{tier.rate}</span>
+                      <span className="text-lg font-serif text-off-white">{tier.rate}</span>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                   <p className="text-xs text-amber-800 font-medium flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5" /> Self-sourced leads earn 2x your commission rate!
                   </p>
@@ -569,7 +569,7 @@ export default function RepDashboard() {
                   </p>
                   <p className="text-[10px] text-blue-700/70 mt-1">Commissions are auto-approved when the customer pays. You earn recurring commissions every month the customer stays active. If they stop paying, commissions stop too.</p>
                 </div>
-                <p className="text-[10px] text-forest/40 font-sans mt-3">Your commission rate increases automatically as you level up. You can also apply up to 5% discount on deals to help close faster.</p>
+                <p className="text-[10px] text-soft-gray/60 font-sans mt-3">Your commission rate increases automatically as you level up. You can also apply up to 5% discount on deals to help close faster.</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -577,18 +577,18 @@ export default function RepDashboard() {
           {/* ═══════ PIPELINE TAB ═══════ */}
           <TabsContent value="pipeline" className="space-y-6">
             {accessCheck && !accessCheck.allowed ? (
-              <Card className="border-amber-200 bg-amber-50/50">
+              <Card className="border-amber-500/20 bg-amber-500/10/50">
                 <CardContent className="py-8 text-center">
                   <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-                  <h3 className="text-base font-serif text-forest mb-2">Daily Training Required</h3>
-                  <p className="text-sm text-forest/60 font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
-                  <Button onClick={() => setActiveTab("training")} className="bg-forest text-white hover:bg-forest/90 font-sans text-sm">
+                  <h3 className="text-base font-serif text-off-white mb-2">Daily Training Required</h3>
+                  <p className="text-sm text-soft-gray font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
+                  <Button onClick={() => setActiveTab("training")} className="bg-charcoal text-off-white hover:bg-electric/90 font-sans text-sm">
                     <BookOpen className="h-4 w-4 mr-2" /> Go to Training
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+              <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
                 <PipelineTab repProfile={repProfile} />
               </Suspense>
             )}
@@ -598,52 +598,52 @@ export default function RepDashboard() {
           <TabsContent value="leaderboard" className="space-y-6">
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-terracotta" /> Top Reps Leaderboard
+                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-electric" /> Top Reps Leaderboard
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {!leaderboard?.length ? (
-                  <div className="text-center py-8"><Trophy className="h-8 w-8 text-forest/20 mx-auto mb-3" /><p className="text-sm text-forest/50 font-sans">No leaderboard data yet. Start logging activities to earn points!</p></div>
+                  <div className="text-center py-8"><Trophy className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No leaderboard data yet. Start logging activities to earn points!</p></div>
                 ) : (
                   <div className="space-y-2">
                     {leaderboard.map((entry: any, i: number) => {
                       const isMe = entry.repId === repProfile.id;
                       return (
-                        <div key={entry.repId} className={`flex items-center justify-between p-4 rounded-lg border ${isMe ? "border-terracotta/30 bg-terracotta/5" : "border-border/30"}`}>
+                        <div key={entry.repId} className={`flex items-center justify-between p-4 rounded-lg border ${isMe ? "border-electric/30 bg-electric/5" : "border-border/30"}`}>
                           <div className="flex items-center gap-4">
                             <div className="relative">
-                              <div className={`absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold z-10 ${i === 0 ? "bg-yellow-400 text-yellow-900" : i === 1 ? "bg-gray-300 text-gray-700" : i === 2 ? "bg-amber-400 text-amber-900" : "bg-sage/30 text-forest/50"}`}>
+                              <div className={`absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold z-10 ${i === 0 ? "bg-yellow-400 text-yellow-900" : i === 1 ? "bg-gray-300 text-gray-700" : i === 2 ? "bg-amber-400 text-amber-900" : "bg-graphite/30 text-soft-gray"}`}>
                                 {i + 1}
                               </div>
                               {entry.profilePhotoUrl ? (
                                 <img src={entry.profilePhotoUrl} alt={entry.repName} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
                               ) : (
-                                <div className="w-10 h-10 rounded-full bg-sage/20 flex items-center justify-center text-forest/40 text-sm font-bold">
+                                <div className="w-10 h-10 rounded-full bg-graphite/20 flex items-center justify-center text-soft-gray/60 text-sm font-bold">
                                   {(entry.repName || "?").charAt(0).toUpperCase()}
                                 </div>
                               )}
                             </div>
                             <div>
-                              <p className="text-sm font-sans text-forest font-medium">{entry.repName || "Unknown"} {isMe && <span className="text-terracotta text-xs">(You)</span>}</p>
+                              <p className="text-sm font-sans text-off-white font-medium">{entry.repName || "Unknown"} {isMe && <span className="text-electric text-xs">(You)</span>}</p>
                               <div className="flex items-center gap-2">
                                 <Badge className={`text-[10px] ${tierColors[entry.level] || ""}`}>{entry.level}</Badge>
-                                <span className="text-[10px] text-forest/40 font-sans">{entry.currentStreak} day streak</span>
+                                <span className="text-[10px] text-soft-gray/60 font-sans">{entry.currentStreak} day streak</span>
                               </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-6">
                             <div className="text-center">
-                              <p className="text-sm font-serif text-forest font-medium">{entry.totalDeals || 0}</p>
-                              <p className="text-[10px] text-forest/40 font-sans">deals</p>
+                              <p className="text-sm font-serif text-off-white font-medium">{entry.totalDeals || 0}</p>
+                              <p className="text-[10px] text-soft-gray/60 font-sans">deals</p>
                             </div>
                             <div className="text-center">
                               <p className="text-sm font-serif text-green-700 font-medium">${parseFloat(entry.totalRevenue || "0").toLocaleString()}</p>
-                              <p className="text-[10px] text-forest/40 font-sans">revenue</p>
+                              <p className="text-[10px] text-soft-gray/60 font-sans">revenue</p>
                             </div>
                             <div className="text-right">
-                              <p className="text-lg font-serif text-forest">{entry.totalPoints?.toLocaleString()}</p>
-                              <p className="text-[10px] text-forest/40 font-sans">points</p>
+                              <p className="text-lg font-serif text-off-white">{entry.totalPoints?.toLocaleString()}</p>
+                              <p className="text-[10px] text-soft-gray/60 font-sans">points</p>
                             </div>
                           </div>
                         </div>
@@ -657,28 +657,28 @@ export default function RepDashboard() {
 
           {/* ═══════ TEAM TAB ═══════ */}
           <TabsContent value="team" className="space-y-6">
-            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+            <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
               <TeamFeed repProfile={repProfile} />
             </Suspense>
           </TabsContent>
 
           {/* ═══════ SUPPORT TAB ═══════ */}
           <TabsContent value="support" className="space-y-6">
-            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+            <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
               <SupportTicketsPanel repId={repProfile.id} />
             </Suspense>
           </TabsContent>
 
           {/* ═══════ SETTINGS TAB ═══════ */}
           <TabsContent value="settings" className="space-y-6">
-            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+            <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
               <RepSettingsPanel repProfile={repProfile} />
             </Suspense>
           </TabsContent>
 
           {/* ═══════ GUIDE TAB ═══════ */}
           <TabsContent value="guide" className="space-y-6">
-            <Suspense fallback={<div className="animate-pulse h-64 bg-sage/10 rounded-xl" />}>
+            <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
               <AppGuide />
             </Suspense>
           </TabsContent>
@@ -707,18 +707,18 @@ function TrainingTab({ modules, progress, quizResults, repStatus }: any) {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-serif text-forest">MiniMorph Training Academy</h3>
-              <p className="text-sm text-forest/60 font-sans">Complete all modules and pass the certification quiz to activate your account.</p>
+              <h3 className="text-lg font-serif text-off-white">MiniMorph Training Academy</h3>
+              <p className="text-sm text-soft-gray font-sans">Complete all modules and pass the certification quiz to activate your account.</p>
             </div>
             {isCertified && (
-              <Badge className="bg-green-100 text-green-700 text-xs font-sans flex items-center gap-1">
+              <Badge className="badge-success text-xs font-sans flex items-center gap-1">
                 <GraduationCap className="w-3 h-3" /> Certified
               </Badge>
             )}
           </div>
           <div className="flex items-center gap-4">
             <Progress value={completionPct} className="h-3 flex-1" />
-            <span className="text-sm font-sans text-forest font-medium">{completionPct}%</span>
+            <span className="text-sm font-sans text-off-white font-medium">{completionPct}%</span>
           </div>
         </CardContent>
       </Card>
@@ -733,18 +733,18 @@ function TrainingTab({ modules, progress, quizResults, repStatus }: any) {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <BookOpen className="w-4 h-4 text-terracotta" />
-                      <h4 className="text-sm font-serif text-forest font-medium">{mod.title}</h4>
+                      <BookOpen className="w-4 h-4 text-electric" />
+                      <h4 className="text-sm font-serif text-off-white font-medium">{mod.title}</h4>
                     </div>
-                    <p className="text-xs text-forest/50 font-sans mb-2">{mod.description}</p>
-                    <div className="flex items-center gap-3 text-[10px] text-forest/40 font-sans">
+                    <p className="text-xs text-soft-gray font-sans mb-2">{mod.description}</p>
+                    <div className="flex items-center gap-3 text-[10px] text-soft-gray/60 font-sans">
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {mod.estimatedMinutes} min</span>
                     </div>
                   </div>
                   {isComplete ? (
-                    <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-forest/30 shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-soft-gray/40 shrink-0" />
                   )}
                 </div>
               </CardContent>
@@ -758,17 +758,17 @@ function TrainingTab({ modules, progress, quizResults, repStatus }: any) {
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-serif text-forest flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-terracotta" /> Certification Quiz
+              <h3 className="text-base font-serif text-off-white flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-electric" /> Certification Quiz
               </h3>
-              <p className="text-sm text-forest/60 font-sans mt-1">Score 80% or higher to become certified. You can retake the quiz.</p>
+              <p className="text-sm text-soft-gray font-sans mt-1">Score 80% or higher to become certified. You can retake the quiz.</p>
               {latestQuiz && (
-                <p className={`text-xs font-sans mt-2 ${latestQuiz.passed ? "text-green-600" : "text-red-500"}`}>
+                <p className={`text-xs font-sans mt-2 ${latestQuiz.passed ? "text-emerald-400" : "text-red-500"}`}>
                   Last attempt: {latestQuiz.score}% ({latestQuiz.passed ? "Passed" : "Failed"}) — Attempt #{latestQuiz.attemptNumber}
                 </p>
               )}
             </div>
-            <Button onClick={() => setShowQuiz(true)} disabled={isCertified} className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans text-sm">
+            <Button onClick={() => setShowQuiz(true)} disabled={isCertified} className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans text-sm">
               {isCertified ? "Certified" : "Take Quiz"}
             </Button>
           </div>
@@ -780,9 +780,9 @@ function TrainingTab({ modules, progress, quizResults, repStatus }: any) {
         <Dialog open={!!selectedModule} onOpenChange={() => setSelectedModule(null)}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-serif text-forest">{selectedModule.title}</DialogTitle>
+              <DialogTitle className="font-serif text-off-white">{selectedModule.title}</DialogTitle>
             </DialogHeader>
-            <div className="prose prose-sm max-w-none text-forest/80 font-sans whitespace-pre-wrap">{String(selectedModule.content || "")}</div>
+            <div className="prose prose-sm max-w-none text-off-white/80 font-sans whitespace-pre-wrap">{String(selectedModule.content || "")}</div>
             <div className="flex justify-end mt-4">
               <MarkCompleteButton moduleId={selectedModule.id} isComplete={completedModuleIds.has(selectedModule.id)} onDone={() => setSelectedModule(null)} />
             </div>
@@ -802,7 +802,7 @@ function TrainingTab({ modules, progress, quizResults, repStatus }: any) {
 function TrainingInsightsSection() {
   const { data: insights, isLoading } = trpc.repComms.myTrainingInsights.useQuery();
 
-  if (isLoading) return <Card className="border-border/50"><CardContent className="p-6 text-center"><p className="text-xs text-forest/40 font-sans">Loading insights...</p></CardContent></Card>;
+  if (isLoading) return <Card className="border-border/50"><CardContent className="p-6 text-center"><p className="text-xs text-soft-gray/60 font-sans">Loading insights...</p></CardContent></Card>;
   if (!insights?.length) return null;
 
   const categoryConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -810,17 +810,17 @@ function TrainingInsightsSection() {
     common_mistake: { label: "Common Mistake", color: "bg-red-50 text-red-700 border-red-200", icon: AlertTriangle },
     technique: { label: "Technique", color: "bg-blue-50 text-blue-700 border-blue-200", icon: Lightbulb },
     objection_handling: { label: "Objection Handling", color: "bg-purple-50 text-purple-700 border-purple-200", icon: Shield },
-    closing_strategy: { label: "Closing Strategy", color: "bg-terracotta/10 text-terracotta border-terracotta/20", icon: Target },
+    closing_strategy: { label: "Closing Strategy", color: "bg-electric/10 text-electric border-electric/20", icon: Target },
   };
 
   return (
     <Card className="border-border/50">
       <CardContent className="p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Brain className="w-5 h-5 text-terracotta" />
-          <h3 className="text-base font-serif text-forest">AI-Powered Insights from Real Interactions</h3>
+          <Brain className="w-5 h-5 text-electric" />
+          <h3 className="text-base font-serif text-off-white">AI-Powered Insights from Real Interactions</h3>
         </div>
-        <p className="text-xs text-forest/50 font-sans mb-4">These patterns were identified by our AI coach from actual rep communications. Learn from what works and avoid common pitfalls.</p>
+        <p className="text-xs text-soft-gray font-sans mb-4">These patterns were identified by our AI coach from actual rep communications. Learn from what works and avoid common pitfalls.</p>
         <div className="space-y-3">
           {insights.map((insight: any) => {
             const config = categoryConfig[insight.category] || { label: insight.category, color: "bg-gray-50 text-gray-700 border-gray-200", icon: Lightbulb };
@@ -832,12 +832,12 @@ function TrainingInsightsSection() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="text-sm font-sans font-medium">{insight.title}</h4>
-                      <Badge className="text-[9px] bg-white/50">{config.label}</Badge>
+                      <Badge className="text-[9px] bg-charcoal/50">{config.label}</Badge>
                       {insight.frequency > 1 && <span className="text-[10px] opacity-60">Seen {insight.frequency}x</span>}
                     </div>
                     <p className="text-xs opacity-80 font-sans whitespace-pre-wrap">{insight.description}</p>
                     {insight.exampleSnippets?.length > 0 && (
-                      <div className="mt-2 p-2 bg-white/40 rounded text-[11px] font-mono opacity-70 truncate">
+                      <div className="mt-2 p-2 bg-charcoal/40 rounded text-[11px] font-mono opacity-70 truncate">
                         "…{(insight.exampleSnippets as any[])[0]?.snippet || ""}…"
                       </div>
                     )}
@@ -858,8 +858,8 @@ function MarkCompleteButton({ moduleId, isComplete, onDone }: { moduleId: number
     onSuccess: () => { toast.success("Module completed! +50 points"); utils.repTraining.myProgress.invalidate(); utils.repGamification.myStats.invalidate(); onDone(); },
     onError: (err: any) => toast.error(err.message),
   });
-  if (isComplete) return <Badge className="bg-green-100 text-green-700">Completed</Badge>;
-  return <Button onClick={() => complete.mutate({ moduleId })} disabled={complete.isPending} className="bg-forest hover:bg-forest/90 text-white rounded-full font-sans text-sm">{complete.isPending ? "Saving..." : "Mark as Complete"}</Button>;
+  if (isComplete) return <Badge className="badge-success">Completed</Badge>;
+  return <Button onClick={() => complete.mutate({ moduleId })} disabled={complete.isPending} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm">{complete.isPending ? "Saving..." : "Mark as Complete"}</Button>;
 }
 
 function QuizDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -875,25 +875,25 @@ function QuizDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader><DialogTitle className="font-serif text-forest">Certification Quiz</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle className="font-serif text-off-white">Certification Quiz</DialogTitle></DialogHeader>
         {result ? (
           <div className="text-center py-6">
             <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${result.passed ? "bg-green-100" : "bg-red-100"}`}>
-              {result.passed ? <GraduationCap className="w-10 h-10 text-green-600" /> : <AlertCircle className="w-10 h-10 text-red-500" />}
+              {result.passed ? <GraduationCap className="w-10 h-10 text-emerald-400" /> : <AlertCircle className="w-10 h-10 text-red-500" />}
             </div>
-            <h3 className="text-xl font-serif text-forest mb-2">{result.passed ? "You Passed!" : "Not Quite"}</h3>
-            <p className="text-sm text-forest/60 font-sans">Score: {result.score}% ({result.correct}/{result.total} correct)</p>
-            <Button onClick={onClose} className="mt-4 bg-forest hover:bg-forest/90 text-white rounded-full font-sans">{result.passed ? "Continue" : "Close"}</Button>
+            <h3 className="text-xl font-serif text-off-white mb-2">{result.passed ? "You Passed!" : "Not Quite"}</h3>
+            <p className="text-sm text-soft-gray font-sans">Score: {result.score}% ({result.correct}/{result.total} correct)</p>
+            <Button onClick={onClose} className="mt-4 bg-electric hover:bg-electric-light text-white rounded-full font-sans">{result.passed ? "Continue" : "Close"}</Button>
           </div>
         ) : (
           <div className="space-y-6">
             {(questions || []).map((q: any) => (
               <div key={q.id} className="space-y-2">
-                <p className="text-sm font-sans text-forest font-medium">{q.id}. {q.question}</p>
+                <p className="text-sm font-sans text-off-white font-medium">{q.id}. {q.question}</p>
                 <div className="space-y-1.5">
                   {q.options.map((opt: string, i: number) => (
                     <button key={i} onClick={() => setAnswers({ ...answers, [String(q.id)]: i })}
-                      className={`w-full text-left p-3 rounded-lg border text-sm font-sans transition-colors ${answers[String(q.id)] === i ? "border-terracotta bg-terracotta/5 text-forest" : "border-border/30 text-forest/70 hover:bg-sage/5"}`}>
+                      className={`w-full text-left p-3 rounded-lg border text-sm font-sans transition-colors ${answers[String(q.id)] === i ? "border-electric bg-electric/5 text-off-white" : "border-border/30 text-soft-gray hover:bg-graphite/5"}`}>
                       {opt}
                     </button>
                   ))}
@@ -901,7 +901,7 @@ function QuizDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
               </div>
             ))}
             <Button onClick={() => submit.mutate({ answers })} disabled={submit.isPending || Object.keys(answers).length < (questions?.length || 0)}
-              className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans py-5">
+              className="w-full bg-electric hover:bg-electric/90 text-white rounded-full font-sans py-5">
               {submit.isPending ? "Grading..." : `Submit Quiz (${Object.keys(answers).length}/${questions?.length || 0} answered)`}
             </Button>
           </div>
@@ -923,45 +923,45 @@ function ActivityTab({ activities, stats, leads }: any) {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <Card className="border-border/50"><CardContent className="p-5 text-center">
-          <p className="text-2xl font-serif text-forest">{stats?.todayActivities || 0}</p>
-          <p className="text-xs text-forest/50 font-sans">Today</p>
+          <p className="text-2xl font-serif text-off-white">{stats?.todayActivities || 0}</p>
+          <p className="text-xs text-soft-gray font-sans">Today</p>
         </CardContent></Card>
         <Card className="border-border/50"><CardContent className="p-5 text-center">
-          <p className="text-2xl font-serif text-forest">{stats?.totalActivities || 0}</p>
-          <p className="text-xs text-forest/50 font-sans">All Time</p>
+          <p className="text-2xl font-serif text-off-white">{stats?.totalActivities || 0}</p>
+          <p className="text-xs text-soft-gray font-sans">All Time</p>
         </CardContent></Card>
         <Card className="border-border/50"><CardContent className="p-5 text-center">
-          <p className="text-2xl font-serif text-forest">{stats?.totalPoints?.toLocaleString() || 0}</p>
-          <p className="text-xs text-forest/50 font-sans">Points Earned</p>
+          <p className="text-2xl font-serif text-off-white">{stats?.totalPoints?.toLocaleString() || 0}</p>
+          <p className="text-xs text-soft-gray font-sans">Points Earned</p>
         </CardContent></Card>
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={() => setShowLogDialog(true)} className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans text-sm">
+        <Button onClick={() => setShowLogDialog(true)} className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans text-sm">
           <Plus className="w-4 h-4 mr-2" /> Log Activity
         </Button>
       </div>
 
       {/* Activity Feed */}
       <Card className="border-border/50">
-        <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-forest">Recent Activity</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">Recent Activity</CardTitle></CardHeader>
         <CardContent>
           {!activities?.length ? (
-            <div className="text-center py-8"><Zap className="h-8 w-8 text-forest/20 mx-auto mb-3" /><p className="text-sm text-forest/50 font-sans">No activities logged yet. Start by logging a call or email!</p></div>
+            <div className="text-center py-8"><Zap className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No activities logged yet. Start by logging a call or email!</p></div>
           ) : (
             <div className="space-y-2">
               {activities.map((a: any) => {
                 const Icon = activityIcons[a.type] || Zap;
                 return (
                   <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/30">
-                    <div className="w-8 h-8 rounded-full bg-forest/5 flex items-center justify-center shrink-0"><Icon className="w-4 h-4 text-forest/60" /></div>
+                    <div className="w-8 h-8 rounded-full bg-electric/10 flex items-center justify-center shrink-0"><Icon className="w-4 h-4 text-soft-gray" /></div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-sans text-forest font-medium capitalize">{a.type.replace(/_/g, " ")}{a.subject ? `: ${a.subject}` : ""}</p>
-                      {a.notes && <p className="text-xs text-forest/50 font-sans truncate">{a.notes}</p>}
+                      <p className="text-sm font-sans text-off-white font-medium capitalize">{a.type.replace(/_/g, " ")}{a.subject ? `: ${a.subject}` : ""}</p>
+                      {a.notes && <p className="text-xs text-soft-gray font-sans truncate">{a.notes}</p>}
                     </div>
                     <div className="text-right shrink-0">
-                      <Badge className="bg-green-50 text-green-600 text-[10px]">+{a.pointsEarned} pts</Badge>
-                      <p className="text-[10px] text-forest/40 font-sans mt-1">{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ""}</p>
+                      <Badge className="bg-green-50 text-emerald-400 text-[10px]">+{a.pointsEarned} pts</Badge>
+                      <p className="text-[10px] text-soft-gray/60 font-sans mt-1">{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ""}</p>
                     </div>
                   </div>
                 );
@@ -992,10 +992,10 @@ function LogActivityDialog({ open, onClose, leads }: { open: boolean; onClose: (
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle className="font-serif text-forest">Log Activity</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle className="font-serif text-off-white">Log Activity</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label className="text-forest/80 text-sm">Activity Type *</Label>
+            <Label className="text-off-white/80 text-sm">Activity Type *</Label>
             <Select value={type} onValueChange={setType}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -1007,7 +1007,7 @@ function LogActivityDialog({ open, onClose, leads }: { open: boolean; onClose: (
           </div>
           {leads?.length > 0 && (
             <div>
-              <Label className="text-forest/80 text-sm">Related Lead</Label>
+              <Label className="text-off-white/80 text-sm">Related Lead</Label>
               <Select value={leadId} onValueChange={setLeadId}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select a lead (optional)" /></SelectTrigger>
                 <SelectContent>
@@ -1016,11 +1016,11 @@ function LogActivityDialog({ open, onClose, leads }: { open: boolean; onClose: (
               </Select>
             </div>
           )}
-          <div><Label className="text-forest/80 text-sm">Subject</Label><Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Brief description" className="mt-1" /></div>
-          <div><Label className="text-forest/80 text-sm">Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Details about the activity" className="mt-1 min-h-[80px]" /></div>
+          <div><Label className="text-off-white/80 text-sm">Subject</Label><Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Brief description" className="mt-1" /></div>
+          <div><Label className="text-off-white/80 text-sm">Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Details about the activity" className="mt-1 min-h-[80px]" /></div>
           {(type === "call" || type === "meeting") && (
             <div>
-              <Label className="text-forest/80 text-sm">Outcome</Label>
+              <Label className="text-off-white/80 text-sm">Outcome</Label>
               <Select value={outcome} onValueChange={setOutcome}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select outcome" /></SelectTrigger>
                 <SelectContent>
@@ -1031,9 +1031,9 @@ function LogActivityDialog({ open, onClose, leads }: { open: boolean; onClose: (
               </Select>
             </div>
           )}
-          <div><Label className="text-forest/80 text-sm">Schedule Follow-up (optional)</Label><Input type="date" value={followUpAt} onChange={(e) => setFollowUpAt(e.target.value)} className="mt-1" /></div>
+          <div><Label className="text-off-white/80 text-sm">Schedule Follow-up (optional)</Label><Input type="date" value={followUpAt} onChange={(e) => setFollowUpAt(e.target.value)} className="mt-1" /></div>
           <Button onClick={() => logActivity.mutate({ type: type as any, leadId: leadId ? Number(leadId) : undefined, subject: subject || undefined, notes: notes || undefined, outcome: outcome ? outcome as any : undefined, followUpAt: followUpAt ? new Date(followUpAt).toISOString() : undefined })}
-            disabled={logActivity.isPending} className="w-full bg-forest hover:bg-forest/90 text-white rounded-full font-sans">
+            disabled={logActivity.isPending} className="w-full bg-electric hover:bg-electric-light text-white rounded-full font-sans">
             {logActivity.isPending ? "Logging..." : "Log Activity"}
           </Button>
         </div>
@@ -1060,8 +1060,8 @@ function CommsTab({ templates, sentEmails, leads }: any) {
         ].map((a) => (
           <Card key={a.label} className="border-border/50 cursor-pointer hover:shadow-md transition-shadow" onClick={a.action}>
             <CardContent className="p-4 text-center">
-              <a.icon className="w-6 h-6 text-terracotta mx-auto mb-2" />
-              <p className="text-sm font-sans text-forest font-medium">{a.label}</p>
+              <a.icon className="w-6 h-6 text-electric mx-auto mb-2" />
+              <p className="text-sm font-sans text-off-white font-medium">{a.label}</p>
             </CardContent>
           </Card>
         ))}
@@ -1070,16 +1070,16 @@ function CommsTab({ templates, sentEmails, leads }: any) {
       {/* Email Templates */}
       {templates?.length > 0 && (
         <Card className="border-border/50">
-          <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-forest">Email Templates</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">Email Templates</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {templates.map((t: any) => (
-                <div key={t.id} className="p-3 rounded-lg border border-border/30 hover:bg-sage/5 cursor-pointer transition-colors" onClick={() => setShowCompose(true)}>
+                <div key={t.id} className="p-3 rounded-lg border border-border/30 hover:bg-graphite/5 cursor-pointer transition-colors" onClick={() => setShowCompose(true)}>
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge className="text-[10px] bg-forest/10 text-forest capitalize">{t.category}</Badge>
-                    <span className="text-sm font-sans text-forest font-medium">{t.name}</span>
+                    <Badge className="text-[10px] bg-electric/10 text-off-white capitalize">{t.category}</Badge>
+                    <span className="text-sm font-sans text-off-white font-medium">{t.name}</span>
                   </div>
-                  <p className="text-xs text-forest/50 font-sans">{t.subject}</p>
+                  <p className="text-xs text-soft-gray font-sans">{t.subject}</p>
                 </div>
               ))}
             </div>
@@ -1089,21 +1089,21 @@ function CommsTab({ templates, sentEmails, leads }: any) {
 
       {/* Sent Emails */}
       <Card className="border-border/50">
-        <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-forest">Sent Emails ({sentEmails?.length || 0})</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">Sent Emails ({sentEmails?.length || 0})</CardTitle></CardHeader>
         <CardContent>
           {!sentEmails?.length ? (
-            <div className="text-center py-8"><Mail className="h-8 w-8 text-forest/20 mx-auto mb-3" /><p className="text-sm text-forest/50 font-sans">No emails sent yet.</p></div>
+            <div className="text-center py-8"><Mail className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No emails sent yet.</p></div>
           ) : (
             <div className="space-y-2">
               {sentEmails.map((e: any) => (
                 <div key={e.id} className="flex items-center justify-between p-3 rounded-lg border border-border/30">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-sans text-forest font-medium truncate">{e.subject}</p>
-                    <p className="text-xs text-forest/50 font-sans">To: {e.recipientName || e.recipientEmail}</p>
+                    <p className="text-sm font-sans text-off-white font-medium truncate">{e.subject}</p>
+                    <p className="text-xs text-soft-gray font-sans">To: {e.recipientName || e.recipientEmail}</p>
                   </div>
                   <div className="text-right shrink-0 ml-2">
-                    <Badge className={`text-[10px] ${e.status === "sent" ? "bg-blue-50 text-blue-600" : e.status === "opened" ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-600"}`}>{e.status}</Badge>
-                    <p className="text-[10px] text-forest/40 font-sans mt-1">{e.sentAt ? new Date(e.sentAt).toLocaleDateString() : ""}</p>
+                    <Badge className={`text-[10px] ${e.status === "sent" ? "bg-blue-50 text-blue-600" : e.status === "opened" ? "bg-green-50 text-emerald-400" : "bg-gray-50 text-gray-600"}`}>{e.status}</Badge>
+                    <p className="text-[10px] text-soft-gray/60 font-sans mt-1">{e.sentAt ? new Date(e.sentAt).toLocaleDateString() : ""}</p>
                   </div>
                 </div>
               ))}
@@ -1155,11 +1155,11 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle className="font-serif text-forest">Compose Email</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle className="font-serif text-off-white">Compose Email</DialogTitle></DialogHeader>
         <div className="space-y-4">
           {leads?.length > 0 && (
             <div>
-              <Label className="text-forest/80 text-sm">Send to Lead</Label>
+              <Label className="text-off-white/80 text-sm">Send to Lead</Label>
               <Select value={leadId} onValueChange={handleSelectLead}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select a lead" /></SelectTrigger>
                 <SelectContent>{leads.map((l: any) => <SelectItem key={l.id} value={String(l.id)}>{l.businessName} — {l.contactName}</SelectItem>)}</SelectContent>
@@ -1167,17 +1167,17 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
             </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-            <div><Label className="text-forest/80 text-sm">Recipient Email *</Label><Input value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="email@example.com" className="mt-1" /></div>
-            <div><Label className="text-forest/80 text-sm">Recipient Name</Label><Input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="John Smith" className="mt-1" /></div>
+            <div><Label className="text-off-white/80 text-sm">Recipient Email *</Label><Input value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="email@example.com" className="mt-1" /></div>
+            <div><Label className="text-off-white/80 text-sm">Recipient Name</Label><Input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="John Smith" className="mt-1" /></div>
           </div>
 
           {/* AI Generate Buttons */}
           <div>
-            <Label className="text-forest/80 text-sm mb-2 block">AI Generate Draft</Label>
+            <Label className="text-off-white/80 text-sm mb-2 block">AI Generate Draft</Label>
             <div className="flex flex-wrap gap-2">
               {["intro", "follow_up", "proposal", "close", "check_in"].map((p) => (
                 <Button key={p} size="sm" variant="outline" onClick={() => handleGenerate(p)} disabled={generating}
-                  className="text-xs border-sage/30 text-forest/70 hover:bg-terracotta/5 hover:border-terracotta/30 rounded-full">
+                  className="text-xs border-border text-soft-gray hover:bg-electric/5 hover:border-electric/30 rounded-full">
                   <Sparkles className="w-3 h-3 mr-1" /> {p.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                 </Button>
               ))}
@@ -1187,10 +1187,10 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
           {/* Template Quick-fill */}
           {templates?.length > 0 && (
             <div>
-              <Label className="text-forest/80 text-sm mb-2 block">Or Use Template</Label>
+              <Label className="text-off-white/80 text-sm mb-2 block">Or Use Template</Label>
               <div className="flex flex-wrap gap-2">
                 {templates.slice(0, 4).map((t: any) => (
-                  <Button key={t.id} size="sm" variant="outline" onClick={() => handleSelectTemplate(t)} className="text-xs border-sage/30 text-forest/70 rounded-full">
+                  <Button key={t.id} size="sm" variant="outline" onClick={() => handleSelectTemplate(t)} className="text-xs border-border text-soft-gray rounded-full">
                     <FileText className="w-3 h-3 mr-1" /> {t.name}
                   </Button>
                 ))}
@@ -1198,12 +1198,12 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
             </div>
           )}
 
-          <div><Label className="text-forest/80 text-sm">Subject *</Label><Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject line" className="mt-1" /></div>
-          <div><Label className="text-forest/80 text-sm">Body *</Label><Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write your email..." className="mt-1 min-h-[150px]" /></div>
+          <div><Label className="text-off-white/80 text-sm">Subject *</Label><Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject line" className="mt-1" /></div>
+          <div><Label className="text-off-white/80 text-sm">Body *</Label><Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write your email..." className="mt-1 min-h-[150px]" /></div>
 
           <Button onClick={() => sendEmail.mutate({ leadId: leadId ? Number(leadId) : undefined, recipientEmail, recipientName: recipientName || undefined, subject, body })}
             disabled={sendEmail.isPending || !recipientEmail || !subject || !body}
-            className="w-full bg-forest hover:bg-forest/90 text-white rounded-full font-sans">
+            className="w-full bg-electric hover:bg-electric-light text-white rounded-full font-sans">
             {sendEmail.isPending ? "Sending..." : "Send Email"} <Send className="w-4 h-4 ml-2" />
           </Button>
         </div>
@@ -1227,16 +1227,16 @@ function StripeConnectSetup() {
   });
 
   if (isLoading) {
-    return <div className="h-16 bg-cream-dark/20 rounded-lg animate-pulse" />;
+    return <div className="h-16 bg-midnight-dark/20 rounded-lg animate-pulse" />;
   }
 
   if (connectStatus?.onboarded) {
     return (
       <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 border border-green-200">
-        <CheckCircle className="h-5 w-5 text-green-600" />
+        <CheckCircle className="h-5 w-5 text-emerald-400" />
         <div>
           <p className="text-sm font-medium text-green-800 font-sans">Payout Account Connected</p>
-          <p className="text-xs text-green-600 font-sans">Your bank account is set up and ready to receive payouts via Stripe.</p>
+          <p className="text-xs text-emerald-400 font-sans">Your bank account is set up and ready to receive payouts via Stripe.</p>
         </div>
       </div>
     );
@@ -1244,11 +1244,11 @@ function StripeConnectSetup() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-50 border border-amber-200">
-        <AlertCircle className="h-5 w-5 text-amber-600" />
+      <div className="flex items-center gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+        <AlertCircle className="h-5 w-5 text-amber-400" />
         <div className="flex-1">
           <p className="text-sm font-medium text-amber-800 font-sans">Payout Setup Required</p>
-          <p className="text-xs text-amber-600 font-sans">
+          <p className="text-xs text-amber-400 font-sans">
             Complete Stripe Connect onboarding to receive commission payouts. This securely collects your tax info (W-9) and bank account details.
           </p>
         </div>
@@ -1264,7 +1264,7 @@ function StripeConnectSetup() {
           <span className="flex items-center gap-2"><Shield className="h-4 w-4" /> Set Up Payouts with Stripe</span>
         )}
       </Button>
-      <p className="text-[10px] text-forest/40 font-sans text-center">
+      <p className="text-[10px] text-soft-gray/60 font-sans text-center">
         Powered by Stripe Connect. Your sensitive information is handled securely by Stripe — we never see your bank details or SSN.
       </p>
     </div>

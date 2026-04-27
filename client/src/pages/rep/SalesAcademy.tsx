@@ -24,11 +24,11 @@ const iconMap: Record<string, any> = {
 };
 
 const moduleColorMap: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  "product-mastery": { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", badge: "bg-blue-100 text-blue-700" },
-  "psychology-selling": { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", badge: "bg-purple-100 text-purple-700" },
+  "product-mastery": { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", badge: "badge-info" },
+  "psychology-selling": { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", badge: "badge-purple" },
   "discovery-call": { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
-  "objection-handling": { bg: "bg-red-50", border: "border-red-200", text: "text-red-700", badge: "bg-red-100 text-red-700" },
-  "closing-techniques": { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", badge: "bg-amber-100 text-amber-700" },
+  "objection-handling": { bg: "bg-red-50", border: "border-red-200", text: "text-red-700", badge: "badge-danger" },
+  "closing-techniques": { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-700", badge: "badge-pending-payment" },
   "digital-prospecting": { bg: "bg-cyan-50", border: "border-cyan-200", text: "text-cyan-700", badge: "bg-cyan-100 text-cyan-700" },
   "account-management": { bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", badge: "bg-teal-100 text-teal-700" },
   "advanced-tactics": { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", badge: "bg-indigo-100 text-indigo-700" },
@@ -129,10 +129,10 @@ export default function SalesAcademy() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 bg-forest/5 rounded-xl animate-pulse" />
+        <div className="h-32 bg-electric/10 rounded-xl animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-40 bg-forest/5 rounded-xl animate-pulse" />
+            <div key={i} className="h-40 bg-electric/10 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -147,7 +147,7 @@ export default function SalesAcademy() {
     const mod = academyData?.modules.find((m: any) => m.id === selectedModuleId);
     return (
       <div className="space-y-6">
-        <Button variant="ghost" onClick={() => setActiveView("overview")} className="text-forest/60 hover:text-forest">
+        <Button variant="ghost" onClick={() => setActiveView("overview")} className="text-soft-gray hover:text-off-white">
           <ChevronLeft className="w-4 h-4 mr-1" /> Back to Academy
         </Button>
 
@@ -156,13 +156,13 @@ export default function SalesAcademy() {
             {result.passed ? (
               <>
                 <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <Trophy className="w-10 h-10 text-green-600" />
+                  <Trophy className="w-10 h-10 text-emerald-400" />
                 </div>
-                <h2 className="text-2xl font-serif text-forest mb-2">Congratulations!</h2>
-                <p className="text-forest/60 font-sans mb-4">
-                  You passed the {mod?.title} quiz with a score of <span className="font-bold text-green-600">{result.score}%</span>
+                <h2 className="text-2xl font-serif text-off-white mb-2">Congratulations!</h2>
+                <p className="text-soft-gray font-sans mb-4">
+                  You passed the {mod?.title} quiz with a score of <span className="font-bold text-emerald-400">{result.score}%</span>
                 </p>
-                <Badge className="bg-green-100 text-green-700 text-sm px-4 py-1">
+                <Badge className="badge-success text-sm px-4 py-1">
                   <GraduationCap className="w-4 h-4 mr-1" /> Module Certified
                 </Badge>
               </>
@@ -171,12 +171,12 @@ export default function SalesAcademy() {
                 <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
                   <RotateCcw className="w-10 h-10 text-red-600" />
                 </div>
-                <h2 className="text-2xl font-serif text-forest mb-2">Not Quite There</h2>
-                <p className="text-forest/60 font-sans mb-4">
+                <h2 className="text-2xl font-serif text-off-white mb-2">Not Quite There</h2>
+                <p className="text-soft-gray font-sans mb-4">
                   You scored <span className="font-bold text-red-600">{result.score}%</span> — you need {result.passingScore}% to pass.
                   Review the material and try again.
                 </p>
-                <Button onClick={() => openModule(selectedModuleId!)} className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans">
+                <Button onClick={() => openModule(selectedModuleId!)} className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans">
                   Review Lessons
                 </Button>
               </>
@@ -187,7 +187,7 @@ export default function SalesAcademy() {
         {/* Question-by-question breakdown */}
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="text-base font-serif text-forest">Question Breakdown</CardTitle>
+            <CardTitle className="text-base font-serif text-off-white">Question Breakdown</CardTitle>
             <CardDescription className="text-xs font-sans">
               {result.correctCount} of {result.totalQuestions} correct
             </CardDescription>
@@ -197,11 +197,11 @@ export default function SalesAcademy() {
               <div key={r.questionId} className={`p-4 rounded-lg border ${r.correct ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"}`}>
                 <div className="flex items-start gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${r.correct ? "bg-green-100" : "bg-red-100"}`}>
-                    {r.correct ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+                    {r.correct ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-sans text-forest font-medium">Question {i + 1}</p>
-                    <p className="text-xs text-forest/60 font-sans mt-1">
+                    <p className="text-sm font-sans text-off-white font-medium">Question {i + 1}</p>
+                    <p className="text-xs text-soft-gray font-sans mt-1">
                       <Lightbulb className="w-3 h-3 inline mr-1" />
                       {r.explanation}
                     </p>
@@ -218,7 +218,7 @@ export default function SalesAcademy() {
               <RotateCcw className="w-4 h-4 mr-1" /> Retake Quiz
             </Button>
           )}
-          <Button onClick={() => setActiveView("overview")} className="bg-forest hover:bg-forest-light text-white rounded-full font-sans">
+          <Button onClick={() => setActiveView("overview")} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans">
             Back to Academy
           </Button>
         </div>
@@ -237,18 +237,18 @@ export default function SalesAcademy() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => setActiveView("overview")} className="text-forest/60 hover:text-forest">
+          <Button variant="ghost" onClick={() => setActiveView("overview")} className="text-soft-gray hover:text-off-white">
             <ChevronLeft className="w-4 h-4 mr-1" /> Back
           </Button>
-          <div className="text-sm font-sans text-forest/60">
+          <div className="text-sm font-sans text-soft-gray">
             {answeredCount} / {totalQuestions} answered
           </div>
         </div>
 
         <Card className="border-border/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-serif text-forest flex items-center gap-2">
-              <GraduationCap className="w-5 h-5 text-terracotta" />
+            <CardTitle className="text-lg font-serif text-off-white flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-electric" />
               {quizData.moduleTitle} — Quiz
             </CardTitle>
             <CardDescription className="text-xs font-sans">
@@ -260,14 +260,14 @@ export default function SalesAcademy() {
 
         <div className="space-y-4">
           {quizData.questions.map((q: any, qIndex: number) => (
-            <Card key={q.id} className={`border transition-all ${quizAnswers[q.id] !== undefined ? "border-forest/30 bg-forest/5" : "border-border/50"}`}>
+            <Card key={q.id} className={`border transition-all ${quizAnswers[q.id] !== undefined ? "border-electric/30 bg-electric/10" : "border-border/50"}`}>
               <CardContent className="p-5">
                 <div className="flex items-start gap-3 mb-4">
-                  <span className="w-7 h-7 rounded-full bg-forest/10 flex items-center justify-center text-xs font-sans font-bold text-forest shrink-0">
+                  <span className="w-7 h-7 rounded-full bg-electric/10 flex items-center justify-center text-xs font-sans font-bold text-electric shrink-0">
                     {qIndex + 1}
                   </span>
                   <div>
-                    <p className="text-sm font-sans text-forest font-medium leading-relaxed">{q.question}</p>
+                    <p className="text-sm font-sans text-off-white font-medium leading-relaxed">{q.question}</p>
                     <Badge variant="outline" className="mt-1 text-[10px]">
                       {q.difficulty === "easy" ? "Foundation" : q.difficulty === "medium" ? "Applied" : "Advanced"}
                     </Badge>
@@ -280,13 +280,13 @@ export default function SalesAcademy() {
                       onClick={() => setQuizAnswers((prev) => ({ ...prev, [q.id]: optIndex }))}
                       className={`w-full text-left p-3 rounded-lg border text-sm font-sans transition-all ${
                         quizAnswers[q.id] === optIndex
-                          ? "border-forest bg-forest/10 text-forest font-medium"
-                          : "border-border/30 hover:border-forest/30 hover:bg-forest/5 text-forest/70"
+                          ? "border-electric bg-electric/10 text-off-white font-medium"
+                          : "border-border/30 hover:border-electric/30 hover:bg-electric/10 text-soft-gray"
                       }`}
                     >
                       <span className="inline-flex items-center gap-2">
                         <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          quizAnswers[q.id] === optIndex ? "border-forest bg-forest" : "border-forest/30"
+                          quizAnswers[q.id] === optIndex ? "border-electric bg-electric" : "border-electric/30"
                         }`}>
                           {quizAnswers[q.id] === optIndex && <CheckCircle className="w-3 h-3 text-white" />}
                         </span>
@@ -304,7 +304,7 @@ export default function SalesAcademy() {
           <Button
             onClick={handleSubmitQuiz}
             disabled={!allAnswered || submitQuizMut.isPending}
-            className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans px-8 py-3 text-base"
+            className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans px-8 py-3 text-base"
           >
             {submitQuizMut.isPending ? (
               <span className="flex items-center gap-2">
@@ -337,10 +337,10 @@ export default function SalesAcademy() {
       <div className="space-y-6">
         {/* Navigation bar */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => setActiveView("overview")} className="text-forest/60 hover:text-forest">
+          <Button variant="ghost" onClick={() => setActiveView("overview")} className="text-soft-gray hover:text-off-white">
             <ChevronLeft className="w-4 h-4 mr-1" /> Back to Academy
           </Button>
-          <div className="flex items-center gap-2 text-sm font-sans text-forest/60">
+          <div className="flex items-center gap-2 text-sm font-sans text-soft-gray">
             <span>Lesson {currentLessonIndex + 1} of {totalLessons}</span>
           </div>
         </div>
@@ -350,8 +350,8 @@ export default function SalesAcademy() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-serif text-forest">{moduleDetail.title}</h2>
-                <p className="text-xs text-forest/50 font-sans mt-1">
+                <h2 className="text-lg font-serif text-off-white">{moduleDetail.title}</h2>
+                <p className="text-xs text-soft-gray font-sans mt-1">
                   <Clock className="w-3 h-3 inline mr-1" />{moduleDetail.estimatedMinutes} min total
                 </p>
               </div>
@@ -365,10 +365,10 @@ export default function SalesAcademy() {
                   onClick={() => { setCurrentLessonIndex(i); setLessonStartTime(Date.now()); }}
                   className={`w-2.5 h-2.5 rounded-full transition-all ${
                     i === currentLessonIndex
-                      ? "bg-forest w-6"
+                      ? "bg-electric w-6"
                       : i < (moduleDetail.progress?.lessonsCompleted ?? 0)
                       ? "bg-green-500"
-                      : "bg-forest/20"
+                      : "bg-electric/20"
                   }`}
                   title={`Lesson ${i + 1}`}
                 />
@@ -381,27 +381,27 @@ export default function SalesAcademy() {
         {lesson && (
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-terracotta" />
+              <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-electric" />
                 {lesson.title}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ScrollArea className="max-h-[60vh]">
-                <div className="prose prose-sm max-w-none text-forest/80 font-sans">
+                <div className="prose prose-sm max-w-none text-off-white/80 font-sans">
                   <Streamdown>{lesson.content}</Streamdown>
                 </div>
 
                 {/* Key Takeaways */}
                 {lesson.keyTakeaways && lesson.keyTakeaways.length > 0 && (
-                  <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <h4 className="text-sm font-serif text-forest flex items-center gap-2 mb-3">
-                      <Lightbulb className="w-4 h-4 text-amber-600" /> Key Takeaways
+                  <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-3">
+                      <Lightbulb className="w-4 h-4 text-amber-400" /> Key Takeaways
                     </h4>
                     <ul className="space-y-2">
                       {lesson.keyTakeaways.map((t: string, i: number) => (
-                        <li key={i} className="text-xs text-forest/70 font-sans flex items-start gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                        <li key={i} className="text-xs text-soft-gray font-sans flex items-start gap-2">
+                          <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                           <span>{t}</span>
                         </li>
                       ))}
@@ -412,19 +412,19 @@ export default function SalesAcademy() {
                 {/* Script / Role Play */}
                 {lesson.script && (
                   <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="text-sm font-serif text-forest flex items-center gap-2 mb-2">
+                    <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-2">
                       <MessageSquare className="w-4 h-4 text-blue-600" /> Practice Script
                     </h4>
-                    <div className="text-xs text-forest/70 font-sans whitespace-pre-wrap">{lesson.script}</div>
+                    <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap">{lesson.script}</div>
                   </div>
                 )}
 
                 {lesson.rolePlay && (
                   <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                    <h4 className="text-sm font-serif text-forest flex items-center gap-2 mb-2">
+                    <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-2">
                       <Zap className="w-4 h-4 text-purple-600" /> Role Play Scenario
                     </h4>
-                    <div className="text-xs text-forest/70 font-sans whitespace-pre-wrap">{lesson.rolePlay}</div>
+                    <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap">{lesson.rolePlay}</div>
                   </div>
                 )}
               </ScrollArea>
@@ -456,7 +456,7 @@ export default function SalesAcademy() {
                 </Button>
                 <Button
                   onClick={() => openQuiz(selectedModuleId!)}
-                  className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans"
+                  className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans"
                 >
                   <GraduationCap className="w-4 h-4 mr-1" /> Take Quiz
                 </Button>
@@ -465,7 +465,7 @@ export default function SalesAcademy() {
               <Button
                 onClick={handleCompleteLesson}
                 disabled={completeLessonMut.isPending}
-                className="bg-forest hover:bg-forest-light text-white rounded-full font-sans"
+                className="bg-electric hover:bg-electric-light text-white rounded-full font-sans"
               >
                 Next Lesson <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
@@ -482,10 +482,10 @@ export default function SalesAcademy() {
   return (
     <div className="space-y-6">
       {/* Hero Banner */}
-      <Card className="border-0 bg-gradient-to-br from-forest to-forest-light text-white overflow-hidden relative">
+      <Card className="border-0 bg-gradient-to-br from-electric to-electric-dim text-midnight overflow-hidden relative">
         <CardContent className="p-8 relative z-10">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-charcoal/20 flex items-center justify-center">
               <GraduationCap className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -499,11 +499,11 @@ export default function SalesAcademy() {
                 <span className="text-xs font-sans text-white/70">Overall Progress</span>
                 <span className="text-sm font-sans font-bold">{overallProgress}%</span>
               </div>
-              <Progress value={overallProgress} className="h-3 bg-white/20" />
+              <Progress value={overallProgress} className="h-3 bg-charcoal/20" />
             </div>
             <div className="text-center px-4 border-l border-white/20">
               <p className="text-2xl font-serif">{academyData?.modules.filter((m: any) => m.progress?.quizPassed).length || 0}</p>
-              <p className="text-[10px] font-sans text-white/60">of {academyData?.modules.length || 8} certified</p>
+              <p className="text-[10px] font-sans text-off-white/50">of {academyData?.modules.length || 8} certified</p>
             </div>
             {academyData?.isFullyCertified && (
               <div className="px-4 border-l border-white/20">
@@ -515,25 +515,25 @@ export default function SalesAcademy() {
           </div>
         </CardContent>
         {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-white/5 rounded-full translate-y-1/2" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-charcoal/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-charcoal/5 rounded-full translate-y-1/2" />
       </Card>
 
       {/* Daily Training Gate Banner */}
       {dailyCheckIn && !dailyCheckIn.isCleared && dailyCheckIn.pendingReviews.length > 0 && (
-        <Card className="border-2 border-amber-300 bg-amber-50/80">
+        <Card className="border-2 border-amber-300 bg-amber-500/10/80">
           <CardContent className="p-5">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6 text-amber-600" />
+                <AlertTriangle className="w-6 h-6 text-amber-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-serif text-forest font-medium mb-1">Daily Training Required</h3>
-                <p className="text-xs text-forest/60 font-sans mb-3">
+                <h3 className="text-sm font-serif text-off-white font-medium mb-1">Daily Training Required</h3>
+                <p className="text-xs text-soft-gray font-sans mb-3">
                   Complete your daily coaching reviews before accessing leads and making calls.
                   You have <span className="font-bold text-amber-700">{dailyCheckIn.pendingReviews.length}</span> review{dailyCheckIn.pendingReviews.length > 1 ? "s" : ""} to complete today.
                   {dailyCheckIn.config && (
-                    <span className="text-forest/40 ml-1">
+                    <span className="text-soft-gray/60 ml-1">
                       ({dailyCheckIn.level.charAt(0).toUpperCase() + dailyCheckIn.level.slice(1)} tier: max {dailyCheckIn.config.maxDailyReviews}/day)
                     </span>
                   )}
@@ -543,7 +543,7 @@ export default function SalesAcademy() {
                     value={dailyCheckIn.checkIn ? (dailyCheckIn.checkIn.reviewsCompleted / Math.max(dailyCheckIn.checkIn.reviewsRequired, 1)) * 100 : 0}
                     className="h-2 flex-1"
                   />
-                  <span className="text-xs font-sans text-forest/50">
+                  <span className="text-xs font-sans text-soft-gray">
                     {dailyCheckIn.checkIn?.reviewsCompleted || 0}/{dailyCheckIn.checkIn?.reviewsRequired || 0} done
                   </span>
                 </div>
@@ -556,7 +556,7 @@ export default function SalesAcademy() {
       {dailyCheckIn?.isCleared && dailyCheckIn.checkIn && dailyCheckIn.checkIn.reviewsRequired > 0 && (
         <Card className="border border-green-200 bg-green-50/50">
           <CardContent className="p-4 flex items-center gap-3">
-            <ShieldCheck className="w-5 h-5 text-green-600" />
+            <ShieldCheck className="w-5 h-5 text-emerald-400" />
             <span className="text-sm font-sans text-green-700">Daily training complete! You're cleared to work.</span>
           </CardContent>
         </Card>
@@ -564,8 +564,8 @@ export default function SalesAcademy() {
 
       {/* Tabs: Modules / Leaderboard / Daily Training */}
       <Tabs defaultValue="modules">
-        <TabsList className="bg-forest/5">
-          <TabsTrigger value="daily" className="font-sans text-xs data-[state=active]:bg-terracotta data-[state=active]:text-white relative">
+        <TabsList className="bg-electric/10">
+          <TabsTrigger value="daily" className="font-sans text-xs data-[state=active]:bg-electric data-[state=active]:text-white relative">
             <CalendarCheck className="w-3.5 h-3.5 mr-1" /> Daily Training
             {dailyCheckIn && !dailyCheckIn.isCleared && dailyCheckIn.pendingReviews.length > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center">
@@ -573,13 +573,13 @@ export default function SalesAcademy() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="modules" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">
+          <TabsTrigger value="modules" className="font-sans text-xs data-[state=active]:bg-electric data-[state=active]:text-white">
             <BookOpen className="w-3.5 h-3.5 mr-1" /> Training Modules
           </TabsTrigger>
-          <TabsTrigger value="leaderboard" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">
+          <TabsTrigger value="leaderboard" className="font-sans text-xs data-[state=active]:bg-electric data-[state=active]:text-white">
             <Trophy className="w-3.5 h-3.5 mr-1" /> Leaderboard
           </TabsTrigger>
-          <TabsTrigger value="certifications" className="font-sans text-xs data-[state=active]:bg-forest data-[state=active]:text-white">
+          <TabsTrigger value="certifications" className="font-sans text-xs data-[state=active]:bg-electric data-[state=active]:text-white">
             <Award className="w-3.5 h-3.5 mr-1" /> My Certifications
           </TabsTrigger>
           <TabsTrigger value="roleplay" className="font-sans text-xs data-[state=active]:bg-purple-600 data-[state=active]:text-white">
@@ -591,19 +591,19 @@ export default function SalesAcademy() {
         <TabsContent value="daily" className="space-y-4 mt-4">
           {checkInLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-forest/40" />
+              <Loader2 className="w-6 h-6 animate-spin text-soft-gray/60" />
             </div>
           ) : dailyCheckIn?.pendingReviews.length === 0 ? (
             <Card className="border-border/50">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <ShieldCheck className="w-8 h-8 text-green-600" />
+                  <ShieldCheck className="w-8 h-8 text-emerald-400" />
                 </div>
-                <h3 className="text-lg font-serif text-forest mb-2">All Clear!</h3>
-                <p className="text-sm text-forest/60 font-sans mb-4">
+                <h3 className="text-lg font-serif text-off-white mb-2">All Clear!</h3>
+                <p className="text-sm text-soft-gray font-sans mb-4">
                   No pending coaching reviews today. You're free to work your pipeline.
                 </p>
-                <div className="flex items-center justify-center gap-4 text-xs text-forest/40 font-sans">
+                <div className="flex items-center justify-center gap-4 text-xs text-soft-gray/60 font-sans">
                   <span className="flex items-center gap-1"><Star className="w-3 h-3" /> Tier: {dailyCheckIn?.level?.charAt(0).toUpperCase()}{dailyCheckIn?.level?.slice(1)}</span>
                   <span className="flex items-center gap-1"><CalendarCheck className="w-3 h-3" /> Max daily: {dailyCheckIn?.config?.maxDailyReviews || 0}</span>
                 </div>
@@ -613,12 +613,12 @@ export default function SalesAcademy() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-serif text-forest">Today's Coaching Reviews</h3>
-                  <p className="text-xs text-forest/50 font-sans mt-0.5">
+                  <h3 className="text-sm font-serif text-off-white">Today's Coaching Reviews</h3>
+                  <p className="text-xs text-soft-gray font-sans mt-0.5">
                     Complete these reviews to unlock your pipeline. Reviews are generated from AI analysis of your sales conversations.
                   </p>
                 </div>
-                <Badge className="bg-forest/10 text-forest text-xs">
+                <Badge className="bg-electric/10 text-electric text-xs">
                   {dailyCheckIn?.checkIn?.reviewsCompleted || 0}/{dailyCheckIn?.checkIn?.reviewsRequired || 0} done
                 </Badge>
               </div>
@@ -632,7 +632,7 @@ export default function SalesAcademy() {
                 return (
                   <Card key={review.id} className={`border transition-all ${
                     review.priority === "critical" ? "border-red-200 bg-red-50/30" :
-                    review.priority === "important" ? "border-amber-200 bg-amber-50/30" :
+                    review.priority === "important" ? "border-amber-500/20 bg-amber-500/10/30" :
                     "border-border/50"
                   }`}>
                     <CardContent className="p-5">
@@ -640,26 +640,26 @@ export default function SalesAcademy() {
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                           review.priority === "critical" ? "bg-red-100" :
                           review.priority === "important" ? "bg-amber-100" :
-                          "bg-forest/10"
+                          "bg-electric/10"
                         }`}>
                           <Brain className={`w-4 h-4 ${
                             review.priority === "critical" ? "text-red-600" :
-                            review.priority === "important" ? "text-amber-600" :
-                            "text-forest/60"
+                            review.priority === "important" ? "text-amber-400" :
+                            "text-soft-gray"
                           }`} />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-sm font-sans text-forest font-medium">{review.title}</h4>
+                            <h4 className="text-sm font-sans text-off-white font-medium">{review.title}</h4>
                             <Badge variant="outline" className={`text-[10px] ${
                               review.priority === "critical" ? "border-red-300 text-red-600" :
-                              review.priority === "important" ? "border-amber-300 text-amber-600" :
-                              "border-forest/30 text-forest/50"
+                              review.priority === "important" ? "border-amber-300 text-amber-400" :
+                              "border-electric/30 text-soft-gray"
                             }`}>
                               {review.priority}
                             </Badge>
                             {review.category && (
-                              <Badge variant="outline" className="text-[10px] border-forest/20 text-forest/40">
+                              <Badge variant="outline" className="text-[10px] border-electric/20 text-soft-gray/60">
                                 {review.category.replace(/_/g, " ")}
                               </Badge>
                             )}
@@ -670,24 +670,24 @@ export default function SalesAcademy() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setExpandedReview(review.id)}
-                              className="text-xs text-terracotta hover:text-terracotta/80 font-sans p-0 h-auto mt-1"
+                              className="text-xs text-electric hover:text-electric/80 font-sans p-0 h-auto mt-1"
                             >
                               <Play className="w-3 h-3 mr-1" /> Start Review
                             </Button>
                           ) : (
                             <div className="mt-3 space-y-4">
                               {/* Lesson content */}
-                              <div className="prose prose-sm max-w-none text-forest/80 font-sans bg-white/50 rounded-lg p-4 border border-border/30">
+                              <div className="prose prose-sm max-w-none text-off-white/80 font-sans bg-charcoal/50 rounded-lg p-4 border border-border/30">
                                 <Streamdown>{review.content}</Streamdown>
                               </div>
 
                               {/* Quiz section */}
                               {needsQuiz && quiz && (
-                                <div className="p-4 bg-forest/5 rounded-lg border border-forest/10">
-                                  <h5 className="text-xs font-sans font-medium text-forest mb-3 flex items-center gap-1">
-                                    <GraduationCap className="w-3.5 h-3.5 text-terracotta" /> Quick Quiz
+                                <div className="p-4 bg-electric/10 rounded-lg border border-electric/10">
+                                  <h5 className="text-xs font-sans font-medium text-off-white mb-3 flex items-center gap-1">
+                                    <GraduationCap className="w-3.5 h-3.5 text-electric" /> Quick Quiz
                                   </h5>
-                                  <p className="text-sm font-sans text-forest mb-3">{quiz.question}</p>
+                                  <p className="text-sm font-sans text-off-white mb-3">{quiz.question}</p>
                                   <div className="space-y-2">
                                     {quiz.options.map((opt: string, i: number) => (
                                       <button
@@ -695,13 +695,13 @@ export default function SalesAcademy() {
                                         onClick={() => setReviewQuizAnswer(prev => ({ ...prev, [review.id]: i }))}
                                         className={`w-full text-left p-3 rounded-lg border text-sm font-sans transition-all ${
                                           reviewQuizAnswer[review.id] === i
-                                            ? "border-forest bg-forest/10 text-forest font-medium"
-                                            : "border-border/30 hover:border-forest/30 hover:bg-forest/5 text-forest/70"
+                                            ? "border-electric bg-electric/10 text-off-white font-medium"
+                                            : "border-border/30 hover:border-electric/30 hover:bg-electric/10 text-soft-gray"
                                         }`}
                                       >
                                         <span className="inline-flex items-center gap-2">
                                           <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                            reviewQuizAnswer[review.id] === i ? "border-forest bg-forest" : "border-forest/30"
+                                            reviewQuizAnswer[review.id] === i ? "border-electric bg-electric" : "border-electric/30"
                                           }`}>
                                             {reviewQuizAnswer[review.id] === i && <CheckCircle className="w-3 h-3 text-white" />}
                                           </span>
@@ -733,7 +733,7 @@ export default function SalesAcademy() {
                                     );
                                   }}
                                   disabled={completeReviewMut.isPending || (needsQuiz && !hasAnswered)}
-                                  className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full font-sans text-xs px-4"
+                                  className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans text-xs px-4"
                                   size="sm"
                                 >
                                   {completeReviewMut.isPending ? (
@@ -747,7 +747,7 @@ export default function SalesAcademy() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => setExpandedReview(null)}
-                                  className="text-xs text-forest/50 font-sans"
+                                  className="text-xs text-soft-gray font-sans"
                                 >
                                   Collapse
                                 </Button>
@@ -768,8 +768,8 @@ export default function SalesAcademy() {
         <TabsContent value="modules" className="space-y-4 mt-4">
           {/* Recommended path */}
           <div className="flex items-center gap-2 mb-2">
-            <Flame className="w-4 h-4 text-terracotta" />
-            <span className="text-xs font-sans text-forest/60">Complete modules in order for the best learning experience</span>
+            <Flame className="w-4 h-4 text-electric" />
+            <span className="text-xs font-sans text-soft-gray">Complete modules in order for the best learning experience</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -790,7 +790,7 @@ export default function SalesAcademy() {
                 <Card
                   key={mod.id}
                   className={`border transition-all hover:shadow-lg cursor-pointer group ${
-                    isPassed ? `${colors.border} ${colors.bg}` : "border-border/50 hover:border-forest/30"
+                    isPassed ? `${colors.border} ${colors.bg}` : "border-border/50 hover:border-electric/30"
                   }`}
                   onClick={() => openModule(mod.id)}
                 >
@@ -798,29 +798,29 @@ export default function SalesAcademy() {
                     <div className="flex items-start gap-4">
                       <div className={`w-12 h-12 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
                         {isPassed ? (
-                          <CheckCircle className="w-6 h-6 text-green-500" />
+                          <CheckCircle className="w-6 h-6 text-emerald-400" />
                         ) : (
                           <Icon className={`w-6 h-6 ${colors.text}`} />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-sans text-forest/40 font-medium">MODULE {index + 1}</span>
+                          <span className="text-[10px] font-sans text-soft-gray/60 font-medium">MODULE {index + 1}</span>
                           {isPassed && (
-                            <Badge className="bg-green-100 text-green-700 text-[10px]">
+                            <Badge className="badge-success text-[10px]">
                               <GraduationCap className="w-3 h-3 mr-0.5" /> Certified
                             </Badge>
                           )}
                           {!prevCompleted && !isStarted && (
-                            <Badge variant="outline" className="text-[10px] text-forest/40">
+                            <Badge variant="outline" className="text-[10px] text-soft-gray/60">
                               <Lock className="w-3 h-3 mr-0.5" /> Recommended after Module {index}
                             </Badge>
                           )}
                         </div>
-                        <h3 className="text-sm font-serif text-forest font-medium truncate">{mod.title}</h3>
-                        <p className="text-xs text-forest/50 font-sans mt-1 line-clamp-2">{mod.description}</p>
+                        <h3 className="text-sm font-serif text-off-white font-medium truncate">{mod.title}</h3>
+                        <p className="text-xs text-soft-gray font-sans mt-1 line-clamp-2">{mod.description}</p>
 
-                        <div className="flex items-center gap-4 mt-3 text-[10px] text-forest/40 font-sans">
+                        <div className="flex items-center gap-4 mt-3 text-[10px] text-soft-gray/60 font-sans">
                           <span className="flex items-center gap-1">
                             <BookOpen className="w-3 h-3" /> {mod.lessonCount} lessons
                           </span>
@@ -835,8 +835,8 @@ export default function SalesAcademy() {
                         {isStarted && !isPassed && (
                           <div className="mt-3">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-[10px] font-sans text-forest/50">{mod.progress.lessonsCompleted}/{mod.lessonCount} lessons</span>
-                              <span className="text-[10px] font-sans text-forest/50">{lessonPct}%</span>
+                              <span className="text-[10px] font-sans text-soft-gray">{mod.progress.lessonsCompleted}/{mod.lessonCount} lessons</span>
+                              <span className="text-[10px] font-sans text-soft-gray">{lessonPct}%</span>
                             </div>
                             <Progress value={lessonPct} className="h-1.5" />
                           </div>
@@ -850,7 +850,7 @@ export default function SalesAcademy() {
                           </div>
                         )}
                       </div>
-                      <ChevronRight className="w-5 h-5 text-forest/20 group-hover:text-forest/50 transition-colors shrink-0" />
+                      <ChevronRight className="w-5 h-5 text-soft-gray/30 group-hover:text-soft-gray transition-colors shrink-0" />
                     </div>
                   </CardContent>
                 </Card>
@@ -863,7 +863,7 @@ export default function SalesAcademy() {
         <TabsContent value="leaderboard" className="mt-4">
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
+              <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" /> Academy Leaderboard
               </CardTitle>
               <CardDescription className="text-xs font-sans">
@@ -873,37 +873,37 @@ export default function SalesAcademy() {
             <CardContent>
               {(!leaderboard || leaderboard.length === 0) ? (
                 <div className="text-center py-8">
-                  <Trophy className="w-10 h-10 text-forest/20 mx-auto mb-3" />
-                  <p className="text-sm text-forest/50 font-sans">No reps have started the academy yet.</p>
-                  <p className="text-xs text-forest/40 font-sans mt-1">Be the first to complete a module!</p>
+                  <Trophy className="w-10 h-10 text-soft-gray/30 mx-auto mb-3" />
+                  <p className="text-sm text-soft-gray font-sans">No reps have started the academy yet.</p>
+                  <p className="text-xs text-soft-gray/60 font-sans mt-1">Be the first to complete a module!</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {leaderboard.map((rep: any, index: number) => (
                     <div key={rep.repId} className={`flex items-center gap-4 p-3 rounded-lg border ${
-                      index === 0 ? "border-amber-200 bg-amber-50/50" :
+                      index === 0 ? "border-amber-500/20 bg-amber-500/10/50" :
                       index === 1 ? "border-gray-200 bg-gray-50/50" :
                       index === 2 ? "border-orange-200 bg-orange-50/50" :
                       "border-border/30"
                     }`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold font-sans ${
-                        index === 0 ? "bg-amber-100 text-amber-700" :
-                        index === 1 ? "bg-gray-100 text-gray-700" :
-                        index === 2 ? "bg-orange-100 text-orange-700" :
-                        "bg-forest/10 text-forest/60"
+                        index === 0 ? "badge-pending-payment" :
+                        index === 1 ? "badge-neutral" :
+                        index === 2 ? "badge-pending-payment" :
+                        "bg-electric/10 text-soft-gray"
                       }`}>
                         {index + 1}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-sans text-forest font-medium">{rep.repName}</span>
+                          <span className="text-sm font-sans text-off-white font-medium">{rep.repName}</span>
                           {rep.isFullyCertified && (
-                            <Badge className="bg-amber-100 text-amber-700 text-[10px]">
+                            <Badge className="badge-pending-payment text-[10px]">
                               <Trophy className="w-3 h-3 mr-0.5" /> Elite
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 mt-1 text-[10px] text-forest/40 font-sans">
+                        <div className="flex items-center gap-3 mt-1 text-[10px] text-soft-gray/60 font-sans">
                           <span>{rep.completedModules}/{rep.totalModules} modules</span>
                           <span>Avg: {rep.avgScore}%</span>
                           <span>{rep.totalTimeMinutes} min spent</span>
@@ -924,16 +924,16 @@ export default function SalesAcademy() {
         <TabsContent value="certifications" className="mt-4">
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-                <Award className="w-4 h-4 text-terracotta" /> My Certifications
+              <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                <Award className="w-4 h-4 text-electric" /> My Certifications
               </CardTitle>
             </CardHeader>
             <CardContent>
               {(!academyData?.certifications || academyData.certifications.length === 0) ? (
                 <div className="text-center py-8">
-                  <GraduationCap className="w-10 h-10 text-forest/20 mx-auto mb-3" />
-                  <p className="text-sm text-forest/50 font-sans">No certifications yet.</p>
-                  <p className="text-xs text-forest/40 font-sans mt-1">Complete modules and pass quizzes to earn certifications.</p>
+                  <GraduationCap className="w-10 h-10 text-soft-gray/30 mx-auto mb-3" />
+                  <p className="text-sm text-soft-gray font-sans">No certifications yet.</p>
+                  <p className="text-xs text-soft-gray/60 font-sans mt-1">Complete modules and pass quizzes to earn certifications.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -941,19 +941,19 @@ export default function SalesAcademy() {
                     const mod = academyData.modules.find((m: any) => m.id === cert.moduleId);
                     const isFull = cert.certificationType === "full";
                     return (
-                      <Card key={cert.id} className={`border-2 ${isFull ? "border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50" : "border-green-200 bg-green-50/50"}`}>
+                      <Card key={cert.id} className={`border-2 ${isFull ? "border-amber-300 bg-gradient-to-br from-graphite to-yellow-50" : "border-green-200 bg-green-50/50"}`}>
                         <CardContent className="p-5 text-center">
                           <div className={`w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center ${isFull ? "bg-amber-100" : "bg-green-100"}`}>
-                            {isFull ? <Trophy className="w-8 h-8 text-amber-600" /> : <GraduationCap className="w-8 h-8 text-green-600" />}
+                            {isFull ? <Trophy className="w-8 h-8 text-amber-400" /> : <GraduationCap className="w-8 h-8 text-emerald-400" />}
                           </div>
-                          <h3 className="text-sm font-serif text-forest font-medium">
+                          <h3 className="text-sm font-serif text-off-white font-medium">
                             {isFull ? "Elite Sales Certification" : mod?.title || cert.moduleId}
                           </h3>
-                          <p className="text-xs text-forest/50 font-sans mt-1">
+                          <p className="text-xs text-soft-gray font-sans mt-1">
                             Score: {cert.score}% | {new Date(cert.certifiedAt).toLocaleDateString()}
                           </p>
                           {isFull && (
-                            <Badge className="mt-2 bg-amber-100 text-amber-700">
+                            <Badge className="mt-2 badge-pending-payment">
                               <Flame className="w-3 h-3 mr-1" /> All Modules Completed
                             </Badge>
                           )}
@@ -980,13 +980,13 @@ export default function SalesAcademy() {
    ROLE PLAY TAB — AI-powered sales practice
    ═══════════════════════════════════════════════════════ */
 const SCENARIO_TYPES = [
-  { value: "cold_call", label: "Cold Call", icon: Phone, description: "Practice calling a prospect who doesn't know you", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { value: "discovery_call", label: "Discovery Call", icon: Search, description: "Uncover pain points and qualify the prospect", color: "bg-green-100 text-green-700 border-green-200" },
-  { value: "objection_handling", label: "Objection Handling", icon: Shield, description: "Handle tough pushback and turn objections into opportunities", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  { value: "closing", label: "Closing", icon: Target, description: "Practice closing techniques to seal the deal", color: "bg-red-100 text-red-700 border-red-200" },
-  { value: "follow_up", label: "Follow Up", icon: ArrowRight, description: "Re-engage a prospect who went cold", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  { value: "cold_call", label: "Cold Call", icon: Phone, description: "Practice calling a prospect who doesn't know you", color: "badge-info border-blue-200" },
+  { value: "discovery_call", label: "Discovery Call", icon: Search, description: "Uncover pain points and qualify the prospect", color: "badge-success border-green-200" },
+  { value: "objection_handling", label: "Objection Handling", icon: Shield, description: "Handle tough pushback and turn objections into opportunities", color: "badge-pending-payment border-amber-500/20" },
+  { value: "closing", label: "Closing", icon: Target, description: "Practice closing techniques to seal the deal", color: "badge-danger border-red-200" },
+  { value: "follow_up", label: "Follow Up", icon: ArrowRight, description: "Re-engage a prospect who went cold", color: "badge-purple border-purple-200" },
   { value: "upsell", label: "Upsell", icon: TrendingUp, description: "Upgrade an existing client to a higher tier", color: "bg-teal-100 text-teal-700 border-teal-200" },
-  { value: "angry_customer", label: "Angry Customer", icon: AlertCircle, description: "De-escalate and retain an unhappy client", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  { value: "angry_customer", label: "Angry Customer", icon: AlertCircle, description: "De-escalate and retain an unhappy client", color: "badge-pending-payment border-orange-200" },
   { value: "price_negotiation", label: "Price Negotiation", icon: Crown, description: "Defend your pricing and demonstrate value", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
 ] as const;
 
@@ -1109,26 +1109,26 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
     const result = scoreMut.data;
     return (
       <div className="space-y-6">
-        <Button variant="ghost" onClick={handleBackToScenarios} className="text-forest/60 hover:text-forest">
+        <Button variant="ghost" onClick={handleBackToScenarios} className="text-soft-gray hover:text-off-white">
           <ChevronLeft className="w-4 h-4 mr-1" /> Back to Scenarios
         </Button>
 
-        <Card className={`border-2 ${result.score >= 70 ? "border-green-300 bg-green-50/50" : result.score >= 50 ? "border-amber-300 bg-amber-50/50" : "border-red-300 bg-red-50/50"}`}>
+        <Card className={`border-2 ${result.score >= 70 ? "border-green-300 bg-green-50/50" : result.score >= 50 ? "border-amber-300 bg-amber-500/10/50" : "border-red-300 bg-red-50/50"}`}>
           <CardContent className="p-8 text-center">
             <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
               result.score >= 70 ? "bg-green-100" : result.score >= 50 ? "bg-amber-100" : "bg-red-100"
             }`}>
               <span className={`text-3xl font-serif font-bold ${
-                result.score >= 70 ? "text-green-600" : result.score >= 50 ? "text-amber-600" : "text-red-600"
+                result.score >= 70 ? "text-emerald-400" : result.score >= 50 ? "text-amber-400" : "text-red-600"
               }`}>{result.score}</span>
             </div>
-            <h2 className="text-2xl font-serif text-forest mb-2">
+            <h2 className="text-2xl font-serif text-off-white mb-2">
               {result.score >= 80 ? "Excellent!" : result.score >= 70 ? "Good Job!" : result.score >= 50 ? "Getting There" : "Keep Practicing"}
             </h2>
-            <p className="text-sm text-forest/60 font-sans mb-2">
+            <p className="text-sm text-soft-gray font-sans mb-2">
               {result.wouldProspectBuy ? "The prospect would likely buy!" : "The prospect wasn't convinced yet."}
             </p>
-            <Badge className={result.wouldProspectBuy ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+            <Badge className={result.wouldProspectBuy ? "badge-success" : "badge-danger"}>
               {result.wouldProspectBuy ? "Deal Likely" : "No Deal"}
             </Badge>
           </CardContent>
@@ -1137,10 +1137,10 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
         {/* Key Moment */}
         <Card className="border-border/50 bg-purple-50/30">
           <CardContent className="p-5">
-            <h3 className="text-sm font-serif text-forest mb-2 flex items-center gap-2">
+            <h3 className="text-sm font-serif text-off-white mb-2 flex items-center gap-2">
               <Lightbulb className="w-4 h-4 text-purple-600" /> Key Moment
             </h3>
-            <p className="text-sm text-forest/70 font-sans">{result.keyMoment}</p>
+            <p className="text-sm text-soft-gray font-sans">{result.keyMoment}</p>
           </CardContent>
         </Card>
 
@@ -1148,32 +1148,32 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
           {/* Strengths */}
           <Card className="border-green-200 bg-green-50/30">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-serif text-forest flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600" /> Strengths
+              <CardTitle className="text-sm font-serif text-off-white flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400" /> Strengths
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {result.strengths.map((s: string, i: number) => (
                 <div key={i} className="flex items-start gap-2">
-                  <Star className="w-3 h-3 text-green-500 shrink-0 mt-1" />
-                  <span className="text-xs text-forest/70 font-sans">{s}</span>
+                  <Star className="w-3 h-3 text-emerald-400 shrink-0 mt-1" />
+                  <span className="text-xs text-soft-gray font-sans">{s}</span>
                 </div>
               ))}
             </CardContent>
           </Card>
 
           {/* Improvements */}
-          <Card className="border-amber-200 bg-amber-50/30">
+          <Card className="border-amber-500/20 bg-amber-500/10/30">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-serif text-forest flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600" /> Areas to Improve
+              <CardTitle className="text-sm font-serif text-off-white flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400" /> Areas to Improve
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {result.improvements.map((s: string, i: number) => (
                 <div key={i} className="flex items-start gap-2">
                   <ArrowRight className="w-3 h-3 text-amber-500 shrink-0 mt-1" />
-                  <span className="text-xs text-forest/70 font-sans">{s}</span>
+                  <span className="text-xs text-soft-gray font-sans">{s}</span>
                 </div>
               ))}
             </CardContent>
@@ -1183,17 +1183,17 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
         {/* Detailed Feedback */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-serif text-forest">Detailed Feedback</CardTitle>
+            <CardTitle className="text-sm font-serif text-off-white">Detailed Feedback</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-sm max-w-none text-forest/80 font-sans">
+            <div className="prose prose-sm max-w-none text-off-white/80 font-sans">
               <Streamdown>{result.feedback}</Streamdown>
             </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-center gap-3">
-          <Button onClick={handleBackToScenarios} className="bg-forest hover:bg-forest-light text-white rounded-full font-sans">
+          <Button onClick={handleBackToScenarios} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans">
             Try Another Scenario
           </Button>
         </div>
@@ -1206,7 +1206,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={handleBackToScenarios} className="text-forest/60 hover:text-forest">
+          <Button variant="ghost" onClick={handleBackToScenarios} className="text-soft-gray hover:text-off-white">
             <ChevronLeft className="w-4 h-4 mr-1" /> Back
           </Button>
           <Button
@@ -1228,8 +1228,8 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                 <span className="text-lg font-serif text-purple-700">{persona.name?.charAt(0)}</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-sans font-medium text-forest">{persona.name}</h3>
-                <p className="text-xs text-forest/50 font-sans">{persona.company} • {persona.industry} • {persona.companySize} employees</p>
+                <h3 className="text-sm font-sans font-medium text-off-white">{persona.name}</h3>
+                <p className="text-xs text-soft-gray font-sans">{persona.company} • {persona.industry} • {persona.companySize} employees</p>
               </div>
               <Badge variant="outline" className="text-[10px] border-purple-300 text-purple-600">
                 {scenarioType.replace(/_/g, " ")}
@@ -1255,7 +1255,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
           </CardContent>
         </Card>
 
-        <p className="text-[10px] text-forest/40 font-sans text-center">
+        <p className="text-[10px] text-soft-gray/60 font-sans text-center">
           Send at least 2 messages before ending the session. The AI will score your performance.
         </p>
       </div>
@@ -1268,7 +1268,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
       <Card className="border-0 bg-gradient-to-br from-purple-600 to-purple-800 text-white overflow-hidden relative">
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-charcoal/20 flex items-center justify-center">
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -1276,16 +1276,16 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
               <p className="text-xs text-white/70 font-sans">Practice sales conversations with AI-generated prospects</p>
             </div>
           </div>
-          <p className="text-xs text-white/60 font-sans mt-3">
+          <p className="text-xs text-off-white/50 font-sans mt-3">
             Choose a scenario, and our AI will generate a unique prospect with realistic pain points, personality, and objections.
             Practice your pitch, handle objections, and get scored on your performance.
           </p>
         </CardContent>
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-charcoal/5 rounded-full -translate-y-1/2 translate-x-1/3" />
       </Card>
 
       {/* Weekly Challenge Banner */}
-      <Card className={`border-2 ${weeklyCompleted ? 'border-green-400 bg-green-50' : 'border-amber-400 bg-amber-50'} overflow-hidden`}>
+      <Card className={`border-2 ${weeklyCompleted ? 'border-green-400 bg-green-50' : 'border-amber-400 bg-amber-500/10'} overflow-hidden`}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${weeklyCompleted ? 'bg-green-200' : 'bg-amber-200'}`}>
@@ -1293,10 +1293,10 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-serif text-forest">Weekly Challenge: {weeklyChallenge.title}</h3>
+                <h3 className="text-sm font-serif text-off-white">Weekly Challenge: {weeklyChallenge.title}</h3>
                 {weeklyCompleted && <Badge className="bg-green-600 text-white text-[10px]">Completed</Badge>}
               </div>
-              <p className="text-xs text-forest/60 font-sans mt-0.5">{weeklyChallenge.description}</p>
+              <p className="text-xs text-soft-gray font-sans mt-0.5">{weeklyChallenge.description}</p>
             </div>
             {!weeklyCompleted && isScenarioUnlocked(weeklyChallenge.scenario) && (
               <Button
@@ -1312,7 +1312,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
         </CardContent>
       </Card>
 
-      <h3 className="text-sm font-serif text-forest">Choose a Scenario</h3>
+      <h3 className="text-sm font-serif text-off-white">Choose a Scenario</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {SCENARIO_TYPES.map((scenario) => {
           const Icon = scenario.icon;
@@ -1331,9 +1331,9 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                     {unlocked ? <Icon className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-sm font-sans font-medium text-forest">{scenario.label}</h4>
+                    <h4 className="text-sm font-sans font-medium text-off-white">{scenario.label}</h4>
                     {unlocked ? (
-                      <p className="text-xs text-forest/50 font-sans mt-0.5">{scenario.description}</p>
+                      <p className="text-xs text-soft-gray font-sans mt-0.5">{scenario.description}</p>
                     ) : (
                       <p className="text-xs text-red-500/70 font-sans mt-0.5">
                         Complete {missingModules.map(m => m.replace(/-/g, ' ')).join(', ')} module{missingModules.length > 1 ? 's' : ''} first
@@ -1342,9 +1342,9 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                   </div>
                   {unlocked ? (
                     startMut.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-forest/40" />
+                      <Loader2 className="w-4 h-4 animate-spin text-soft-gray/60" />
                     ) : (
-                      <Play className="w-4 h-4 text-forest/20 group-hover:text-forest/50 transition-colors" />
+                      <Play className="w-4 h-4 text-soft-gray/30 group-hover:text-soft-gray transition-colors" />
                     )
                   ) : (
                     <Lock className="w-4 h-4 text-gray-300" />
@@ -1359,7 +1359,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
       {/* Past Sessions */}
       {sessions && sessions.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-serif text-forest">Past Sessions</h3>
+          <h3 className="text-sm font-serif text-off-white">Past Sessions</h3>
           {sessions.slice(0, 10).map((session: any) => {
             const persona = JSON.parse(session.prospectPersona);
             const scenarioLabel = SCENARIO_TYPES.find(s => s.value === session.scenarioType)?.label || session.scenarioType;
@@ -1377,22 +1377,22 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-sans text-forest">{persona.name}</span>
+                          <span className="text-sm font-sans text-off-white">{persona.name}</span>
                           <Badge variant="outline" className="text-[10px]">{scenarioLabel}</Badge>
                           <Badge className={`text-[10px] ${
-                            session.status === "scored" ? "bg-green-100 text-green-700" :
-                            session.status === "active" ? "bg-blue-100 text-blue-700" :
-                            "bg-gray-100 text-gray-700"
+                            session.status === "scored" ? "badge-success" :
+                            session.status === "active" ? "badge-info" :
+                            "badge-neutral"
                           }`}>
                             {session.status === "scored" ? `Score: ${session.score}` : session.status}
                           </Badge>
                         </div>
-                        <span className="text-[10px] text-forest/40 font-sans">
+                        <span className="text-[10px] text-soft-gray/60 font-sans">
                           {new Date(session.createdAt).toLocaleDateString()} • {session.messageCount || 0} messages
                         </span>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-forest/20" />
+                    <ChevronRight className="w-4 h-4 text-soft-gray/30" />
                   </div>
                 </CardContent>
               </Card>

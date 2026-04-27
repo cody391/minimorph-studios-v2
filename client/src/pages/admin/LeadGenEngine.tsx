@@ -118,11 +118,11 @@ export default function LeadGenEngine() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-serif text-forest flex items-center gap-2">
-            <Brain className="w-6 h-6 text-terracotta" />
+          <h1 className="text-2xl font-serif text-off-white flex items-center gap-2">
+            <Brain className="w-6 h-6 text-electric" />
             Lead Generation Engine
           </h1>
-          <p className="text-sm text-forest/60 font-sans mt-1">
+          <p className="text-sm text-soft-gray font-sans mt-1">
             Autonomous lead discovery, enrichment, outreach, and routing
           </p>
         </div>
@@ -131,7 +131,7 @@ export default function LeadGenEngine() {
             variant="outline"
             size="sm"
             onClick={() => refetchStats()}
-            className="border-forest/20"
+            className="border-electric/20"
           >
             <RefreshCw className="w-4 h-4 mr-1" />
             Refresh
@@ -140,7 +140,7 @@ export default function LeadGenEngine() {
             size="sm"
             onClick={() => runEnhancedPipeline.mutate()}
             disabled={isAnyMutationLoading}
-            className="bg-terracotta hover:bg-terracotta/90 text-white"
+            className="bg-electric hover:bg-electric/90 text-white"
           >
             {runEnhancedPipeline.isPending ? (
               <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
@@ -161,27 +161,27 @@ export default function LeadGenEngine() {
         </div>
       ) : stats ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Scraped" value={stats.totalScraped} icon={Globe} color="text-forest" />
-          <StatCard label="Qualified" value={stats.totalQualified} icon={Search} color="text-sage" />
-          <StatCard label="Enriched" value={stats.totalEnriched} icon={Brain} color="text-terracotta" />
-          <StatCard label="Converted" value={stats.totalConverted} icon={Target} color="text-forest" />
-          <StatCard label="AI Leads" value={stats.totalLeadsGenerated} icon={Zap} color="text-terracotta" />
-          <StatCard label="In Pipeline" value={stats.leadsInPipeline} icon={Rocket} color="text-sage" />
-          <StatCard label="Closed Won" value={stats.leadsClosedWon} icon={Star} color="text-forest" />
-          <StatCard label="Active Reps" value={stats.repsActive} icon={Users} color="text-terracotta" sub={`${stats.repsNeedingLeads} need leads`} />
+          <StatCard label="Scraped" value={stats.totalScraped} icon={Globe} color="text-off-white" />
+          <StatCard label="Qualified" value={stats.totalQualified} icon={Search} color="text-soft-gray" />
+          <StatCard label="Enriched" value={stats.totalEnriched} icon={Brain} color="text-electric" />
+          <StatCard label="Converted" value={stats.totalConverted} icon={Target} color="text-off-white" />
+          <StatCard label="AI Leads" value={stats.totalLeadsGenerated} icon={Zap} color="text-electric" />
+          <StatCard label="In Pipeline" value={stats.leadsInPipeline} icon={Rocket} color="text-soft-gray" />
+          <StatCard label="Closed Won" value={stats.leadsClosedWon} icon={Star} color="text-off-white" />
+          <StatCard label="Active Reps" value={stats.repsActive} icon={Users} color="text-electric" sub={`${stats.repsNeedingLeads} need leads`} />
         </div>
       ) : null}
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-forest/10 pb-2 overflow-x-auto">
+      <div className="flex gap-2 border-b border-electric/10 pb-2 overflow-x-auto">
         {(["overview", "scrape", "outreach", "enterprise", "capacity", "scoring", "performance"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setSelectedTab(tab)}
             className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
               selectedTab === tab
-                ? "bg-forest text-white"
-                : "text-forest/60 hover:text-forest hover:bg-forest/5"
+                ? "bg-charcoal text-off-white"
+                : "text-soft-gray hover:text-electric hover:bg-electric/10"
             }`}
           >
             {tab === "overview" ? "Overview" :
@@ -199,9 +199,9 @@ export default function LeadGenEngine() {
       {selectedTab === "overview" && (
         <div className="space-y-4">
           {/* Pipeline Flow */}
-          <Card className="border-forest/10">
+          <Card className="border-electric/10">
             <CardHeader>
-              <CardTitle className="text-forest font-serif text-lg">Pipeline Flow</CardTitle>
+              <CardTitle className="text-off-white font-serif text-lg">Pipeline Flow</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2">
@@ -217,13 +217,13 @@ export default function LeadGenEngine() {
                     <button
                       onClick={step.action}
                       disabled={isAnyMutationLoading}
-                      className="flex flex-col items-center gap-1 p-3 rounded-xl border border-forest/10 hover:border-terracotta/30 hover:bg-terracotta/5 transition-all min-w-[80px]"
+                      className="flex flex-col items-center gap-1 p-3 rounded-xl border border-electric/10 hover:border-electric/30 hover:bg-electric/5 transition-all min-w-[80px]"
                     >
-                      <step.icon className="w-5 h-5 text-forest/70" />
-                      <span className="text-xs font-medium text-forest">{step.label}</span>
-                      <span className="text-lg font-bold text-terracotta">{step.count ?? 0}</span>
+                      <step.icon className="w-5 h-5 text-soft-gray" />
+                      <span className="text-xs font-medium text-off-white">{step.label}</span>
+                      <span className="text-lg font-bold text-electric">{step.count ?? 0}</span>
                     </button>
-                    {i < 5 && <span className="text-forest/30 text-lg">→</span>}
+                    {i < 5 && <span className="text-soft-gray/40 text-lg">→</span>}
                   </div>
                 ))}
               </div>
@@ -234,7 +234,7 @@ export default function LeadGenEngine() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Button
               variant="outline"
-              className="h-auto py-3 flex-col gap-1 border-forest/10"
+              className="h-auto py-3 flex-col gap-1 border-electric/10"
               onClick={() => scoreWebsites.mutate({ limit: 20 })}
               disabled={isAnyMutationLoading}
             >
@@ -243,7 +243,7 @@ export default function LeadGenEngine() {
             </Button>
             <Button
               variant="outline"
-              className="h-auto py-3 flex-col gap-1 border-forest/10"
+              className="h-auto py-3 flex-col gap-1 border-electric/10"
               onClick={() => enrichBusinesses.mutate({ limit: 10 })}
               disabled={isAnyMutationLoading}
             >
@@ -252,7 +252,7 @@ export default function LeadGenEngine() {
             </Button>
             <Button
               variant="outline"
-              className="h-auto py-3 flex-col gap-1 border-forest/10"
+              className="h-auto py-3 flex-col gap-1 border-electric/10"
               onClick={() => sendDueOutreach.mutate()}
               disabled={isAnyMutationLoading}
             >
@@ -261,7 +261,7 @@ export default function LeadGenEngine() {
             </Button>
             <Button
               variant="outline"
-              className="h-auto py-3 flex-col gap-1 border-forest/10"
+              className="h-auto py-3 flex-col gap-1 border-electric/10"
               onClick={() => scanEnterprise.mutate({ limit: 10 })}
               disabled={isAnyMutationLoading}
             >
@@ -275,10 +275,10 @@ export default function LeadGenEngine() {
       {selectedTab === "scrape" && (
         <div className="space-y-4">
           {/* New Scrape Job */}
-          <Card className="border-forest/10">
+          <Card className="border-electric/10">
             <CardHeader>
-              <CardTitle className="text-forest font-serif text-lg flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-terracotta" />
+              <CardTitle className="text-off-white font-serif text-lg flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-electric" />
                 Start New Scrape
               </CardTitle>
             </CardHeader>
@@ -302,7 +302,7 @@ export default function LeadGenEngine() {
                 <Button
                   onClick={handleStartScrape}
                   disabled={createScrapeJob.isPending}
-                  className="bg-forest hover:bg-forest/90 text-white"
+                  className="bg-electric hover:bg-electric-light text-white"
                 >
                   {createScrapeJob.isPending ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -312,7 +312,7 @@ export default function LeadGenEngine() {
                   Scrape
                 </Button>
               </div>
-              <p className="text-xs text-forest/50">
+              <p className="text-xs text-soft-gray">
                 Searches Google Maps for businesses without websites or with poor web presence.
                 Targets: restaurants, salons, contractors, medical offices, and more.
               </p>
@@ -320,9 +320,9 @@ export default function LeadGenEngine() {
           </Card>
 
           {/* Scrape Jobs List */}
-          <Card className="border-forest/10">
+          <Card className="border-electric/10">
             <CardHeader className="cursor-pointer" onClick={() => setShowScrapeJobs(!showScrapeJobs)}>
-              <CardTitle className="text-forest font-serif text-lg flex items-center justify-between">
+              <CardTitle className="text-off-white font-serif text-lg flex items-center justify-between">
                 <span>Scrape Jobs ({scrapeJobs?.length || 0})</span>
                 {showScrapeJobs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </CardTitle>
@@ -331,15 +331,15 @@ export default function LeadGenEngine() {
               <CardContent>
                 <div className="space-y-2">
                   {scrapeJobs?.map((job) => (
-                    <div key={job.id} className="flex items-center justify-between p-3 rounded-lg bg-forest/5">
+                    <div key={job.id} className="flex items-center justify-between p-3 rounded-lg bg-electric/10">
                       <div>
-                        <span className="font-medium text-forest">{job.targetArea}</span>
-                        <span className="text-xs text-forest/50 ml-2">
+                        <span className="font-medium text-off-white">{job.targetArea}</span>
+                        <span className="text-xs text-soft-gray ml-2">
                           {job.radiusKm}km radius
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-forest/70">
+                        <span className="text-sm text-soft-gray">
                           {job.totalFound || 0} found
                         </span>
                         <Badge variant={
@@ -353,7 +353,7 @@ export default function LeadGenEngine() {
                     </div>
                   ))}
                   {(!scrapeJobs || scrapeJobs.length === 0) && (
-                    <p className="text-sm text-forest/50 text-center py-4">No scrape jobs yet. Start one above.</p>
+                    <p className="text-sm text-soft-gray text-center py-4">No scrape jobs yet. Start one above.</p>
                   )}
                 </div>
               </CardContent>
@@ -361,9 +361,9 @@ export default function LeadGenEngine() {
           </Card>
 
           {/* Scraped Businesses */}
-          <Card className="border-forest/10">
+          <Card className="border-electric/10">
             <CardHeader className="cursor-pointer" onClick={() => setShowBusinesses(!showBusinesses)}>
-              <CardTitle className="text-forest font-serif text-lg flex items-center justify-between">
+              <CardTitle className="text-off-white font-serif text-lg flex items-center justify-between">
                 <span>Scraped Businesses ({businesses?.length || 0})</span>
                 {showBusinesses ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </CardTitle>
@@ -372,13 +372,13 @@ export default function LeadGenEngine() {
               <CardContent>
                 <div className="space-y-2">
                   {businesses?.map((biz) => (
-                    <div key={biz.id} className="p-3 rounded-lg bg-forest/5 space-y-1">
+                    <div key={biz.id} className="p-3 rounded-lg bg-electric/10 space-y-1">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-forest">{biz.businessName}</span>
+                          <span className="font-medium text-off-white">{biz.businessName}</span>
                           {biz.website && (
                             <a href={biz.website} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="w-3 h-3 text-forest/40" />
+                              <ExternalLink className="w-3 h-3 text-soft-gray/60" />
                             </a>
                           )}
                         </div>
@@ -392,13 +392,13 @@ export default function LeadGenEngine() {
                           <Badge variant="outline">{biz.status}</Badge>
                         </div>
                       </div>
-                      <div className="text-xs text-forest/50">
+                      <div className="text-xs text-soft-gray">
                         {biz.address} · {biz.rating ? `★ ${biz.rating}` : ""} ({biz.reviewCount || 0} reviews)
                       </div>
                     </div>
                   ))}
                   {(!businesses || businesses.length === 0) && (
-                    <p className="text-sm text-forest/50 text-center py-4">No businesses scraped yet.</p>
+                    <p className="text-sm text-soft-gray text-center py-4">No businesses scraped yet.</p>
                   )}
                 </div>
               </CardContent>
@@ -409,10 +409,10 @@ export default function LeadGenEngine() {
 
       {selectedTab === "outreach" && (
         <div className="space-y-4">
-          <Card className="border-forest/10">
+          <Card className="border-electric/10">
             <CardHeader>
-              <CardTitle className="text-forest font-serif text-lg flex items-center gap-2">
-                <Mail className="w-5 h-5 text-terracotta" />
+              <CardTitle className="text-off-white font-serif text-lg flex items-center gap-2">
+                <Mail className="w-5 h-5 text-electric" />
                 Outreach Control
               </CardTitle>
             </CardHeader>
@@ -422,7 +422,7 @@ export default function LeadGenEngine() {
                   variant="outline"
                   onClick={() => sendDueOutreach.mutate()}
                   disabled={isAnyMutationLoading}
-                  className="border-forest/10"
+                  className="border-electric/10"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Send Due Messages
@@ -430,7 +430,7 @@ export default function LeadGenEngine() {
                 <Button
                   variant="outline"
                   onClick={() => trpc.useUtils().leadGen.listOutreachSequences.invalidate()}
-                  className="border-forest/10"
+                  className="border-electric/10"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Refresh Sequences
@@ -439,26 +439,26 @@ export default function LeadGenEngine() {
                   variant="outline"
                   onClick={() => runReengagement.mutate()}
                   disabled={isAnyMutationLoading}
-                  className="border-forest/10"
+                  className="border-electric/10"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Re-engage Cold Leads
                 </Button>
               </div>
-              <div className="p-4 rounded-lg bg-forest/5">
-                <h4 className="font-medium text-forest mb-2">Smart Outreach Schedule</h4>
-                <div className="space-y-1 text-sm text-forest/70">
+              <div className="p-4 rounded-lg bg-electric/10">
+                <h4 className="font-medium text-off-white mb-2">Smart Outreach Schedule</h4>
+                <div className="space-y-1 text-sm text-soft-gray">
                   <p>Day 0: Introduction email (with website audit PDF)</p>
                   <p>Day 2: Follow-up SMS (sent at optimal time)</p>
                   <p>Day 5: Value-add email (competitor comparison)</p>
                   <p>Day 8: Check-in SMS (branched based on behavior)</p>
                   <p>Day 14: Final follow-up or auto-proposal</p>
-                  <p className="text-terracotta font-medium mt-2">Day 30+: Re-engagement campaign for cold leads</p>
+                  <p className="text-electric font-medium mt-2">Day 30+: Re-engagement campaign for cold leads</p>
                 </div>
               </div>
-              <div className="p-4 rounded-lg bg-sage/10 border border-sage/20">
-                <h4 className="font-medium text-forest mb-2">Smart Features</h4>
-                <div className="space-y-1 text-sm text-forest/70">
+              <div className="p-4 rounded-lg bg-electric/5 border border-border/50">
+                <h4 className="font-medium text-off-white mb-2">Smart Features</h4>
+                <div className="space-y-1 text-sm text-soft-gray">
                   <p>• Website Audit PDF attached to first email as lead magnet</p>
                   <p>• Optimal send timing based on industry patterns</p>
                   <p>• Drip branches based on lead behavior (opened, clicked, replied)</p>
@@ -467,9 +467,9 @@ export default function LeadGenEngine() {
                   <p>• Re-engagement campaigns for leads that went cold after 30 days</p>
                 </div>
               </div>
-              <div className="p-4 rounded-lg bg-terracotta/5 border border-terracotta/10">
-                <h4 className="font-medium text-terracotta mb-2">AI Agent Behavior</h4>
-                <div className="space-y-1 text-sm text-forest/70">
+              <div className="p-4 rounded-lg bg-electric/5 border border-electric/10">
+                <h4 className="font-medium text-electric mb-2">AI Agent Behavior</h4>
+                <div className="space-y-1 text-sm text-soft-gray">
                   <p>• Replies to questions autonomously</p>
                   <p>• Pushes for close when buying intent detected</p>
                   <p>• Hands to rep when human touch needed</p>
@@ -484,10 +484,10 @@ export default function LeadGenEngine() {
 
       {selectedTab === "enterprise" && (
         <div className="space-y-4">
-          <Card className="border-forest/10">
+          <Card className="border-electric/10">
             <CardHeader>
-              <CardTitle className="text-forest font-serif text-lg flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-terracotta" />
+              <CardTitle className="text-off-white font-serif text-lg flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-electric" />
                 Enterprise Prospects (Your Pipeline)
               </CardTitle>
             </CardHeader>
@@ -498,7 +498,7 @@ export default function LeadGenEngine() {
                   size="sm"
                   onClick={() => scanEnterprise.mutate({ limit: 10 })}
                   disabled={isAnyMutationLoading}
-                  className="border-forest/10"
+                  className="border-electric/10"
                 >
                   <Search className="w-4 h-4 mr-1" />
                   Scan for Enterprise Leads
@@ -506,11 +506,11 @@ export default function LeadGenEngine() {
               </div>
               <div className="space-y-3">
                 {enterpriseProspects?.map((prospect) => (
-                  <div key={prospect.id} className="p-4 rounded-xl border border-forest/10 space-y-2">
+                  <div key={prospect.id} className="p-4 rounded-xl border border-electric/10 space-y-2">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium text-forest">{prospect.businessName}</h4>
-                        <p className="text-xs text-forest/50">
+                        <h4 className="font-medium text-off-white">{prospect.businessName}</h4>
+                        <p className="text-xs text-soft-gray">
                           {prospect.industry} · {prospect.estimatedEmployees ? `~${prospect.estimatedEmployees} employees` : ""} · {prospect.estimatedRevenue || ""}
                         </p>
                       </div>
@@ -524,7 +524,7 @@ export default function LeadGenEngine() {
                       </Badge>
                     </div>
                     {prospect.automationOpportunities && (
-                      <div className="text-sm text-forest/70">
+                      <div className="text-sm text-soft-gray">
                         <strong>Automation Opportunities:</strong>
                         <ul className="list-disc list-inside mt-1">
                           {(prospect.automationOpportunities as string[]).map((opp, i) => (
@@ -534,29 +534,29 @@ export default function LeadGenEngine() {
                       </div>
                     )}
                     {prospect.estimatedSavings && (
-                      <p className="text-sm text-terracotta font-medium">
+                      <p className="text-sm text-electric font-medium">
                         Est. Savings: {prospect.estimatedSavings}
                       </p>
                     )}
                     {prospect.aiAnalysisReport && (
-                      <details className="text-sm text-forest/60">
-                        <summary className="cursor-pointer text-forest/80 font-medium">Full AI Report</summary>
+                      <details className="text-sm text-soft-gray">
+                        <summary className="cursor-pointer text-off-white/80 font-medium">Full AI Report</summary>
                         <p className="mt-2 whitespace-pre-wrap">{prospect.aiAnalysisReport}</p>
                       </details>
                     )}
                     <div className="flex gap-2">
                       {prospect.email && (
-                        <a href={`mailto:${prospect.email}`} className="text-xs text-forest/50 hover:text-forest">
+                        <a href={`mailto:${prospect.email}`} className="text-xs text-soft-gray hover:text-off-white">
                           <Mail className="w-3 h-3 inline mr-1" />{prospect.email}
                         </a>
                       )}
                       {prospect.phone && (
-                        <span className="text-xs text-forest/50">
+                        <span className="text-xs text-soft-gray">
                           📞 {prospect.phone}
                         </span>
                       )}
                       {prospect.linkedinUrl && (
-                        <a href={prospect.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-forest/50 hover:text-forest">
+                        <a href={prospect.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-soft-gray hover:text-off-white">
                           <ExternalLink className="w-3 h-3 inline mr-1" />LinkedIn
                         </a>
                       )}
@@ -564,7 +564,7 @@ export default function LeadGenEngine() {
                   </div>
                 ))}
                 {(!enterpriseProspects || enterpriseProspects.length === 0) && (
-                  <p className="text-sm text-forest/50 text-center py-8">
+                  <p className="text-sm text-soft-gray text-center py-8">
                     No enterprise prospects yet. Click "Scan for Enterprise Leads" to find big-ticket opportunities.
                   </p>
                 )}
@@ -576,10 +576,10 @@ export default function LeadGenEngine() {
 
       {selectedTab === "capacity" && (
         <div className="space-y-4">
-          <Card className="border-forest/10">
+          <Card className="border-electric/10">
             <CardHeader>
-              <CardTitle className="text-forest font-serif text-lg flex items-center gap-2">
-                <Users className="w-5 h-5 text-terracotta" />
+              <CardTitle className="text-off-white font-serif text-lg flex items-center gap-2">
+                <Users className="w-5 h-5 text-electric" />
                 Rep Capacity Manager
               </CardTitle>
             </CardHeader>
@@ -590,7 +590,7 @@ export default function LeadGenEngine() {
                   size="sm"
                   onClick={() => autoFeedReps.mutate()}
                   disabled={isAnyMutationLoading}
-                  className="border-forest/10"
+                  className="border-electric/10"
                 >
                   <Zap className="w-4 h-4 mr-1" />
                   Auto-Feed All Reps
@@ -598,31 +598,31 @@ export default function LeadGenEngine() {
               </div>
               <div className="space-y-3">
                 {capacity?.map((rep) => (
-                  <div key={rep.repId} className="flex items-center justify-between p-3 rounded-lg bg-forest/5">
+                  <div key={rep.repId} className="flex items-center justify-between p-3 rounded-lg bg-electric/10">
                     <div>
-                      <span className="font-medium text-forest">{rep.repName}</span>
+                      <span className="font-medium text-off-white">{rep.repName}</span>
                       {rep.serviceArea && (
-                        <span className="text-xs text-forest/50 ml-2">
+                        <span className="text-xs text-soft-gray ml-2">
                           <MapPin className="w-3 h-3 inline" /> {rep.serviceArea}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <span className="text-sm font-medium text-forest">
+                        <span className="text-sm font-medium text-off-white">
                           {rep.activeLeads} / {rep.maxCapacity}
                         </span>
-                        <span className="text-xs text-forest/50 ml-1">leads</span>
+                        <span className="text-xs text-soft-gray ml-1">leads</span>
                       </div>
                       {/* Capacity bar */}
-                      <div className="w-24 h-2 bg-forest/10 rounded-full overflow-hidden">
+                      <div className="w-24 h-2 bg-electric/10 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${
                             rep.activeLeads / rep.maxCapacity > 0.8
-                              ? "bg-terracotta"
+                              ? "bg-electric"
                               : rep.activeLeads / rep.maxCapacity > 0.4
-                              ? "bg-sage"
-                              : "bg-forest/30"
+                              ? "bg-graphite"
+                              : "bg-electric/30"
                           }`}
                           style={{ width: `${Math.min(100, (rep.activeLeads / rep.maxCapacity) * 100)}%` }}
                         />
@@ -634,7 +634,7 @@ export default function LeadGenEngine() {
                   </div>
                 ))}
                 {(!capacity || capacity.length === 0) && (
-                  <p className="text-sm text-forest/50 text-center py-4">No active reps yet.</p>
+                  <p className="text-sm text-soft-gray text-center py-4">No active reps yet.</p>
                 )}
               </div>
             </CardContent>
@@ -659,10 +659,10 @@ function ScoringTab({ isAnyMutationLoading, refetchStats }: { isAnyMutationLoadi
 
   return (
     <div className="space-y-4">
-      <Card className="border-forest/10">
+      <Card className="border-electric/10">
         <CardHeader>
-          <CardTitle className="text-forest font-serif text-lg flex items-center gap-2">
-            <Brain className="w-5 h-5 text-terracotta" />
+          <CardTitle className="text-off-white font-serif text-lg flex items-center gap-2">
+            <Brain className="w-5 h-5 text-electric" />
             ML Scoring Model
           </CardTitle>
         </CardHeader>
@@ -673,7 +673,7 @@ function ScoringTab({ isAnyMutationLoading, refetchStats }: { isAnyMutationLoadi
               size="sm"
               onClick={() => rescoreAll.mutate()}
               disabled={isAnyMutationLoading || rescoreAll.isPending}
-              className="border-forest/10"
+              className="border-electric/10"
             >
               <RefreshCw className={`w-4 h-4 mr-1 ${rescoreAll.isPending ? "animate-spin" : ""}`} />
               Re-score All Active Leads
@@ -688,27 +688,27 @@ function ScoringTab({ isAnyMutationLoading, refetchStats }: { isAnyMutationLoadi
             <>
               {/* Model Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="p-3 rounded-lg bg-forest/5 text-center">
-                  <p className="text-2xl font-bold text-forest">{insights.modelConfidence}%</p>
-                  <p className="text-xs text-forest/50">Model Confidence</p>
+                <div className="p-3 rounded-lg bg-electric/10 text-center">
+                  <p className="text-2xl font-bold text-off-white">{insights.modelConfidence}%</p>
+                  <p className="text-xs text-soft-gray">Model Confidence</p>
                 </div>
-                <div className="p-3 rounded-lg bg-forest/5 text-center">
-                  <p className="text-2xl font-bold text-forest">{insights.totalClosedLeads}</p>
-                  <p className="text-xs text-forest/50">Training Samples</p>
+                <div className="p-3 rounded-lg bg-electric/10 text-center">
+                  <p className="text-2xl font-bold text-off-white">{insights.totalClosedLeads}</p>
+                  <p className="text-xs text-soft-gray">Training Samples</p>
                 </div>
-                <div className="p-3 rounded-lg bg-forest/5 text-center">
-                  <p className="text-2xl font-bold text-terracotta">{insights.overallWinRate}%</p>
-                  <p className="text-xs text-forest/50">Win Rate</p>
+                <div className="p-3 rounded-lg bg-electric/10 text-center">
+                  <p className="text-2xl font-bold text-electric">{insights.overallWinRate}%</p>
+                  <p className="text-xs text-soft-gray">Win Rate</p>
                 </div>
-                <div className="p-3 rounded-lg bg-forest/5 text-center">
-                  <p className="text-2xl font-bold text-forest">{Object.keys(insights.weights.industryMultiplier).length}</p>
-                  <p className="text-xs text-forest/50">Industry Patterns</p>
+                <div className="p-3 rounded-lg bg-electric/10 text-center">
+                  <p className="text-2xl font-bold text-off-white">{Object.keys(insights.weights.industryMultiplier).length}</p>
+                  <p className="text-xs text-soft-gray">Industry Patterns</p>
                 </div>
               </div>
 
               {/* Scoring Weights */}
-              <div className="p-4 rounded-lg bg-forest/5">
-                <h4 className="font-medium text-forest mb-3">Learned Scoring Weights</h4>
+              <div className="p-4 rounded-lg bg-electric/10">
+                <h4 className="font-medium text-off-white mb-3">Learned Scoring Weights</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {[
                     { label: "No Website", value: insights.weights.noWebsite },
@@ -720,9 +720,9 @@ function ScoringTab({ isAnyMutationLoading, refetchStats }: { isAnyMutationLoadi
                     { label: "Self-Sourced", value: insights.weights.selfSourcedBonus },
                     { label: "Intent Signal", value: insights.weights.intentSignalBonus },
                   ].map((w) => (
-                    <div key={w.label} className="flex items-center justify-between p-2 rounded bg-white">
-                      <span className="text-xs text-forest/70">{w.label}</span>
-                      <span className="text-sm font-bold text-terracotta">+{w.value}</span>
+                    <div key={w.label} className="flex items-center justify-between p-2 rounded bg-charcoal">
+                      <span className="text-xs text-soft-gray">{w.label}</span>
+                      <span className="text-sm font-bold text-electric">+{w.value}</span>
                     </div>
                   ))}
                 </div>
@@ -730,12 +730,12 @@ function ScoringTab({ isAnyMutationLoading, refetchStats }: { isAnyMutationLoadi
 
               {/* Top Industries */}
               {insights.topIndustries.length > 0 && (
-                <div className="p-4 rounded-lg bg-sage/10 border border-sage/20">
-                  <h4 className="font-medium text-forest mb-3">Top Converting Industries</h4>
+                <div className="p-4 rounded-lg bg-electric/5 border border-border/50">
+                  <h4 className="font-medium text-off-white mb-3">Top Converting Industries</h4>
                   <div className="space-y-2">
                     {insights.topIndustries.map((ind) => (
                       <div key={ind.industry} className="flex items-center justify-between">
-                        <span className="text-sm text-forest">{ind.industry}</span>
+                        <span className="text-sm text-off-white">{ind.industry}</span>
                         <Badge variant={ind.multiplier > 1.2 ? "default" : ind.multiplier > 0.8 ? "secondary" : "destructive"}>
                           {ind.multiplier > 1 ? "+" : ""}{Math.round((ind.multiplier - 1) * 100)}% vs avg
                         </Badge>
@@ -745,12 +745,12 @@ function ScoringTab({ isAnyMutationLoading, refetchStats }: { isAnyMutationLoadi
                 </div>
               )}
 
-              <p className="text-xs text-forest/40 text-center">
+              <p className="text-xs text-soft-gray/60 text-center">
                 Model last updated: {new Date(insights.weights.updatedAt).toLocaleString()} · Based on {insights.weights.sampleSize} closed leads
               </p>
             </>
           ) : (
-            <p className="text-sm text-forest/50 text-center py-8">No scoring data available yet. Close some deals to train the model.</p>
+            <p className="text-sm text-soft-gray text-center py-8">No scoring data available yet. Close some deals to train the model.</p>
           )}
         </CardContent>
       </Card>
@@ -763,10 +763,10 @@ function PerformanceTab() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-forest/10">
+      <Card className="border-electric/10">
         <CardHeader>
-          <CardTitle className="text-forest font-serif text-lg flex items-center gap-2">
-            <Target className="w-5 h-5 text-terracotta" />
+          <CardTitle className="text-off-white font-serif text-lg flex items-center gap-2">
+            <Target className="w-5 h-5 text-electric" />
             Rep Performance Analytics
           </CardTitle>
         </CardHeader>
@@ -778,37 +778,37 @@ function PerformanceTab() {
           ) : performance && performance.length > 0 ? (
             <div className="space-y-3">
               {performance.sort((a, b) => b.overallCloseRate - a.overallCloseRate).map((rep, i) => (
-                <div key={rep.repId} className="p-4 rounded-xl border border-forest/10 space-y-3">
+                <div key={rep.repId} className="p-4 rounded-xl border border-electric/10 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                        i === 0 ? "bg-terracotta" : i === 1 ? "bg-forest" : "bg-sage"
+                        i === 0 ? "bg-electric" : i === 1 ? "bg-electric" : "bg-graphite"
                       }`}>
                         #{i + 1}
                       </div>
                       <div>
-                        <h4 className="font-medium text-forest">{rep.repName}</h4>
-                        <p className="text-xs text-forest/50">{rep.activeLeads} active leads · {rep.totalDeals} deals closed</p>
+                        <h4 className="font-medium text-off-white">{rep.repName}</h4>
+                        <p className="text-xs text-soft-gray">{rep.activeLeads} active leads · {rep.totalDeals} deals closed</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-terracotta">{rep.overallCloseRate}%</p>
-                      <p className="text-xs text-forest/50">close rate</p>
+                      <p className="text-2xl font-bold text-electric">{rep.overallCloseRate}%</p>
+                      <p className="text-xs text-soft-gray">close rate</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="p-2 rounded-lg bg-forest/5 text-center">
-                      <p className="text-lg font-bold text-forest">${rep.avgDealSize.toLocaleString()}</p>
-                      <p className="text-xs text-forest/50">Avg Deal</p>
+                    <div className="p-2 rounded-lg bg-electric/10 text-center">
+                      <p className="text-lg font-bold text-off-white">${rep.avgDealSize.toLocaleString()}</p>
+                      <p className="text-xs text-soft-gray">Avg Deal</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-forest/5 text-center">
-                      <p className="text-lg font-bold text-forest">{rep.avgTimeToClose}d</p>
-                      <p className="text-xs text-forest/50">Avg Close Time</p>
+                    <div className="p-2 rounded-lg bg-electric/10 text-center">
+                      <p className="text-lg font-bold text-off-white">{rep.avgTimeToClose}d</p>
+                      <p className="text-xs text-soft-gray">Avg Close Time</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-forest/5 text-center">
-                      <p className="text-lg font-bold text-forest">${rep.totalRevenue.toLocaleString()}</p>
-                      <p className="text-xs text-forest/50">Total Revenue</p>
+                    <div className="p-2 rounded-lg bg-electric/10 text-center">
+                      <p className="text-lg font-bold text-off-white">${rep.totalRevenue.toLocaleString()}</p>
+                      <p className="text-xs text-soft-gray">Total Revenue</p>
                     </div>
                   </div>
 
@@ -829,18 +829,18 @@ function PerformanceTab() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-forest/50 text-center py-8">
+            <p className="text-sm text-soft-gray text-center py-8">
               No rep performance data yet. Reps need to close deals to generate analytics.
             </p>
           )}
         </CardContent>
       </Card>
 
-      <Card className="border-forest/10">
+      <Card className="border-electric/10">
         <CardContent className="p-4">
-          <div className="p-4 rounded-lg bg-terracotta/5 border border-terracotta/10">
-            <h4 className="font-medium text-terracotta mb-2">Performance-Based Routing</h4>
-            <div className="space-y-1 text-sm text-forest/70">
+          <div className="p-4 rounded-lg bg-electric/5 border border-electric/10">
+            <h4 className="font-medium text-electric mb-2">Performance-Based Routing</h4>
+            <div className="space-y-1 text-sm text-soft-gray">
               <p>• Leads are routed to reps based on their close rate per industry, not just capacity</p>
               <p>• Restaurant lead? Goes to the rep who closes restaurants best</p>
               <p>• New reps get a mix of industries to build their profile</p>
@@ -861,16 +861,16 @@ function StatCard({ label, value, icon: Icon, color, sub }: {
   sub?: string;
 }) {
   return (
-    <Card className="border-forest/10">
+    <Card className="border-electric/10">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${color === "text-forest" ? "bg-forest/10" : color === "text-terracotta" ? "bg-terracotta/10" : "bg-sage/10"}`}>
+          <div className={`p-2 rounded-lg ${color === "text-off-white" ? "bg-electric/10" : color === "text-electric" ? "bg-electric/10" : "bg-electric/5"}`}>
             <Icon className={`w-4 h-4 ${color}`} />
           </div>
           <div>
-            <p className="text-2xl font-bold text-forest">{value}</p>
-            <p className="text-xs text-forest/50">{label}</p>
-            {sub && <p className="text-xs text-terracotta">{sub}</p>}
+            <p className="text-2xl font-bold text-off-white">{value}</p>
+            <p className="text-xs text-soft-gray">{label}</p>
+            {sub && <p className="text-xs text-electric">{sub}</p>}
           </div>
         </div>
       </CardContent>

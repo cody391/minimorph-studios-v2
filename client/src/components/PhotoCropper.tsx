@@ -166,7 +166,7 @@ export default function PhotoCropper({
   return (
     <div className="space-y-3">
       <div className="text-center">
-        <p className="text-xs text-forest/60 font-sans mb-2">
+        <p className="text-xs text-soft-gray font-sans mb-2">
           Drag to reposition · Scroll or use slider to zoom
         </p>
       </div>
@@ -190,7 +190,7 @@ export default function PhotoCropper({
           style={{ touchAction: "none" }}
         />
         {!imageLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center text-white/60 text-sm">
+          <div className="absolute inset-0 flex items-center justify-center text-off-white/50 text-sm">
             Loading...
           </div>
         )}
@@ -198,7 +198,7 @@ export default function PhotoCropper({
 
       {/* Zoom controls */}
       <div className="flex items-center gap-3 px-2">
-        <ZoomOut className="w-4 h-4 text-forest/50 flex-shrink-0" />
+        <ZoomOut className="w-4 h-4 text-soft-gray flex-shrink-0" />
         <Slider
           value={[zoom]}
           min={0.5}
@@ -207,8 +207,8 @@ export default function PhotoCropper({
           onValueChange={([v]) => setZoom(v)}
           className="flex-1"
         />
-        <ZoomIn className="w-4 h-4 text-forest/50 flex-shrink-0" />
-        <span className="text-[10px] text-forest/40 font-mono w-10 text-right">
+        <ZoomIn className="w-4 h-4 text-soft-gray flex-shrink-0" />
+        <span className="text-[10px] text-soft-gray/60 font-mono w-10 text-right">
           {Math.round(zoom * 100)}%
         </span>
       </div>
@@ -238,7 +238,7 @@ export default function PhotoCropper({
           type="button"
           size="sm"
           onClick={handleConfirm}
-          className="text-xs rounded-full bg-terracotta hover:bg-terracotta/90 text-white"
+          className="text-xs rounded-full bg-electric hover:bg-electric/90 text-white"
         >
           <Check className="w-3 h-3 mr-1" /> Use This Photo
         </Button>

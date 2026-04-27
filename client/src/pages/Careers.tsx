@@ -55,9 +55,9 @@ const FAQS = [
 ];
 
 const LEVELS = [
-  { name: "Bronze", rate: "10%", requirement: "Starting tier", icon: Shield, color: "bg-amber-100 text-amber-700" },
+  { name: "Bronze", rate: "10%", requirement: "Starting tier", icon: Shield, color: "badge-pending-payment" },
   { name: "Silver", rate: "12%", requirement: "3+ months, $3K+/mo", icon: Award, color: "bg-slate-100 text-slate-700" },
-  { name: "Gold", rate: "14%", requirement: "6+ months, $7K+/mo", icon: Trophy, color: "bg-yellow-100 text-yellow-700" },
+  { name: "Gold", rate: "14%", requirement: "6+ months, $7K+/mo", icon: Trophy, color: "badge-pending" },
   { name: "Platinum", rate: "15%", requirement: "12+ months, $12K+/mo", icon: Star, color: "bg-violet-100 text-violet-700" },
 ];
 
@@ -66,22 +66,22 @@ export default function Careers() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-midnight">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-forest via-forest/95 to-forest/85" />
+        <div className="absolute inset-0 bg-gradient-to-br from-midnight via-charcoal/95 to-graphite/85" />
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 right-20 w-96 h-96 rounded-full bg-terracotta blur-3xl" />
-          <div className="absolute bottom-20 left-20 w-72 h-72 rounded-full bg-sage blur-3xl" />
+          <div className="absolute top-20 right-20 w-96 h-96 rounded-full bg-electric blur-3xl" />
+          <div className="absolute bottom-20 left-20 w-72 h-72 rounded-full bg-graphite blur-3xl" />
         </div>
         <div className="relative container max-w-6xl mx-auto px-6 py-24 md:py-32">
           <div className="max-w-3xl">
-            <Badge className="bg-terracotta/20 text-terracotta border-terracotta/30 font-sans text-xs mb-6">
+            <Badge className="bg-electric/20 text-electric border-electric/30 font-sans text-xs mb-6">
               Now Hiring Sales Representatives
             </Badge>
             <h1 className="text-4xl md:text-6xl font-serif text-white leading-tight mb-6">
               Sell websites.<br />
-              <span className="text-terracotta italic">Earn big.</span><br />
+              <span className="text-electric italic">Earn big.</span><br />
               Work free.
             </h1>
             <p className="text-lg text-white/70 font-sans max-w-xl mb-8">
@@ -91,14 +91,14 @@ export default function Careers() {
             <div className="flex flex-wrap gap-4">
               <Button
                 onClick={() => setLocation("/become-rep/values")}
-                className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full px-8 py-6 text-base font-sans"
+                className="bg-electric hover:bg-electric/90 text-white rounded-full px-8 py-6 text-base font-sans"
               >
                 Apply Now <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 onClick={() => document.getElementById("earnings")?.scrollIntoView({ behavior: "smooth" })}
-                className="border-white/30 text-white hover:bg-white/10 rounded-full px-8 py-6 text-base font-sans"
+                className="border-white/30 text-white hover:bg-charcoal/10 rounded-full px-8 py-6 text-base font-sans"
               >
                 See Earnings Potential
               </Button>
@@ -108,7 +108,7 @@ export default function Careers() {
       </section>
 
       {/* Social Proof Bar */}
-      <section className="bg-forest/5 border-y border-border/20">
+      <section className="bg-electric/10 border-y border-border/20">
         <div className="container max-w-6xl mx-auto px-6 py-6">
           <div className="flex flex-wrap justify-center gap-8 md:gap-16 text-center">
             {[
@@ -118,8 +118,8 @@ export default function Careers() {
               { value: "Flexible", label: "Schedule" },
             ].map((s) => (
               <div key={s.label}>
-                <p className="text-2xl font-serif text-forest">{s.value}</p>
-                <p className="text-xs text-forest/50 font-sans">{s.label}</p>
+                <p className="text-2xl font-serif text-off-white">{s.value}</p>
+                <p className="text-xs text-soft-gray font-sans">{s.label}</p>
               </div>
             ))}
           </div>
@@ -130,18 +130,18 @@ export default function Careers() {
       <section className="py-20">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif text-forest mb-3">Why reps love MiniMorph</h2>
-            <p className="text-forest/60 font-sans max-w-xl mx-auto">Everything you need to succeed — tools, training, leads, and a clear path to higher earnings.</p>
+            <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">Why reps love MiniMorph</h2>
+            <p className="text-soft-gray font-sans max-w-xl mx-auto">Everything you need to succeed — tools, training, leads, and a clear path to higher earnings.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {BENEFITS.map((b) => (
-              <Card key={b.title} className="border-border/30 hover:border-terracotta/30 hover:shadow-sm transition-all group">
+              <Card key={b.title} className="border-border/30 hover:border-electric/30 hover:shadow-sm transition-all group">
                 <CardContent className="p-5">
-                  <div className="w-10 h-10 rounded-lg bg-terracotta/10 flex items-center justify-center mb-3 group-hover:bg-terracotta/20 transition-colors">
-                    <b.icon className="h-5 w-5 text-terracotta" />
+                  <div className="w-10 h-10 rounded-lg bg-electric/10 flex items-center justify-center mb-3 group-hover:bg-electric/20 transition-colors">
+                    <b.icon className="h-5 w-5 text-electric" />
                   </div>
-                  <h3 className="text-sm font-medium text-forest font-sans mb-1">{b.title}</h3>
-                  <p className="text-xs text-forest/50 font-sans leading-relaxed">{b.desc}</p>
+                  <h3 className="text-sm font-medium text-off-white font-sans mb-1">{b.title}</h3>
+                  <p className="text-xs text-soft-gray font-sans leading-relaxed">{b.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -150,39 +150,39 @@ export default function Careers() {
       </section>
 
       {/* Earnings Calculator */}
-      <section id="earnings" className="py-20 bg-forest/5">
+      <section id="earnings" className="py-20 bg-electric/10">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif text-forest mb-3">Earnings potential</h2>
-            <p className="text-forest/60 font-sans max-w-xl mx-auto">Your income scales with your effort. Here's what reps earn at different activity levels.</p>
+            <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">Earnings potential</h2>
+            <p className="text-soft-gray font-sans max-w-xl mx-auto">Your income scales with your effort. Here's what reps earn at different activity levels.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {EARNINGS_EXAMPLES.map((e, i) => (
-              <Card key={e.level} className={`border-border/30 ${i === 2 ? "ring-2 ring-terracotta/30 shadow-md" : ""}`}>
+              <Card key={e.level} className={`border-border/30 ${i === 2 ? "ring-2 ring-electric/30 shadow-md" : ""}`}>
                 <CardContent className="p-6 text-center">
-                  {i === 2 && <Badge className="bg-terracotta text-white text-[10px] font-sans mb-3">Most Popular</Badge>}
-                  <p className="text-xs text-forest/50 font-sans uppercase tracking-wide mb-1">{e.level}</p>
-                  <p className="text-3xl font-serif text-forest mb-1">{e.monthly}</p>
-                  <p className="text-xs text-forest/40 font-sans mb-4">/month</p>
+                  {i === 2 && <Badge className="bg-electric text-white text-[10px] font-sans mb-3">Most Popular</Badge>}
+                  <p className="text-xs text-soft-gray font-sans uppercase tracking-wide mb-1">{e.level}</p>
+                  <p className="text-3xl font-serif text-off-white mb-1">{e.monthly}</p>
+                  <p className="text-xs text-soft-gray/60 font-sans mb-4">/month</p>
                   <div className="space-y-2 text-left">
                     <div className="flex justify-between text-xs font-sans">
-                      <span className="text-forest/50">Deals/month</span>
-                      <span className="text-forest font-medium">{e.deals}</span>
+                      <span className="text-soft-gray">Deals/month</span>
+                      <span className="text-off-white font-medium">{e.deals}</span>
                     </div>
                     <div className="flex justify-between text-xs font-sans">
-                      <span className="text-forest/50">Avg deal size</span>
-                      <span className="text-forest font-medium">${e.avgDeal.toLocaleString()}</span>
+                      <span className="text-soft-gray">Avg deal size</span>
+                      <span className="text-off-white font-medium">${e.avgDeal.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-xs font-sans border-t border-border/20 pt-2 mt-2">
-                      <span className="text-forest/50">Annual earnings</span>
-                      <span className="text-forest font-bold">{e.annual}</span>
+                      <span className="text-soft-gray">Annual earnings</span>
+                      <span className="text-off-white font-bold">{e.annual}</span>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
-          <p className="text-[10px] text-forest/40 font-sans text-center mt-4">
+          <p className="text-[10px] text-soft-gray/60 font-sans text-center mt-4">
             Based on 10% base commission rate. Top performers at Platinum tier earn 15% with priority lead access.
           </p>
         </div>
@@ -192,27 +192,27 @@ export default function Careers() {
       <section className="py-20">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif text-forest mb-3">Level up, earn more</h2>
-            <p className="text-forest/60 font-sans max-w-xl mx-auto">Your commission rate grows as you build tenure and revenue. Performance scores determine your tier advancement.</p>
+            <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">Level up, earn more</h2>
+            <p className="text-soft-gray font-sans max-w-xl mx-auto">Your commission rate grows as you build tenure and revenue. Performance scores determine your tier advancement.</p>
           </div>
           <div className="max-w-2xl mx-auto space-y-3">
             {LEVELS.map((l, i) => (
-              <div key={l.name} className="flex items-center gap-4 p-4 rounded-xl border border-border/30 hover:border-terracotta/20 transition-colors">
+              <div key={l.name} className="flex items-center gap-4 p-4 rounded-xl border border-border/30 hover:border-electric/20 transition-colors">
                 <div className={`w-12 h-12 rounded-full ${l.color} flex items-center justify-center shrink-0`}>
                   <l.icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-medium text-forest font-sans">{l.name}</h3>
+                    <h3 className="text-sm font-medium text-off-white font-sans">{l.name}</h3>
                     <Badge variant="outline" className="text-[10px] font-sans">{l.requirement}</Badge>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xl font-serif text-forest">{l.rate}</p>
-                  <p className="text-[10px] text-forest/40 font-sans">commission</p>
+                  <p className="text-xl font-serif text-off-white">{l.rate}</p>
+                  <p className="text-[10px] text-soft-gray/60 font-sans">commission</p>
                 </div>
                 {i < LEVELS.length - 1 && (
-                  <div className="hidden md:block text-forest/20">
+                  <div className="hidden md:block text-soft-gray/30">
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 )}
@@ -223,11 +223,11 @@ export default function Careers() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-forest/5">
+      <section className="py-20 bg-electric/10">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif text-forest mb-3">How it works</h2>
-            <p className="text-forest/60 font-sans max-w-xl mx-auto">From application to your first commission — here's the journey.</p>
+            <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">How it works</h2>
+            <p className="text-soft-gray font-sans max-w-xl mx-auto">From application to your first commission — here's the journey.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[
@@ -237,12 +237,12 @@ export default function Careers() {
               { step: "04", title: "Earn", desc: "Commissions are tracked automatically. Get paid directly to your bank via Stripe Connect.", icon: DollarSign },
             ].map((s) => (
               <div key={s.step} className="text-center">
-                <div className="w-14 h-14 rounded-full bg-terracotta/10 flex items-center justify-center mx-auto mb-4">
-                  <s.icon className="h-6 w-6 text-terracotta" />
+                <div className="w-14 h-14 rounded-full bg-electric/10 flex items-center justify-center mx-auto mb-4">
+                  <s.icon className="h-6 w-6 text-electric" />
                 </div>
-                <p className="text-xs text-terracotta font-sans font-bold mb-1">STEP {s.step}</p>
-                <h3 className="text-lg font-serif text-forest mb-2">{s.title}</h3>
-                <p className="text-xs text-forest/50 font-sans leading-relaxed">{s.desc}</p>
+                <p className="text-xs text-electric font-sans font-bold mb-1">STEP {s.step}</p>
+                <h3 className="text-lg font-serif text-off-white mb-2">{s.title}</h3>
+                <p className="text-xs text-soft-gray font-sans leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -253,7 +253,7 @@ export default function Careers() {
       <section className="py-20">
         <div className="container max-w-3xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif text-forest mb-3">Frequently asked questions</h2>
+            <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">Frequently asked questions</h2>
           </div>
           <div className="space-y-2">
             {FAQS.map((faq, i) => (
@@ -263,18 +263,18 @@ export default function Careers() {
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-5 text-left hover:bg-forest/5 transition-colors"
+                  className="w-full flex items-center justify-between p-5 text-left hover:bg-electric/10 transition-colors"
                 >
-                  <span className="text-sm font-medium text-forest font-sans pr-4">{faq.q}</span>
+                  <span className="text-sm font-medium text-off-white font-sans pr-4">{faq.q}</span>
                   {openFaq === i ? (
-                    <ChevronUp className="h-4 w-4 text-forest/40 shrink-0" />
+                    <ChevronUp className="h-4 w-4 text-soft-gray/60 shrink-0" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-forest/40 shrink-0" />
+                    <ChevronDown className="h-4 w-4 text-soft-gray/60 shrink-0" />
                   )}
                 </button>
                 {openFaq === i && (
                   <div className="px-5 pb-5">
-                    <p className="text-xs text-forest/60 font-sans leading-relaxed">{faq.a}</p>
+                    <p className="text-xs text-soft-gray font-sans leading-relaxed">{faq.a}</p>
                   </div>
                 )}
               </div>
@@ -284,15 +284,15 @@ export default function Careers() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-forest">
+      <section className="py-20 bg-electric">
         <div className="container max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-3xl md:text-4xl font-serif text-white mb-4">Ready to start earning?</h2>
-          <p className="text-white/60 font-sans max-w-xl mx-auto mb-8">
+          <p className="text-off-white/50 font-sans max-w-xl mx-auto mb-8">
             Join the MiniMorph team. No cold calling, no inventory, no overhead. Just close deals and get paid.
           </p>
           <Button
             onClick={() => setLocation("/become-rep/values")}
-            className="bg-terracotta hover:bg-terracotta/90 text-white rounded-full px-10 py-6 text-base font-sans"
+            className="bg-electric hover:bg-electric/90 text-white rounded-full px-10 py-6 text-base font-sans"
           >
             Apply Now <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
@@ -304,12 +304,12 @@ export default function Careers() {
       <footer className="py-8 border-t border-border/10">
         <div className="container max-w-6xl mx-auto px-6 flex flex-wrap justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-forest rounded-lg flex items-center justify-center">
+            <div className="w-7 h-7 bg-electric rounded-lg flex items-center justify-center">
               <span className="text-white text-xs font-bold">M</span>
             </div>
-            <span className="text-sm font-serif text-forest">MiniMorph Studios</span>
+            <span className="text-sm font-serif text-off-white">MiniMorph Studios</span>
           </div>
-          <p className="text-xs text-forest/40 font-sans">&copy; {new Date().getFullYear()} MiniMorph Studios. All rights reserved.</p>
+          <p className="text-xs text-soft-gray/60 font-sans">&copy; {new Date().getFullYear()} MiniMorph Studios. All rights reserved.</p>
         </div>
       </footer>
     </div>

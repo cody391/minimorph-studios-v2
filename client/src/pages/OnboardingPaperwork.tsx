@@ -38,7 +38,7 @@ const FORM_CONFIG: Record<FormType, {
     title: "W-9 Tax Information",
     icon: DollarSign,
     description: "Federal tax classification and taxpayer identification",
-    color: "text-green-600 bg-green-50",
+    color: "text-emerald-400 bg-green-50",
   },
   hr_employment: {
     title: "HR / Employment Info",
@@ -56,7 +56,7 @@ const FORM_CONFIG: Record<FormType, {
     title: "Rep Agreement",
     icon: Handshake,
     description: "Independent contractor agreement and terms",
-    color: "text-terracotta bg-terracotta/10",
+    color: "text-electric bg-electric/10",
   },
 };
 
@@ -64,7 +64,7 @@ const FORM_ORDER: FormType[] = ["w9_tax", "hr_employment", "payroll_setup", "rep
 
 function AutoFilledBadge() {
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] text-green-600 font-medium">
+    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
       <Sparkles className="w-3 h-3" /> Auto-filled
     </span>
   );
@@ -94,7 +94,7 @@ function SmartField({
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <Label className="text-forest/80 text-sm">{label}</Label>
+        <Label className="text-off-white/80 text-sm">{label}</Label>
         {isAutoFilled && <AutoFilledBadge />}
       </div>
       <Input
@@ -103,12 +103,12 @@ function SmartField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className={`border-sage/30 focus:border-forest ${
+        className={`border-border focus:border-electric ${
           isAutoFilled ? "bg-green-50/50 border-green-200" : ""
         }`}
       />
       {isAutoFilled && (
-        <p className="text-[10px] text-green-600/70 mt-0.5">
+        <p className="text-[10px] text-emerald-400/70 mt-0.5">
           From your {source === "trust_verification" ? "trust verification" : "account signup"}
         </p>
       )}
@@ -173,21 +173,21 @@ export default function OnboardingPaperwork() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-forest border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-midnight flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <Lock className="w-12 h-12 text-forest mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-forest mb-2">Login Required</h2>
+            <Lock className="w-12 h-12 text-electric mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-off-white mb-2">Login Required</h2>
             <p className="text-muted-foreground mb-4">Please log in to access onboarding paperwork.</p>
-            <Button onClick={() => navigate("/login")} className="bg-forest hover:bg-forest-light text-white">
+            <Button onClick={() => navigate("/login")} className="bg-electric hover:bg-electric-light text-white">
               Log In
             </Button>
           </CardContent>
@@ -198,13 +198,13 @@ export default function OnboardingPaperwork() {
 
   if (allComplete) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-midnight flex items-center justify-center p-4">
         <Card className="max-w-lg w-full">
           <CardContent className="pt-8 pb-8 text-center">
             <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+              <CheckCircle className="w-10 h-10 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-bold text-forest mb-2 font-serif">
+            <h2 className="text-2xl font-bold text-off-white mb-2 font-serif">
               All Paperwork Complete!
             </h2>
             <p className="text-muted-foreground mb-6">
@@ -215,7 +215,7 @@ export default function OnboardingPaperwork() {
                 const c = FORM_CONFIG[ft];
                 return (
                   <div key={ft} className="flex items-center gap-2 p-2 rounded-lg bg-green-50 border border-green-200">
-                    <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                    <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span className="text-xs font-medium text-green-800">{c.title}</span>
                   </div>
                 );
@@ -223,7 +223,7 @@ export default function OnboardingPaperwork() {
             </div>
             <Button
               onClick={() => navigate("/become-rep/payout-setup")}
-              className="bg-forest hover:bg-forest-light text-white w-full rounded-full py-5"
+              className="bg-electric hover:bg-electric-light text-white w-full rounded-full py-5"
               size="lg"
             >
               Set Up Payout Account <ArrowRight className="w-4 h-4 ml-2" />
@@ -235,10 +235,10 @@ export default function OnboardingPaperwork() {
   }
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-midnight">
       <OnboardingProgress currentStep={6} />
       {/* Header */}
-      <div className="bg-forest text-white py-8 px-4">
+      <div className="bg-charcoal text-off-white py-8 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <button
             onClick={() => navigate("/become-rep?step=2")}
@@ -258,14 +258,14 @@ export default function OnboardingPaperwork() {
       <div className="max-w-2xl mx-auto px-4 mt-6 mb-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+            <Zap className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-medium text-green-800 mb-1">
                 Smart Auto-Fill Active
               </p>
               <p className="text-xs text-green-700 leading-relaxed">
                 We already have your information from the trust verification step.
-                Fields marked with <Sparkles className="w-3 h-3 inline text-green-600" /> are pre-filled.
+                Fields marked with <Sparkles className="w-3 h-3 inline text-emerald-400" /> are pre-filled.
                 Just review, verify, and confirm each form.
               </p>
             </div>
@@ -289,20 +289,20 @@ export default function OnboardingPaperwork() {
                 }}
                 className={`flex-1 p-2 rounded-lg border text-center transition-all ${
                   isCurrent
-                    ? "border-terracotta bg-white shadow-md"
+                    ? "border-electric bg-charcoal shadow-md"
                     : isComplete
                       ? "border-green-200 bg-green-50"
-                      : "border-sage/20 bg-white/50 opacity-60"
+                      : "border-border/50 bg-charcoal/50 opacity-60"
                 }`}
               >
                 <div className="flex items-center justify-center gap-1.5 mb-0.5">
                   {isComplete ? (
-                    <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                   ) : (
-                    <c.icon className={`w-3.5 h-3.5 ${isCurrent ? "text-terracotta" : "text-forest/40"}`} />
+                    <c.icon className={`w-3.5 h-3.5 ${isCurrent ? "text-electric" : "text-soft-gray/60"}`} />
                   )}
                   <span className={`text-[10px] font-medium ${
-                    isCurrent ? "text-forest" : isComplete ? "text-green-700" : "text-forest/40"
+                    isCurrent ? "text-off-white" : isComplete ? "text-green-700" : "text-soft-gray/60"
                   }`}>
                     {c.title.split(" ")[0]}
                   </span>
@@ -315,7 +315,7 @@ export default function OnboardingPaperwork() {
 
       {/* Current form */}
       <div className="max-w-2xl mx-auto px-4 pb-12">
-        <Card className="border-sage/20 shadow-lg">
+        <Card className="border-border/50 shadow-lg">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -323,8 +323,8 @@ export default function OnboardingPaperwork() {
                   <config.icon className="w-5 h-5" />
                 </div>
                 <div>
-                  <CardTitle className="font-serif text-forest text-lg">{config.title}</CardTitle>
-                  <CardDescription className="text-forest/60 text-xs">{config.description}</CardDescription>
+                  <CardTitle className="font-serif text-off-white text-lg">{config.title}</CardTitle>
+                  <CardDescription className="text-soft-gray text-xs">{config.description}</CardDescription>
                 </div>
               </div>
               {autoFilledCount.filled > 0 && (
@@ -337,7 +337,7 @@ export default function OnboardingPaperwork() {
           <CardContent>
             {formLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-forest" />
+                <Loader2 className="w-6 h-6 animate-spin text-off-white" />
               </div>
             ) : formData ? (
               <div className="space-y-4">
@@ -376,7 +376,7 @@ export default function OnboardingPaperwork() {
                 )}
 
                 {/* E-Signature */}
-                <div className="pt-4 border-t border-sage/10">
+                <div className="pt-4 border-t border-border/10">
                   <SignaturePad
                     onSignatureChange={setSignature}
                     signerName={formData?.autoPopulatedFields ? (formData.autoPopulatedFields as any).name || (formData.autoPopulatedFields as any).legalName || "" : ""}
@@ -387,7 +387,7 @@ export default function OnboardingPaperwork() {
                   <Button
                     onClick={handleConfirmForm}
                     disabled={!signature}
-                    className="w-full bg-terracotta hover:bg-terracotta/90 text-white rounded-full py-5 font-sans disabled:opacity-50"
+                    className="w-full bg-electric hover:bg-electric/90 text-white rounded-full py-5 font-sans disabled:opacity-50"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Sign & Confirm {config.title}
@@ -440,10 +440,10 @@ function W9Form({
         onChange={(v) => setOverrides({ ...overrides, w9_businessName: v })}
         placeholder="Leave blank if not applicable"
       />
-      <div className="bg-forest/5 rounded-lg p-3">
-        <Label className="text-forest/80 text-sm font-medium">Federal Tax Classification</Label>
-        <p className="text-sm text-forest mt-1">Individual / Sole Proprietor (Independent Contractor)</p>
-        <p className="text-[10px] text-forest/50 mt-0.5">
+      <div className="bg-electric/10 rounded-lg p-3">
+        <Label className="text-off-white/80 text-sm font-medium">Federal Tax Classification</Label>
+        <p className="text-sm text-off-white mt-1">Individual / Sole Proprietor (Independent Contractor)</p>
+        <p className="text-[10px] text-soft-gray mt-0.5">
           MiniMorph reps are classified as independent contractors
         </p>
       </div>
@@ -485,7 +485,7 @@ function W9Form({
         placeholder="••••"
         sensitive
       />
-      <p className="text-[10px] text-forest/40">
+      <p className="text-[10px] text-soft-gray/60">
         Full SSN will be collected securely during final tax processing. Only last 4 digits stored.
       </p>
     </div>
@@ -574,17 +574,17 @@ function HRForm({
           placeholder="ZIP"
         />
       </div>
-      <div className="bg-forest/5 rounded-lg p-3">
-        <Label className="text-forest/80 text-sm font-medium">Government ID</Label>
-        <p className="text-sm text-forest mt-1">
+      <div className="bg-electric/10 rounded-lg p-3">
+        <Label className="text-off-white/80 text-sm font-medium">Government ID</Label>
+        <p className="text-sm text-off-white mt-1">
           {data.idType === "drivers_license" ? "Driver's License" : data.idType === "passport" ? "Passport" : "State ID"} — Last 4: ••{data.idLast4?.slice(-2) || "••"}
         </p>
-        <p className="text-[10px] text-green-600 mt-0.5 flex items-center gap-1">
+        <p className="text-[10px] text-emerald-400 mt-0.5 flex items-center gap-1">
           <Sparkles className="w-3 h-3" /> Verified during trust verification
         </p>
       </div>
-      <div className="pt-2 border-t border-sage/10">
-        <Label className="text-forest/80 text-sm font-medium mb-2 block">Emergency Contact</Label>
+      <div className="pt-2 border-t border-border/10">
+        <Label className="text-off-white/80 text-sm font-medium mb-2 block">Emergency Contact</Label>
         <div className="grid grid-cols-2 gap-3">
           <SmartField
             label="Emergency Contact Name"
@@ -669,11 +669,11 @@ function PayrollForm({
       <div className={`rounded-lg p-4 border ${
         data.stripeConnectStatus === "connected"
           ? "bg-green-50 border-green-200"
-          : "bg-amber-50 border-amber-200"
+          : "bg-amber-500/10 border-amber-500/20"
       }`}>
         <div className="flex items-center gap-2 mb-1">
           <CreditCard className={`w-4 h-4 ${
-            data.stripeConnectStatus === "connected" ? "text-green-600" : "text-amber-600"
+            data.stripeConnectStatus === "connected" ? "text-emerald-400" : "text-amber-400"
           }`} />
           <span className={`text-sm font-medium ${
             data.stripeConnectStatus === "connected" ? "text-green-800" : "text-amber-800"
@@ -752,7 +752,7 @@ function RepAgreementForm({
       {data.ndaAlreadySigned && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
           <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-green-600" />
+            <Shield className="w-4 h-4 text-emerald-400" />
             <span className="text-sm font-medium text-green-800">NDA Already Signed</span>
           </div>
           <p className="text-xs text-green-700 mt-1">
@@ -765,8 +765,8 @@ function RepAgreementForm({
         </div>
       )}
 
-      <div className="bg-forest/5 rounded-lg p-4 text-xs text-forest/70 leading-relaxed">
-        <p className="font-medium text-forest text-sm mb-2">Key Terms Summary</p>
+      <div className="bg-electric/10 rounded-lg p-4 text-xs text-soft-gray leading-relaxed">
+        <p className="font-medium text-off-white text-sm mb-2">Key Terms Summary</p>
         <ul className="space-y-1.5 list-disc list-inside">
           <li>Independent contractor relationship (not employment)</li>
           <li>10-20% commission on all sales you close</li>

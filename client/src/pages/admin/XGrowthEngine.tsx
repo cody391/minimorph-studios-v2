@@ -18,9 +18,9 @@ type EngagementCategory = "rep_recruitment" | "lead_gen" | "brand_awareness" | "
 
 const CATEGORY_COLORS: Record<EngagementCategory, string> = {
   rep_recruitment: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-  lead_gen: "bg-green-500/10 text-green-500 border-green-500/20",
+  lead_gen: "bg-green-500/10 text-emerald-400 border-green-500/20",
   brand_awareness: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  authority: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  authority: "bg-amber-500/100/10 text-amber-500 border-amber-500/20",
   general: "bg-gray-500/10 text-gray-400 border-gray-500/20",
 };
 
@@ -79,7 +79,7 @@ function DashboardTab() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-500/10">
-                <UserPlus className="h-5 w-5 text-green-500" />
+                <UserPlus className="h-5 w-5 text-emerald-400" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Following</p>
@@ -104,7 +104,7 @@ function DashboardTab() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
+              <div className="p-2 rounded-lg bg-amber-500/100/10">
                 <TrendingUp className="h-5 w-5 text-amber-500" />
               </div>
               <div>
@@ -134,7 +134,7 @@ function DashboardTab() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              <UserPlus className="h-4 w-4 text-green-500" />
+              <UserPlus className="h-4 w-4 text-emerald-400" />
               <div>
                 <p className="text-sm text-muted-foreground">Follows</p>
                 <p className="text-lg font-semibold">{todayCounts.follows} <span className="text-xs text-muted-foreground">/ 40</span></p>
@@ -185,7 +185,7 @@ function DashboardTab() {
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all ${
-                      val.used / val.limit > 0.8 ? "bg-red-500" : val.used / val.limit > 0.5 ? "bg-amber-500" : "bg-green-500"
+                      val.used / val.limit > 0.8 ? "bg-red-500" : val.used / val.limit > 0.5 ? "bg-amber-500/100" : "bg-green-500"
                     }`}
                     style={{ width: `${Math.min((val.used / val.limit) * 100, 100)}%` }}
                   />
@@ -407,7 +407,7 @@ function ApprovalQueueTab() {
     return (
       <Card>
         <CardContent className="py-12 text-center">
-          <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+          <CheckCircle className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold">All Clear</h3>
           <p className="text-muted-foreground">No pending replies to approve. Queue replies from the Engage tab.</p>
         </CardContent>
@@ -419,7 +419,7 @@ function ApprovalQueueTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Pending Replies ({queue.length})</h3>
-        <Badge variant="outline" className="bg-amber-500/10 text-amber-500">
+        <Badge variant="outline" className="bg-amber-500/100/10 text-amber-500">
           <Clock className="h-3 w-3 mr-1" /> Awaiting Approval
         </Badge>
       </div>
@@ -631,7 +631,7 @@ function ActivityLogTab() {
   const { data: log, isLoading } = trpc.xGrowthDashboard.activityLog.useQuery({ limit: 100 });
 
   const ACTION_ICONS: Record<string, React.ReactNode> = {
-    follow: <UserPlus className="h-4 w-4 text-green-500" />,
+    follow: <UserPlus className="h-4 w-4 text-emerald-400" />,
     unfollow: <UserMinus className="h-4 w-4 text-gray-500" />,
     like: <Heart className="h-4 w-4 text-red-500" />,
     reply: <MessageSquare className="h-4 w-4 text-blue-500" />,
@@ -639,9 +639,9 @@ function ActivityLogTab() {
   };
 
   const STATUS_BADGES: Record<string, string> = {
-    executed: "bg-green-500/10 text-green-500",
+    executed: "bg-green-500/10 text-emerald-400",
     failed: "bg-red-500/10 text-red-500",
-    pending_approval: "bg-amber-500/10 text-amber-500",
+    pending_approval: "bg-amber-500/100/10 text-amber-500",
     approved: "bg-blue-500/10 text-blue-500",
     rejected: "bg-gray-500/10 text-gray-400",
   };

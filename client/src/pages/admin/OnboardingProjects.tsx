@@ -24,7 +24,7 @@ import {
 import { FLAG_DESCRIPTIONS } from "@shared/quoteEngine";
 
 const STAGE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  intake: { label: "Intake", color: "bg-gray-100 text-gray-700", icon: <ClipboardList className="w-3 h-3" /> },
+  intake: { label: "Intake", color: "badge-neutral", icon: <ClipboardList className="w-3 h-3" /> },
   questionnaire: { label: "Questionnaire", color: "bg-amber-100 text-amber-800", icon: <ClipboardList className="w-3 h-3" /> },
   assets_upload: { label: "Assets Upload", color: "bg-blue-100 text-blue-800", icon: <Upload className="w-3 h-3" /> },
   design: { label: "Designing", color: "bg-purple-100 text-purple-800", icon: <Palette className="w-3 h-3" /> },
@@ -161,9 +161,9 @@ export default function OnboardingProjects() {
 
                   {/* Custom Quote / Review Flags */}
                   {project.needsCustomQuote && (
-                    <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3">
+                    <div className="mb-4 rounded-lg border border-amber-300 bg-amber-500/10 p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <AlertTriangle className="w-4 h-4 text-amber-400" />
                         <span className="font-semibold text-amber-800 text-sm">Custom Quote Required</span>
                         <Badge className="bg-amber-200 text-amber-900 text-xs ml-auto">
                           Complexity: {project.complexityScore}/100
@@ -172,7 +172,7 @@ export default function OnboardingProjects() {
                       {Array.isArray(project.reviewFlags) && project.reviewFlags.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {(project.reviewFlags as string[]).map((flag: string) => (
-                            <Badge key={flag} variant="outline" className="text-xs border-amber-300 text-amber-700 bg-white">
+                            <Badge key={flag} variant="outline" className="text-xs border-amber-300 text-amber-700 bg-charcoal">
                               <ShieldAlert className="w-3 h-3 mr-1" />
                               {(FLAG_DESCRIPTIONS as Record<string, string>)[flag] || flag.replace(/_/g, " ")}
                             </Badge>

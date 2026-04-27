@@ -62,7 +62,7 @@ export default function BrandKit() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Palette className="w-6 h-6 text-forest" />
+            <Palette className="w-6 h-6 text-off-white" />
             Brand Kit
           </h1>
           <p className="text-gray-500 mt-1">Manage your brand identity and content assets</p>
@@ -236,7 +236,7 @@ function AssetCard({ asset, onEdit, onDelete }: { asset: any; onEdit: () => void
           </div>
           <div className="flex gap-1 shrink-0 ml-2">
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={copyValue}>
-              {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
+              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </Button>
             <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600" onClick={onDelete}>
               <Trash2 className="w-3 h-3" />

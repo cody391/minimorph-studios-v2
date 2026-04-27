@@ -58,7 +58,7 @@
   --color-glass: oklch(0.20 0.01 260 / 0.6);
   --color-glass-border: oklch(0.40 0.01 260 / 0.3);
 
-  /* Legacy warm-theme aliases (admin/portal/onboarding still use these) */
+  /* Legacy warm-theme aliases (kept for backward compat during migration) */
   --color-forest: oklch(0.35 0.06 160);
   --color-forest-light: oklch(0.45 0.06 160);
   --color-terracotta: oklch(0.62 0.14 45);
@@ -75,40 +75,41 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
+/* ─── Dark Premium Theme (Default) ─── */
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.97 0.01 85);
-  --foreground: oklch(0.25 0.04 160);
-  --card: oklch(0.99 0.005 85);
-  --card-foreground: oklch(0.25 0.04 160);
-  --popover: oklch(0.99 0.005 85);
-  --popover-foreground: oklch(0.25 0.04 160);
-  --primary: oklch(0.35 0.06 160);
-  --primary-foreground: oklch(0.97 0.01 85);
-  --secondary: oklch(0.93 0.015 85);
-  --secondary-foreground: oklch(0.35 0.04 160);
-  --muted: oklch(0.93 0.015 85);
-  --muted-foreground: oklch(0.55 0.03 160);
-  --accent: oklch(0.62 0.14 45);
-  --accent-foreground: oklch(0.99 0.005 85);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.88 0.02 85);
-  --input: oklch(0.88 0.02 85);
-  --ring: oklch(0.62 0.14 45);
-  --chart-1: oklch(0.35 0.06 160);
-  --chart-2: oklch(0.62 0.14 45);
-  --chart-3: oklch(0.68 0.05 155);
-  --chart-4: oklch(0.82 0.04 155);
-  --chart-5: oklch(0.93 0.015 85);
-  --sidebar: oklch(0.97 0.01 85);
-  --sidebar-foreground: oklch(0.25 0.04 160);
-  --sidebar-primary: oklch(0.35 0.06 160);
-  --sidebar-primary-foreground: oklch(0.97 0.01 85);
-  --sidebar-accent: oklch(0.93 0.015 85);
-  --sidebar-accent-foreground: oklch(0.25 0.04 160);
-  --sidebar-border: oklch(0.88 0.02 85);
-  --sidebar-ring: oklch(0.62 0.14 45);
+  --background: oklch(0.13 0.01 260);
+  --foreground: oklch(0.93 0.005 260);
+  --card: oklch(0.17 0.01 260);
+  --card-foreground: oklch(0.93 0.005 260);
+  --popover: oklch(0.17 0.01 260);
+  --popover-foreground: oklch(0.93 0.005 260);
+  --primary: oklch(0.72 0.19 250);
+  --primary-foreground: oklch(0.13 0.01 260);
+  --secondary: oklch(0.22 0.01 260);
+  --secondary-foreground: oklch(0.90 0.005 260);
+  --muted: oklch(0.22 0.01 260);
+  --muted-foreground: oklch(0.65 0.01 260);
+  --accent: oklch(0.78 0.12 80);
+  --accent-foreground: oklch(0.13 0.01 260);
+  --destructive: oklch(0.60 0.20 25);
+  --destructive-foreground: oklch(0.95 0.005 260);
+  --border: oklch(0.28 0.01 260);
+  --input: oklch(0.22 0.01 260);
+  --ring: oklch(0.72 0.19 250);
+  --chart-1: oklch(0.72 0.19 250);
+  --chart-2: oklch(0.78 0.12 80);
+  --chart-3: oklch(0.65 0.20 290);
+  --chart-4: oklch(0.78 0.12 200);
+  --chart-5: oklch(0.60 0.20 25);
+  --sidebar: oklch(0.15 0.01 260);
+  --sidebar-foreground: oklch(0.90 0.005 260);
+  --sidebar-primary: oklch(0.72 0.19 250);
+  --sidebar-primary-foreground: oklch(0.13 0.01 260);
+  --sidebar-accent: oklch(0.22 0.01 260);
+  --sidebar-accent-foreground: oklch(0.90 0.005 260);
+  --sidebar-border: oklch(0.28 0.01 260);
+  --sidebar-ring: oklch(0.72 0.19 250);
 }
 
 @layer base {
@@ -196,19 +197,6 @@
     z-index: 1;
   }
 
-  /* Legacy alias */
-  .paper-texture {
-    position: relative;
-  }
-  .paper-texture::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1;
-  }
-
   /* ─── Gradient text utilities ─── */
   .text-gradient-electric {
     background: linear-gradient(135deg, oklch(0.72 0.19 250), oklch(0.65 0.20 290));
@@ -222,6 +210,53 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* ─── Status Badge Utilities (dark-theme optimized) ─── */
+  .badge-active {
+    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30;
+  }
+  .badge-success {
+    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30;
+  }
+  .badge-pending {
+    @apply bg-amber-500/15 text-amber-400 border border-amber-500/30;
+  }
+  .badge-pending-payment {
+    @apply bg-orange-500/15 text-orange-400 border border-orange-500/30;
+  }
+  .badge-warning {
+    @apply bg-yellow-500/15 text-yellow-400 border border-yellow-500/30;
+  }
+  .badge-danger {
+    @apply bg-red-500/15 text-red-400 border border-red-500/30;
+  }
+  .badge-info {
+    @apply bg-blue-500/15 text-blue-400 border border-blue-500/30;
+  }
+  .badge-neutral {
+    @apply bg-gray-500/15 text-gray-400 border border-gray-500/30;
+  }
+  .badge-hot {
+    @apply bg-red-500/15 text-red-400 border border-red-500/30;
+  }
+  .badge-warm {
+    @apply bg-amber-500/15 text-amber-400 border border-amber-500/30;
+  }
+  .badge-cold {
+    @apply bg-blue-500/15 text-blue-400 border border-blue-500/30;
+  }
+  .badge-renewed {
+    @apply bg-cyan-500/15 text-cyan-400 border border-cyan-500/30;
+  }
+  .badge-cancelled {
+    @apply bg-gray-500/15 text-gray-400 border border-gray-500/30;
+  }
+  .badge-purple {
+    @apply bg-purple-500/15 text-purple-400 border border-purple-500/30;
+  }
+  .badge-electric {
+    @apply bg-sky-500/15 text-sky-400 border border-sky-500/30;
   }
 }
 

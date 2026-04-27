@@ -146,10 +146,10 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
       {/* Profile Photo Section */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <Camera className="h-4 w-4 text-terracotta" /> Profile Photo
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <Camera className="h-4 w-4 text-electric" /> Profile Photo
           </CardTitle>
-          <CardDescription className="text-xs text-forest/50 font-sans">
+          <CardDescription className="text-xs text-soft-gray font-sans">
             Your photo appears in your email signature, dashboard, and leaderboard.
           </CardDescription>
         </CardHeader>
@@ -160,10 +160,10 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
                 <img
                   src={repProfile.profilePhotoUrl}
                   alt={repProfile.fullName}
-                  className="w-24 h-24 rounded-full object-cover border-2 border-sage/30"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-border"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-forest/10 flex items-center justify-center text-forest text-3xl font-bold border-2 border-sage/30">
+                <div className="w-24 h-24 rounded-full bg-electric/10 flex items-center justify-center text-electric text-3xl font-bold border-2 border-border">
                   {repProfile.fullName?.charAt(0) || "?"}
                 </div>
               )}
@@ -175,9 +175,9 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
               </button>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-forest font-sans">{repProfile.fullName}</p>
-              <p className="text-xs text-forest/50 font-sans">{repProfile.email}</p>
-              {repProfile.phone && <p className="text-xs text-forest/50 font-sans">{repProfile.phone}</p>}
+              <p className="text-sm font-medium text-off-white font-sans">{repProfile.fullName}</p>
+              <p className="text-xs text-soft-gray font-sans">{repProfile.email}</p>
+              {repProfile.phone && <p className="text-xs text-soft-gray font-sans">{repProfile.phone}</p>}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -194,7 +194,7 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
               >
                 {uploading || uploadPhoto.isPending ? (
                   <span className="flex items-center gap-1">
-                    <div className="animate-spin w-3 h-3 border border-forest border-t-transparent rounded-full" />
+                    <div className="animate-spin w-3 h-3 border border-electric border-t-transparent rounded-full" />
                     Uploading...
                   </span>
                 ) : (
@@ -211,17 +211,17 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
       {/* Push Notifications Section */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <Smartphone className="h-4 w-4 text-terracotta" /> Push Notifications
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <Smartphone className="h-4 w-4 text-electric" /> Push Notifications
           </CardTitle>
-          <CardDescription className="text-xs text-forest/50 font-sans">
+          <CardDescription className="text-xs text-soft-gray font-sans">
             Get instant alerts on your device when important events happen.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!pushSupported ? (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
-              <BellOff className="h-4 w-4 text-amber-600" />
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <BellOff className="h-4 w-4 text-amber-400" />
               <p className="text-xs text-amber-700 font-sans">
                 Push notifications are not supported in this browser. Try Chrome or Firefox.
               </p>
@@ -229,10 +229,10 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
           ) : (
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-forest font-sans">
+                <p className="text-sm font-medium text-off-white font-sans">
                   {pushSubscribed ? "Push notifications enabled" : "Enable push notifications"}
                 </p>
-                <p className="text-xs text-forest/50 font-sans">
+                <p className="text-xs text-soft-gray font-sans">
                   {pushSubscribed
                     ? "You'll receive alerts for new leads, coaching feedback, and more."
                     : "Click to allow browser notifications from MiniMorph Studios."}
@@ -243,7 +243,7 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
                 size="sm"
                 onClick={pushSubscribed ? handleDisablePush : handleEnablePush}
                 disabled={subscribePush.isPending || unsubscribePush.isPending}
-                className={`text-xs font-sans rounded-full ${!pushSubscribed ? "bg-terracotta hover:bg-terracotta/90 text-white" : ""}`}
+                className={`text-xs font-sans rounded-full ${!pushSubscribed ? "bg-electric hover:bg-electric/90 text-white" : ""}`}
               >
                 {pushSubscribed ? (
                   <span className="flex items-center gap-1"><BellOff className="h-3 w-3" /> Disable</span>
@@ -259,22 +259,22 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
       {/* Notification Preferences Section */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-serif text-forest flex items-center gap-2">
-            <Settings className="h-4 w-4 text-terracotta" /> Notification Preferences
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <Settings className="h-4 w-4 text-electric" /> Notification Preferences
           </CardTitle>
-          <CardDescription className="text-xs text-forest/50 font-sans">
+          <CardDescription className="text-xs text-soft-gray font-sans">
             Control which notifications you receive and how.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {prefsLoading ? (
             <div className="text-center py-6">
-              <div className="animate-spin w-5 h-5 border-2 border-forest border-t-transparent rounded-full mx-auto" />
+              <div className="animate-spin w-5 h-5 border-2 border-electric border-t-transparent rounded-full mx-auto" />
             </div>
           ) : (
             <div className="space-y-4">
               {/* Header row */}
-              <div className="grid grid-cols-[1fr,60px,60px,60px] gap-2 items-center text-[10px] text-forest/40 font-sans uppercase tracking-wider">
+              <div className="grid grid-cols-[1fr,60px,60px,60px] gap-2 items-center text-[10px] text-soft-gray/60 font-sans uppercase tracking-wider">
                 <span>Category</span>
                 <span className="text-center">All</span>
                 <span className="text-center flex items-center justify-center gap-0.5"><Smartphone className="h-3 w-3" /> Push</span>
@@ -285,8 +285,8 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
                 return (
                   <div key={cat.id} className="grid grid-cols-[1fr,60px,60px,60px] gap-2 items-center py-2 border-b border-border/20 last:border-0">
                     <div>
-                      <p className="text-sm font-sans text-forest">{cat.label}</p>
-                      <p className="text-[10px] text-forest/40 font-sans">{cat.description}</p>
+                      <p className="text-sm font-sans text-off-white">{cat.label}</p>
+                      <p className="text-[10px] text-soft-gray/60 font-sans">{cat.description}</p>
                     </div>
                     <div className="flex justify-center">
                       <Switch

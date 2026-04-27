@@ -31,7 +31,7 @@ export default function CommsHub({ leads, templates, sentEmails }: CommsHubProps
   return (
     <div className="space-y-4">
       {/* Channel Switcher */}
-      <div className="flex gap-2 p-1 bg-sage/10 rounded-xl">
+      <div className="flex gap-2 p-1 bg-electric/5 rounded-xl">
         {[
           { key: "email" as const, label: "Email", icon: Mail },
           { key: "sms" as const, label: "SMS", icon: MessageSquare },
@@ -43,8 +43,8 @@ export default function CommsHub({ leads, templates, sentEmails }: CommsHubProps
             onClick={() => setActiveChannel(ch.key)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-sans transition-all ${
               activeChannel === ch.key
-                ? "bg-forest text-white shadow-sm"
-                : "text-forest/60 hover:text-forest hover:bg-white/50"
+                ? "bg-charcoal text-off-white shadow-sm"
+                : "text-soft-gray hover:text-electric hover:bg-charcoal/50"
             }`}
           >
             <ch.icon className="w-4 h-4" />
@@ -73,8 +73,8 @@ function EmailChannel({ leads, templates, sentEmails }: { leads: any[]; template
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-serif text-forest">Email</h3>
-        <Button onClick={() => setShowCompose(true)} className="bg-forest hover:bg-forest/90 text-white rounded-full font-sans text-sm">
+        <h3 className="text-lg font-serif text-off-white">Email</h3>
+        <Button onClick={() => setShowCompose(true)} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm">
           <Mail className="w-4 h-4 mr-2" /> Compose
         </Button>
       </div>
@@ -82,11 +82,11 @@ function EmailChannel({ leads, templates, sentEmails }: { leads: any[]; template
       {/* Quick AI Drafts */}
       <Card className="border-border/50">
         <CardContent className="p-4">
-          <p className="text-xs text-forest/50 font-sans mb-2">Quick AI Draft</p>
+          <p className="text-xs text-soft-gray font-sans mb-2">Quick AI Draft</p>
           <div className="flex flex-wrap gap-2">
             {["intro", "follow_up", "proposal", "close", "check_in"].map((p) => (
               <Button key={p} size="sm" variant="outline" onClick={() => { setShowCompose(true); }}
-                className="text-xs border-sage/30 text-forest/70 hover:bg-terracotta/5 hover:border-terracotta/30 rounded-full">
+                className="text-xs border-border text-soft-gray hover:bg-electric/5 hover:border-electric/30 rounded-full">
                 <Sparkles className="w-3 h-3 mr-1" /> {p.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
               </Button>
             ))}
@@ -97,14 +97,14 @@ function EmailChannel({ leads, templates, sentEmails }: { leads: any[]; template
       {/* Templates */}
       {templates?.length > 0 && (
         <Card className="border-border/50">
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-sans text-forest/70">Templates</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-sans text-soft-gray">Templates</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {templates.map((t: any) => (
                 <button key={t.id} onClick={() => setShowCompose(true)}
-                  className="p-2.5 rounded-lg border border-border/30 hover:bg-sage/5 text-left transition-colors">
-                  <Badge className="text-[9px] bg-forest/10 text-forest capitalize mb-1">{t.category}</Badge>
-                  <p className="text-xs font-sans text-forest font-medium truncate">{t.name}</p>
+                  className="p-2.5 rounded-lg border border-border/30 hover:bg-graphite/5 text-left transition-colors">
+                  <Badge className="text-[9px] bg-electric/10 text-off-white capitalize mb-1">{t.category}</Badge>
+                  <p className="text-xs font-sans text-off-white font-medium truncate">{t.name}</p>
                 </button>
               ))}
             </div>
@@ -115,13 +115,13 @@ function EmailChannel({ leads, templates, sentEmails }: { leads: any[]; template
       {/* Sent Emails with Coaching Badges */}
       <Card className="border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-sans text-forest/70">Sent ({sentEmails?.length || 0})</CardTitle>
+          <CardTitle className="text-sm font-sans text-soft-gray">Sent ({sentEmails?.length || 0})</CardTitle>
         </CardHeader>
         <CardContent>
           {!sentEmails?.length ? (
             <div className="text-center py-6">
-              <Mail className="h-7 w-7 text-forest/15 mx-auto mb-2" />
-              <p className="text-xs text-forest/40 font-sans">No emails sent yet</p>
+              <Mail className="h-7 w-7 text-soft-gray/20 mx-auto mb-2" />
+              <p className="text-xs text-soft-gray/60 font-sans">No emails sent yet</p>
             </div>
           ) : (
             <div className="space-y-1.5">
@@ -146,10 +146,10 @@ function EmailRow({ email, onSelect }: { email: any; onSelect: () => void }) {
   );
 
   return (
-    <button onClick={onSelect} className="w-full flex items-center gap-3 p-3 rounded-lg border border-border/20 hover:bg-sage/5 transition-colors text-left">
+    <button onClick={onSelect} className="w-full flex items-center gap-3 p-3 rounded-lg border border-border/20 hover:bg-graphite/5 transition-colors text-left">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-sans text-forest font-medium truncate">{email.subject}</p>
-        <p className="text-xs text-forest/50 font-sans">To: {email.recipientName || email.recipientEmail}</p>
+        <p className="text-sm font-sans text-off-white font-medium truncate">{email.subject}</p>
+        <p className="text-xs text-soft-gray font-sans">To: {email.recipientName || email.recipientEmail}</p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {coaching && (
@@ -168,7 +168,7 @@ function EmailRow({ email, onSelect }: { email: any; onSelect: () => void }) {
             </Tooltip>
           </TooltipProvider>
         )}
-        <Badge className={`text-[10px] ${email.status === "sent" ? "bg-blue-50 text-blue-600" : email.status === "opened" ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-600"}`}>
+        <Badge className={`text-[10px] ${email.status === "sent" ? "bg-blue-50 text-blue-600" : email.status === "opened" ? "bg-green-50 text-emerald-400" : "bg-gray-50 text-gray-600"}`}>
           {email.status}
         </Badge>
       </div>
@@ -186,23 +186,23 @@ function EmailDetailDialog({ email, onClose }: { email: any; onClose: () => void
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-serif text-forest">{email.subject}</DialogTitle>
+          <DialogTitle className="font-serif text-off-white">{email.subject}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="text-xs text-forest/50 font-sans">
+          <div className="text-xs text-soft-gray font-sans">
             To: {email.recipientName || email.recipientEmail} — {email.sentAt ? new Date(email.sentAt).toLocaleString() : ""}
           </div>
-          <div className="p-4 bg-sage/5 rounded-lg text-sm font-sans text-forest/80 whitespace-pre-wrap">{email.body}</div>
+          <div className="p-4 bg-graphite/5 rounded-lg text-sm font-sans text-off-white/80 whitespace-pre-wrap">{email.body}</div>
 
           {/* AI Coaching Feedback */}
           {isLoading ? (
-            <div className="p-4 bg-forest/5 rounded-lg animate-pulse"><p className="text-xs text-forest/40">Loading AI feedback...</p></div>
+            <div className="p-4 bg-electric/10 rounded-lg animate-pulse"><p className="text-xs text-soft-gray/60">Loading AI feedback...</p></div>
           ) : coaching ? (
             <CoachingCard coaching={coaching} />
           ) : (
-            <div className="p-3 bg-forest/5 rounded-lg text-center">
-              <Brain className="w-5 h-5 text-forest/20 mx-auto mb-1" />
-              <p className="text-xs text-forest/40 font-sans">AI coaching feedback pending...</p>
+            <div className="p-3 bg-electric/10 rounded-lg text-center">
+              <Brain className="w-5 h-5 text-soft-gray/30 mx-auto mb-1" />
+              <p className="text-xs text-soft-gray/60 font-sans">AI coaching feedback pending...</p>
             </div>
           )}
         </div>
@@ -226,8 +226,8 @@ function SmsChannel({ leads }: { leads: any[] }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-serif text-forest">SMS Messages</h3>
-        <Button onClick={() => setShowCompose(true)} className="bg-forest hover:bg-forest/90 text-white rounded-full font-sans text-sm">
+        <h3 className="text-lg font-serif text-off-white">SMS Messages</h3>
+        <Button onClick={() => setShowCompose(true)} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm">
           <MessageSquare className="w-4 h-4 mr-2" /> New SMS
         </Button>
       </div>
@@ -235,28 +235,28 @@ function SmsChannel({ leads }: { leads: any[] }) {
       <Card className="border-border/50">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center"><p className="text-sm text-forest/40 font-sans">Loading conversations...</p></div>
+            <div className="p-8 text-center"><p className="text-sm text-soft-gray/60 font-sans">Loading conversations...</p></div>
           ) : !threads?.length ? (
             <div className="p-8 text-center">
-              <MessageSquare className="h-8 w-8 text-forest/15 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No SMS conversations yet</p>
-              <p className="text-xs text-forest/30 font-sans mt-1">Send your first text message to a lead</p>
+              <MessageSquare className="h-8 w-8 text-soft-gray/20 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No SMS conversations yet</p>
+              <p className="text-xs text-soft-gray/40 font-sans mt-1">Send your first text message to a lead</p>
             </div>
           ) : (
             <div className="divide-y divide-border/20">
               {threads.map((thread: any) => (
                 <button key={thread.phoneNumber} onClick={() => setSelectedThread(thread.phoneNumber)}
-                  className="w-full flex items-center gap-3 p-4 hover:bg-sage/5 transition-colors text-left">
-                  <div className="w-10 h-10 rounded-full bg-forest/10 flex items-center justify-center shrink-0">
-                    <MessageSquare className="w-5 h-5 text-forest/50" />
+                  className="w-full flex items-center gap-3 p-4 hover:bg-graphite/5 transition-colors text-left">
+                  <div className="w-10 h-10 rounded-full bg-electric/10 flex items-center justify-center shrink-0">
+                    <MessageSquare className="w-5 h-5 text-soft-gray" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-sans text-forest font-medium">{thread.phoneNumber}</p>
-                    <p className="text-xs text-forest/50 font-sans truncate">{thread.lastMessage}</p>
+                    <p className="text-sm font-sans text-off-white font-medium">{thread.phoneNumber}</p>
+                    <p className="text-xs text-soft-gray font-sans truncate">{thread.lastMessage}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] text-forest/40 font-sans">{thread.lastAt ? new Date(thread.lastAt).toLocaleDateString() : ""}</p>
-                    <Badge className="text-[9px] bg-forest/10 text-forest mt-1">{thread.messages.length}</Badge>
+                    <p className="text-[10px] text-soft-gray/60 font-sans">{thread.lastAt ? new Date(thread.lastAt).toLocaleDateString() : ""}</p>
+                    <Badge className="text-[9px] bg-electric/10 text-electric mt-1">{thread.messages.length}</Badge>
                   </div>
                 </button>
               ))}
@@ -282,11 +282,11 @@ function SmsBubble({ msg }: { msg: any }) {
       <div className="max-w-[75%]">
         <div className={`px-3.5 py-2.5 rounded-2xl text-sm font-sans ${
           msg.direction === "outbound"
-            ? "bg-forest text-white rounded-br-md"
-            : "bg-sage/20 text-forest rounded-bl-md"
+            ? "bg-charcoal text-off-white rounded-br-md"
+            : "bg-graphite/20 text-off-white rounded-bl-md"
         }`}>
           <p>{msg.body}</p>
-          <div className={`flex items-center gap-1.5 mt-1 ${msg.direction === "outbound" ? "text-white/50" : "text-forest/30"}`}>
+          <div className={`flex items-center gap-1.5 mt-1 ${msg.direction === "outbound" ? "text-white/50" : "text-soft-gray/40"}`}>
             <span className="text-[10px]">
               {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
               {msg.direction === "outbound" && msg.status && ` \u00b7 ${msg.status}`}
@@ -344,12 +344,12 @@ function SmsThreadView({ phoneNumber, leads, onBack }: { phoneNumber: string; le
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={onBack} className="text-forest/60">
+        <Button variant="ghost" size="sm" onClick={onBack} className="text-soft-gray">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <p className="text-sm font-sans text-forest font-medium">{lead?.contactName || phoneNumber}</p>
-          <p className="text-xs text-forest/50 font-sans">{phoneNumber}{lead ? ` — ${lead.businessName}` : ""}</p>
+          <p className="text-sm font-sans text-off-white font-medium">{lead?.contactName || phoneNumber}</p>
+          <p className="text-xs text-soft-gray font-sans">{phoneNumber}{lead ? ` — ${lead.businessName}` : ""}</p>
         </div>
       </div>
 
@@ -357,7 +357,7 @@ function SmsThreadView({ phoneNumber, leads, onBack }: { phoneNumber: string; le
         <CardContent className="p-0">
           <ScrollArea className="h-[400px] p-4" ref={scrollRef}>
             {isLoading ? (
-              <div className="text-center py-8"><p className="text-xs text-forest/40">Loading...</p></div>
+              <div className="text-center py-8"><p className="text-xs text-soft-gray/60">Loading...</p></div>
             ) : (
               <div className="space-y-3">
                 {sortedMessages.map((msg: any) => (
@@ -384,7 +384,7 @@ function SmsThreadView({ phoneNumber, leads, onBack }: { phoneNumber: string; le
             <Button
               onClick={() => sendSms.mutate({ toNumber: phoneNumber, body: newMessage, leadId: lead?.id })}
               disabled={sendSms.isPending || !newMessage.trim()}
-              className="bg-forest hover:bg-forest/90 text-white rounded-full"
+              className="bg-electric hover:bg-electric-light text-white rounded-full"
               size="sm"
             >
               <Send className="w-4 h-4" />
@@ -420,11 +420,11 @@ function ComposeSmsDialog({ open, onClose, leads }: { open: boolean; onClose: ()
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle className="font-serif text-forest">Send SMS</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle className="font-serif text-off-white">Send SMS</DialogTitle></DialogHeader>
         <div className="space-y-4">
           {leads?.length > 0 && (
             <div>
-              <Label className="text-forest/80 text-sm">Send to Lead</Label>
+              <Label className="text-off-white/80 text-sm">Send to Lead</Label>
               <Select value={leadId} onValueChange={handleSelectLead}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select a lead" /></SelectTrigger>
                 <SelectContent>{leads.filter((l: any) => l.phone).map((l: any) => <SelectItem key={l.id} value={String(l.id)}>{l.businessName} — {l.phone}</SelectItem>)}</SelectContent>
@@ -432,18 +432,18 @@ function ComposeSmsDialog({ open, onClose, leads }: { open: boolean; onClose: ()
             </div>
           )}
           <div>
-            <Label className="text-forest/80 text-sm">Phone Number *</Label>
+            <Label className="text-off-white/80 text-sm">Phone Number *</Label>
             <Input value={toNumber} onChange={(e) => setToNumber(e.target.value)} placeholder="+1234567890" className="mt-1" />
           </div>
           <div>
-            <Label className="text-forest/80 text-sm">Message *</Label>
+            <Label className="text-off-white/80 text-sm">Message *</Label>
             <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Type your message..." className="mt-1 min-h-[100px]" />
-            <p className="text-[10px] text-forest/40 font-sans mt-1">{body.length}/160 characters</p>
+            <p className="text-[10px] text-soft-gray/60 font-sans mt-1">{body.length}/160 characters</p>
           </div>
           <Button
             onClick={() => sendSms.mutate({ toNumber, body, leadId: leadId ? Number(leadId) : undefined })}
             disabled={sendSms.isPending || !toNumber || !body}
-            className="w-full bg-forest hover:bg-forest/90 text-white rounded-full font-sans"
+            className="w-full bg-electric hover:bg-electric-light text-white rounded-full font-sans"
           >
             {sendSms.isPending ? "Sending..." : "Send SMS"} <Send className="w-4 h-4 ml-2" />
           </Button>
@@ -464,7 +464,7 @@ function CallsChannel({ leads }: { leads: any[] }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-serif text-forest">Calls</h3>
+        <h3 className="text-lg font-serif text-off-white">Calls</h3>
         <div className="flex gap-2">
           {voiceToken?.error && (
             <TooltipProvider>
@@ -476,7 +476,7 @@ function CallsChannel({ leads }: { leads: any[] }) {
               </Tooltip>
             </TooltipProvider>
           )}
-          <Button onClick={() => setShowDialer(true)} className="bg-forest hover:bg-forest/90 text-white rounded-full font-sans text-sm">
+          <Button onClick={() => setShowDialer(true)} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm">
             <PhoneCall className="w-4 h-4 mr-2" /> New Call
           </Button>
         </div>
@@ -491,9 +491,9 @@ function CallsChannel({ leads }: { leads: any[] }) {
         ].map((s) => (
           <Card key={s.label} className="border-border/50">
             <CardContent className="p-3 text-center">
-              <s.icon className="w-5 h-5 text-terracotta mx-auto mb-1" />
-              <p className="text-lg font-serif text-forest">{s.value}</p>
-              <p className="text-[10px] text-forest/50 font-sans">{s.label}</p>
+              <s.icon className="w-5 h-5 text-electric mx-auto mb-1" />
+              <p className="text-lg font-serif text-off-white">{s.value}</p>
+              <p className="text-[10px] text-soft-gray font-sans">{s.label}</p>
             </CardContent>
           </Card>
         ))}
@@ -502,15 +502,15 @@ function CallsChannel({ leads }: { leads: any[] }) {
       {/* Call History */}
       <Card className="border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-sans text-forest/70">Recent Calls</CardTitle>
+          <CardTitle className="text-sm font-sans text-soft-gray">Recent Calls</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="p-6 text-center"><p className="text-xs text-forest/40">Loading...</p></div>
+            <div className="p-6 text-center"><p className="text-xs text-soft-gray/60">Loading...</p></div>
           ) : !callLogs?.length ? (
             <div className="p-6 text-center">
-              <Phone className="h-7 w-7 text-forest/15 mx-auto mb-2" />
-              <p className="text-xs text-forest/40 font-sans">No calls yet</p>
+              <Phone className="h-7 w-7 text-soft-gray/20 mx-auto mb-2" />
+              <p className="text-xs text-soft-gray/60 font-sans">No calls yet</p>
             </div>
           ) : (
             <div className="space-y-1.5">
@@ -546,13 +546,13 @@ function CallRow({ call }: { call: any }) {
 
   return (
     <>
-      <button onClick={() => setShowDetail(true)} className="w-full flex items-center gap-3 p-3 rounded-lg border border-border/20 hover:bg-sage/5 transition-colors text-left">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${call.direction === "outbound" ? "bg-forest/10" : "bg-terracotta/10"}`}>
-          {call.direction === "outbound" ? <PhoneCall className="w-4 h-4 text-forest/60" /> : <Phone className="w-4 h-4 text-terracotta/60" />}
+      <button onClick={() => setShowDetail(true)} className="w-full flex items-center gap-3 p-3 rounded-lg border border-border/20 hover:bg-graphite/5 transition-colors text-left">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${call.direction === "outbound" ? "bg-electric/10" : "bg-electric/10"}`}>
+          {call.direction === "outbound" ? <PhoneCall className="w-4 h-4 text-soft-gray" /> : <Phone className="w-4 h-4 text-electric/60" />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-sans text-forest font-medium">{call.toNumber}</p>
-          <p className="text-xs text-forest/50 font-sans">
+          <p className="text-sm font-sans text-off-white font-medium">{call.toNumber}</p>
+          <p className="text-xs text-soft-gray font-sans">
             {call.duration ? `${Math.floor(call.duration / 60)}:${String(call.duration % 60).padStart(2, "0")}` : "—"} · {call.direction}
           </p>
         </div>
@@ -566,7 +566,7 @@ function CallRow({ call }: { call: any }) {
               <Brain className="w-3 h-3" /> {coaching.overallScore}
             </div>
           )}
-          {call.recordingUrl && <Mic className="w-3.5 h-3.5 text-forest/30" />}
+          {call.recordingUrl && <Mic className="w-3.5 h-3.5 text-soft-gray/40" />}
           <Badge className={`text-[10px] ${statusColors[call.status] || "bg-gray-50 text-gray-600"}`}>{call.status?.replace(/_/g, " ")}</Badge>
         </div>
       </button>
@@ -574,19 +574,19 @@ function CallRow({ call }: { call: any }) {
       {showDetail && (
         <Dialog open={true} onOpenChange={() => setShowDetail(false)}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-            <DialogHeader><DialogTitle className="font-serif text-forest">Call Details</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-serif text-off-white">Call Details</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm font-sans">
-                <div><span className="text-forest/50">To:</span> <span className="text-forest">{call.toNumber}</span></div>
-                <div><span className="text-forest/50">Direction:</span> <span className="text-forest capitalize">{call.direction}</span></div>
-                <div><span className="text-forest/50">Duration:</span> <span className="text-forest">{call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : "—"}</span></div>
-                <div><span className="text-forest/50">Status:</span> <Badge className={`text-[10px] ${statusColors[call.status] || ""}`}>{call.status}</Badge></div>
+                <div><span className="text-soft-gray">To:</span> <span className="text-off-white">{call.toNumber}</span></div>
+                <div><span className="text-soft-gray">Direction:</span> <span className="text-off-white capitalize">{call.direction}</span></div>
+                <div><span className="text-soft-gray">Duration:</span> <span className="text-off-white">{call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : "—"}</span></div>
+                <div><span className="text-soft-gray">Status:</span> <Badge className={`text-[10px] ${statusColors[call.status] || ""}`}>{call.status}</Badge></div>
               </div>
 
               {call.transcription && (
                 <div>
-                  <p className="text-xs text-forest/50 font-sans mb-2">Transcription</p>
-                  <div className="p-3 bg-sage/5 rounded-lg text-sm font-sans text-forest/80 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                  <p className="text-xs text-soft-gray font-sans mb-2">Transcription</p>
+                  <div className="p-3 bg-graphite/5 rounded-lg text-sm font-sans text-off-white/80 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
                     {call.transcription}
                   </div>
                 </div>
@@ -594,15 +594,15 @@ function CallRow({ call }: { call: any }) {
 
               {call.recordingUrl && (
                 <div>
-                  <p className="text-xs text-forest/50 font-sans mb-2">Recording</p>
+                  <p className="text-xs text-soft-gray font-sans mb-2">Recording</p>
                   <audio controls className="w-full" src={call.recordingUrl} />
                 </div>
               )}
 
               {coaching ? <CoachingCard coaching={coaching} /> : (
-                <div className="p-3 bg-forest/5 rounded-lg text-center">
-                  <Brain className="w-5 h-5 text-forest/20 mx-auto mb-1" />
-                  <p className="text-xs text-forest/40 font-sans">{call.status === "completed" ? "AI coaching feedback pending..." : "Coaching available after call completes"}</p>
+                <div className="p-3 bg-electric/10 rounded-lg text-center">
+                  <Brain className="w-5 h-5 text-soft-gray/30 mx-auto mb-1" />
+                  <p className="text-xs text-soft-gray/60 font-sans">{call.status === "completed" ? "AI coaching feedback pending..." : "Coaching available after call completes"}</p>
                 </div>
               )}
             </div>
@@ -639,11 +639,11 @@ function DialerDialog({ open, onClose, leads }: { open: boolean; onClose: () => 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle className="font-serif text-forest">Make a Call</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle className="font-serif text-off-white">Make a Call</DialogTitle></DialogHeader>
         <div className="space-y-4">
           {leads?.length > 0 && (
             <div>
-              <Label className="text-forest/80 text-sm">Call a Lead</Label>
+              <Label className="text-off-white/80 text-sm">Call a Lead</Label>
               <Select value={leadId} onValueChange={handleSelectLead}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select a lead" /></SelectTrigger>
                 <SelectContent>{leads.filter((l: any) => l.phone).map((l: any) => <SelectItem key={l.id} value={String(l.id)}>{l.businessName} — {l.phone}</SelectItem>)}</SelectContent>
@@ -708,16 +708,16 @@ function CoachingChannel() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-serif text-forest">AI Communication Coach</h3>
+      <h3 className="text-lg font-serif text-off-white">AI Communication Coach</h3>
 
       {/* Score Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="border-border/50">
           <CardContent className="p-3 text-center">
-            <div className={`text-2xl font-serif ${avgScore >= 80 ? "text-green-600" : avgScore >= 60 ? "text-yellow-600" : "text-red-600"}`}>
+            <div className={`text-2xl font-serif ${avgScore >= 80 ? "text-emerald-400" : avgScore >= 60 ? "text-yellow-600" : "text-red-600"}`}>
               {avgScore}
             </div>
-            <p className="text-[10px] text-forest/50 font-sans">Avg Score</p>
+            <p className="text-[10px] text-soft-gray font-sans">Avg Score</p>
           </CardContent>
         </Card>
         {[
@@ -727,9 +727,9 @@ function CoachingChannel() {
         ].map((s) => (
           <Card key={s.label} className="border-border/50">
             <CardContent className="p-3 text-center">
-              <s.icon className="w-4 h-4 text-terracotta mx-auto mb-1" />
-              <p className="text-lg font-serif text-forest">{s.count}</p>
-              <p className="text-[10px] text-forest/50 font-sans">{s.label} Reviewed</p>
+              <s.icon className="w-4 h-4 text-electric mx-auto mb-1" />
+              <p className="text-lg font-serif text-off-white">{s.count}</p>
+              <p className="text-[10px] text-soft-gray font-sans">{s.label} Reviewed</p>
             </CardContent>
           </Card>
         ))}
@@ -738,16 +738,16 @@ function CoachingChannel() {
       {/* Recent Feedback */}
       <Card className="border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-sans text-forest/70">Recent Feedback</CardTitle>
+          <CardTitle className="text-sm font-sans text-soft-gray">Recent Feedback</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="p-6 text-center"><p className="text-xs text-forest/40">Loading...</p></div>
+            <div className="p-6 text-center"><p className="text-xs text-soft-gray/60">Loading...</p></div>
           ) : !feedback?.length ? (
             <div className="p-6 text-center">
-              <Brain className="h-8 w-8 text-forest/15 mx-auto mb-3" />
-              <p className="text-sm text-forest/50 font-sans">No coaching feedback yet</p>
-              <p className="text-xs text-forest/30 font-sans mt-1">Send emails, texts, or make calls to get AI feedback</p>
+              <Brain className="h-8 w-8 text-soft-gray/20 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">No coaching feedback yet</p>
+              <p className="text-xs text-soft-gray/40 font-sans mt-1">Send emails, texts, or make calls to get AI feedback</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -768,7 +768,7 @@ function CoachingChannel() {
 function CoachingCard({ coaching, compact }: { coaching: any; compact?: boolean }) {
   const [expanded, setExpanded] = useState(false);
 
-  const scoreColor = (coaching.overallScore ?? 0) >= 80 ? "text-green-600 bg-green-50" :
+  const scoreColor = (coaching.overallScore ?? 0) >= 80 ? "text-emerald-400 bg-green-50" :
     (coaching.overallScore ?? 0) >= 60 ? "text-yellow-600 bg-yellow-50" : "text-red-600 bg-red-50";
 
   const toneColors: Record<string, string> = {
@@ -785,23 +785,23 @@ function CoachingCard({ coaching, compact }: { coaching: any; compact?: boolean 
 
   return (
     <div className="border border-border/30 rounded-lg overflow-hidden">
-      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-3 hover:bg-sage/5 transition-colors text-left">
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 p-3 hover:bg-graphite/5 transition-colors text-left">
         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${scoreColor}`}>
           <span className="text-sm font-serif font-bold">{coaching.overallScore}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <TypeIcon className="w-3.5 h-3.5 text-forest/40" />
-            <span className="text-xs text-forest/50 font-sans capitalize">{coaching.communicationType}</span>
+            <TypeIcon className="w-3.5 h-3.5 text-soft-gray/60" />
+            <span className="text-xs text-soft-gray font-sans capitalize">{coaching.communicationType}</span>
             {coaching.toneAnalysis && (
               <Badge className={`text-[9px] ${toneColors[coaching.toneAnalysis] || ""}`}>{coaching.toneAnalysis}</Badge>
             )}
           </div>
           {compact && coaching.keyTakeaways?.[0] && (
-            <p className="text-xs text-forest/60 font-sans mt-0.5 truncate">{coaching.keyTakeaways[0]}</p>
+            <p className="text-xs text-soft-gray font-sans mt-0.5 truncate">{coaching.keyTakeaways[0]}</p>
           )}
         </div>
-        <ChevronRight className={`w-4 h-4 text-forest/30 transition-transform ${expanded ? "rotate-90" : ""}`} />
+        <ChevronRight className={`w-4 h-4 text-soft-gray/40 transition-transform ${expanded ? "rotate-90" : ""}`} />
       </button>
 
       {expanded && (
@@ -811,12 +811,12 @@ function CoachingCard({ coaching, compact }: { coaching: any; compact?: boolean 
           {/* Strengths */}
           {coaching.strengths?.length > 0 && (
             <div>
-              <p className="text-xs text-green-600 font-sans font-medium mb-1 flex items-center gap-1">
+              <p className="text-xs text-emerald-400 font-sans font-medium mb-1 flex items-center gap-1">
                 <CheckCircle className="w-3 h-3" /> Strengths
               </p>
               <ul className="space-y-1">
                 {(coaching.strengths as string[]).map((s: string, i: number) => (
-                  <li key={i} className="text-xs text-forest/70 font-sans pl-4 relative before:content-['•'] before:absolute before:left-1 before:text-green-500">{s}</li>
+                  <li key={i} className="text-xs text-soft-gray font-sans pl-4 relative before:content-['•'] before:absolute before:left-1 before:text-emerald-400">{s}</li>
                 ))}
               </ul>
             </div>
@@ -830,7 +830,7 @@ function CoachingCard({ coaching, compact }: { coaching: any; compact?: boolean 
               </p>
               <ul className="space-y-1">
                 {(coaching.improvements as string[]).map((s: string, i: number) => (
-                  <li key={i} className="text-xs text-forest/70 font-sans pl-4 relative before:content-['•'] before:absolute before:left-1 before:text-orange-500">{s}</li>
+                  <li key={i} className="text-xs text-soft-gray font-sans pl-4 relative before:content-['•'] before:absolute before:left-1 before:text-orange-500">{s}</li>
                 ))}
               </ul>
             </div>
@@ -839,16 +839,16 @@ function CoachingCard({ coaching, compact }: { coaching: any; compact?: boolean 
           {/* Detailed Feedback */}
           {coaching.detailedFeedback && (
             <div>
-              <p className="text-xs text-forest/50 font-sans font-medium mb-1">Detailed Feedback</p>
-              <div className="text-xs text-forest/70 font-sans whitespace-pre-wrap leading-relaxed">{coaching.detailedFeedback}</div>
+              <p className="text-xs text-soft-gray font-sans font-medium mb-1">Detailed Feedback</p>
+              <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap leading-relaxed">{coaching.detailedFeedback}</div>
             </div>
           )}
 
           {/* Suggested Follow-up */}
           {coaching.suggestedFollowUp && (
-            <div className="p-2.5 bg-forest/5 rounded-lg">
-              <p className="text-xs text-forest font-sans font-medium mb-0.5">Suggested Follow-up</p>
-              <p className="text-xs text-forest/70 font-sans">{coaching.suggestedFollowUp}</p>
+            <div className="p-2.5 bg-electric/10 rounded-lg">
+              <p className="text-xs text-off-white font-sans font-medium mb-0.5">Suggested Follow-up</p>
+              <p className="text-xs text-soft-gray font-sans">{coaching.suggestedFollowUp}</p>
             </div>
           )}
         </div>
@@ -901,11 +901,11 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle className="font-serif text-forest">Compose Email</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle className="font-serif text-off-white">Compose Email</DialogTitle></DialogHeader>
         <div className="space-y-4">
           {leads?.length > 0 && (
             <div>
-              <Label className="text-forest/80 text-sm">Send to Lead</Label>
+              <Label className="text-off-white/80 text-sm">Send to Lead</Label>
               <Select value={leadId} onValueChange={handleSelectLead}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select a lead" /></SelectTrigger>
                 <SelectContent>{leads.map((l: any) => <SelectItem key={l.id} value={String(l.id)}>{l.businessName} — {l.contactName}</SelectItem>)}</SelectContent>
@@ -913,16 +913,16 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
-            <div><Label className="text-forest/80 text-sm">Recipient Email *</Label><Input value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="email@example.com" className="mt-1" /></div>
-            <div><Label className="text-forest/80 text-sm">Recipient Name</Label><Input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="John Smith" className="mt-1" /></div>
+            <div><Label className="text-off-white/80 text-sm">Recipient Email *</Label><Input value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="email@example.com" className="mt-1" /></div>
+            <div><Label className="text-off-white/80 text-sm">Recipient Name</Label><Input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="John Smith" className="mt-1" /></div>
           </div>
 
           <div>
-            <Label className="text-forest/80 text-sm mb-2 block">AI Generate Draft</Label>
+            <Label className="text-off-white/80 text-sm mb-2 block">AI Generate Draft</Label>
             <div className="flex flex-wrap gap-2">
               {["intro", "follow_up", "proposal", "close", "check_in"].map((p) => (
                 <Button key={p} size="sm" variant="outline" onClick={() => handleGenerate(p)} disabled={generating}
-                  className="text-xs border-sage/30 text-forest/70 hover:bg-terracotta/5 hover:border-terracotta/30 rounded-full">
+                  className="text-xs border-border text-soft-gray hover:bg-electric/5 hover:border-electric/30 rounded-full">
                   <Sparkles className="w-3 h-3 mr-1" /> {p.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                 </Button>
               ))}
@@ -931,10 +931,10 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
 
           {templates?.length > 0 && (
             <div>
-              <Label className="text-forest/80 text-sm mb-2 block">Or Use Template</Label>
+              <Label className="text-off-white/80 text-sm mb-2 block">Or Use Template</Label>
               <div className="flex flex-wrap gap-2">
                 {templates.slice(0, 4).map((t: any) => (
-                  <Button key={t.id} size="sm" variant="outline" onClick={() => handleSelectTemplate(t)} className="text-xs border-sage/30 text-forest/70 rounded-full">
+                  <Button key={t.id} size="sm" variant="outline" onClick={() => handleSelectTemplate(t)} className="text-xs border-border text-soft-gray rounded-full">
                     <FileText className="w-3 h-3 mr-1" /> {t.name}
                   </Button>
                 ))}
@@ -942,12 +942,12 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
             </div>
           )}
 
-          <div><Label className="text-forest/80 text-sm">Subject *</Label><Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject line" className="mt-1" /></div>
-          <div><Label className="text-forest/80 text-sm">Body *</Label><Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write your email..." className="mt-1 min-h-[150px]" /></div>
+          <div><Label className="text-off-white/80 text-sm">Subject *</Label><Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject line" className="mt-1" /></div>
+          <div><Label className="text-off-white/80 text-sm">Body *</Label><Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write your email..." className="mt-1 min-h-[150px]" /></div>
 
           <Button onClick={() => sendEmail.mutate({ leadId: leadId ? Number(leadId) : undefined, recipientEmail, recipientName: recipientName || undefined, subject, body })}
             disabled={sendEmail.isPending || !recipientEmail || !subject || !body}
-            className="w-full bg-forest hover:bg-forest/90 text-white rounded-full font-sans">
+            className="w-full bg-electric hover:bg-electric-light text-white rounded-full font-sans">
             {sendEmail.isPending ? "Sending..." : "Send Email"} <Send className="w-4 h-4 ml-2" />
           </Button>
         </div>

@@ -147,6 +147,19 @@ Returns `401 Unauthorized` if missing or invalid. Returns `500` if `SCHEDULER_SE
 | Email function | `sendRenewalReminderEmail()` |
 | Response `result` | `{ scanned, remindersSent, skipped, contractsUpdated, errors }` |
 
+### 13. Pending Payment Check
+
+| Field | Value |
+|-------|-------|
+| Endpoint | `POST /api/scheduled/pending-payment-check` |
+| Purpose | Detect rep-closed deals stuck in `pending_payment` status (Stripe checkout link expired or customer never completed payment) |
+| Recommended cadence | Daily |
+| Idempotency | Checks `nurtureLogs` for existing records matching `customerId + type=support_request + subject containing "payment_reminder"`. One reminder per contract per 24h window. |
+| Email function | `sendPaymentLinkReminderEmail()` |
+| Response `result` | `{ checked, stale, remindersSent, errors }` |
+
+This endpoint queries all contracts with `status = "pending_payment"` created more than 24 hours ago. For each stale contract, it sends a reminder email to the customer informing them their payment link may have expired and that a fresh link will be sent shortly. It also notifies the site owner with a summary of how many contracts are stuck. Admins can then use the "Resend Payment Link" button in the Contracts panel to generate a fresh Stripe checkout session.
+
 ### Health Check
 
 | Field | Value |
@@ -223,6 +236,9 @@ If a job is already running (overlap guard): HTTP 409 with `"error": "Job \"outr
 
 # Renewal check — daily at 9:00 AM
 0 9 * * *     curl -s -X POST -H "x-scheduler-secret: $SCHEDULER_SECRET" https://your-domain/api/scheduled/renewal-check
+
+# Pending payment check — daily at 11:00 AM
+0 11 * * *    curl -s -X POST -H "x-scheduler-secret: $SCHEDULER_SECRET" https://your-domain/api/scheduled/pending-payment-check
 ```
 
 ## Local Development
