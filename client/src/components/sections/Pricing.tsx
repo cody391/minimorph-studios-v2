@@ -207,7 +207,7 @@ export default function Pricing() {
                 )}
                 <span className="text-xs font-sans text-off-white/40">{tier.setup}</span>
                 {tier.price !== "Custom" && (
-                  <span className="text-[10px] font-sans text-off-white/30 block mt-1">12-month contract</span>
+                  <span className="text-[10px] font-sans text-off-white/40 block mt-1">12-month contract</span>
                 )}
               </div>
 

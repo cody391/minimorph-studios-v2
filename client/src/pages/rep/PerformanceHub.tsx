@@ -126,7 +126,7 @@ export default function PerformanceHub({ repProfile }: PerformanceHubProps) {
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">Performance Score</span>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleRecalculate} disabled={isRecalculating}>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={handleRecalculate} aria-label="Recalculate stats" disabled={isRecalculating}>
                 <RefreshCw className={`h-3.5 w-3.5 text-soft-gray/60 ${isRecalculating ? "animate-spin" : ""}`} />
               </Button>
             </div>
@@ -298,7 +298,7 @@ export default function PerformanceHub({ repProfile }: PerformanceHubProps) {
               <>
                 {!leadQueue?.allocations.length ? (
                   <div className="text-center py-8">
-                    <Target className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" />
+                    <Target className="h-8 w-8 text-soft-gray/40 mx-auto mb-3" />
                     <p className="text-sm text-soft-gray font-sans">No leads in your queue right now</p>
                     <p className="text-xs text-soft-gray/40 font-sans mt-1">Keep your score high to receive more leads</p>
                   </div>

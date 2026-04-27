@@ -201,7 +201,7 @@ function EmailDetailDialog({ email, onClose }: { email: any; onClose: () => void
             <CoachingCard coaching={coaching} />
           ) : (
             <div className="p-3 bg-electric/10 rounded-lg text-center">
-              <Brain className="w-5 h-5 text-soft-gray/30 mx-auto mb-1" />
+              <Brain className="w-5 h-5 text-soft-gray/40 mx-auto mb-1" />
               <p className="text-xs text-soft-gray/60 font-sans">AI coaching feedback pending...</p>
             </div>
           )}
@@ -601,7 +601,7 @@ function CallRow({ call }: { call: any }) {
 
               {coaching ? <CoachingCard coaching={coaching} /> : (
                 <div className="p-3 bg-electric/10 rounded-lg text-center">
-                  <Brain className="w-5 h-5 text-soft-gray/30 mx-auto mb-1" />
+                  <Brain className="w-5 h-5 text-soft-gray/40 mx-auto mb-1" />
                   <p className="text-xs text-soft-gray/60 font-sans">{call.status === "completed" ? "AI coaching feedback pending..." : "Coaching available after call completes"}</p>
                 </div>
               )}

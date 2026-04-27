@@ -111,13 +111,13 @@ export default function ContentCalendarPage() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={prevMonth}>
+              <Button variant="ghost" size="icon" onClick={prevMonth} aria-label="Previous month">
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <h2 className="text-lg font-semibold min-w-[180px] text-center">
                 {MONTHS[month]} {year}
               </h2>
-              <Button variant="ghost" size="icon" onClick={nextMonth}>
+              <Button variant="ghost" size="icon" onClick={nextMonth} aria-label="Next month">
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

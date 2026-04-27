@@ -62,7 +62,7 @@ export default function Reports() {
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !reports?.length ? (
             <div className="text-center py-12">
-              <BarChart3 className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <BarChart3 className="h-10 w-10 text-soft-gray/40 mx-auto mb-3" />
               <p className="text-sm text-soft-gray font-sans">No reports yet. Reports are generated monthly for active customers.</p>
             </div>
           ) : (

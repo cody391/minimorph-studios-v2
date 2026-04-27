@@ -192,7 +192,7 @@ export default function RepDashboard() {
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               {/* Rep Avatar */}
               {repProfile.profilePhotoUrl ? (
-                <img src={repProfile.profilePhotoUrl} alt={repProfile.fullName} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white/30 shrink-0" />
+                <img src={repProfile.profilePhotoUrl} alt={repProfile.fullName} loading="lazy" className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white/30 shrink-0" />
               ) : (
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-electric flex items-center justify-center text-white font-bold text-base sm:text-lg border-2 border-white/30 shrink-0">
                   {repProfile.fullName?.charAt(0) || "?"}
@@ -226,18 +226,18 @@ export default function RepDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 mb-4 sm:mb-6">
             <TabsList className="bg-charcoal border border-border/50 flex-wrap h-auto gap-0.5 sm:gap-1 p-1 w-max sm:w-auto">
-              <TabsTrigger value="performance" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Performance</TabsTrigger>
-              <TabsTrigger value="overview" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Overview</TabsTrigger>
-              <TabsTrigger value="training" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Training</TabsTrigger>
-              <TabsTrigger value="activity" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Activity</TabsTrigger>
-              <TabsTrigger value="comms" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Comms</TabsTrigger>
-              <TabsTrigger value="earnings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Earnings</TabsTrigger>
-              <TabsTrigger value="pipeline" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Pipeline</TabsTrigger>
-              <TabsTrigger value="leaderboard" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Board</TabsTrigger>
-              <TabsTrigger value="team" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Team</TabsTrigger>
-              <TabsTrigger value="support" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Support</TabsTrigger>
-              <TabsTrigger value="settings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Settings</TabsTrigger>
-              <TabsTrigger value="guide" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 data-[state=active]:bg-electric data-[state=active]:text-white">Guide</TabsTrigger>
+              <TabsTrigger value="performance" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Performance</TabsTrigger>
+              <TabsTrigger value="overview" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Overview</TabsTrigger>
+              <TabsTrigger value="training" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Training</TabsTrigger>
+              <TabsTrigger value="activity" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Activity</TabsTrigger>
+              <TabsTrigger value="comms" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Comms</TabsTrigger>
+              <TabsTrigger value="earnings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Earnings</TabsTrigger>
+              <TabsTrigger value="pipeline" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Pipeline</TabsTrigger>
+              <TabsTrigger value="leaderboard" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Board</TabsTrigger>
+              <TabsTrigger value="team" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Team</TabsTrigger>
+              <TabsTrigger value="support" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Support</TabsTrigger>
+              <TabsTrigger value="settings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Settings</TabsTrigger>
+              <TabsTrigger value="guide" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Guide</TabsTrigger>
             </TabsList>
           </div>
 
@@ -314,7 +314,7 @@ export default function RepDashboard() {
                 </CardHeader>
                 <CardContent>
                   {!followUps?.length ? (
-                    <div className="text-center py-6"><Calendar className="h-8 w-8 text-soft-gray/30 mx-auto mb-2" /><p className="text-sm text-soft-gray font-sans">No upcoming follow-ups</p></div>
+                    <div className="text-center py-6"><Calendar className="h-8 w-8 text-soft-gray/40 mx-auto mb-2" /><p className="text-sm text-soft-gray font-sans">No upcoming follow-ups</p></div>
                   ) : (
                     <div className="space-y-2">
                       {followUps.slice(0, 5).map((f: any) => (
@@ -364,7 +364,7 @@ export default function RepDashboard() {
               </CardHeader>
               <CardContent>
                 {(myLeads ?? []).length === 0 ? (
-                  <div className="text-center py-8"><Target className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No leads assigned yet.</p></div>
+                  <div className="text-center py-8"><Target className="h-8 w-8 text-soft-gray/40 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No leads assigned yet.</p></div>
                 ) : (
                   <div className="space-y-2">
                     {(myLeads ?? []).slice(0, 10).map((lead: any) => (
@@ -378,10 +378,10 @@ export default function RepDashboard() {
                           <p className="text-xs text-soft-gray font-sans">{lead.contactName} &bull; {lead.email}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 ml-4">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setActiveTab("activity"); toast.info("Log your activity from the Activity tab"); }}>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" aria-label="Log call" onClick={() => { setActiveTab("activity"); toast.info("Log your activity from the Activity tab"); }}>
                             <Phone className="h-3.5 w-3.5 text-soft-gray" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setActiveTab("comms"); toast.info("Send an email from the Communications tab"); }}>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" aria-label="Send email" onClick={() => { setActiveTab("comms"); toast.info("Send an email from the Communications tab"); }}>
                             <Mail className="h-3.5 w-3.5 text-soft-gray" />
                           </Button>
                         </div>
@@ -493,7 +493,7 @@ export default function RepDashboard() {
               <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">Commission History</CardTitle></CardHeader>
               <CardContent>
                 {!commissions?.length ? (
-                  <div className="text-center py-8"><DollarSign className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No commissions yet. Close your first deal to start earning.</p></div>
+                  <div className="text-center py-8"><DollarSign className="h-8 w-8 text-soft-gray/40 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No commissions yet. Close your first deal to start earning.</p></div>
                 ) : (
                   <div className="space-y-2">
                     {commissions.map((c: any) => (
@@ -604,7 +604,7 @@ export default function RepDashboard() {
               </CardHeader>
               <CardContent>
                 {!leaderboard?.length ? (
-                  <div className="text-center py-8"><Trophy className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No leaderboard data yet. Start logging activities to earn points!</p></div>
+                  <div className="text-center py-8"><Trophy className="h-8 w-8 text-soft-gray/40 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No leaderboard data yet. Start logging activities to earn points!</p></div>
                 ) : (
                   <div className="space-y-2">
                     {leaderboard.map((entry: any, i: number) => {
@@ -617,7 +617,7 @@ export default function RepDashboard() {
                                 {i + 1}
                               </div>
                               {entry.profilePhotoUrl ? (
-                                <img src={entry.profilePhotoUrl} alt={entry.repName} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                                <img src={entry.profilePhotoUrl} alt={entry.repName} loading="lazy" className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
                               ) : (
                                 <div className="w-10 h-10 rounded-full bg-graphite/20 flex items-center justify-center text-soft-gray/60 text-sm font-bold">
                                   {(entry.repName || "?").charAt(0).toUpperCase()}
@@ -947,7 +947,7 @@ function ActivityTab({ activities, stats, leads }: any) {
         <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">Recent Activity</CardTitle></CardHeader>
         <CardContent>
           {!activities?.length ? (
-            <div className="text-center py-8"><Zap className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No activities logged yet. Start by logging a call or email!</p></div>
+            <div className="text-center py-8"><Zap className="h-8 w-8 text-soft-gray/40 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No activities logged yet. Start by logging a call or email!</p></div>
           ) : (
             <div className="space-y-2">
               {activities.map((a: any) => {
@@ -1092,7 +1092,7 @@ function CommsTab({ templates, sentEmails, leads }: any) {
         <CardHeader className="pb-3"><CardTitle className="text-base font-serif text-off-white">Sent Emails ({sentEmails?.length || 0})</CardTitle></CardHeader>
         <CardContent>
           {!sentEmails?.length ? (
-            <div className="text-center py-8"><Mail className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No emails sent yet.</p></div>
+            <div className="text-center py-8"><Mail className="h-8 w-8 text-soft-gray/40 mx-auto mb-3" /><p className="text-sm text-soft-gray font-sans">No emails sent yet.</p></div>
           ) : (
             <div className="space-y-2">
               {sentEmails.map((e: any) => (

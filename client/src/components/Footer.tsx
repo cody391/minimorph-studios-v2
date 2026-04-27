@@ -46,7 +46,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-charcoal border-t border-glass-border">
+    <footer aria-label="Site footer" className="bg-charcoal border-t border-glass-border">
       <div className="container py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           {/* Brand */}

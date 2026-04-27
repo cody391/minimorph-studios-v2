@@ -545,7 +545,7 @@ function PostCard({ post, detailed }: { post: any; detailed?: boolean }) {
               <div className="mt-2 text-sm text-gray-800 whitespace-pre-wrap">{buildTweetPreview()}</div>
               {post.mediaUrls && Array.isArray(post.mediaUrls) && (post.mediaUrls as string[]).length > 0 && (
                 <div className="mt-3 rounded-xl overflow-hidden border">
-                  <img src={(post.mediaUrls as string[])[0]} alt="Post media" className="w-full max-h-64 object-cover" />
+                  <img src={(post.mediaUrls as string[])[0]} alt="Post media" loading="lazy" className="w-full max-h-64 object-cover" />
                 </div>
               )}
               <div className="flex gap-6 mt-3 text-xs text-gray-400">
@@ -654,7 +654,7 @@ function AccountCard({ account, onRefetch }: { account: any; onRefetch: () => vo
           <Button
             variant="ghost"
             size="icon"
-            className="text-red-400 hover:text-red-600 hover:bg-red-50"
+            className="text-red-400 hover:text-red-600 hover:bg-red-50" aria-label="Remove account"
             onClick={() => {
               if (confirm("Remove this account?")) deleteAccount.mutate({ id: account.id });
             }}

@@ -63,7 +63,7 @@ export default function Customers() {
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !customers?.length ? (
             <div className="text-center py-12">
-              <Building2 className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <Building2 className="h-10 w-10 text-soft-gray/40 mx-auto mb-3" />
               <p className="text-sm text-soft-gray font-sans">No customers yet. Customers are created when leads close.</p>
             </div>
           ) : (

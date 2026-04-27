@@ -159,7 +159,7 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
               {repProfile.profilePhotoUrl ? (
                 <img
                   src={repProfile.profilePhotoUrl}
-                  alt={repProfile.fullName}
+                  alt={repProfile.fullName} loading="lazy"
                   className="w-24 h-24 rounded-full object-cover border-2 border-border"
                 />
               ) : (

@@ -70,7 +70,7 @@ export default function OnboardingProjects() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-serif text-[#2D5A3D]">Onboarding Projects</h1>
+        <h1 className="text-2xl font-serif text-electric">Onboarding Projects</h1>
         <p className="text-gray-600 mt-1">Track customer projects from intake through launch</p>
       </div>
 
@@ -80,7 +80,7 @@ export default function OnboardingProjects() {
           onClick={() => setFilterStage("all")}
           className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
             filterStage === "all"
-              ? "bg-[#2D5A3D] text-white"
+              ? "bg-electric text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
@@ -95,7 +95,7 @@ export default function OnboardingProjects() {
               onClick={() => setFilterStage(stage)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1 ${
                 filterStage === stage
-                  ? "bg-[#2D5A3D] text-white"
+                  ? "bg-electric text-white"
                   : `${config.color} hover:opacity-80`
               }`}
             >
@@ -109,7 +109,7 @@ export default function OnboardingProjects() {
       {/* Projects list */}
       {projectsQuery.isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-[#2D5A3D]" />
+          <Loader2 className="w-6 h-6 animate-spin text-electric" />
         </div>
       ) : projects.length === 0 ? (
         <Card className="border-dashed">
@@ -126,7 +126,7 @@ export default function OnboardingProjects() {
             const nextStage = currentStageIndex < ALL_STAGES.length - 1 ? ALL_STAGES[currentStageIndex + 1] : null;
 
             return (
-              <Card key={project.id} className="border-[#2D5A3D]/10">
+              <Card key={project.id} className="border-electric/10">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -153,7 +153,7 @@ export default function OnboardingProjects() {
                       <div
                         key={stage}
                         className={`h-1.5 flex-1 rounded-full ${
-                          i <= currentStageIndex ? "bg-[#2D5A3D]" : "bg-gray-200"
+                          i <= currentStageIndex ? "bg-electric" : "bg-gray-200"
                         }`}
                       />
                     ))}
@@ -201,7 +201,7 @@ export default function OnboardingProjects() {
                         href={project.liveUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-[#2D5A3D] hover:underline"
+                        className="flex items-center gap-1 text-electric hover:underline"
                       >
                         <ArrowUpRight className="w-3.5 h-3.5" />
                         Live site
@@ -220,7 +220,7 @@ export default function OnboardingProjects() {
                         size="sm"
                         onClick={() => handleStageUpdate(project.id, nextStage)}
                         disabled={updateStageMutation.isPending}
-                        className="bg-[#2D5A3D] hover:bg-[#234A31] text-white"
+                        className="bg-electric hover:bg-electric-light text-white"
                       >
                         Move to {STAGE_CONFIG[nextStage]?.label || nextStage}
                       </Button>

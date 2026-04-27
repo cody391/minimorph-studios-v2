@@ -94,7 +94,7 @@ export default function Onboarding() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAF6F1" }}>
-        <Loader2 className="w-8 h-8 animate-spin text-[#2D5A3D]" />
+        <Loader2 className="w-8 h-8 animate-spin text-electric" />
       </div>
     );
   }
@@ -104,18 +104,18 @@ export default function Onboarding() {
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAF6F1" }}>
         <Card className="max-w-md w-full mx-4">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-serif text-[#2D5A3D]">Welcome to Your Project</CardTitle>
+            <CardTitle className="text-2xl font-serif text-electric">Welcome to Your Project</CardTitle>
             <CardDescription>Sign in to access your onboarding portal and track your website project.</CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <a href="/login">
-              <Button className="bg-[#2D5A3D] hover:bg-[#234A31] text-white">
+              <Button className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]">
                 Sign In to Continue
               </Button>
             </a>
             <p className="text-sm text-gray-500 mt-4">
               Don't have a project yet?{" "}
-              <Link href="/get-started" className="text-[#C4704B] hover:underline">
+              <Link href="/get-started" className="text-electric hover:underline">
                 Get started here
               </Link>
             </p>
@@ -130,19 +130,19 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen" style={{ background: "#FAF6F1" }}>
       {/* Header */}
-      <header className="border-b border-[#2D5A3D]/10 bg-charcoal/60 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-electric/10 bg-charcoal/60 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer">
-              <div className="w-9 h-9 rounded-lg bg-[#2D5A3D] flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-9 h-9 rounded-lg bg-electric flex items-center justify-center text-white font-bold text-sm">
                 M
               </div>
-              <span className="font-serif text-xl text-[#2D5A3D]">MiniMorph</span>
+              <span className="font-serif text-xl text-electric">MiniMorph</span>
             </div>
           </Link>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">Welcome, {user.name || "there"}</span>
-            <Badge variant="outline" className="border-[#2D5A3D]/30 text-[#2D5A3D]">
+            <Badge variant="outline" className="border-electric/30 text-electric">
               Onboarding
             </Badge>
           </div>
@@ -161,9 +161,9 @@ export default function Onboarding() {
                   onClick={() => setCurrentStage(stage)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     isActive
-                      ? "bg-[#2D5A3D] text-white shadow-md"
+                      ? "bg-electric text-white shadow-md"
                       : isPast
-                      ? "bg-[#2D5A3D]/10 text-[#2D5A3D]"
+                      ? "bg-electric/10 text-electric"
                       : "bg-gray-100 text-gray-400"
                   }`}
                 >
@@ -172,7 +172,7 @@ export default function Onboarding() {
                   <span className="sm:hidden">{i + 1}</span>
                 </button>
                 {i < stages.length - 1 && (
-                  <div className={`w-8 h-0.5 mx-1 ${isPast ? "bg-[#2D5A3D]/30" : "bg-gray-200"}`} />
+                  <div className={`w-8 h-0.5 mx-1 ${isPast ? "bg-electric/30" : "bg-gray-200"}`} />
                 )}
               </div>
             );
@@ -300,18 +300,18 @@ function AssetUploadStep({
   return (
     <div className="max-w-3xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-serif text-[#2D5A3D] mb-2">Upload Your Assets</h2>
+        <h2 className="text-3xl font-serif text-electric mb-2">Upload Your Assets</h2>
         <p className="text-gray-600">
           Share your logo, photos, brand guidelines, and any content you'd like on your website.
           Don't worry if you don't have everything — we can work with what you have.
         </p>
       </div>
 
-      <Card className="border-[#2D5A3D]/10 mb-6">
+      <Card className="border-electric/10 mb-6">
         <CardContent className="p-8">
           {/* Category selector */}
           <div className="mb-6">
-            <Label className="text-[#2D5A3D] font-medium mb-2 block">What are you uploading?</Label>
+            <Label className="text-electric font-medium mb-2 block">What are you uploading?</Label>
             <div className="flex flex-wrap gap-2">
               {[
                 { value: "logo", label: "Logo" },
@@ -326,7 +326,7 @@ function AssetUploadStep({
                   onClick={() => setSelectedCategory(cat.value)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     selectedCategory === cat.value
-                      ? "bg-[#2D5A3D] text-white"
+                      ? "bg-electric text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
@@ -338,7 +338,7 @@ function AssetUploadStep({
           </div>
 
           {/* Upload area */}
-          <label className="block border-2 border-dashed border-[#2D5A3D]/20 rounded-xl p-10 text-center cursor-pointer hover:border-[#2D5A3D]/40 transition-colors">
+          <label className="block border-2 border-dashed border-electric/20 rounded-xl p-10 text-center cursor-pointer hover:border-electric/40 transition-colors">
             <input
               type="file"
               multiple
@@ -349,14 +349,14 @@ function AssetUploadStep({
             />
             {uploading ? (
               <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-10 h-10 animate-spin text-[#2D5A3D]" />
-                <p className="text-[#2D5A3D] font-medium">Uploading...</p>
+                <Loader2 className="w-10 h-10 animate-spin text-electric" />
+                <p className="text-electric font-medium">Uploading...</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <Upload className="w-10 h-10 text-[#2D5A3D]/40" />
+                <Upload className="w-10 h-10 text-electric/40" />
                 <p className="text-gray-600">
-                  <span className="text-[#2D5A3D] font-medium">Click to upload</span> or drag and drop
+                  <span className="text-electric font-medium">Click to upload</span> or drag and drop
                 </p>
                 <p className="text-sm text-gray-400">Images, PDFs, and documents up to 5MB each</p>
                 <p className="text-[10px] text-gray-300 mt-1">Recommended: PNG or SVG for logos • JPG at 1200px+ for photos • PDF for brand guides</p>
@@ -374,9 +374,9 @@ function AssetUploadStep({
 
       {/* Uploaded files list */}
       {assets.length > 0 && (
-        <Card className="border-[#2D5A3D]/10 mb-6">
+        <Card className="border-electric/10 mb-6">
           <CardHeader>
-            <CardTitle className="text-lg text-[#2D5A3D]">Uploaded Files ({assets.length})</CardTitle>
+            <CardTitle className="text-lg text-electric">Uploaded Files ({assets.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -410,11 +410,11 @@ function AssetUploadStep({
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack} className="border-[#2D5A3D]/20 text-[#2D5A3D]">
+        <Button variant="outline" onClick={onBack} className="border-border/50 text-off-white min-h-[44px]">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <Button onClick={onNext} className="bg-[#2D5A3D] hover:bg-[#234A31] text-white">
+        <Button onClick={onNext} className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]">
           Continue to Domain Setup
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
@@ -466,13 +466,13 @@ function DomainStep({
   return (
     <div className="max-w-3xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-serif text-[#2D5A3D] mb-2">Domain Setup</h2>
+        <h2 className="text-3xl font-serif text-electric mb-2">Domain Setup</h2>
         <p className="text-gray-600">
           Already have a domain? We'll connect it. Need a new one? We'll help you choose and register it.
         </p>
       </div>
 
-      <Card className="border-[#2D5A3D]/10">
+      <Card className="border-electric/10">
         <CardContent className="p-8 space-y-6">
           {/* Domain option selection */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -501,13 +501,13 @@ function DomainStep({
                 onClick={() => setDomainOption(option.value)}
                 className={`p-5 rounded-xl border-2 text-left transition-all ${
                   domainOption === option.value
-                    ? "border-[#2D5A3D] bg-[#2D5A3D]/5"
+                    ? "border-electric bg-electric/5"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
               >
                 <div
                   className={`mb-3 ${
-                    domainOption === option.value ? "text-[#2D5A3D]" : "text-gray-400"
+                    domainOption === option.value ? "text-electric" : "text-gray-400"
                   }`}
                 >
                   {option.icon}
@@ -520,9 +520,9 @@ function DomainStep({
 
           {/* Existing domain fields */}
           {domainOption === "existing" && (
-            <div className="space-y-4 p-5 bg-[#2D5A3D]/5 rounded-xl">
+            <div className="space-y-4 p-5 bg-electric/5 rounded-xl">
               <div className="space-y-2">
-                <Label className="text-[#2D5A3D] font-medium">Your domain name</Label>
+                <Label className="text-electric font-medium">Your domain name</Label>
                 <Input
                   value={existingDomain}
                   onChange={(e) => setExistingDomain(e.target.value)}
@@ -530,7 +530,7 @@ function DomainStep({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[#2D5A3D] font-medium">Where is it registered? (optional)</Label>
+                <Label className="text-electric font-medium">Where is it registered? (optional)</Label>
                 <Input
                   value={domainRegistrar}
                   onChange={(e) => setDomainRegistrar(e.target.value)}
@@ -544,18 +544,18 @@ function DomainStep({
           )}
 
           {domainOption === "new" && (
-            <div className="p-5 bg-[#2D5A3D]/5 rounded-xl space-y-4">
+            <div className="p-5 bg-electric/5 rounded-xl space-y-4">
               <p className="text-gray-700">
                 We'll help you find the perfect domain name for your business. After your website design is approved,
                 we'll present you with available options and handle the registration.
               </p>
-              <div className="bg-charcoal rounded-lg p-4 border border-[#2D5A3D]/10">
-                <h4 className="font-medium text-[#2D5A3D] mb-3 text-sm">Domain Pricing</h4>
+              <div className="bg-charcoal rounded-lg p-4 border border-electric/10">
+                <h4 className="font-medium text-electric mb-3 text-sm">Domain Pricing</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600">.com domain</span>
                     <div className="text-right">
-                      <span className="font-medium text-[#2D5A3D]">FREE first year</span>
+                      <span className="font-medium text-electric">FREE first year</span>
                       <span className="text-gray-400 text-xs ml-1">(with Growth or Premium)</span>
                     </div>
                   </div>
@@ -577,7 +577,7 @@ function DomainStep({
 
           {/* Additional notes */}
           <div className="space-y-2">
-            <Label className="text-[#2D5A3D] font-medium">Any notes about your domain? (optional)</Label>
+            <Label className="text-electric font-medium">Any notes about your domain? (optional)</Label>
             <Textarea
               value={domainNotes}
               onChange={(e) => setDomainNotes(e.target.value)}
@@ -588,14 +588,14 @@ function DomainStep({
 
           {/* Navigation */}
           <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={onBack} className="border-[#2D5A3D]/20 text-[#2D5A3D]">
+            <Button variant="outline" onClick={onBack} className="border-border/50 text-off-white min-h-[44px]">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={setDomainMutation.isPending}
-              className="bg-[#2D5A3D] hover:bg-[#234A31] text-white"
+              className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]"
             >
               {setDomainMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -659,16 +659,16 @@ function ProjectStatusStep({
     return (
       <div className="max-w-3xl mx-auto text-center">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-serif text-[#2D5A3D] mb-2">Your Project Status</h2>
+          <h2 className="text-3xl font-serif text-electric mb-2">Your Project Status</h2>
           <p className="text-gray-600">
             Complete the previous steps to start tracking your project.
           </p>
         </div>
-        <Card className="border-[#2D5A3D]/10 p-10">
+        <Card className="border-electric/10 p-10">
           <div className="flex flex-col items-center gap-4">
             <Rocket className="w-12 h-12 text-gray-300" />
             <p className="text-gray-500">No project found. Complete the questionnaire to get started.</p>
-            <Button variant="outline" onClick={onBack} className="border-[#2D5A3D]/20 text-[#2D5A3D]">
+            <Button variant="outline" onClick={onBack} className="border-border/50 text-off-white min-h-[44px]">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go Back
             </Button>
@@ -681,14 +681,14 @@ function ProjectStatusStep({
   return (
     <div className="max-w-3xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-serif text-[#2D5A3D] mb-2">Your Project Status</h2>
+        <h2 className="text-3xl font-serif text-electric mb-2">Your Project Status</h2>
         <p className="text-gray-600">
           Track the progress of your website from design through launch.
         </p>
       </div>
 
       {/* Progress timeline */}
-      <Card className="border-[#2D5A3D]/10 mb-6">
+      <Card className="border-electric/10 mb-6">
         <CardContent className="p-8">
           <div className="space-y-4">
             {PROJECT_STAGES.map((stage, i) => {
@@ -700,9 +700,9 @@ function ProjectStatusStep({
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                       isComplete
-                        ? "bg-[#2D5A3D] text-white"
+                        ? "bg-electric text-white"
                         : isCurrent
-                        ? "bg-[#C4704B] text-white"
+                        ? "bg-electric text-white"
                         : "bg-gray-100 text-gray-400"
                     }`}
                   >
@@ -716,7 +716,7 @@ function ProjectStatusStep({
                     <div className="flex items-center gap-2">
                       <span
                         className={`font-medium ${
-                          isCurrent ? "text-[#C4704B]" : isComplete ? "text-[#2D5A3D]" : "text-gray-400"
+                          isCurrent ? "text-electric" : isComplete ? "text-electric" : "text-gray-400"
                         }`}
                       >
                         {display.label}
@@ -729,7 +729,7 @@ function ProjectStatusStep({
                   {i < PROJECT_STAGES.length - 1 && (
                     <div
                       className={`hidden sm:block w-16 h-0.5 ${
-                        isComplete ? "bg-[#2D5A3D]" : "bg-gray-200"
+                        isComplete ? "bg-electric" : "bg-gray-200"
                       }`}
                     />
                   )}
@@ -742,9 +742,9 @@ function ProjectStatusStep({
 
       {/* Design review section (shown when in review or revisions stage) */}
       {(project.stage === "review" || project.stage === "revisions") && (
-        <Card className="border-[#2D5A3D]/10 mb-6">
+        <Card className="border-electric/10 mb-6">
           <CardHeader>
-            <CardTitle className="text-lg text-[#2D5A3D]">Review Your Design</CardTitle>
+            <CardTitle className="text-lg text-electric">Review Your Design</CardTitle>
             <CardDescription>
               {project.designMockupUrl
                 ? "Your design mockup is ready for review. Share your feedback below."
@@ -756,14 +756,14 @@ function ProjectStatusStep({
               <div className="border rounded-lg overflow-hidden">
                 <img
                   src={project.designMockupUrl}
-                  alt="Design mockup"
+                  alt="Design mockup" loading="lazy"
                   className="w-full"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label className="text-[#2D5A3D] font-medium">Your Feedback</Label>
+              <Label className="text-electric font-medium">Your Feedback</Label>
               <Textarea
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
@@ -777,7 +777,7 @@ function ProjectStatusStep({
                 onClick={handleFeedback}
                 disabled={!feedbackText.trim() || feedbackMutation.isPending}
                 variant="outline"
-                className="border-[#C4704B] text-[#C4704B] hover:bg-[#C4704B]/10"
+                className="border-electric text-electric hover:bg-electric/10"
               >
                 {feedbackMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -789,7 +789,7 @@ function ProjectStatusStep({
               <Button
                 onClick={handleApprove}
                 disabled={approveMutation.isPending}
-                className="bg-[#2D5A3D] hover:bg-[#234A31] text-white"
+                className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]"
               >
                 {approveMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -828,7 +828,7 @@ function ProjectStatusStep({
               href={project.liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#2D5A3D] font-medium hover:underline text-lg"
+              className="text-electric font-medium hover:underline text-lg"
             >
               {project.liveUrl}
             </a>
@@ -838,12 +838,12 @@ function ProjectStatusStep({
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack} className="border-[#2D5A3D]/20 text-[#2D5A3D]">
+        <Button variant="outline" onClick={onBack} className="border-border/50 text-off-white min-h-[44px]">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
         <Link href="/portal">
-          <Button className="bg-[#C4704B] hover:bg-[#B35F3A] text-white">
+          <Button className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]">
             Go to Customer Portal
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>

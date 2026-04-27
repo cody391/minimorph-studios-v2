@@ -76,7 +76,7 @@ export default function Contracts() {
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !contracts?.length ? (
             <div className="text-center py-12">
-              <FileText className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <FileText className="h-10 w-10 text-soft-gray/40 mx-auto mb-3" />
               <p className="text-sm text-soft-gray font-sans">No contracts yet. Contracts are created after a sale closes.</p>
             </div>
           ) : (

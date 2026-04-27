@@ -83,7 +83,7 @@ export default function Contact() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.5 }}
-            className="mt-8 text-sm text-off-white/30 font-sans"
+            className="mt-8 text-sm text-off-white/40 font-sans"
           >
             Not ready yet? No pressure. Email us at{" "}
             <a href="mailto:hello@minimorphstudios.com" className="text-electric/60 hover:text-electric transition-colors underline underline-offset-2">

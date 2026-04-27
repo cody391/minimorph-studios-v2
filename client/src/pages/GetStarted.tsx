@@ -225,7 +225,7 @@ export default function GetStarted() {
             <Button
               variant="outline"
               onClick={() => setLocation("/portal")}
-              className="font-sans text-sm rounded-full border-border/50"
+              className="font-sans text-sm rounded-full border-border/50 min-h-[44px]"
             >
               Go to My Dashboard
             </Button>
@@ -344,7 +344,7 @@ export default function GetStarted() {
                         </button>
                       </div>
                       {formData.password && !passwordLongEnough && (
-                        <p className="text-xs text-red-500 mt-1 font-sans">Must be at least 8 characters</p>
+                        <p role="alert" className="text-xs text-red-500 mt-1 font-sans">Must be at least 8 characters</p>
                       )}
                     </div>
                     <div>
@@ -357,7 +357,7 @@ export default function GetStarted() {
                         className="font-sans border-border/50 focus:border-electric"
                       />
                       {formData.confirmPassword && !passwordsMatch && (
-                        <p className="text-xs text-red-500 mt-1 font-sans">Passwords don't match</p>
+                        <p role="alert" className="text-xs text-red-500 mt-1 font-sans">Passwords don't match</p>
                       )}
                     </div>
                   </div>
@@ -597,7 +597,7 @@ export default function GetStarted() {
             variant="outline"
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1}
-            className="font-sans text-sm rounded-full border-border/50"
+            className="font-sans text-sm rounded-full border-border/50 min-h-[44px]"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -607,7 +607,7 @@ export default function GetStarted() {
             <Button
               onClick={() => setStep(step + 1)}
               disabled={!canProceed}
-              className="bg-electric hover:bg-electric-light text-white font-sans text-sm rounded-full px-6"
+              className="bg-electric hover:bg-electric-light text-white font-sans text-sm rounded-full px-6 min-h-[44px]"
             >
               Continue
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -616,7 +616,7 @@ export default function GetStarted() {
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm rounded-full px-8"
+              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm rounded-full px-8 min-h-[44px]"
             >
               {isSubmitting ? (
                 <div className="flex items-center gap-2">

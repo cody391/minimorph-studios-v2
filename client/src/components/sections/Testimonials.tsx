@@ -105,7 +105,7 @@ export default function Testimonials() {
                 <p className="text-sm font-sans font-medium text-off-white/80">{t.name}</p>
                 <p className="text-xs font-sans text-off-white/40">{t.role}</p>
                 <p className="text-xs font-sans text-electric/60 mt-1">{t.industry}</p>
-                <span className="inline-block mt-2 text-[10px] font-sans text-off-white/30 px-2 py-0.5 rounded-full border border-off-white/10">
+                <span className="inline-block mt-2 text-[10px] font-sans text-off-white/40 px-2 py-0.5 rounded-full border border-off-white/10">
                   {t.package} Plan
                 </span>
               </div>
@@ -113,7 +113,7 @@ export default function Testimonials() {
           ))}
         </div>
 
-        <p className="text-center mt-8 text-[10px] font-sans text-off-white/20 max-w-lg mx-auto">
+        <p className="text-center mt-8 text-[10px] font-sans text-off-white/40 max-w-lg mx-auto">
           Names are fictional composites to protect client privacy. Metrics are illustrative of typical outcomes
           observed across similar engagements and are not guaranteed results. Individual results vary.
         </p>

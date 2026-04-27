@@ -373,7 +373,7 @@ export function QuestionnaireWizard({
   return (
     <div className="max-w-5xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-serif text-[#2D5A3D] mb-2">Tell Us About Your Brand</h2>
+        <h2 className="text-3xl font-serif text-electric mb-2">Tell Us About Your Brand</h2>
         <p className="text-gray-600">
           Help us understand your vision so we can design a website that truly represents your business.
         </p>
@@ -385,8 +385,8 @@ export function QuestionnaireWizard({
           onClick={() => setShowAiChat(!showAiChat)}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all border-2 ${
             showAiChat
-              ? "bg-[#C4704B] text-white border-[#C4704B] shadow-md"
-              : "bg-charcoal text-[#2D5A3D] border-[#2D5A3D]/20 hover:border-[#C4704B]/50 hover:bg-[#C4704B]/5"
+              ? "bg-electric text-white border-electric shadow-md"
+              : "bg-charcoal text-electric border-electric/20 hover:border-electric/50 hover:bg-electric/5"
           }`}
         >
           <MessageSquare className="w-4 h-4" />
@@ -405,12 +405,12 @@ export function QuestionnaireWizard({
 
       {/* Step progress bar */}
       <div className="text-center mb-3">
-        <span className="text-xs font-medium text-[#2D5A3D]/60">
+        <span className="text-xs font-medium text-electric/60">
           Step {step} of 5 — {Math.round((step / 5) * 100)}% complete
         </span>
         <div className="mt-1.5 h-1.5 w-full max-w-xs mx-auto bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-[#2D5A3D] rounded-full transition-all duration-500"
+            className="h-full bg-electric rounded-full transition-all duration-500"
             style={{ width: `${(step / 5) * 100}%` }}
           />
         </div>
@@ -427,9 +427,9 @@ export function QuestionnaireWizard({
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   isActive
-                    ? "bg-[#2D5A3D] text-white shadow-md"
+                    ? "bg-electric text-white shadow-md"
                     : isPast
-                    ? "bg-[#2D5A3D]/10 text-[#2D5A3D] cursor-pointer hover:bg-[#2D5A3D]/20"
+                    ? "bg-electric/10 text-electric cursor-pointer hover:bg-electric/20"
                     : "bg-gray-100 text-gray-400"
                 }`}
               >
@@ -437,7 +437,7 @@ export function QuestionnaireWizard({
                 <span className="hidden md:inline">{s.label}</span>
               </button>
               {i < QUESTIONNAIRE_STEPS.length - 1 && (
-                <div className={`w-6 h-0.5 mx-0.5 ${isPast ? "bg-[#2D5A3D]/30" : "bg-gray-200"}`} />
+                <div className={`w-6 h-0.5 mx-0.5 ${isPast ? "bg-electric/30" : "bg-gray-200"}`} />
               )}
             </div>
           );
@@ -447,9 +447,9 @@ export function QuestionnaireWizard({
       <div className={`grid gap-6 ${showAiChat ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
         {/* AI Chat Panel */}
         {showAiChat && (
-          <Card className="border-[#C4704B]/20 bg-charcoal overflow-hidden">
-            <CardHeader className="pb-2 bg-gradient-to-r from-[#C4704B]/5 to-transparent">
-              <CardTitle className="text-base font-serif text-[#C4704B] flex items-center gap-2">
+          <Card className="border-electric/20 bg-charcoal overflow-hidden">
+            <CardHeader className="pb-2 bg-gradient-to-r from-electric/5 to-transparent">
+              <CardTitle className="text-base font-serif text-electric flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" />
                 AI Design Assistant
               </CardTitle>
@@ -477,13 +477,13 @@ export function QuestionnaireWizard({
         )}
 
         {/* Form Panel */}
-        <Card className={`border-[#2D5A3D]/10 ${aiAutoFilled ? "ring-2 ring-green-300/50" : ""}`}>
+        <Card className={`border-electric/10 ${aiAutoFilled ? "ring-2 ring-green-300/50" : ""}`}>
           <CardContent className="p-6 md:p-8">
             {/* ── STEP 1: Website Type ── */}
             {step === 1 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#2D5A3D] mb-1">What kind of website do you need?</h3>
+                  <h3 className="text-lg font-semibold text-electric mb-1">What kind of website do you need?</h3>
                   <p className="text-sm text-gray-500">Select the option that best describes your business.</p>
                 </div>
                 <div className="grid gap-3">
@@ -493,25 +493,25 @@ export function QuestionnaireWizard({
                       onClick={() => setWebsiteType(type)}
                       className={`flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
                         websiteType === type
-                          ? "border-[#2D5A3D] bg-[#2D5A3D]/5 shadow-sm"
-                          : "border-gray-200 hover:border-[#2D5A3D]/30 hover:bg-gray-50"
+                          ? "border-electric bg-electric/5 shadow-sm"
+                          : "border-gray-200 hover:border-electric/30 hover:bg-gray-50"
                       }`}
                     >
                       <div
                         className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${
-                          websiteType === type ? "bg-[#2D5A3D] text-white" : "bg-gray-100 text-gray-500"
+                          websiteType === type ? "bg-electric text-white" : "bg-gray-100 text-gray-500"
                         }`}
                       >
                         {TYPE_ICONS[type]}
                       </div>
                       <div className="min-w-0">
-                        <div className={`font-medium ${websiteType === type ? "text-[#2D5A3D]" : "text-gray-800"}`}>
+                        <div className={`font-medium ${websiteType === type ? "text-electric" : "text-gray-800"}`}>
                           {WEBSITE_TYPE_LABELS[type]}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">{WEBSITE_TYPE_DESCRIPTIONS[type]}</div>
                       </div>
                       {websiteType === type && (
-                        <CheckCircle2 className="w-5 h-5 text-[#2D5A3D] shrink-0 ml-auto" />
+                        <CheckCircle2 className="w-5 h-5 text-electric shrink-0 ml-auto" />
                       )}
                     </button>
                   ))}
@@ -523,11 +523,11 @@ export function QuestionnaireWizard({
             {step === 2 && (
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#2D5A3D] mb-1">Brand Identity & Audience</h3>
+                  <h3 className="text-lg font-semibold text-electric mb-1">Brand Identity & Audience</h3>
                   <p className="text-sm text-gray-500">Tell us about your brand's personality and who you serve.</p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#2D5A3D] font-medium">What tone best describes your brand?</Label>
+                  <Label className="text-electric font-medium">What tone best describes your brand?</Label>
                   <Select value={brandTone} onValueChange={(v) => setBrandTone(v as BrandTone)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -540,15 +540,15 @@ export function QuestionnaireWizard({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#2D5A3D] font-medium">Brand colors</Label>
+                  <Label className="text-electric font-medium">Brand colors</Label>
                   <Input
                     value={brandColors}
                     onChange={(e) => setBrandColors(e.target.value)}
-                    placeholder="e.g. #2D5A3D, #C4704B — or leave blank and we'll suggest some"
+                    placeholder="e.g. #00D4FF, #0A0E1A — or leave blank and we'll suggest some"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#2D5A3D] font-medium">Who is your target audience?</Label>
+                  <Label className="text-electric font-medium">Who is your target audience?</Label>
                   <Textarea
                     value={targetAudience}
                     onChange={(e) => setTargetAudience(e.target.value)}
@@ -557,7 +557,7 @@ export function QuestionnaireWizard({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#2D5A3D] font-medium">Who will write the website content?</Label>
+                  <Label className="text-electric font-medium">Who will write the website content?</Label>
                   <Select value={contentPreference} onValueChange={(v) => setContentPreference(v as ContentPreference)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -574,7 +574,7 @@ export function QuestionnaireWizard({
             {step === 3 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#2D5A3D] mb-1">Inspiration & Competitors</h3>
+                  <h3 className="text-lg font-semibold text-electric mb-1">Inspiration & Competitors</h3>
                   <p className="text-sm text-gray-500">
                     Show us websites you love and competitors you want to outperform. This helps us understand your taste and goals.
                   </p>
@@ -583,9 +583,9 @@ export function QuestionnaireWizard({
                 {/* Inspiration sites */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-[#2D5A3D] font-medium text-base">Websites You Love</Label>
+                    <Label className="text-electric font-medium text-base">Websites You Love</Label>
                     {inspirationSites.length < 3 && (
-                      <Button variant="ghost" size="sm" onClick={addInspiration} className="text-[#C4704B] hover:text-[#C4704B]/80">
+                      <Button variant="ghost" size="sm" onClick={addInspiration} className="text-electric hover:text-electric/80">
                         <Plus className="w-4 h-4 mr-1" /> Add
                       </Button>
                     )}
@@ -635,9 +635,9 @@ export function QuestionnaireWizard({
                 {/* Competitor sites */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-[#2D5A3D] font-medium text-base">Competitor Websites</Label>
+                    <Label className="text-electric font-medium text-base">Competitor Websites</Label>
                     {competitorSites.length < 3 && (
-                      <Button variant="ghost" size="sm" onClick={addCompetitor} className="text-[#C4704B] hover:text-[#C4704B]/80">
+                      <Button variant="ghost" size="sm" onClick={addCompetitor} className="text-electric hover:text-electric/80">
                         <Plus className="w-4 h-4 mr-1" /> Add
                       </Button>
                     )}
@@ -690,7 +690,7 @@ export function QuestionnaireWizard({
             {step === 4 && (
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#2D5A3D] mb-1">
+                  <h3 className="text-lg font-semibold text-electric mb-1">
                     {websiteType ? `${WEBSITE_TYPE_LABELS[websiteType]} Details` : "Industry Details"}
                   </h3>
                   <p className="text-sm text-gray-500">
@@ -702,23 +702,23 @@ export function QuestionnaireWizard({
                 {websiteType === "service_business" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Service area</Label>
+                      <Label className="text-electric font-medium">Service area</Label>
                       <Input value={sbServiceArea} onChange={(e) => setSbServiceArea(e.target.value)} placeholder="e.g. Greater Houston, TX" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Services offered</Label>
+                      <Label className="text-electric font-medium">Services offered</Label>
                       <Textarea value={sbServicesOffered} onChange={(e) => setSbServicesOffered(e.target.value)} placeholder="List your main services, e.g. Interior detailing, Exterior wash, Ceramic coating..." rows={2} />
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                       <div>
-                        <Label className="text-[#2D5A3D] font-medium">Need online booking?</Label>
+                        <Label className="text-electric font-medium">Need online booking?</Label>
                         <p className="text-xs text-gray-500">Allow customers to book appointments on your website</p>
                       </div>
                       <Switch checked={sbHasBooking} onCheckedChange={setSbHasBooking} />
                     </div>
                     {sbHasBooking && (
-                      <div className="space-y-2 pl-4 border-l-2 border-[#2D5A3D]/20">
-                        <Label className="text-[#2D5A3D] font-medium">Current booking method</Label>
+                      <div className="space-y-2 pl-4 border-l-2 border-electric/20">
+                        <Label className="text-electric font-medium">Current booking method</Label>
                         <Select value={sbBookingMethod} onValueChange={setSbBookingMethod}>
                           <SelectTrigger><SelectValue placeholder="How do customers book now?" /></SelectTrigger>
                           <SelectContent>
@@ -733,14 +733,14 @@ export function QuestionnaireWizard({
                     )}
                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                       <div>
-                        <Label className="text-[#2D5A3D] font-medium">Licensed or certified?</Label>
+                        <Label className="text-electric font-medium">Licensed or certified?</Label>
                         <p className="text-xs text-gray-500">Display credentials on your website for trust</p>
                       </div>
                       <Switch checked={sbLicensed} onCheckedChange={setSbLicensed} />
                     </div>
                     {sbLicensed && (
-                      <div className="space-y-2 pl-4 border-l-2 border-[#2D5A3D]/20">
-                        <Label className="text-[#2D5A3D] font-medium">License/certification details</Label>
+                      <div className="space-y-2 pl-4 border-l-2 border-electric/20">
+                        <Label className="text-electric font-medium">License/certification details</Label>
                         <Input value={sbLicenseDetails} onChange={(e) => setSbLicenseDetails(e.target.value)} placeholder="e.g. IDA Certified Detailer, State License #12345" />
                       </div>
                     )}
@@ -751,42 +751,42 @@ export function QuestionnaireWizard({
                 {websiteType === "restaurant" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Cuisine type</Label>
+                      <Label className="text-electric font-medium">Cuisine type</Label>
                       <Input value={rCuisineType} onChange={(e) => setRCuisineType(e.target.value)} placeholder="e.g. Italian, Mexican, BBQ, Fusion" />
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                       <div>
-                        <Label className="text-[#2D5A3D] font-medium">Physical location?</Label>
+                        <Label className="text-electric font-medium">Physical location?</Label>
                         <p className="text-xs text-gray-500">Do you have a dine-in location?</p>
                       </div>
                       <Switch checked={rHasLocation} onCheckedChange={setRHasLocation} />
                     </div>
                     {rHasLocation && (
-                      <div className="space-y-2 pl-4 border-l-2 border-[#2D5A3D]/20">
-                        <Label className="text-[#2D5A3D] font-medium">Number of locations</Label>
+                      <div className="space-y-2 pl-4 border-l-2 border-electric/20">
+                        <Label className="text-electric font-medium">Number of locations</Label>
                         <Input type="number" min={1} value={rLocationCount} onChange={(e) => setRLocationCount(Number(e.target.value) || 1)} />
                       </div>
                     )}
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Operating hours</Label>
+                      <Label className="text-electric font-medium">Operating hours</Label>
                       <Input value={rHours} onChange={(e) => setRHours(e.target.value)} placeholder="e.g. Mon-Sat 11am-10pm, Sun 12pm-8pm" />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <Label className="text-sm text-[#2D5A3D]">Online menu</Label>
+                        <Label className="text-sm text-electric">Online menu</Label>
                         <Switch checked={rNeedsMenu} onCheckedChange={setRNeedsMenu} />
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <Label className="text-sm text-[#2D5A3D]">Online ordering</Label>
+                        <Label className="text-sm text-electric">Online ordering</Label>
                         <Switch checked={rNeedsOrdering} onCheckedChange={setRNeedsOrdering} />
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <Label className="text-sm text-[#2D5A3D]">Reservations</Label>
+                        <Label className="text-sm text-electric">Reservations</Label>
                         <Switch checked={rNeedsReservations} onCheckedChange={setRNeedsReservations} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Delivery partners</Label>
+                      <Label className="text-electric font-medium">Delivery partners</Label>
                       <Input value={rDeliveryPartners} onChange={(e) => setRDeliveryPartners(e.target.value)} placeholder="e.g. DoorDash, UberEats, Grubhub — or leave blank" />
                     </div>
                   </div>
@@ -796,49 +796,49 @@ export function QuestionnaireWizard({
                 {websiteType === "contractor" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Trade type</Label>
+                      <Label className="text-electric font-medium">Trade type</Label>
                       <Input value={cTradeType} onChange={(e) => setCTradeType(e.target.value)} placeholder="e.g. Plumbing, HVAC, Roofing, General Contractor" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Service area</Label>
+                      <Label className="text-electric font-medium">Service area</Label>
                       <Input value={cServiceArea} onChange={(e) => setCServiceArea(e.target.value)} placeholder="e.g. Dallas-Fort Worth metro area" />
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                       <div>
-                        <Label className="text-[#2D5A3D] font-medium">Licensed or certified?</Label>
+                        <Label className="text-electric font-medium">Licensed or certified?</Label>
                         <p className="text-xs text-gray-500">Display your license for credibility</p>
                       </div>
                       <Switch checked={cLicensed} onCheckedChange={setCLicensed} />
                     </div>
                     {cLicensed && (
-                      <div className="space-y-2 pl-4 border-l-2 border-[#2D5A3D]/20">
-                        <Label className="text-[#2D5A3D] font-medium">License number</Label>
+                      <div className="space-y-2 pl-4 border-l-2 border-electric/20">
+                        <Label className="text-electric font-medium">License number</Label>
                         <Input value={cLicenseNumber} onChange={(e) => setCLicenseNumber(e.target.value)} placeholder="e.g. TACLA12345C" />
                       </div>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                         <div>
-                          <Label className="text-sm text-[#2D5A3D]">Quote request form</Label>
+                          <Label className="text-sm text-electric">Quote request form</Label>
                           <p className="text-xs text-gray-400">Let customers request quotes online</p>
                         </div>
                         <Switch checked={cNeedsQuoteForm} onCheckedChange={setCNeedsQuoteForm} />
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                         <div>
-                          <Label className="text-sm text-[#2D5A3D]">Before/after gallery</Label>
+                          <Label className="text-sm text-electric">Before/after gallery</Label>
                           <p className="text-xs text-gray-400">Showcase your work with photos</p>
                         </div>
                         <Switch checked={cNeedsGallery} onCheckedChange={setCNeedsGallery} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Insurance info</Label>
+                      <Label className="text-electric font-medium">Insurance info</Label>
                       <Input value={cInsurance} onChange={(e) => setCInsurance(e.target.value)} placeholder="e.g. Fully insured and bonded — or leave blank" />
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                       <div>
-                        <Label className="text-[#2D5A3D] font-medium">24/7 emergency service?</Label>
+                        <Label className="text-electric font-medium">24/7 emergency service?</Label>
                         <p className="text-xs text-gray-500">Highlight emergency availability on your site</p>
                       </div>
                       <Switch checked={cEmergency} onCheckedChange={setCEmergency} />
@@ -857,7 +857,7 @@ export function QuestionnaireWizard({
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">How many products?</Label>
+                      <Label className="text-electric font-medium">How many products?</Label>
                       <Select value={eProductCount} onValueChange={setEProductCount}>
                         <SelectTrigger><SelectValue placeholder="Select range" /></SelectTrigger>
                         <SelectContent>
@@ -870,11 +870,11 @@ export function QuestionnaireWizard({
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Product categories</Label>
+                      <Label className="text-electric font-medium">Product categories</Label>
                       <Input value={eCategories} onChange={(e) => setECategories(e.target.value)} placeholder="e.g. Jewelry, Clothing, Electronics, Home Decor" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Existing platform</Label>
+                      <Label className="text-electric font-medium">Existing platform</Label>
                       <Select value={eExistingPlatform} onValueChange={setEExistingPlatform}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -901,29 +901,29 @@ export function QuestionnaireWizard({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                         <div>
-                          <Label className="text-sm text-[#2D5A3D]">Shipping needed</Label>
+                          <Label className="text-sm text-electric">Shipping needed</Label>
                           <p className="text-xs text-gray-400">Physical products?</p>
                         </div>
                         <Switch checked={eNeedsShipping} onCheckedChange={setENeedsShipping} />
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                         <div>
-                          <Label className="text-sm text-[#2D5A3D]">Inventory system</Label>
+                          <Label className="text-sm text-electric">Inventory system</Label>
                           <p className="text-xs text-gray-400">Track stock levels?</p>
                         </div>
                         <Switch checked={eHasInventory} onCheckedChange={setEHasInventory} />
                       </div>
                       <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                         <div>
-                          <Label className="text-sm text-[#2D5A3D]">Subscriptions</Label>
+                          <Label className="text-sm text-electric">Subscriptions</Label>
                           <p className="text-xs text-gray-400">Recurring orders?</p>
                         </div>
                         <Switch checked={eNeedsSubscriptions} onCheckedChange={setENeedsSubscriptions} />
                       </div>
                     </div>
                     {eNeedsShipping && (
-                      <div className="space-y-2 pl-4 border-l-2 border-[#2D5A3D]/20">
-                        <Label className="text-[#2D5A3D] font-medium">Shipping regions</Label>
+                      <div className="space-y-2 pl-4 border-l-2 border-electric/20">
+                        <Label className="text-electric font-medium">Shipping regions</Label>
                         <Select value={eShippingRegions} onValueChange={setEShippingRegions}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -935,11 +935,11 @@ export function QuestionnaireWizard({
                       </div>
                     )}
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Payment methods</Label>
+                      <Label className="text-electric font-medium">Payment methods</Label>
                       <Input value={ePaymentMethods} onChange={(e) => setEPaymentMethods(e.target.value)} placeholder="e.g. Credit card, PayPal, Apple Pay" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Tax handling</Label>
+                      <Label className="text-electric font-medium">Tax handling</Label>
                       <Select value={eTaxHandling} onValueChange={setETaxHandling}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -952,14 +952,14 @@ export function QuestionnaireWizard({
                     {/* Product variants */}
                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                       <div>
-                        <Label className="text-sm text-[#2D5A3D]">Product variants</Label>
+                        <Label className="text-sm text-electric">Product variants</Label>
                         <p className="text-xs text-gray-400">Size, color, material options?</p>
                       </div>
                       <Switch checked={eHasVariants} onCheckedChange={setEHasVariants} />
                     </div>
                     {eHasVariants && (
                       <div className="space-y-2">
-                        <Label className="text-[#2D5A3D] font-medium">Variant complexity</Label>
+                        <Label className="text-electric font-medium">Variant complexity</Label>
                         <Select value={eVariantComplexity} onValueChange={setEVariantComplexity}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -972,7 +972,7 @@ export function QuestionnaireWizard({
                     )}
                     {/* Product photos status */}
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Product photos</Label>
+                      <Label className="text-electric font-medium">Product photos</Label>
                       <Select value={ePhotosStatus} onValueChange={setEPhotosStatus}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -984,7 +984,7 @@ export function QuestionnaireWizard({
                     </div>
                     {/* Product descriptions status */}
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Product descriptions</Label>
+                      <Label className="text-electric font-medium">Product descriptions</Label>
                       <Select value={eDescriptionsStatus} onValueChange={setEDescriptionsStatus}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -997,14 +997,14 @@ export function QuestionnaireWizard({
                     {/* Abandoned cart interest */}
                     <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
                       <div>
-                        <Label className="text-sm text-[#2D5A3D]">Abandoned cart emails</Label>
+                        <Label className="text-sm text-electric">Abandoned cart emails</Label>
                         <p className="text-xs text-gray-400">Auto-email customers who leave items in cart?</p>
                       </div>
                       <Switch checked={eAbandonedCart} onCheckedChange={setEAbandonedCart} />
                     </div>
                     {/* Return policy */}
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Return / refund policy</Label>
+                      <Label className="text-electric font-medium">Return / refund policy</Label>
                       <Textarea value={eReturnPolicy} onChange={(e) => setEReturnPolicy(e.target.value)} placeholder="Describe your return/refund policy, or leave blank if you need help creating one" rows={2} />
                     </div>
                   </div>
@@ -1014,15 +1014,15 @@ export function QuestionnaireWizard({
                 {websiteType === "other" && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">What industry are you in?</Label>
+                      <Label className="text-electric font-medium">What industry are you in?</Label>
                       <Input value={oIndustry} onChange={(e) => setOIndustry(e.target.value)} placeholder="e.g. Healthcare, Education, Real Estate, Nonprofit" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">Describe your business</Label>
+                      <Label className="text-electric font-medium">Describe your business</Label>
                       <Textarea value={oDescription} onChange={(e) => setODescription(e.target.value)} placeholder="Tell us what your business does and what you need from your website..." rows={4} />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[#2D5A3D] font-medium">What makes your business unique?</Label>
+                      <Label className="text-electric font-medium">What makes your business unique?</Label>
                       <Textarea value={oUnique} onChange={(e) => setOUnique(e.target.value)} placeholder="Any special requirements, unique selling points, or things we should know..." rows={3} />
                     </div>
                   </div>
@@ -1044,13 +1044,13 @@ export function QuestionnaireWizard({
             {step === 5 && (
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-lg font-semibold text-[#2D5A3D] mb-1">Features & Special Requests</h3>
+                  <h3 className="text-lg font-semibold text-electric mb-1">Features & Special Requests</h3>
                   <p className="text-sm text-gray-500">
                     Almost done! Tell us about must-have features and anything else on your mind.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#2D5A3D] font-medium">Must-have features</Label>
+                  <Label className="text-electric font-medium">Must-have features</Label>
                   <Textarea
                     value={mustHaveFeatures}
                     onChange={(e) => setMustHaveFeatures(e.target.value)}
@@ -1060,7 +1060,7 @@ export function QuestionnaireWizard({
                   <p className="text-xs text-gray-400">Separate with commas</p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[#2D5A3D] font-medium">Anything else we should know?</Label>
+                  <Label className="text-electric font-medium">Anything else we should know?</Label>
                   <Textarea
                     value={specialRequests}
                     onChange={(e) => setSpecialRequests(e.target.value)}
@@ -1070,8 +1070,8 @@ export function QuestionnaireWizard({
                 </div>
 
                 {/* Summary preview */}
-                <div className="p-4 rounded-xl bg-[#2D5A3D]/5 border border-[#2D5A3D]/10">
-                  <h4 className="text-sm font-semibold text-[#2D5A3D] mb-2">Quick Summary</h4>
+                <div className="p-4 rounded-xl bg-electric/5 border border-electric/10">
+                  <h4 className="text-sm font-semibold text-electric mb-2">Quick Summary</h4>
                   <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                     <div><span className="font-medium">Type:</span> {websiteType ? WEBSITE_TYPE_LABELS[websiteType] : "Not selected"}</div>
                     <div><span className="font-medium">Tone:</span> {brandTone}</div>
@@ -1087,7 +1087,7 @@ export function QuestionnaireWizard({
             {/* ── Navigation buttons ── */}
             <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
               {step > 1 ? (
-                <Button variant="outline" onClick={goBack} className="border-[#2D5A3D]/20 text-[#2D5A3D]">
+                <Button variant="outline" onClick={goBack} className="border-electric/20 text-electric">
                   <ArrowLeft className="w-4 h-4 mr-2" /> Back
                 </Button>
               ) : (
@@ -1097,7 +1097,7 @@ export function QuestionnaireWizard({
                 <Button
                   onClick={goNext}
                   disabled={!canAdvance(step)}
-                  className="bg-[#2D5A3D] hover:bg-[#234A31] text-white"
+                  className="bg-electric hover:bg-electric-light text-white"
                 >
                   Next <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -1105,7 +1105,7 @@ export function QuestionnaireWizard({
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-[#2D5A3D] hover:bg-[#234A31] text-white h-12 px-8 text-base"
+                  className="bg-electric hover:bg-electric-light text-white h-12 px-8 text-base"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-5 h-5 animate-spin mr-2" />

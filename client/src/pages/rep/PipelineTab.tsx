@@ -288,7 +288,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                               <p className="text-sm font-medium text-off-white font-sans truncate">{lead.businessName}</p>
                               <p className="text-[11px] text-soft-gray font-sans truncate">{lead.contactName}</p>
                             </div>
-                            <GripVertical className="h-4 w-4 text-soft-gray/30 shrink-0" />
+                            <GripVertical className="h-4 w-4 text-soft-gray/40 shrink-0" />
                           </div>
                           <div className="flex items-center gap-1.5">
                             <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] ${ti.bg}`}>
@@ -517,7 +517,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
           <ScrollArea className="h-[400px] pr-2">
             {(leadPool as Lead[]).length === 0 ? (
               <div className="text-center py-12">
-                <Target className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" />
+                <Target className="h-8 w-8 text-soft-gray/40 mx-auto mb-3" />
                 <p className="text-sm text-soft-gray font-sans">No unassigned leads available right now.</p>
               </div>
             ) : (

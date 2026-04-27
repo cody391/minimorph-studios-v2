@@ -134,6 +134,15 @@
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
   }
+  /* Visible focus rings for keyboard navigation */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  /* Clear disabled states */
+  :disabled,
+  [aria-disabled="true"] {
+    @apply opacity-50 cursor-not-allowed;
+  }
 }
 
 @layer components {

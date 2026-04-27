@@ -235,10 +235,10 @@ function AssetCard({ asset, onEdit, onDelete }: { asset: any; onEdit: () => void
             )}
           </div>
           <div className="flex gap-1 shrink-0 ml-2">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={copyValue}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyValue} aria-label="Copy value">
               {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600" onClick={onDelete}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600" onClick={onDelete} aria-label="Delete">
               <Trash2 className="w-3 h-3" />
             </Button>
           </div>
@@ -294,7 +294,7 @@ function CreateAssetDialog({ open, onOpenChange, onSuccess }: {
             {type === "color" ? (
               <div className="flex gap-2">
                 <Input type="color" value={value || "#000000"} onChange={e => setValue(e.target.value)} className="w-14 h-10 p-1" />
-                <Input value={value} onChange={e => setValue(e.target.value)} placeholder="#2D5A3D" className="flex-1" />
+                <Input value={value} onChange={e => setValue(e.target.value)} placeholder="#00D4FF" className="flex-1" />
               </div>
             ) : (
               <Textarea value={value} onChange={e => setValue(e.target.value)} placeholder={

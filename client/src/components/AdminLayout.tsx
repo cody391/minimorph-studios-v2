@@ -301,12 +301,12 @@ function AdminLayoutContent({
         {isMobile && (
           <div className="flex border-b border-border/30 h-14 items-center justify-between bg-charcoal/95 px-2 backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="h-9 w-9 rounded-lg" />
+              <SidebarTrigger className="h-11 w-11 rounded-lg" aria-label="Toggle sidebar" />
               <span className="font-serif text-off-white text-sm">{activeMenuItem?.label ?? "Admin"}</span>
             </div>
           </div>
         )}
-        <main className="flex-1 p-3 sm:p-6">{children}</main>
+        <main id="main-content" className="flex-1 p-3 sm:p-6">{children}</main>
       </SidebarInset>
     </>
   );

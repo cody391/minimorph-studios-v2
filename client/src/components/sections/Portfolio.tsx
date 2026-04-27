@@ -66,10 +66,11 @@ export default function Portfolio() {
               onClick={() => setLocation(`/showroom/${site.slug}`)}
             >
               {/* Hero image */}
-              <div className="relative h-48 overflow-hidden">
+              <div className="relative h-48 overflow-hidden" style={{ aspectRatio: "16/9" }}>
                 <img
                   src={site.heroImage}
                   alt={site.name}
+                  loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -158,7 +159,7 @@ export default function Portfolio() {
           </Button>
         </motion.div>
 
-        <p className="text-center mt-8 text-[10px] font-sans text-off-white/20 max-w-lg mx-auto">
+        <p className="text-center mt-8 text-[10px] font-sans text-off-white/40 max-w-lg mx-auto">
           All sample sites are fictional demonstrations created to showcase
           MiniMorph capabilities. Business names, locations, and details are
           illustrative only. Actual results depend on your content, industry,

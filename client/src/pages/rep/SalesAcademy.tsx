@@ -850,7 +850,7 @@ export default function SalesAcademy() {
                           </div>
                         )}
                       </div>
-                      <ChevronRight className="w-5 h-5 text-soft-gray/30 group-hover:text-soft-gray transition-colors shrink-0" />
+                      <ChevronRight className="w-5 h-5 text-soft-gray/40 group-hover:text-soft-gray transition-colors shrink-0" />
                     </div>
                   </CardContent>
                 </Card>
@@ -873,7 +873,7 @@ export default function SalesAcademy() {
             <CardContent>
               {(!leaderboard || leaderboard.length === 0) ? (
                 <div className="text-center py-8">
-                  <Trophy className="w-10 h-10 text-soft-gray/30 mx-auto mb-3" />
+                  <Trophy className="w-10 h-10 text-soft-gray/40 mx-auto mb-3" />
                   <p className="text-sm text-soft-gray font-sans">No reps have started the academy yet.</p>
                   <p className="text-xs text-soft-gray/60 font-sans mt-1">Be the first to complete a module!</p>
                 </div>
@@ -931,7 +931,7 @@ export default function SalesAcademy() {
             <CardContent>
               {(!academyData?.certifications || academyData.certifications.length === 0) ? (
                 <div className="text-center py-8">
-                  <GraduationCap className="w-10 h-10 text-soft-gray/30 mx-auto mb-3" />
+                  <GraduationCap className="w-10 h-10 text-soft-gray/40 mx-auto mb-3" />
                   <p className="text-sm text-soft-gray font-sans">No certifications yet.</p>
                   <p className="text-xs text-soft-gray/60 font-sans mt-1">Complete modules and pass quizzes to earn certifications.</p>
                 </div>
@@ -1344,7 +1344,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                     startMut.isPending ? (
                       <Loader2 className="w-4 h-4 animate-spin text-soft-gray/60" />
                     ) : (
-                      <Play className="w-4 h-4 text-soft-gray/30 group-hover:text-soft-gray transition-colors" />
+                      <Play className="w-4 h-4 text-soft-gray/40 group-hover:text-soft-gray transition-colors" />
                     )
                   ) : (
                     <Lock className="w-4 h-4 text-gray-300" />
@@ -1392,7 +1392,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                         </span>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-soft-gray/30" />
+                    <ChevronRight className="w-4 h-4 text-soft-gray/40" />
                   </div>
                 </CardContent>
               </Card>

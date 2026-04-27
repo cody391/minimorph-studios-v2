@@ -59,7 +59,7 @@ export default function Submissions() {
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !submissions?.length ? (
             <div className="text-center py-12">
-              <Inbox className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <Inbox className="h-10 w-10 text-soft-gray/40 mx-auto mb-3" />
               <p className="text-sm text-soft-gray font-sans">No submissions yet. They'll appear here when visitors fill out the contact form.</p>
             </div>
           ) : (

@@ -108,7 +108,7 @@ export default function Overview() {
                   </div>
                 </div>
                 {i < lifecycleSteps.length - 1 && (
-                  <ArrowRight className="h-3.5 w-3.5 text-soft-gray/30 shrink-0" />
+                  <ArrowRight className="h-3.5 w-3.5 text-soft-gray/40 shrink-0" />
                 )}
               </div>
             ))}

@@ -212,7 +212,7 @@ export default function Careers() {
                   <p className="text-[10px] text-soft-gray/60 font-sans">commission</p>
                 </div>
                 {i < LEVELS.length - 1 && (
-                  <div className="hidden md:block text-soft-gray/30">
+                  <div className="hidden md:block text-soft-gray/40">
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 )}

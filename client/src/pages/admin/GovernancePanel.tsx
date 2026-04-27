@@ -337,7 +337,7 @@ export default function GovernancePanel() {
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
           ) : !filteredAndSorted.length ? (
             <div className="text-center py-12">
-              <Shield className="h-8 w-8 text-soft-gray/30 mx-auto mb-3" />
+              <Shield className="h-8 w-8 text-soft-gray/40 mx-auto mb-3" />
               <p className="text-sm text-soft-gray font-sans">No reps found</p>
             </div>
           ) : (
@@ -517,7 +517,7 @@ export default function GovernancePanel() {
                         </p>
                         {strike.status === "pending" && (
                           <div className="flex gap-1 mt-1">
-                            <Button size="sm" variant="outline" className="text-[10px] h-6 px-1.5" onClick={() => { setSelectedStrike(strike); setShowReviewDialog(true); }}>
+                            <Button size="sm" variant="outline" className="text-xs h-8 px-2" onClick={() => { setSelectedStrike(strike); setShowReviewDialog(true); }}>
                               Review
                             </Button>
                           </div>

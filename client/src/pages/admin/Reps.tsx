@@ -162,7 +162,7 @@ export default function Reps() {
                 <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
               ) : !reps?.length ? (
                 <div className="text-center py-12">
-                  <Users className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+                  <Users className="h-10 w-10 text-soft-gray/40 mx-auto mb-3" />
                   <p className="text-sm text-soft-gray font-sans">No reps yet.</p>
                 </div>
               ) : (
@@ -704,7 +704,7 @@ function AssessmentsTab() {
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !filtered.length ? (
             <div className="text-center py-12">
-              <ClipboardCheck className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <ClipboardCheck className="h-10 w-10 text-soft-gray/40 mx-auto mb-3" />
               <p className="text-sm text-soft-gray font-sans">No assessments yet.</p>
             </div>
           ) : (
@@ -1071,7 +1071,7 @@ function OnboardingPipelineTab() {
                         <td className="py-3">
                           <div className="flex items-center gap-2">
                             {candidate.photo ? (
-                              <img src={candidate.photo} alt="" className="w-7 h-7 rounded-full object-cover" />
+                              <img src={candidate.photo} alt="Candidate photo" loading="lazy" className="w-7 h-7 rounded-full object-cover" />
                             ) : (
                               <div className="w-7 h-7 rounded-full bg-electric/10 flex items-center justify-center">
                                 <span className="text-[10px] font-bold text-off-white">

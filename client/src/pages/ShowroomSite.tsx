@@ -142,7 +142,7 @@ function BlogPreview({ site, posts }: { site: SiteType; posts: { title: string; 
               style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}
             >
               <div className="h-36 overflow-hidden">
-                <img src={site.heroImage} alt={p.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ objectPosition: idx === 0 ? "center" : idx === 1 ? "left" : "right" }} />
+                <img src={site.heroImage} alt={p.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ objectPosition: idx === 0 ? "center" : idx === 1 ? "left" : "right" }} />
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-2">
@@ -344,6 +344,7 @@ function InstagramFeed({ site }: { site: SiteType }) {
               <img
                 src={site.heroImage}
                 alt={`Instagram post ${i + 1}`}
+                loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 style={{ objectPosition: ["center", "left", "right", "top", "bottom", "center"][i] }}
               />
@@ -579,7 +580,7 @@ function ContractorProjects({ site }: { site: SiteType }) {
               style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}
             >
               <div className="h-40 overflow-hidden">
-                <img src={site.heroImage} alt={p.title} className="w-full h-full object-cover" style={{ objectPosition: idx % 2 === 0 ? "center" : "left" }} />
+                <img src={site.heroImage} alt={p.title} loading="lazy" className="w-full h-full object-cover" style={{ objectPosition: idx % 2 === 0 ? "center" : "left" }} />
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -877,7 +878,7 @@ function BoutiqueArrivals({ site }: { site: SiteType }) {
               style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}
             >
               <div className="aspect-square rounded-lg overflow-hidden mb-4">
-                <img src={site.heroImage} alt={item.name} className="w-full h-full object-cover" style={{ objectPosition: ["center", "left", "right", "top", "bottom", "center"][idx] }} />
+                <img src={site.heroImage} alt={item.name} loading="lazy" className="w-full h-full object-cover" style={{ objectPosition: ["center", "left", "right", "top", "bottom", "center"][idx] }} />
               </div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: site.palette.accent + "15", color: site.palette.accent }}>{item.tag}</span>
@@ -965,7 +966,7 @@ function CoffeeProducts({ site }: { site: SiteType }) {
               style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}
             >
               <div className="h-40 overflow-hidden relative">
-                <img src={site.heroImage} alt={p.name} className="w-full h-full object-cover" style={{ objectPosition: ["center", "left", "right", "top", "bottom", "center"][idx] }} />
+                <img src={site.heroImage} alt={p.name} loading="lazy" className="w-full h-full object-cover" style={{ objectPosition: ["center", "left", "right", "top", "bottom", "center"][idx] }} />
                 {p.badge && (
                   <span className="absolute top-3 right-3 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full" style={{ backgroundColor: site.palette.accent, color: site.palette.bg }}>{p.badge}</span>
                 )}
@@ -1655,6 +1656,7 @@ export default function ShowroomSite() {
               <img
                 src={site.heroImage}
                 alt={site.name}
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             </motion.div>
@@ -1766,6 +1768,7 @@ export default function ShowroomSite() {
                 <img
                   src={site.heroImage}
                   alt={`${site.name} gallery ${i + 1}`}
+                  loading="lazy"
                   className="w-full h-full object-cover"
                   style={{
                     objectPosition: ["center", "left", "right", "top", "bottom", "center"][i],

@@ -180,7 +180,7 @@ export default function SupportTicketsPanel({ repId }: { repId: number }) {
       ) : !tickets?.length ? (
         <Card className="border-border/50">
           <CardContent className="py-12 text-center">
-            <LifeBuoy className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+            <LifeBuoy className="h-10 w-10 text-soft-gray/40 mx-auto mb-3" />
             <p className="text-sm text-soft-gray font-sans">No support tickets yet.</p>
             <p className="text-xs text-soft-gray/40 font-sans mt-1">Click "New Ticket" to get help from our AI-powered support system.</p>
           </CardContent>

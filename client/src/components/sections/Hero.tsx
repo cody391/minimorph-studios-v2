@@ -118,7 +118,7 @@ export default function Hero() {
                 <div className="w-3 h-3 rounded-full bg-yellow-400/60" />
                 <div className="w-3 h-3 rounded-full bg-green-400/60" />
                 <div className="ml-3 flex-1 h-7 rounded-md bg-off-white/5 flex items-center px-3">
-                  <span className="text-xs text-off-white/30 font-mono">yourbusiness.com</span>
+                  <span className="text-xs text-off-white/40 font-mono">yourbusiness.com</span>
                 </div>
               </div>
               <div className="space-y-4">

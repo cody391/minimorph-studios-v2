@@ -132,7 +132,7 @@ export default function Leads() {
             <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
           ) : !leads?.length ? (
             <div className="text-center py-12">
-              <Target className="h-10 w-10 text-soft-gray/30 mx-auto mb-3" />
+              <Target className="h-10 w-10 text-soft-gray/40 mx-auto mb-3" />
               <p className="text-sm text-soft-gray font-sans">No leads yet. Add your first lead or let AI source them.</p>
             </div>
           ) : (

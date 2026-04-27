@@ -410,13 +410,13 @@ export default function BecomeRep() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-soft-gray/60 hover:text-soft-gray"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-soft-gray/60 hover:text-soft-gray p-2 min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Toggle password visibility"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                   {password && password.length < 8 && (
-                    <p className="text-[11px] text-red-500 mt-1 font-sans">Must be at least 8 characters</p>
+                    <p role="alert" className="text-[11px] text-red-500 mt-1 font-sans">Must be at least 8 characters</p>
                   )}
                 </div>
                 <div>
@@ -434,13 +434,13 @@ export default function BecomeRep() {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-soft-gray/60 hover:text-soft-gray"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-soft-gray/60 hover:text-soft-gray p-2 min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Toggle password visibility"
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                   {confirmPassword && password !== confirmPassword && (
-                    <p className="text-[11px] text-red-500 mt-1 font-sans">Passwords don't match</p>
+                    <p role="alert" className="text-[11px] text-red-500 mt-1 font-sans">Passwords don't match</p>
                   )}
                 </div>
                 <div>
@@ -532,7 +532,7 @@ export default function BecomeRep() {
                       onClick={() => photoInputRef.current?.click()}
                     >
                       {photoPreview ? (
-                        <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                        <img src={photoPreview} alt="Profile photo preview" loading="lazy" className="w-full h-full object-cover" />
                       ) : (
                         <Camera className="w-6 h-6 text-electric/40 group-hover:text-electric/60 transition-colors" />
                       )}

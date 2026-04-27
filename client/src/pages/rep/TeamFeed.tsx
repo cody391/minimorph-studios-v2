@@ -147,7 +147,7 @@ export default function TeamFeed({ repProfile }: TeamFeedProps) {
               {mentors.map((mentor: any) => (
                 <div key={mentor.id} className="flex items-center gap-2 bg-charcoal rounded-lg px-3 py-2 border border-violet-100">
                   {mentor.profilePhotoUrl ? (
-                    <img src={mentor.profilePhotoUrl} alt={mentor.fullName} className="w-7 h-7 rounded-full object-cover" />
+                    <img src={mentor.profilePhotoUrl} alt={mentor.fullName} loading="lazy" className="w-7 h-7 rounded-full object-cover" />
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 text-xs font-bold">
                       {(mentor.fullName || "?").charAt(0).toUpperCase()}

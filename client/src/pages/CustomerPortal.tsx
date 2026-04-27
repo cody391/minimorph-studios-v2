@@ -170,14 +170,14 @@ export default function CustomerPortal() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 sm:mb-8">
           <TabsList className="bg-midnight-dark/30 rounded-full p-1 w-max sm:w-auto">
-            <TabsTrigger value="overview" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Overview</TabsTrigger>
-            <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Reports</TabsTrigger>
-            <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Support</TabsTrigger>
-            <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Upgrades</TabsTrigger>
-            <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Onboarding</TabsTrigger>
-            <TabsTrigger value="billing" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Billing</TabsTrigger>
-            <TabsTrigger value="referrals" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Referrals</TabsTrigger>
-            <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">
+            <TabsTrigger value="overview" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Overview</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Reports</TabsTrigger>
+            <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Support</TabsTrigger>
+            <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Upgrades</TabsTrigger>
+            <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Onboarding</TabsTrigger>
+            <TabsTrigger value="billing" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Billing</TabsTrigger>
+            <TabsTrigger value="referrals" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Referrals</TabsTrigger>
+            <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">
               <Bot className="h-3 w-3 mr-1" /> AI Assistant
             </TabsTrigger>
           </TabsList>
