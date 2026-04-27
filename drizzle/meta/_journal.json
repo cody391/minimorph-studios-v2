@@ -239,6 +239,20 @@
       "when": 1777317491515,
       "tag": "0033_previous_susan_delgado",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1777331272133,
+      "tag": "0034_clever_major_mapleleaf",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1777331434347,
+      "tag": "0035_flat_pete_wisdom",
+      "breakpoints": true
     }
   ]
 }

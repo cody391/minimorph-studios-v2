@@ -18,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Target, Flame, Snowflake, Sun, Phone, Mail, FileText, Sparkles,
   GripVertical, ChevronRight, CheckCircle, XCircle, Loader2, Plus,
-  ArrowRight, DollarSign, Send, Eye, Handshake,
+  ArrowRight, DollarSign, Send, Eye, Handshake, ShieldCheck, MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,6 +62,8 @@ type Lead = {
   qualificationScore: number;
   enrichmentData?: any;
   lastTouchAt?: Date | string | null;
+  smsOptIn?: boolean;
+  smsOptedOut?: boolean;
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -97,9 +99,25 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
     onError: (e) => toast.error(e.message),
   });
 
+  // SMS opt-in mutation
+  const recordSmsOptIn = trpc.leadGen.recordSmsOptIn.useMutation({
+    onSuccess: (data) => {
+      utils.leads.myLeads.invalidate();
+      if (data.alreadyOptedIn) {
+        toast.info("Lead was already opted in.");
+      } else {
+        toast.success("SMS consent recorded successfully!");
+      }
+      setShowSmsOptIn(false);
+      if (selectedLead) setSelectedLead({ ...selectedLead, smsOptIn: true });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   // State
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [showSmsOptIn, setShowSmsOptIn] = useState(false);
   const [showPool, setShowPool] = useState(false);
   const [showProposal, setShowProposal] = useState(false);
   const [showCloseDeal, setShowCloseDeal] = useState(false);
@@ -324,8 +342,16 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                                   <Phone className="h-3.5 w-3.5" />
                                 </button>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); window.location.href = `sms:${lead.phone}`; }}
-                                  className="p-1.5 rounded-md hover:bg-purple-50 text-soft-gray/60 hover:text-purple-600 transition-colors" title="Send SMS"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!lead.smsOptIn) {
+                                      toast.error("SMS opt-in required. Record consent in lead details first.");
+                                      return;
+                                    }
+                                    window.location.href = `sms:${lead.phone}`;
+                                  }}
+                                  className={`p-1.5 rounded-md transition-colors ${lead.smsOptIn ? "hover:bg-purple-50 text-soft-gray/60 hover:text-purple-600" : "text-soft-gray/30 cursor-not-allowed"}`}
+                                  title={lead.smsOptIn ? "Send SMS" : "SMS opt-in required"}
                                 >
                                   <Send className="h-3.5 w-3.5" />
                                 </button>
@@ -460,6 +486,42 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
               )}
 
               <Separator />
+
+              {/* SMS Opt-In Status */}
+              {selectedLead.phone && (
+                <div className={`rounded-lg p-3 flex items-center justify-between ${
+                  selectedLead.smsOptedOut
+                    ? "bg-red-500/10 border border-red-500/20"
+                    : selectedLead.smsOptIn
+                      ? "bg-green-500/10 border border-green-500/20"
+                      : "bg-yellow-500/10 border border-yellow-500/20"
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className={`h-4 w-4 ${
+                      selectedLead.smsOptedOut ? "text-red-500" : selectedLead.smsOptIn ? "text-emerald-400" : "text-yellow-600"
+                    }`} />
+                    <span className={`text-xs font-sans font-medium ${
+                      selectedLead.smsOptedOut ? "text-red-600" : selectedLead.smsOptIn ? "text-emerald-400" : "text-yellow-600"
+                    }`}>
+                      {selectedLead.smsOptedOut
+                        ? "SMS: Opted Out"
+                        : selectedLead.smsOptIn
+                          ? "SMS: Opted In"
+                          : "SMS: No Consent Recorded"}
+                    </span>
+                  </div>
+                  {!selectedLead.smsOptIn && !selectedLead.smsOptedOut && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-[10px] h-7 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10"
+                      onClick={() => setShowSmsOptIn(true)}
+                    >
+                      <ShieldCheck className="h-3 w-3 mr-1" /> Record Consent
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {/* Action buttons */}
               <div className="grid grid-cols-2 gap-2">
@@ -814,6 +876,45 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ═══ SMS Opt-In Consent Dialog ═══ */}
+      <AlertDialog open={showSmsOptIn} onOpenChange={setShowSmsOptIn}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif text-off-white flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-electric" /> Record SMS Consent
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-soft-gray font-sans text-sm">
+              How did <strong>{selectedLead?.contactName}</strong> from <strong>{selectedLead?.businessName}</strong> give consent to receive SMS messages?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="grid grid-cols-2 gap-2 py-2">
+            {[
+              { method: "verbal_consent" as const, label: "Verbal Consent", desc: "Agreed on a call" },
+              { method: "form_submission" as const, label: "Form Submission", desc: "Filled out a form" },
+              { method: "reply_start" as const, label: "Reply START", desc: "Texted START to us" },
+              { method: "manual" as const, label: "Other / Manual", desc: "Other documented consent" },
+            ].map((opt) => (
+              <Button
+                key={opt.method}
+                variant="outline"
+                className="h-auto py-3 flex flex-col items-start text-left font-sans"
+                disabled={recordSmsOptIn.isPending}
+                onClick={() => {
+                  if (!selectedLead) return;
+                  recordSmsOptIn.mutate({ leadId: selectedLead.id, method: opt.method });
+                }}
+              >
+                <span className="text-xs font-medium text-off-white">{opt.label}</span>
+                <span className="text-[10px] text-soft-gray">{opt.desc}</span>
+              </Button>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-sans text-sm">Cancel</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

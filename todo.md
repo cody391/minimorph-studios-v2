@@ -1223,3 +1223,15 @@
 - [x] Added /dev-access route to App.tsx
 - [x] Created docs/dev-access.md with full route map and API reference
 - [x] Validation: typecheck + build + tests pass (33 test files, 844 tests passing)
+
+### Phase 47: Lead Outreach Pipeline Optimization (Email-First + Phone Follow-up + SMS Opt-in)
+- [x] Audit current outreach flow (backend procedures, email/SMS/call logic, pipeline stages)
+- [x] Add sms_opt_in, smsOptInAt, smsOptInMethod fields to leads table for opt-in tracking
+- [x] Reorder outreach channels: email-first (Day 0, 3, 7), rep call reminder (Day 5), SMS gated on opt-in (Day 10, 14)
+- [x] Update rep pipeline UI: SMS quick-action gated on opt-in, dimmed when no consent
+- [x] Update lead detail dialog: SMS opt-in status banner (green/yellow/red), Record Consent button
+- [x] Add opt-in recording mechanism: recordSmsOptIn + getSmsOptInStatus tRPC endpoints, consent dialog with 4 methods
+- [x] Update CommsHub ComposeSmsDialog: opt-in/opt-out warnings, send button disabled without consent
+- [x] Backend sendSms procedure: added smsOptIn gate before sending
+- [x] Backend sendDueOutreach: SMS steps skip if no opt-in, rep_call_reminder creates activity log
+- [x] Validation: typecheck clean, 35 test files (864/865 pass — 1 pre-existing Stripe timeout), production build OK

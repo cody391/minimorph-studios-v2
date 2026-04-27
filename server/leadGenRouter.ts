@@ -510,4 +510,43 @@ export const leadGenRouter = router({
 
       return { success: true, message: "Your audit is being generated. Check your email shortly!" };
     }),
+
+  // ─── SMS Opt-In Recording ───
+  recordSmsOptIn: protectedProcedure
+    .input(z.object({
+      leadId: z.number(),
+      method: z.enum(["verbal_consent", "form_submission", "reply_start", "manual"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = (await getDb())!;
+      const [lead] = await db.select().from(leads).where(eq(leads.id, input.leadId));
+      if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
+      if (lead.smsOptIn) {
+        return { success: true, alreadyOptedIn: true };
+      }
+      if (lead.smsOptedOut) {
+        throw new TRPCError({ code: "CONFLICT", message: "This lead has previously opted out of SMS. Cannot record opt-in while opted out." });
+      }
+      await db.update(leads).set({
+        smsOptIn: true,
+        smsOptInAt: new Date(),
+        smsOptInMethod: input.method,
+      }).where(eq(leads.id, input.leadId));
+      return { success: true, alreadyOptedIn: false };
+    }),
+
+  // ─── SMS Opt-In Status Check ───
+  getSmsOptInStatus: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ input }) => {
+      const db = (await getDb())!;
+      const [lead] = await db.select({
+        smsOptIn: leads.smsOptIn,
+        smsOptInAt: leads.smsOptInAt,
+        smsOptInMethod: leads.smsOptInMethod,
+        smsOptedOut: leads.smsOptedOut,
+      }).from(leads).where(eq(leads.id, input.leadId));
+      if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
+      return lead;
+    }),
 });

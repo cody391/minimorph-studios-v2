@@ -1,0 +1,2 @@
+ALTER TABLE `outreach_sequences` MODIFY COLUMN `sequenceType` enum('cold_email','cold_sms','warm_email','warm_sms','follow_up','call_reminder') NOT NULL DEFAULT 'cold_email';--> statement-breakpoint
+ALTER TABLE `outreach_sequences` MODIFY COLUMN `channel` enum('email','sms','rep_call_reminder') NOT NULL DEFAULT 'email';

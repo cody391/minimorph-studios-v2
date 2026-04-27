@@ -97,6 +97,9 @@ export const leads = mysqlTable("leads", {
   lastTouchAt: timestamp("lastTouchAt"),
   selfSourced: boolean("selfSourced").default(false).notNull(),
   discountPercent: int("discountPercent").default(0).notNull(), // 0-5% rep discount
+  smsOptIn: boolean("smsOptIn").default(false).notNull(),
+  smsOptInAt: timestamp("smsOptInAt"),
+  smsOptInMethod: mysqlEnum("smsOptInMethod", ["verbal_consent", "form_submission", "reply_start", "manual"]),
   smsOptedOut: boolean("smsOptedOut").default(false).notNull(),
   smsOptOutAt: timestamp("smsOptOutAt"),
   smsFirstMessageSent: boolean("smsFirstMessageSent").default(false).notNull(),
@@ -812,7 +815,7 @@ export const scrapedBusinesses = mysqlTable("scraped_businesses", {
 export const outreachSequences = mysqlTable("outreach_sequences", {
   id: int("id").autoincrement().primaryKey(),
   leadId: int("leadId").notNull(),
-  sequenceType: mysqlEnum("sequenceType", ["cold_email", "cold_sms", "warm_email", "warm_sms", "follow_up"])
+  sequenceType: mysqlEnum("sequenceType", ["cold_email", "cold_sms", "warm_email", "warm_sms", "follow_up", "call_reminder"])
     .default("cold_email")
     .notNull(),
   stepNumber: int("stepNumber").default(1).notNull(),
@@ -823,7 +826,7 @@ export const outreachSequences = mysqlTable("outreach_sequences", {
     .notNull(),
   subject: varchar("subject", { length: 255 }),
   body: text("body"),
-  channel: mysqlEnum("channel", ["email", "sms"]).default("email").notNull(),
+  channel: mysqlEnum("channel", ["email", "sms", "rep_call_reminder"]).default("email").notNull(),
   aiGenerated: boolean("aiGenerated").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

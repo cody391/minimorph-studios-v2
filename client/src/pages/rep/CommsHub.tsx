@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 import {
   Mail, MessageSquare, Phone, Sparkles, Send, FileText,
   PhoneCall, PhoneOff, Mic, MicOff, Clock, Star, TrendingUp,
-  AlertCircle, CheckCircle, ChevronRight, Brain, ArrowLeft,
+  AlertCircle, CheckCircle, ChevronRight, Brain, ArrowLeft, ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -417,6 +417,11 @@ function ComposeSmsDialog({ open, onClose, leads }: { open: boolean; onClose: ()
     if (lead?.phone) setToNumber(lead.phone);
   };
 
+  // Check opt-in status of selected lead
+  const selectedLead = leadId ? leads?.find((l: any) => l.id === Number(leadId)) : null;
+  const leadNeedsOptIn = selectedLead && !selectedLead.smsOptIn;
+  const leadOptedOut = selectedLead && selectedLead.smsOptedOut;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -427,10 +432,25 @@ function ComposeSmsDialog({ open, onClose, leads }: { open: boolean; onClose: ()
               <Label className="text-off-white/80 text-sm">Send to Lead</Label>
               <Select value={leadId} onValueChange={handleSelectLead}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Select a lead" /></SelectTrigger>
-                <SelectContent>{leads.filter((l: any) => l.phone).map((l: any) => <SelectItem key={l.id} value={String(l.id)}>{l.businessName} — {l.phone}</SelectItem>)}</SelectContent>
+                <SelectContent>{leads.filter((l: any) => l.phone).map((l: any) => <SelectItem key={l.id} value={String(l.id)}>{l.businessName} — {l.phone}{l.smsOptIn ? " \u2713" : ""}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           )}
+
+          {/* Opt-in warning */}
+          {leadOptedOut && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+              <span className="text-xs text-red-600 font-sans">This lead has opted out of SMS. You cannot send messages.</span>
+            </div>
+          )}
+          {leadNeedsOptIn && !leadOptedOut && (
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-yellow-600 shrink-0" />
+              <span className="text-xs text-yellow-600 font-sans">This lead has not opted in to SMS. Record their consent in the Pipeline lead details first.</span>
+            </div>
+          )}
+
           <div>
             <Label className="text-off-white/80 text-sm">Phone Number *</Label>
             <Input value={toNumber} onChange={(e) => setToNumber(e.target.value)} placeholder="+1234567890" className="mt-1" />
@@ -442,7 +462,7 @@ function ComposeSmsDialog({ open, onClose, leads }: { open: boolean; onClose: ()
           </div>
           <Button
             onClick={() => sendSms.mutate({ toNumber, body, leadId: leadId ? Number(leadId) : undefined })}
-            disabled={sendSms.isPending || !toNumber || !body}
+            disabled={sendSms.isPending || !toNumber || !body || !!leadOptedOut || !!leadNeedsOptIn}
             className="w-full bg-electric hover:bg-electric-light text-white rounded-full font-sans"
           >
             {sendSms.isPending ? "Sending..." : "Send SMS"} <Send className="w-4 h-4 ml-2" />

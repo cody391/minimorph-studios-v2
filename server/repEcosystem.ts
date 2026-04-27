@@ -574,11 +574,14 @@ Return JSON: { "subject": "...", "body": "..." }`,
       const rep = await db.getRepByUserId(ctx.user.id);
       if (!rep) throw new Error("Not a rep");
 
-      // SMS compliance: check opt-out status
+      // SMS compliance: check opt-in and opt-out status
       if (input.leadId) {
         const lead = await db.getLeadById(input.leadId);
         if (lead?.smsOptedOut) {
           throw new TRPCError({ code: "FORBIDDEN", message: "This lead has opted out of SMS messages. Cannot send." });
+        }
+        if (!lead?.smsOptIn) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "This lead has not opted in to SMS. Record their consent first (e.g. verbal consent on a call)." });
         }
       }
 

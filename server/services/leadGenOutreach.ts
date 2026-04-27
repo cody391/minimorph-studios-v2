@@ -14,11 +14,13 @@ import { sendEmail } from "./email";
 import type { EnrichmentResult } from "./leadGenEnrichment";
 
 // Outreach sequence templates (day offsets from lead creation)
-const OUTREACH_SCHEDULE = [
+// Email-first strategy: cold SMS is blocked by US carriers without opt-in.
+// SMS is ONLY sent after explicit opt-in (verbal consent on a call, form, etc.).
+export const OUTREACH_SCHEDULE = [
   { day: 0, channel: "email" as const, type: "cold_email" as const, purpose: "intro" },
-  { day: 2, channel: "sms" as const, type: "cold_sms" as const, purpose: "follow_up_sms" },
-  { day: 5, channel: "email" as const, type: "warm_email" as const, purpose: "value_add" },
-  { day: 8, channel: "sms" as const, type: "warm_sms" as const, purpose: "check_in" },
+  { day: 3, channel: "email" as const, type: "warm_email" as const, purpose: "value_add" },
+  { day: 7, channel: "rep_call_reminder" as const, type: "call_reminder" as const, purpose: "rep_call_reminder" },
+  { day: 10, channel: "email" as const, type: "follow_up" as const, purpose: "case_study" },
   { day: 14, channel: "email" as const, type: "follow_up" as const, purpose: "final_follow_up" },
 ];
 
@@ -127,35 +129,50 @@ export async function scheduleOutreachSequence(leadId: number): Promise<number> 
     scheduledAt.setDate(scheduledAt.getDate() + step.day);
     scheduledAt.setHours(10, 0, 0, 0); // Send at 10 AM
 
-    // Generate the message
     try {
-      const message = await generateOutreachMessage({
-        businessName: lead.businessName,
-        contactName: lead.contactName,
-        industry: lead.industry || undefined,
-        website: lead.website || undefined,
-        websiteScore: enrichment.websiteScore,
-        websiteIssues: enrichment.websiteIssues,
-        painPoints: enrichment.painPoints,
-        recommendedApproach: enrichment.recommendedApproach,
-        dossier: enrichment.dossier,
-        channel: step.channel,
-        purpose: step.purpose,
-      });
+      if (step.channel === "rep_call_reminder") {
+        // Schedule a rep call reminder — no AI message generation needed
+        await db.insert(outreachSequences).values({
+          leadId,
+          sequenceType: step.type,
+          stepNumber: step.day,
+          scheduledAt,
+          channel: step.channel,
+          subject: `Call reminder: ${lead.businessName}`,
+          body: `Reminder to call ${lead.contactName} at ${lead.businessName}. Phone: ${lead.phone || "N/A"}. They received 2 emails already — a call can help move them forward and is a chance to get SMS opt-in consent.`,
+          aiGenerated: false,
+          status: "scheduled",
+        });
+        scheduled++;
+      } else {
+        // Generate the email message via AI
+        const message = await generateOutreachMessage({
+          businessName: lead.businessName,
+          contactName: lead.contactName,
+          industry: lead.industry || undefined,
+          website: lead.website || undefined,
+          websiteScore: enrichment.websiteScore,
+          websiteIssues: enrichment.websiteIssues,
+          painPoints: enrichment.painPoints,
+          recommendedApproach: enrichment.recommendedApproach,
+          dossier: enrichment.dossier,
+          channel: "email",
+          purpose: step.purpose,
+        });
 
-      await db.insert(outreachSequences).values({
-        leadId,
-        sequenceType: step.type,
-        stepNumber: step.day,
-        scheduledAt,
-        channel: step.channel,
-        subject: message.subject,
-        body: message.body,
-        aiGenerated: true,
-        status: "scheduled",
-      });
-
-      scheduled++;
+        await db.insert(outreachSequences).values({
+          leadId,
+          sequenceType: step.type,
+          stepNumber: step.day,
+          scheduledAt,
+          channel: step.channel,
+          subject: message.subject,
+          body: message.body,
+          aiGenerated: true,
+          status: "scheduled",
+        });
+        scheduled++;
+      }
     } catch (err) {
       console.error(`[Outreach] Failed to generate step ${step.purpose} for lead ${leadId}:`, err);
     }
@@ -190,8 +207,8 @@ export async function sendDueOutreach(): Promise<number> {
       const [lead] = await db.select().from(leads).where(eq(leads.id, seq.leadId));
       if (!lead) continue;
 
-      // Check if lead has opted out of SMS
-      if (seq.channel === "sms" && lead.smsOptedOut) {
+      // Block SMS if lead has opted out OR has not opted in
+      if (seq.channel === "sms" && (lead.smsOptedOut || !lead.smsOptIn)) {
         await db.update(outreachSequences)
           .set({ status: "cancelled" })
           .where(eq(outreachSequences.id, seq.id));
@@ -222,10 +239,25 @@ export async function sendDueOutreach(): Promise<number> {
         continue;
       }
 
-      if (seq.channel === "sms" && lead.phone) {
-        // Send SMS
+      if (seq.channel === "rep_call_reminder") {
+        // Create a notification for the assigned rep (or all active reps)
+        const targetRepId = lead.assignedRepId;
+        if (targetRepId) {
+          await createRepNotification({
+            repId: targetRepId,
+            type: "lead_assigned",
+            title: "Call Reminder",
+            message: seq.body || `Time to call ${lead.contactName} at ${lead.businessName}.`,
+            metadata: { leadId: lead.id, businessName: lead.businessName, phone: lead.phone },
+          });
+        }
+        // Mark as sent
+        await db.update(outreachSequences)
+          .set({ status: "sent", sentAt: new Date() })
+          .where(eq(outreachSequences.id, seq.id));
+      } else if (seq.channel === "sms" && lead.phone && lead.smsOptIn) {
+        // Send SMS — only if lead has explicitly opted in
         const body = seq.body || "";
-        // Add opt-out notice on first SMS
         const smsBody = !lead.smsFirstMessageSent
           ? `${body}\n\nReply STOP to opt out.`
           : body;
@@ -237,6 +269,18 @@ export async function sendDueOutreach(): Promise<number> {
             .set({ smsFirstMessageSent: true })
             .where(eq(leads.id, lead.id));
         }
+
+        // Mark as sent + log
+        await db.update(outreachSequences)
+          .set({ status: "sent", sentAt: new Date() })
+          .where(eq(outreachSequences.id, seq.id));
+        await db.update(leads).set({ lastTouchAt: new Date() }).where(eq(leads.id, seq.leadId));
+        await db.insert(aiConversations).values({
+          leadId: seq.leadId,
+          channel: "sms",
+          direction: "outbound",
+          content: seq.body || "",
+        });
       } else if (seq.channel === "email" && lead.email) {
         // Send email
         await sendEmail({
@@ -246,25 +290,19 @@ export async function sendDueOutreach(): Promise<number> {
             <p>${(seq.body || "").replace(/\n/g, "<br/>")}</p>
           </div>`,
         });
+
+        // Mark as sent + log
+        await db.update(outreachSequences)
+          .set({ status: "sent", sentAt: new Date() })
+          .where(eq(outreachSequences.id, seq.id));
+        await db.update(leads).set({ lastTouchAt: new Date() }).where(eq(leads.id, seq.leadId));
+        await db.insert(aiConversations).values({
+          leadId: seq.leadId,
+          channel: "email",
+          direction: "outbound",
+          content: seq.body || "",
+        });
       }
-
-      // Mark as sent
-      await db.update(outreachSequences)
-        .set({ status: "sent", sentAt: new Date() })
-        .where(eq(outreachSequences.id, seq.id));
-
-      // Update lead last touch
-      await db.update(leads)
-        .set({ lastTouchAt: new Date() })
-        .where(eq(leads.id, seq.leadId));
-
-      // Log the outreach in AI conversations
-      await db.insert(aiConversations).values({
-        leadId: seq.leadId,
-        channel: seq.channel,
-        direction: "outbound",
-        content: seq.body || "",
-      });
 
       sent++;
     } catch (err) {
