@@ -513,6 +513,96 @@ export function registerScheduledRoutes(app: Express) {
       })
   );
 
+
+  // ─── Pending Payment Expiration Check ───
+  app.post("/api/scheduled/pending-payment-check", async (req, res) => {
+    await runJob(req, res, "pending-payment-check", async () => {
+      const db = await getDb();
+      if (!db) return { scanned: 0, expiredFound: 0, remindersSent: 0, errors: [] };
+
+      // Find contracts with status pending_payment older than 24 hours
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const staleContracts = await db
+        .select()
+        .from(contracts)
+        .where(
+          and(
+            eq(contracts.status, "pending_payment"),
+            lte(contracts.createdAt, twentyFourHoursAgo)
+          )
+        );
+
+      let expiredFound = 0;
+      let remindersSent = 0;
+      const errors: string[] = [];
+
+      for (const contract of staleContracts) {
+        expiredFound++;
+        try {
+          // Get customer info for reminder email
+          const [customer] = await db
+            .select()
+            .from(customers)
+            .where(eq(customers.id, contract.customerId))
+            .limit(1);
+
+          if (!customer) {
+            errors.push(`Contract #${contract.id}: customer not found`);
+            continue;
+          }
+
+          // Log a nurture entry as admin alert
+          await db.insert(nurtureLogs).values({
+            customerId: customer.id,
+            contractId: contract.id,
+            type: "support_request",
+            channel: "in_app",
+            subject: "Payment link may be expired",
+            content: `Contract #${contract.id} (${contract.packageTier}) has been in pending_payment status for over 24 hours. The original Stripe checkout link may have expired. Consider resending a payment link.`,
+            status: "sent",
+            scheduledAt: new Date(),
+            sentAt: new Date(),
+          });
+
+          // Send reminder email to customer if email helper supports it
+          try {
+            const { sendPaymentLinkReminderEmail } = await import("./services/customerEmails");
+            if (sendPaymentLinkReminderEmail) {
+              await sendPaymentLinkReminderEmail({
+                to: customer.email,
+                customerName: customer.contactName,
+                businessName: customer.businessName,
+                packageTier: contract.packageTier as any,
+              });
+              remindersSent++;
+            }
+          } catch (emailErr: any) {
+            // If reminder email function doesn't exist yet, just log it
+            if (!emailErr.message?.includes("is not a function")) {
+              errors.push(`Contract #${contract.id}: email error - ${emailErr.message}`);
+            }
+          }
+
+          // Notify owner/admin
+          const { notifyOwner } = await import("./_core/notification");
+          await notifyOwner({
+            title: "Stale Pending Payment",
+            content: `Contract #${contract.id} for ${customer.businessName} (${contract.packageTier}) has been awaiting payment for over 24 hours. The checkout link may have expired.`,
+          });
+        } catch (err: any) {
+          errors.push(`Contract #${contract.id}: ${err.message}`);
+        }
+      }
+
+      return {
+        scanned: staleContracts.length,
+        expiredFound,
+        remindersSent,
+        errors,
+      };
+    });
+  });
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -523,5 +613,5 @@ export function registerScheduledRoutes(app: Express) {
     });
   });
 
-  console.log("[Scheduled] Registered 13 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 14 scheduled job endpoints at /api/scheduled/*");
 }

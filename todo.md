@@ -1172,3 +1172,12 @@
 - [x] Fix 7: Onboarding dummy project — no fake data creation
 - [x] Fix 8: Mark/remove obsolete server/index.ts
 - [x] Validation: typecheck + tests + production build
+
+### Phase 42: Pending Payment Usability Fixes
+- [x] FIX 1: Add resend payment link admin procedure (contracts.resendPaymentLink)
+- [x] FIX 1: Add Resend Payment Link button in admin Contracts.tsx for pending_payment contracts
+- [x] FIX 2: Add POST /api/scheduled/pending-payment-check endpoint
+- [x] FIX 2: Detect stale pending_payment contracts (>24h), log/alert, optionally send reminder
+- [x] FIX 3: Update CustomerPortal to show pending payment state with payment link or request-new-link message
+- [x] FIX 4: Write focused tests for resend, expiration check, and portal pending state
+- [x] Validation: typecheck + tests + production build

@@ -26,6 +26,10 @@ export default function Contracts() {
     onSuccess: () => { toast.success("Contract updated"); refetch(); },
     onError: (e) => toast.error(e.message),
   });
+  const resendPaymentLink = trpc.contracts.resendPaymentLink.useMutation({
+    onSuccess: () => { toast.success("Payment link resent to customer"); },
+    onError: (e) => toast.error(e.message),
+  });
 
   const counts = useMemo(() => {
     if (!contracts) return { pendingPayment: 0, active: 0, expiring: 0, expired: 0 };
@@ -132,7 +136,20 @@ export default function Contracts() {
               </div>
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setSelected(null)} className="font-sans text-sm">Close</Button></DialogFooter>
+          <DialogFooter className="flex gap-2">
+            {selected?.status === "pending_payment" && (
+              <Button
+                size="sm"
+                className="font-sans text-sm bg-amber-600 hover:bg-amber-700 text-white"
+                disabled={resendPaymentLink.isPending}
+                onClick={() => resendPaymentLink.mutate({ contractId: selected.id })}
+              >
+                <CreditCard className="w-3.5 h-3.5 mr-1" />
+                {resendPaymentLink.isPending ? "Sending..." : "Resend Payment Link"}
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setSelected(null)} className="font-sans text-sm">Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

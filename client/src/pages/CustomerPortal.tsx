@@ -25,6 +25,7 @@ const statusColors: Record<string, string> = {
   expired: "bg-red-100 text-red-700",
   renewed: "bg-blue-100 text-blue-700",
   cancelled: "bg-gray-100 text-gray-700",
+  pending_payment: "bg-amber-100 text-amber-700",
 };
 
 export default function CustomerPortal() {
@@ -78,6 +79,7 @@ export default function CustomerPortal() {
   );
 
   const activeContract = contracts?.find((c: any) => c.status === "active" || c.status === "expiring_soon");
+  const pendingPaymentContract = contracts?.find((c: any) => c.status === "pending_payment");
   const latestReport = reportsData?.length ? [...reportsData].sort((a: any, b: any) => b.id - a.id)[0] : undefined;
   // Support logs are now fetched inside SupportTab via nurture.mySupportLogs
 
@@ -200,8 +202,14 @@ export default function CustomerPortal() {
                     <span className="text-xs text-forest/50 font-sans uppercase tracking-wide">Contract</span>
                     {activeContract && <Badge className={`text-[10px] font-sans ${statusColors[activeContract.status] ?? ""}`}>{activeContract.status.replace(/_/g, " ")}</Badge>}
                   </div>
-                  <div className="text-lg font-serif text-forest capitalize">{activeContract?.packageTier ?? "No active"} Plan</div>
-                  <p className="text-xs text-forest/50 font-sans mt-1">{daysRemaining} days remaining</p>
+                  <div className="text-lg font-serif text-forest capitalize">{activeContract?.packageTier ?? pendingPaymentContract?.packageTier ?? "No active"} Plan</div>
+                  {activeContract ? (
+                    <p className="text-xs text-forest/50 font-sans mt-1">{daysRemaining} days remaining</p>
+                  ) : pendingPaymentContract ? (
+                    <p className="text-xs text-amber-600 font-sans mt-1 font-medium">Awaiting payment</p>
+                  ) : (
+                    <p className="text-xs text-forest/50 font-sans mt-1">No contract</p>
+                  )}
                 </CardContent>
               </Card>
 
@@ -223,6 +231,26 @@ export default function CustomerPortal() {
               </Card>
             </div>
 
+            {/* Pending Payment Banner */}
+            {!activeContract && pendingPaymentContract && (
+              <Card className="border-amber-200 bg-amber-50/50">
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                    <div>
+                      <h3 className="text-sm font-serif text-forest font-medium">Payment Pending</h3>
+                      <p className="text-xs text-forest/70 font-sans mt-1">
+                        Your <span className="capitalize font-medium">{pendingPaymentContract.packageTier}</span> package is reserved.
+                        Please complete payment using the link sent to your email to activate your contract and begin onboarding.
+                      </p>
+                      <p className="text-xs text-forest/50 font-sans mt-2">
+                        Can't find the email? Use the Support tab and we'll resend your payment link.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Contract Details */}
             {activeContract && (
               <Card className="border-border/50">

@@ -18,7 +18,7 @@ import { assessmentRouter } from "./assessmentRouter";
 import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
-import { repTiers, customers } from "../drizzle/schema";
+import { repTiers, customers, contracts, reps, nurtureLogs } from "../drizzle/schema";
 import { getDb } from "./db";
 import { eq } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
@@ -1072,6 +1072,137 @@ const contractsRouter = router({
       const { id, ...data } = input;
       await db.updateContract(id, data);
       return { success: true };
+    }),
+
+  resendPaymentLink: adminProcedure
+    .input(z.object({ contractId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      // 1. Get the contract — must be pending_payment
+      const [contract] = await database.select().from(contracts).where(eq(contracts.id, input.contractId)).limit(1);
+      if (!contract) throw new TRPCError({ code: "NOT_FOUND", message: "Contract not found" });
+      if (contract.status !== "pending_payment") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Contract is not in pending_payment status" });
+      }
+
+      // 2. Get the customer
+      const [customer] = await database.select().from(customers).where(eq(customers.id, contract.customerId)).limit(1);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+
+      // 3. Get lead/rep info if available
+      let leadId: number | null = customer.leadId ?? null;
+      let repId: number = contract.repId;
+      let repName = "MiniMorph Studios";
+      if (repId > 0) {
+        const [rep] = await database.select().from(reps).where(eq(reps.id, repId)).limit(1);
+        if (rep) repName = rep.fullName;
+      }
+
+      // 4. Create new Stripe checkout session (does NOT create duplicate contract/customer)
+      const Stripe = (await import("stripe")).default;
+      const { PACKAGES } = await import("../shared/pricing");
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
+
+      const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
+      const pkg = PACKAGES[contract.packageTier as keyof typeof PACKAGES];
+      if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid package tier" });
+
+      const origin = ctx.req.headers.origin || ctx.req.headers.referer || "https://minimorphstudios.net";
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer_email: customer.email,
+        client_reference_id: String(customer.id),
+        allow_promotion_codes: true,
+        subscription_data: {
+          metadata: {
+            user_id: customer.userId ? String(customer.userId) : "",
+            package_tier: contract.packageTier,
+            business_name: customer.businessName,
+            contract_id: String(contract.id),
+            lead_id: leadId ? String(leadId) : "",
+            rep_id: String(repId),
+            customer_id: String(customer.id),
+            rep_closed: "true",
+          },
+        },
+        metadata: {
+          user_id: customer.userId ? String(customer.userId) : "",
+          customer_email: customer.email,
+          customer_name: customer.contactName,
+          package_tier: contract.packageTier,
+          business_name: customer.businessName,
+          contract_id: String(contract.id),
+          lead_id: leadId ? String(leadId) : "",
+          rep_id: String(repId),
+          customer_id: String(customer.id),
+          rep_closed: "true",
+        },
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `${pkg.name} Package`,
+                description: pkg.description,
+              },
+              unit_amount: Math.round(pkg.monthlyPrice * 100),
+              recurring: { interval: "month" },
+            },
+            quantity: 1,
+          },
+          ...(pkg.setupFeeInCents > 0
+            ? [{
+                price_data: {
+                  currency: "usd" as const,
+                  product_data: {
+                    name: `${pkg.name} — One-Time Setup Fee`,
+                    description: "Custom website design, build, and launch",
+                  },
+                  unit_amount: pkg.setupFeeInCents,
+                },
+                quantity: 1,
+              }]
+            : []),
+        ],
+        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/get-started?cancelled=true`,
+      });
+
+      const paymentUrl = session.url;
+
+      // 5. Send payment link email
+      if (paymentUrl) {
+        const { sendPaymentLinkEmail } = await import("./services/customerEmails");
+        await sendPaymentLinkEmail({
+          to: customer.email,
+          customerName: customer.contactName,
+          businessName: customer.businessName,
+          packageTier: contract.packageTier as any,
+          paymentUrl,
+          repName,
+        });
+      }
+
+      // 6. Log the resend in nurture logs if possible
+      try {
+        await database.insert(nurtureLogs).values({
+          customerId: customer.id,
+          type: "support_request",
+          channel: "email",
+          subject: "Payment link resent by admin",
+          content: `New payment link generated for contract #${contract.id}`,
+          status: "sent",
+          scheduledAt: new Date(),
+          sentAt: new Date(),
+        });
+      } catch (logErr) {
+        console.error("[resendPaymentLink] Failed to log nurture entry:", logErr);
+      }
+
+      return { success: true, paymentUrl };
     }),
 });
 

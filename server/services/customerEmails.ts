@@ -424,3 +424,42 @@ export async function sendPaymentLinkEmail(params: {
     transactional: true,
   });
 }
+
+/* ═══════════════════════════════════════════════════════
+   7. PAYMENT LINK REMINDER EMAIL
+   Sent when a pending_payment contract is older than 24h
+   ═══════════════════════════════════════════════════════ */
+export async function sendPaymentLinkReminderEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  packageTier: PackageKey;
+}) {
+  const pkg = PACKAGES[params.packageTier];
+  const html = brandWrap(`
+    <h2 style="color:#2d4a3e;margin:0 0 16px;font-size:24px;">Friendly Reminder: Complete Your Payment</h2>
+    <p style="margin:0 0 16px;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;">
+      We noticed your payment for the <strong>${pkg.name}</strong> package for ${params.businessName}
+      hasn't been completed yet. Your original payment link may have expired.
+    </p>
+    <p style="margin:0 0 16px;">
+      No worries — our team will send you a fresh payment link shortly. If you have any questions
+      about your package or need to make changes, just reply to this email.
+    </p>
+    <div style="margin:24px 0;padding:16px;background:#f8f6f3;border-radius:8px;border-left:4px solid #c0705a;">
+      <p style="margin:0;font-size:14px;color:#2d4a3e;">
+        <strong>Package:</strong> ${pkg.name}<br/>
+        <strong>Monthly:</strong> $${pkg.monthlyPrice}/mo<br/>
+        ${pkg.setupFeeInCents > 0 ? `<strong>One-time setup:</strong> $${(pkg.setupFeeInCents / 100).toFixed(0)}<br/>` : ""}
+      </p>
+    </div>
+    <p style="margin:0;color:#6b7c6e;">— The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `Reminder: Complete your ${pkg.name} payment — ${params.businessName}`,
+    html,
+    transactional: true,
+  });
+}
