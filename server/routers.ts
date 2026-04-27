@@ -737,6 +737,9 @@ const leadsRouter = router({
                 package_tier: input.packageTier,
                 business_name: lead.businessName,
                 contract_id: String(contract.id),
+                lead_id: String(lead.id),
+                rep_id: String(rep.id),
+                customer_id: String(customer.id),
                 rep_closed: "true",
               },
             },
@@ -747,6 +750,9 @@ const leadsRouter = router({
               package_tier: input.packageTier,
               business_name: lead.businessName,
               contract_id: String(contract.id),
+              lead_id: String(lead.id),
+              rep_id: String(rep.id),
+              customer_id: String(customer.id),
               rep_closed: "true",
             },
             line_items: [
@@ -780,6 +786,22 @@ const leadsRouter = router({
             cancel_url: `${origin}/get-started?cancelled=true`,
           });
           paymentUrl = session.url;
+          // Send payment link email to customer
+          if (paymentUrl) {
+            try {
+              const { sendPaymentLinkEmail } = await import("./services/customerEmails");
+              await sendPaymentLinkEmail({
+                to: lead.email,
+                customerName: lead.contactName,
+                businessName: lead.businessName,
+                packageTier: input.packageTier as any,
+                paymentUrl,
+                repName: rep.fullName,
+              });
+            } catch (emailErr) {
+              console.error("[closeDeal] Failed to send payment link email:", emailErr);
+            }
+          }
         }
       } catch (err) {
         console.error("[closeDeal] Failed to create Stripe checkout:", err);

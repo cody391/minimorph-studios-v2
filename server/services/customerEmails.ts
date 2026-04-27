@@ -377,3 +377,50 @@ export async function sendPaymentFailedEmail(params: {
     html,
   });
 }
+
+
+/* ═══════════════════════════════════════════════════════
+   7. PAYMENT LINK EMAIL (Rep-Closed Deals)
+   Sent when a rep closes a deal and generates a Stripe checkout link
+   ═══════════════════════════════════════════════════════ */
+export async function sendPaymentLinkEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  packageTier: PackageKey;
+  paymentUrl: string;
+  repName: string;
+}) {
+  const pkg = PACKAGES[params.packageTier];
+  const html = brandWrap(`
+    <h2 style="color:#2d4a3e;margin:0 0 16px;font-size:24px;">Your Website Build is Ready to Start</h2>
+    <p style="margin:0 0 16px;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;">
+      Great news! ${params.repName} has put together your <strong>${pkg.name}</strong> package
+      for ${params.businessName}. We're ready to start building your website as soon as payment is confirmed.
+    </p>
+    <div style="margin:24px 0;padding:16px;background:#f8f6f3;border-radius:8px;border-left:4px solid #c0705a;">
+      <p style="margin:0;font-size:14px;color:#2d4a3e;">
+        <strong>Package:</strong> ${pkg.name}<br/>
+        <strong>Monthly:</strong> $${pkg.monthlyPrice}/mo<br/>
+        ${pkg.setupFeeInCents > 0 ? `<strong>One-time setup:</strong> $${(pkg.setupFeeInCents / 100).toFixed(0)}<br/>` : ""}
+        <strong>Includes:</strong> ${pkg.features.slice(0, 4).join(", ")}
+      </p>
+    </div>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${params.paymentUrl}" style="display:inline-block;padding:14px 32px;background:#c0705a;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
+        Complete Payment & Get Started
+      </a>
+    </div>
+    <p style="margin:0 0 16px;font-size:14px;color:#6b7c6e;">
+      Once payment is confirmed, your onboarding portal will activate and our team will begin your custom website build.
+    </p>
+    <p style="margin:0;color:#6b7c6e;">— The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `Complete your payment — ${pkg.name} package for ${params.businessName}`,
+    html,
+    transactional: true,
+  });
+}

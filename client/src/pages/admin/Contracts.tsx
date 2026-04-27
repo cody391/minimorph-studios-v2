@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { FileText, Clock, CheckCircle, AlertTriangle, CreditCard } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
+  pending_payment: "bg-amber-100 text-amber-700",
   active: "bg-green-100 text-green-700",
   expiring_soon: "bg-yellow-100 text-yellow-700",
   expired: "bg-red-100 text-red-700",
@@ -27,8 +28,9 @@ export default function Contracts() {
   });
 
   const counts = useMemo(() => {
-    if (!contracts) return { active: 0, expiring: 0, expired: 0 };
+    if (!contracts) return { pendingPayment: 0, active: 0, expiring: 0, expired: 0 };
     return {
+      pendingPayment: contracts.filter((c: any) => c.status === "pending_payment").length,
       active: contracts.filter((c: any) => c.status === "active").length,
       expiring: contracts.filter((c: any) => c.status === "expiring_soon").length,
       expired: contracts.filter((c: any) => c.status === "expired").length,
@@ -44,8 +46,9 @@ export default function Contracts() {
         <p className="text-sm text-forest/60 font-sans mt-1">Track 12-month contracts, renewals, and lifecycle status</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {[
+          { label: "Pending Payment", count: counts.pendingPayment, icon: CreditCard, color: "text-amber-600" },
           { label: "Active", count: counts.active, icon: CheckCircle, color: "text-green-600" },
           { label: "Expiring Soon", count: counts.expiring, icon: AlertTriangle, color: "text-yellow-600" },
           { label: "Expired", count: counts.expired, icon: Clock, color: "text-red-600" },
@@ -123,7 +126,7 @@ export default function Contracts() {
                 <Select value={selected.status} onValueChange={(val) => { updateContract.mutate({ id: selected.id, status: val as any }); setSelected({ ...selected, status: val }); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["draft", "active", "expiring_soon", "expired", "renewed", "cancelled"].map((s) => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}
+                    {["draft", "pending_payment", "active", "expiring_soon", "expired", "renewed", "cancelled"].map((s) => <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
