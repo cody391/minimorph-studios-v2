@@ -246,6 +246,163 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
       "We are committed to building a website you are happy with, which is why we include 3 rounds of revisions in every project. If you have concerns about the direction of your project, please reach out to our team so we can address them. Specific refund terms are outlined in our Terms of Service.",
     escalationReason: "Refund and guarantee questions require human review to assess the specific situation.",
   },
+  // ── STRESS-TEST Q3: Can I sell products? ──────────────────────────────
+  {
+    id: "sell_products",
+    patterns: ["sell products", "sell online", "online store", "ecommerce", "e-commerce", "product store", "sell things"],
+    classification: "escalate",
+    category: "ecommerce",
+    question: "Can I sell products on my website?",
+    answer:
+      "Yes, we build ecommerce websites, but they require a custom quote because product stores involve specialized features like inventory management, payment processing, shipping, and tax handling. During onboarding, we will ask about your product count, categories, and requirements, then provide a tailored Commerce package proposal. Ecommerce is not included in the standard Starter, Growth, or Pro plans.",
+    escalationReason: "Ecommerce projects require custom scoping and Commerce-tier pricing.",
+  },
+  // ── STRESS-TEST Q4: Can you connect Stripe? ────────────────────────
+  {
+    id: "connect_stripe",
+    patterns: ["connect stripe", "stripe integration", "stripe payment", "stripe checkout", "add stripe"],
+    classification: "answer",
+    category: "integrations",
+    question: "Can you connect Stripe to my website?",
+    answer:
+      "Yes. For simple payment buttons or donation links, Stripe can be set up as part of your current plan. For full ecommerce checkout with cart, inventory, and order management, that falls under our Commerce packages and requires a custom quote. We will help determine the right setup during onboarding.",
+  },
+  // ── STRESS-TEST Q5: Can you connect Shopify? ───────────────────────
+  {
+    id: "connect_shopify",
+    patterns: ["shopify", "connect shopify", "shopify integration", "shopify store", "use shopify"],
+    classification: "escalate",
+    category: "integrations",
+    question: "Can you connect Shopify to my website?",
+    answer:
+      "Shopify integration is available but requires a custom quote. Setting up or connecting a Shopify store involves product migration, theme customization, checkout configuration, and ongoing maintenance that goes beyond our standard plans. Our team will review your specific Shopify needs and provide a detailed proposal.",
+    escalationReason: "Shopify integration requires custom scoping for product setup, theme work, and ongoing platform costs.",
+  },
+  // ── STRESS-TEST Q6: Can I add Google Analytics? ─────────────────────
+  {
+    id: "google_analytics",
+    patterns: ["google analytics", "analytics", "track visitors", "website traffic", "visitor tracking"],
+    classification: "answer",
+    category: "integrations",
+    question: "Can I add Google Analytics to my website?",
+    answer:
+      "Google Analytics setup is included in the Growth and Pro plans. For Starter plan customers, it is available as an add-on. We will install the tracking code, configure basic goals, and verify data is flowing correctly. You will have full access to your Google Analytics dashboard.",
+  },
+  // ── STRESS-TEST Q7: Google Business Profile ─────────────────────────
+  {
+    id: "google_business_profile",
+    patterns: ["google business", "google business profile", "google maps listing", "google my business", "gmb", "business listing"],
+    classification: "answer",
+    category: "integrations",
+    question: "Can you set up my Google Business Profile?",
+    answer:
+      "Basic Google Business Profile optimization is available as an add-on for all plans. This includes verifying your listing, adding your website link, updating business hours, and ensuring your NAP (name, address, phone) is consistent. We do not manage ongoing Google Business Profile posts or reviews — that is a separate service. Full GBP optimization is available as an add-on.",
+  },
+  // ── STRESS-TEST Q8: SMS lead alerts ─────────────────────────────────
+  {
+    id: "sms_lead_alerts",
+    patterns: ["text me", "sms alert", "sms notification", "text notification", "form notification", "lead alert", "text when"],
+    classification: "answer",
+    category: "integrations",
+    question: "Can you text me when someone fills out a form?",
+    answer:
+      "Yes. SMS lead alerts are included in the Pro plan. For Starter and Growth customers, SMS alerts are available as a popular add-on. When a customer submits your contact or quote form, you will receive an instant text message with their details so you can respond quickly.",
+  },
+  // ── STRESS-TEST Q9: Monthly photo changes ───────────────────────────
+  {
+    id: "monthly_photo_changes",
+    patterns: ["change photos", "update photos", "swap images", "new photos", "photo updates", "change images monthly"],
+    classification: "answer",
+    category: "support",
+    question: "Can I change photos on my website every month?",
+    answer:
+      "Yes. Photo and content updates are included in your plan: Starter includes 1 update per month, Growth includes 2 per month, and Pro includes 4 per month. Each update can include photo swaps, text changes, or minor layout adjustments. If you need more frequent updates, additional update blocks are available as an add-on.",
+  },
+  // ── STRESS-TEST Q10: Product description writing ────────────────────
+  {
+    id: "product_descriptions",
+    patterns: ["write product descriptions", "product copywriting", "product descriptions", "write descriptions", "product copy"],
+    classification: "escalate",
+    category: "ecommerce",
+    question: "Can you write my product descriptions?",
+    answer:
+      "Product description writing is available as an add-on service for ecommerce projects. The scope and pricing depend on the number of products and the level of detail required. For small catalogs (under 25 products), we can include basic descriptions in your Commerce package. For larger catalogs, we will provide a custom quote for copywriting services.",
+    escalationReason: "Product copywriting scope depends on catalog size and requires custom pricing.",
+  },
+  // ── STRESS-TEST Q13: What happens if I cancel? ──────────────────────
+  {
+    id: "cancellation",
+    patterns: ["cancel", "cancellation", "what if I cancel", "stop service", "end contract", "leave", "terminate"],
+    classification: "answer",
+    category: "legal",
+    question: "What happens if I cancel my plan?",
+    answer:
+      "All plans require a 12-month commitment. If you cancel before the 12-month term, early termination fees may apply as outlined in your contract. After the initial term, you can cancel with 30 days notice. When you cancel, you retain ownership of your content, domain name, and any assets you provided. The website design and hosting will be deactivated at the end of your billing period. We can provide a data export upon request.",
+  },
+  // ── STRESS-TEST Q14: SEO guarantee (CRITICAL GUARDRAIL) ────────────
+  {
+    id: "seo_guarantee",
+    patterns: ["guarantee ranking", "guarantee seo", "first page google", "rank number one", "guaranteed traffic", "promise ranking", "guarantee leads", "guarantee revenue"],
+    classification: "escalate",
+    category: "technical",
+    question: "Can you guarantee I will rank on Google?",
+    answer:
+      "We cannot and do not guarantee specific search engine rankings, traffic numbers, or revenue outcomes. No legitimate web agency can make that promise — Google rankings depend on hundreds of factors including competition, content quality, domain authority, and ongoing SEO efforts. What we do guarantee is that your website will be built with SEO best practices: clean code, proper meta tags, mobile optimization, fast loading, and structured data. Pro plan customers also get advanced SEO pages. For ongoing SEO campaigns, we can discuss add-on services, but results are never guaranteed.",
+    escalationReason: "SEO guarantee requests require careful handling to set proper expectations and avoid legal liability.",
+  },
+  // ── STRESS-TEST Q15: AI chatbot ─────────────────────────────────────
+  {
+    id: "ai_chatbot",
+    patterns: ["ai chatbot", "chatbot", "ai chat", "chat widget", "live chat", "automated chat", "ai assistant"],
+    classification: "answer",
+    category: "integrations",
+    question: "Can I add an AI chatbot to my website?",
+    answer:
+      "Yes. An AI chat widget is available as an add-on for all plans. It can answer common customer questions, capture leads, and route inquiries to you. The chatbot is trained on your business information and FAQ. Setup and monthly maintenance are included in the add-on pricing.",
+  },
+  // ── STRESS-TEST Q16: Toast/Square integration ───────────────────────
+  {
+    id: "toast_square",
+    patterns: ["toast", "square", "toast integration", "square integration", "pos integration", "point of sale", "connect toast", "connect square"],
+    classification: "escalate",
+    category: "integrations",
+    question: "Can you connect Toast or Square to my website?",
+    answer:
+      "Toast and Square integrations are available but require a custom quote. These involve connecting your POS system to your website for online ordering, menu syncing, or payment processing. The complexity depends on which features you need and your current Toast/Square setup. Our team will review your requirements and provide a tailored proposal.",
+    escalationReason: "POS integrations (Toast/Square) require custom scoping based on the specific features and platform configuration.",
+  },
+  // ── STRESS-TEST Q17: Bilingual / multilingual site ──────────────────
+  {
+    id: "bilingual_site",
+    patterns: ["bilingual", "multilingual", "two languages", "spanish", "french", "translate", "multi-language", "second language"],
+    classification: "escalate",
+    category: "technical",
+    question: "Can you make a bilingual or multilingual website?",
+    answer:
+      "Multilingual websites are available but require a custom quote. Building a bilingual site involves duplicating content, setting up language switching, and potentially different layouts for different languages. The scope depends on the number of languages, pages, and whether you will provide translated content or need translation services. Our team will assess your multilingual needs and provide a detailed proposal.",
+    escalationReason: "Multilingual builds require custom scoping for content duplication, translation, and language-switching infrastructure.",
+  },
+  // ── STRESS-TEST Q19: 200 products ──────────────────────────────────
+  {
+    id: "large_product_catalog",
+    patterns: ["200 products", "hundreds of products", "large catalog", "many products", "500 products", "1000 products", "bulk products"],
+    classification: "escalate",
+    category: "ecommerce",
+    question: "Can you add 200+ products to my online store?",
+    answer:
+      "Yes, we can build stores with large catalogs, but 100+ products always requires a custom quote. Large catalogs need advanced search, filtering, category management, bulk import tools, and potentially custom inventory integration. Our team will review your product data, categories, and variant complexity to provide an accurate Commerce Custom proposal.",
+    escalationReason: "100+ product catalogs require Commerce Custom tier with specialized infrastructure and import tooling.",
+  },
+  // ── STRESS-TEST Q20: More revisions ─────────────────────────────────
+  {
+    id: "extra_revisions",
+    patterns: ["more revisions", "extra revisions", "additional revisions", "more changes", "revision limit", "not enough revisions"],
+    classification: "answer",
+    category: "process",
+    question: "Can I get more revisions?",
+    answer:
+      "Every project includes 3 rounds of revisions at no additional cost. If you need more, additional revision blocks are available at $149 per round. You can purchase extra revision blocks at any time during your project or after launch. We recommend being thorough with your feedback in each round to make the most of your included revisions.",
+  },
 ];
 
 /**

@@ -107,6 +107,12 @@ export function QuestionnaireWizard({
   const [ePaymentMethods, setEPaymentMethods] = useState("Credit card");
   const [eNeedsSubscriptions, setENeedsSubscriptions] = useState(false);
   const [eTaxHandling, setETaxHandling] = useState("Not sure");
+  const [eHasVariants, setEHasVariants] = useState(false);
+  const [eVariantComplexity, setEVariantComplexity] = useState("simple");
+  const [ePhotosStatus, setEPhotosStatus] = useState("have_all");
+  const [eDescriptionsStatus, setEDescriptionsStatus] = useState("have_all");
+  const [eAbandonedCart, setEAbandonedCart] = useState(false);
+  const [eReturnPolicy, setEReturnPolicy] = useState("");
   // Other
   const [oDescription, setODescription] = useState("");
   const [oIndustry, setOIndustry] = useState("");
@@ -278,6 +284,13 @@ export function QuestionnaireWizard({
         paymentMethods: ePaymentMethods,
         needsSubscriptions: eNeedsSubscriptions,
         taxHandling: eTaxHandling,
+        hasProductVariants: eHasVariants,
+        variantComplexity: eVariantComplexity,
+        productPhotosStatus: ePhotosStatus,
+        productDescriptionsStatus: eDescriptionsStatus,
+        abandonedCartInterest: eAbandonedCart,
+        returnPolicy: eReturnPolicy,
+        platformPreference: eExistingPlatform === "None" ? "not_sure" : eExistingPlatform.toLowerCase(),
       };
     } else if (websiteType === "other") {
       q.otherFields = {
@@ -303,11 +316,15 @@ export function QuestionnaireWizard({
         pid = result.id;
         onProjectCreated(pid);
       }
-      await submitQuestionnaire.mutateAsync({
+      const result = await submitQuestionnaire.mutateAsync({
         projectId: pid,
         questionnaire: buildPayload(),
       });
-      toast.success("Questionnaire saved!");
+      if (result.needsCustomQuote) {
+        toast.info("Questionnaire saved! Your project has been flagged for a custom quote. Our team will review your requirements and reach out within 1 business day.", { duration: 8000 });
+      } else {
+        toast.success("Questionnaire saved!");
+      }
       onNext();
     } catch {
       toast.error("Failed to save questionnaire. Please try again.");
@@ -929,6 +946,64 @@ export function QuestionnaireWizard({
                           <SelectItem value="Not sure">Not sure yet</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    {/* Product variants */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
+                      <div>
+                        <Label className="text-sm text-[#2D5A3D]">Product variants</Label>
+                        <p className="text-xs text-gray-400">Size, color, material options?</p>
+                      </div>
+                      <Switch checked={eHasVariants} onCheckedChange={setEHasVariants} />
+                    </div>
+                    {eHasVariants && (
+                      <div className="space-y-2">
+                        <Label className="text-[#2D5A3D] font-medium">Variant complexity</Label>
+                        <Select value={eVariantComplexity} onValueChange={setEVariantComplexity}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="simple">Simple (1-2 options per product)</SelectItem>
+                            <SelectItem value="moderate">Moderate (3-5 options)</SelectItem>
+                            <SelectItem value="complex">Complex (6+ options)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {/* Product photos status */}
+                    <div className="space-y-2">
+                      <Label className="text-[#2D5A3D] font-medium">Product photos</Label>
+                      <Select value={ePhotosStatus} onValueChange={setEPhotosStatus}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="have_all">I have all product photos ready</SelectItem>
+                          <SelectItem value="have_some">I have some, need help with the rest</SelectItem>
+                          <SelectItem value="need_all">I need all product photos taken/created</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {/* Product descriptions status */}
+                    <div className="space-y-2">
+                      <Label className="text-[#2D5A3D] font-medium">Product descriptions</Label>
+                      <Select value={eDescriptionsStatus} onValueChange={setEDescriptionsStatus}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="have_all">I have all descriptions written</SelectItem>
+                          <SelectItem value="have_some">I have some, need help with the rest</SelectItem>
+                          <SelectItem value="need_written">I need all descriptions written</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {/* Abandoned cart interest */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
+                      <div>
+                        <Label className="text-sm text-[#2D5A3D]">Abandoned cart emails</Label>
+                        <p className="text-xs text-gray-400">Auto-email customers who leave items in cart?</p>
+                      </div>
+                      <Switch checked={eAbandonedCart} onCheckedChange={setEAbandonedCart} />
+                    </div>
+                    {/* Return policy */}
+                    <div className="space-y-2">
+                      <Label className="text-[#2D5A3D] font-medium">Return / refund policy</Label>
+                      <Textarea value={eReturnPolicy} onChange={(e) => setEReturnPolicy(e.target.value)} placeholder="Describe your return/refund policy, or leave blank if you need help creating one" rows={2} />
                     </div>
                   </div>
                 )}

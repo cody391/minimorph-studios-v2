@@ -1151,3 +1151,13 @@
 - [x] Pro (Clover & Thistle): InstagramFeed, NewsletterSignup, GoogleReviews, BlogPreview, GiftCard, NewArrivals lookbook
 - [x] Commerce (Ember & Oak Coffee): ProductCatalog w/ cart, SubscriptionSignup, BlogPreview, Reviews, Newsletter, ShippingInfo
 - [x] Ensure each site visually demonstrates every feature its package tier promises
+
+### Phase 40: Fulfillment Stress-Test Implementation (Expanded)
+- [x] Expand shared/questionnaire.ts with all universal + conditional fields (ecommerce variants, photos, descriptions, abandoned cart, return policy, platform preference)
+- [x] Expand shared/quoteEngine.ts with 30+ review flags (complex variants, product copywriting, photos needed, abandoned cart, 3rd-party platform, SEO guarantee, legal compliance, multi-location, allergen, catering, financing)
+- [x] Expand shared/answerBank.ts from 23 → 38 entries covering all 20 stress-test questions (sell products, Stripe, Shopify, Analytics, GBP, SMS alerts, photo changes, product descriptions, cancellation, SEO guarantee, AI chatbot, Toast/Square, bilingual, 200 products, extra revisions)
+- [x] Expand shared/integrationMatrix.ts from 33 → 50 entries with new items in all 4 tiers (Google Maps embed, GBP optimization, Google Search Console, Meta pixel, extra revisions, Shopify, Toast/Square, WooCommerce, guaranteed SEO, guaranteed leads, legal/medical claims)
+- [x] Add new ecommerce UI fields to QuestionnaireWizard (product variants toggle, variant complexity, photos status, descriptions status, abandoned cart toggle, return policy textarea)
+- [x] Add post-submission custom quote feedback messaging (green success vs amber custom quote alert)
+- [x] Write server/stress-test-additions.test.ts — 39 tests covering answer bank, integration matrix, and quote engine expansions
+- [x] All 39 new tests passing, TypeScript compiles clean, 0 regressions
