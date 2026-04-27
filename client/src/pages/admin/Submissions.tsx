@@ -34,7 +34,7 @@ export default function Submissions() {
         <p className="text-sm text-soft-gray font-sans mt-1">Leads from the public contact form — review, respond, and convert</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "Total Submissions", count: counts.total, icon: Inbox, color: "text-off-white" },
           { label: "New / Unread", count: counts.newCount, icon: Mail, color: "text-blue-600" },

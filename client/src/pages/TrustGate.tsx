@@ -436,7 +436,7 @@ export default function TrustGate() {
                       className="mt-1 border-border focus:border-electric"
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <Label className="text-off-white/80 text-xs">City *</Label>
                       <Input

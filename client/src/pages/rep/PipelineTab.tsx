@@ -200,7 +200,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
     return (
       <div className="space-y-4">
         <div className="h-8 w-48 bg-graphite/20 animate-pulse rounded" />
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-64 bg-electric/5 animate-pulse rounded-xl" />
           ))}
@@ -212,7 +212,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
   return (
     <div className="space-y-6">
       {/* Pipeline Summary */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-serif text-off-white">My Pipeline</h2>
           <p className="text-xs text-soft-gray font-sans mt-0.5">
@@ -237,13 +237,13 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
       </div>
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex overflow-x-auto gap-4 pb-4 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-x-visible sm:pb-0">
         {PIPELINE_STAGES.map((stage) => {
           const leads = leadsByStage[stage.key] || [];
           return (
             <div
               key={stage.key}
-              className={`rounded-xl border border-border/40 overflow-hidden transition-all ${
+              className={`rounded-xl border border-border/40 overflow-hidden transition-all min-w-[240px] sm:min-w-0 ${
                 draggedLeadId ? "ring-2 ring-electric/20" : ""
               }`}
               onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("ring-2", "ring-electric/50"); }}
@@ -252,7 +252,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
             >
               {/* Column header */}
               <div className={`${stage.headerBg} px-4 py-3 border-b border-border/30`}>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <Badge className={`text-[10px] font-sans ${stage.color}`}>{stage.label}</Badge>
                     <span className="text-xs text-soft-gray/60 font-sans">{leads.length}</span>

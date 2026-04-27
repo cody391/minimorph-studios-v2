@@ -133,7 +133,7 @@ export default function Careers() {
             <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">Why reps love MiniMorph</h2>
             <p className="text-soft-gray font-sans max-w-xl mx-auto">Everything you need to succeed — tools, training, leads, and a clear path to higher earnings.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {BENEFITS.map((b) => (
               <Card key={b.title} className="border-border/30 hover:border-electric/30 hover:shadow-sm transition-all group">
                 <CardContent className="p-5">
@@ -156,7 +156,7 @@ export default function Careers() {
             <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">Earnings potential</h2>
             <p className="text-soft-gray font-sans max-w-xl mx-auto">Your income scales with your effort. Here's what reps earn at different activity levels.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {EARNINGS_EXAMPLES.map((e, i) => (
               <Card key={e.level} className={`border-border/30 ${i === 2 ? "ring-2 ring-electric/30 shadow-md" : ""}`}>
                 <CardContent className="p-6 text-center">
@@ -229,7 +229,7 @@ export default function Careers() {
             <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">How it works</h2>
             <p className="text-soft-gray font-sans max-w-xl mx-auto">From application to your first commission — here's the journey.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {[
               { step: "01", title: "Apply", desc: "Fill out our 4-step application. Tell us about yourself, your experience, and why you want to join.", icon: Briefcase },
               { step: "02", title: "Train", desc: "Complete 9 training modules covering values, product mastery, sales psychology, discovery calls, objection handling, closing, prospecting, account management, and advanced tactics.", icon: GraduationCap },

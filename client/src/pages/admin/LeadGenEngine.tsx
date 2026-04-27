@@ -797,7 +797,7 @@ function PerformanceTab() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="p-2 rounded-lg bg-electric/10 text-center">
                       <p className="text-lg font-bold text-off-white">${rep.avgDealSize.toLocaleString()}</p>
                       <p className="text-xs text-soft-gray">Avg Deal</p>

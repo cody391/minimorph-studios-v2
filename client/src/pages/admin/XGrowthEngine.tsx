@@ -719,7 +719,7 @@ export default function XGrowthEngine() {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="flex overflow-x-auto w-full sm:grid sm:grid-cols-5">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="engage">Engage</TabsTrigger>
           <TabsTrigger value="approval">Approval Queue</TabsTrigger>

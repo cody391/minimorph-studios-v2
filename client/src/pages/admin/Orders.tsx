@@ -72,7 +72,7 @@ export default function AdminOrders() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-electric/10">
                   <th className="text-left p-4 text-xs font-sans font-medium text-soft-gray uppercase tracking-wider">Customer</th>

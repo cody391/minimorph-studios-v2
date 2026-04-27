@@ -67,7 +67,7 @@ export default function Reports() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm font-sans">
+              <table className="w-full min-w-[600px] text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Customer</th>

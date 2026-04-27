@@ -39,7 +39,7 @@ export default function Customers() {
         <p className="text-sm text-soft-gray font-sans mt-1">Active accounts, health scores, and customer lifecycle</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(["active", "at_risk", "churned"] as const).map((s) => {
           const cfg = statusConfig[s];
           return (
@@ -68,7 +68,7 @@ export default function Customers() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm font-sans">
+              <table className="w-full min-w-[600px] text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Business</th>

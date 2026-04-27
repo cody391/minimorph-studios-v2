@@ -116,7 +116,7 @@ export default function CustomerPortal() {
       <div className="min-h-screen bg-midnight p-6">
         <div className="max-w-5xl mx-auto space-y-6">
           <Skeleton className="h-10 w-64" />
-          <div className="grid grid-cols-3 gap-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
           <Skeleton className="h-64" />
         </div>
       </div>
@@ -154,21 +154,22 @@ export default function CustomerPortal() {
     <div className="min-h-screen bg-midnight">
       {/* Header */}
       <div className="bg-charcoal text-off-white">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-serif mb-1">{customer.businessName}</h1>
-            <p className="text-sm text-off-white/50 font-sans">Your MiniMorph website dashboard</p>
+            <h1 className="text-lg sm:text-xl font-serif mb-1">{customer.businessName}</h1>
+            <p className="text-xs sm:text-sm text-off-white/50 font-sans">Your MiniMorph website dashboard</p>
           </div>
-          <Button variant="outline" onClick={() => setLocation("/")} className="text-off-white border-off-white/20 hover:bg-off-white/10 font-sans text-sm rounded-full">
+          <Button variant="outline" onClick={() => setLocation("/")} className="text-off-white border-off-white/20 hover:bg-off-white/10 font-sans text-sm rounded-full w-fit">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Site
           </Button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-8 bg-midnight-dark/30 rounded-full p-1">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 sm:mb-8">
+          <TabsList className="bg-midnight-dark/30 rounded-full p-1 w-max sm:w-auto">
             <TabsTrigger value="overview" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Overview</TabsTrigger>
             <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Reports</TabsTrigger>
             <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite">Support</TabsTrigger>
@@ -180,6 +181,7 @@ export default function CustomerPortal() {
               <Bot className="h-3 w-3 mr-1" /> AI Assistant
             </TabsTrigger>
           </TabsList>
+          </div>
 
           {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-6">
@@ -261,7 +263,7 @@ export default function CustomerPortal() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
                     <div>
                       <p className="text-xs text-soft-gray font-sans uppercase tracking-wide mb-1">Package</p>
                       <p className="text-sm font-medium text-off-white font-sans capitalize">{activeContract.packageTier}</p>
@@ -339,7 +341,7 @@ export default function CustomerPortal() {
                             {report.status}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
                           <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
                             <Eye className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
                             <p className="text-lg font-serif text-off-white">{(report.pageViews ?? 0).toLocaleString()}</p>

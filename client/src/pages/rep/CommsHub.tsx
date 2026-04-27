@@ -483,7 +483,7 @@ function CallsChannel({ leads }: { leads: any[] }) {
       </div>
 
       {/* Call Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "Total Calls", value: callLogs?.length || 0, icon: Phone },
           { label: "Completed", value: callLogs?.filter((c: any) => c.status === "completed").length || 0, icon: CheckCircle },
@@ -658,7 +658,7 @@ function DialerDialog({ open, onClose, leads }: { open: boolean; onClose: () => 
             className="text-center text-lg font-mono tracking-wider"
           />
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {dialPad.map((key) => (
               <Button key={key} variant="outline" className="h-12 text-lg font-mono" onClick={() => setToNumber((p) => p + key)}>
                 {key}

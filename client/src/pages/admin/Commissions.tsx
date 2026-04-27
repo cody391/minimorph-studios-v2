@@ -54,7 +54,7 @@ export default function Commissions() {
         <p className="text-sm text-soft-gray font-sans mt-1">Rep payouts, pending approvals, and payment history</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: "Pending Payouts", value: `$${totals.pending.toLocaleString()}`, icon: Clock, color: "text-yellow-600" },
           { label: "Total Paid", value: `$${totals.paid.toLocaleString()}`, icon: CheckCircle, color: "text-emerald-400" },
@@ -84,7 +84,7 @@ export default function Commissions() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm font-sans">
+              <table className="w-full min-w-[600px] text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Rep</th>

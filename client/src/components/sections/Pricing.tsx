@@ -261,7 +261,7 @@ export default function Pricing() {
             animate={{ opacity: 1, height: "auto" }}
             className="max-w-5xl mx-auto overflow-x-auto"
           >
-            <table className="w-full text-sm font-sans">
+            <table className="w-full text-sm font-sans min-w-[600px]">
               <thead>
                 <tr className="border-b border-glass-border">
                   <th className="text-left py-3 px-4 text-off-white/50 font-medium">Feature</th>

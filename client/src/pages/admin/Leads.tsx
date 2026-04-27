@@ -102,7 +102,7 @@ export default function Leads() {
       </div>
 
       {/* Temperature Summary */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {(["cold", "warm", "hot"] as const).map((t) => {
           const info = tempIcons[t];
           const count = leads?.filter((l: any) => l.temperature === t).length ?? 0;
@@ -137,7 +137,7 @@ export default function Leads() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm font-sans">
+              <table className="w-full min-w-[600px] text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Business</th>

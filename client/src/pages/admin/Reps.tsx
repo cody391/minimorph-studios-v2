@@ -167,7 +167,7 @@ export default function Reps() {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm font-sans">
+                  <table className="w-full min-w-[600px] text-sm font-sans">
                     <thead>
                       <tr className="border-b border-border/50">
                         <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Name</th>
@@ -279,7 +279,7 @@ export default function Reps() {
                   <p className="text-sm text-soft-gray font-sans text-center py-6">No commissions pending approval.</p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm font-sans">
+                    <table className="w-full min-w-[600px] text-sm font-sans">
                       <thead>
                         <tr className="border-b border-border/50">
                           <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Rep</th>
@@ -326,7 +326,7 @@ export default function Reps() {
                   <p className="text-sm text-soft-gray font-sans text-center py-6">No commissions ready for payout.</p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm font-sans">
+                    <table className="w-full min-w-[600px] text-sm font-sans">
                       <thead>
                         <tr className="border-b border-border/50">
                           <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Rep</th>
@@ -382,7 +382,7 @@ export default function Reps() {
                 <p className="text-sm text-soft-gray font-sans text-center py-6">No active reps to rank.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm font-sans">
+                  <table className="w-full min-w-[600px] text-sm font-sans">
                     <thead>
                       <tr className="border-b border-border/50">
                         <th className="text-left py-2 px-2 text-xs text-soft-gray uppercase font-medium">Rank</th>
@@ -709,7 +709,7 @@ function AssessmentsTab() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm font-sans">
+              <table className="w-full min-w-[600px] text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/30">
                     <th className="text-left py-2 px-3 text-[10px] uppercase text-soft-gray font-medium">Candidate</th>
@@ -779,7 +779,7 @@ function AssessmentsTab() {
           ) : detail ? (
             <div className="space-y-4 font-sans">
               {/* Score summary */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-purple-50 rounded-lg p-3 text-center">
                   <div className="text-xs text-purple-600 mb-1">Character (2x)</div>
                   <div className={`text-2xl font-bold ${scoreColor(detail.gate1Score)}`}>
@@ -1044,7 +1044,7 @@ function OnboardingPipelineTab() {
 
           {/* Pipeline table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="border-b border-border/50 text-left">
                   <th className="pb-2 font-sans text-soft-gray text-xs font-medium">Candidate</th>

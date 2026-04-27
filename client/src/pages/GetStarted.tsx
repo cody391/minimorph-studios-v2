@@ -245,12 +245,15 @@ export default function GetStarted() {
     <div className="min-h-screen bg-midnight">
       {/* Header */}
       <div className="border-b border-border/30 bg-charcoal/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <button onClick={() => setLocation("/")} className="flex items-center gap-2 text-sm text-soft-gray hover:text-off-white font-sans transition-colors">
             <ChevronLeft className="h-4 w-4" />
-            MiniMorph
+            <span className="hidden sm:inline">MiniMorph</span>
           </button>
-          <div className="flex items-center gap-2">
+          {/* Mobile: compact step indicator */}
+          <span className="sm:hidden text-xs font-sans text-off-white/70">{step}/{STEPS.length}</span>
+          {/* Desktop: full step dots */}
+          <div className="hidden sm:flex items-center gap-2">
             {STEPS.map((s) => (
               <div key={s.id} className="flex items-center gap-2">
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-sans transition-all ${
@@ -265,7 +268,7 @@ export default function GetStarted() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Step Header */}
         <div className="mb-8">
           <p className="text-xs text-electric font-sans uppercase tracking-wider mb-2">Step {step} of {STEPS.length}</p>
@@ -422,7 +425,7 @@ export default function GetStarted() {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {PACKAGES.map((pkg) => (
               <button
                 key={pkg.tier}
@@ -589,7 +592,7 @@ export default function GetStarted() {
         )}
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-10 pt-6 border-t border-border/20">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 sm:mt-10 pt-4 sm:pt-6 border-t border-border/20 gap-3">
           <Button
             variant="outline"
             onClick={() => setStep(Math.max(1, step - 1))}

@@ -454,7 +454,7 @@ function W9Form({
         onChange={(v) => setOverrides({ ...overrides, w9_address: v })}
         placeholder="Street address"
       />
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <SmartField
           label="City"
           value={overrides["w9_city"] ?? data.city}
@@ -551,7 +551,7 @@ function HRForm({
         onChange={(v) => setOverrides({ ...overrides, hr_address: v })}
         placeholder="Street address"
       />
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <SmartField
           label="City"
           value={overrides["hr_city"] ?? data.city}
@@ -641,7 +641,7 @@ function PayrollForm({
         onChange={(v) => setOverrides({ ...overrides, pay_address: v })}
         placeholder="Street address"
       />
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <SmartField
           label="City"
           value={overrides["pay_city"] ?? data.city}

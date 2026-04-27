@@ -324,7 +324,7 @@ export default function BecomeRep() {
 
       {/* Benefits Row */}
       <div className="max-w-4xl mx-auto px-4 -mt-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
             { icon: DollarSign, label: "10% Commission", desc: "On every sale you close" },
             { icon: Users, label: "AI-Sourced Leads", desc: "Warm prospects ready to buy" },
@@ -343,7 +343,7 @@ export default function BecomeRep() {
       </div>
 
       {/* Step Progress */}
-      <div className="max-w-lg mx-auto px-4 mt-8 mb-4">
+      <div className="max-w-lg mx-auto px-4 mt-6 sm:mt-8 mb-4 overflow-x-auto">
         <div className="flex items-center justify-between">
           {STEPS.map((s, i) => (
             <div key={s.id} className="flex items-center">

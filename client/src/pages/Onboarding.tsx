@@ -131,7 +131,7 @@ export default function Onboarding() {
     <div className="min-h-screen" style={{ background: "#FAF6F1" }}>
       {/* Header */}
       <header className="border-b border-[#2D5A3D]/10 bg-charcoal/60 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer">
               <div className="w-9 h-9 rounded-lg bg-[#2D5A3D] flex items-center justify-center text-white font-bold text-sm">
@@ -149,7 +149,7 @@ export default function Onboarding() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Progress Steps */}
         <div className="flex items-center justify-center mb-12 gap-1">
           {stages.map((stage, i) => {

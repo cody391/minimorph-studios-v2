@@ -50,7 +50,7 @@ export default function Contracts() {
         <p className="text-sm text-soft-gray font-sans mt-1">Track 12-month contracts, renewals, and lifecycle status</p>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Pending Payment", count: counts.pendingPayment, icon: CreditCard, color: "text-amber-400" },
           { label: "Active", count: counts.active, icon: CheckCircle, color: "text-emerald-400" },
@@ -81,7 +81,7 @@ export default function Contracts() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm font-sans">
+              <table className="w-full min-w-[600px] text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Customer</th>
