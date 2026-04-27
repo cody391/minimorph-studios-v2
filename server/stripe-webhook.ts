@@ -265,6 +265,46 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // ── 8. Auto-create initial commission for the rep (if applicable) ──
   await createInitialCommission(session);
+
+  // ── 9. Activate rep-closed contracts upon payment confirmation ──────
+  if (session.metadata?.rep_closed === "true" && session.metadata?.contract_id) {
+    const repContractId = parseInt(session.metadata.contract_id);
+    if (!isNaN(repContractId)) {
+      try {
+        // Activate the contract (was pending_payment)
+        await database
+          .update(contracts)
+          .set({ status: "active", stripeSubscriptionId: (session.subscription as string) || undefined })
+          .where(eq(contracts.id, repContractId));
+        console.log(`[Stripe] Rep-closed contract ${repContractId} activated after payment`);
+
+        // Approve all pending commissions for this contract
+        const pendingCommissions = await database
+          .select()
+          .from(commissions)
+          .where(eq(commissions.contractId, repContractId));
+        for (const comm of pendingCommissions) {
+          if (comm.status === "pending") {
+            await database
+              .update(commissions)
+              .set({ status: "approved" })
+              .where(eq(commissions.id, comm.id));
+            // Notify the rep
+            await db.createRepNotification({
+              repId: comm.repId,
+              type: "commission_approved",
+              title: "Commission Approved — Payment Confirmed!",
+              message: `Payment received for contract #${repContractId}. Your $${parseFloat(comm.amount).toFixed(2)} commission is now approved.`,
+              metadata: { commissionId: comm.id, contractId: repContractId, amount: comm.amount },
+            });
+            console.log(`[Stripe] Commission ${comm.id} approved after payment for contract ${repContractId}`);
+          }
+        }
+      } catch (err) {
+        console.error(`[Stripe] Failed to activate rep-closed contract ${repContractId}:`, err);
+      }
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════

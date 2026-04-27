@@ -465,7 +465,7 @@ Most small businesses know they need a website, but they face three brutal probl
 
 You must be able to recite these in your sleep. Every conversation should naturally flow toward the right tier for the prospect.
 
-### Starter — $149/mo
+### Starter — $150/mo
 **Who it's for:** Solo operators, new businesses, side hustles
 **What they get:**
 - Custom 5-page website (Home, About, Services, Contact, Blog)
@@ -478,7 +478,7 @@ You must be able to recite these in your sleep. Every conversation should natura
 
 **Selling angle:** "For less than $5 a day, you get a professional website that works for you 24/7 — and we handle everything."
 
-### Growth — $299/mo (Most Popular)
+### Growth — $250/mo (Most Popular)
 **Who it's for:** Established businesses ready to scale
 **What they get:**
 - Custom 10-page website
@@ -492,7 +492,7 @@ You must be able to recite these in your sleep. Every conversation should natura
 
 **Selling angle:** "This is where businesses go from 'having a website' to 'having a growth engine.' The analytics and strategy reviews alone pay for themselves."
 
-### Premium — $499/mo
+### Pro — $400/mo
 **Who it's for:** Businesses that want the full competitive advantage
 **What they get:**
 - Custom 20+ page website
@@ -513,7 +513,7 @@ You must be able to recite these in your sleep. Every conversation should natura
 - Customers can upgrade tiers at any time
 - Custom enterprise solutions available for larger businesses`,
         keyTakeaways: [
-          "Starter ($149/mo) for solopreneurs, Growth ($299/mo) for scaling businesses, Premium ($499/mo) for full competitive advantage",
+          "Starter ($150/mo) for solopreneurs, Growth ($250/mo) for scaling businesses, Pro ($400/mo) for full competitive advantage",
           "Always lead with the value, not the price — frame cost against what they're losing without a proper site",
           "Simple monthly pricing with no setup fees — easy for prospects to say yes"
         ]
@@ -567,9 +567,9 @@ When a prospect says "I'm also looking at..." you need to respond instantly with
         id: "pm-2",
         question: "What is the monthly cost for the Growth tier?",
         type: "multiple_choice",
-        options: ["$149/mo", "$199/mo", "$299/mo", "$499/mo"],
+        options: ["$150/mo", "$199/mo", "$250/mo", "$400/mo"],
         correctAnswer: 2,
-        explanation: "Growth is $299/mo — our most popular tier for established businesses ready to scale.",
+        explanation: "Growth is $250/mo — our most popular tier for established businesses ready to scale.",
         difficulty: "easy"
       },
       {
@@ -590,9 +590,9 @@ When a prospect says "I'm also looking at..." you need to respond instantly with
         id: "pm-4",
         question: "What is the monthly cost for the Starter tier?",
         type: "multiple_choice",
-        options: ["$99/mo", "$149/mo", "$199/mo", "$249/mo"],
+        options: ["$99/mo", "$150/mo", "$199/mo", "$249/mo"],
         correctAnswer: 1,
-        explanation: "Starter is $149/mo — perfect for small businesses getting started online. Simple monthly pricing, no setup fees.",
+        explanation: "Starter is $150/mo — perfect for small businesses getting started online. Simple monthly pricing, no setup fees.",
         difficulty: "easy"
       },
       {
@@ -613,9 +613,9 @@ When a prospect says "I'm also looking at..." you need to respond instantly with
         id: "pm-6",
         question: "What is the monthly cost for the Premium tier?",
         type: "multiple_choice",
-        options: ["$299/mo", "$399/mo", "$499/mo", "$599/mo"],
+        options: ["$250/mo", "$399/mo", "$400/mo", "$599/mo"],
         correctAnswer: 2,
-        explanation: "Premium is $499/mo — the complete package. Position it as 'your entire digital department for less than a part-time employee.'",
+        explanation: "Premium is $400/mo — the complete package. Position it as 'your entire digital department for less than a part-time employee.'",
         difficulty: "easy"
       },
       {
@@ -1099,7 +1099,7 @@ If someone isn't interested, they don't object — they just say "no thanks" and
 **What they're really saying:** "I don't see enough value to justify the cost."
 
 **Response framework:**
-1. Break it down: "$149/month is less than $5/day. That's less than your morning coffee. But unlike coffee, this actually brings in customers."
+1. Break it down: "$150/month is less than $5/day. That's less than your morning coffee. But unlike coffee, this actually brings in customers."
 2. ROI calculation: "What's your average customer worth? $500? $1,000? If this website brings in just ONE extra customer per month, it pays for itself 5x over."
 3. Cost of inaction: "What's it costing you NOT to have a proper website? If you're losing even 2 customers a month..."
 4. Comparison: "A traditional agency would charge $15,000-$25,000 for what we deliver. We're able to offer it at this price because our AI handles the heavy lifting."
@@ -1179,7 +1179,7 @@ If someone isn't interested, they don't object — they just say "no thanks" and
       },
       {
         id: "oh-3",
-        question: "A prospect says '$299/month is too much for a website.' What's the most effective reframe?",
+        question: "A prospect says '$250/month is too much for a website.' What's the most effective reframe?",
         type: "scenario",
         options: [
           "Offer a 20% discount",
@@ -1670,7 +1670,7 @@ For larger deals, shift your language:
           "Adding hidden fees"
         ],
         correctAnswer: 1,
-        explanation: "Anchoring sets the reference point. If you start with Premium ($499/mo), Growth ($299/mo) feels like a bargain. If you start with Starter ($149/mo), Growth feels expensive. Always anchor high.",
+        explanation: "Anchoring sets the reference point. If you start with Pro ($400/mo), Growth ($250/mo) feels like a bargain. If you start with Starter ($150/mo), Growth feels expensive. Always anchor high.",
         difficulty: "medium"
       }
     ],

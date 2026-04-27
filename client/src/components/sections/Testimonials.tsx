@@ -50,7 +50,7 @@ export default function Testimonials() {
             viewport={{ once: true }}
             className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
           >
-            From Our Clients
+            Example Customer Scenarios
           </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -59,8 +59,8 @@ export default function Testimonials() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
           >
-            Don't take our word for it.{" "}
-            <span className="text-gradient-electric">Take theirs.</span>
+            See what's possible.{" "}
+            <span className="text-gradient-electric">Real scenarios, real impact.</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -69,8 +69,8 @@ export default function Testimonials() {
             transition={{ delay: 0.2 }}
             className="text-off-white/50 font-sans max-w-xl mx-auto"
           >
-            Real businesses in West Michigan. Real problems. Real results.
-            (And yes, they actually like talking to us.)
+            Composite scenarios based on typical small business challenges we solve.
+            (Names and details are fictional composites for illustration.)
           </motion.p>
         </div>
 

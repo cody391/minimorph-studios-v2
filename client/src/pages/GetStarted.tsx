@@ -224,7 +224,7 @@ export default function GetStarted() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => setLocation("/customer")}
+              onClick={() => setLocation("/portal")}
               className="font-sans text-sm rounded-full border-border/50"
             >
               Go to My Dashboard

@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -55,6 +56,7 @@ export function QuestionnaireWizard({
   onProjectCreated: (id: number) => void;
 }) {
   // ── Wizard step ──
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
 
   // ── Step 1: Website type ──
@@ -308,9 +310,9 @@ export function QuestionnaireWizard({
       let pid = projectId;
       if (!pid) {
         const result = await createProject.mutateAsync({
-          businessName: "My Business",
-          contactName: "Customer",
-          contactEmail: "customer@example.com",
+          businessName: user?.name || "New Project",
+          contactName: user?.name || "Customer",
+          contactEmail: user?.email || "",
           packageTier: "growth",
         });
         pid = result.id;

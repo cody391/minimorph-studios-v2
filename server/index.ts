@@ -1,3 +1,8 @@
+/**
+ * ⚠️  OBSOLETE — NOT USED IN PRODUCTION
+ * The production entry point is server/_core/index.ts (see package.json "dev" and "build" scripts).
+ * This file is retained only for reference. Do not import or modify.
+ */
 import express from "express";
 import { createServer } from "http";
 import path from "path";

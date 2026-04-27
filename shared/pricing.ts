@@ -6,56 +6,77 @@
  * RULE: Every price displayed anywhere in the app (Home page, GetStarted,
  * Academy curriculum, PipelineTab, proposals, Stripe checkout) MUST
  * reference these constants. Never hardcode dollar amounts.
+ *
+ * Intended pricing (confirmed):
+ *   Starter:  $150/mo + $500 setup
+ *   Growth:   $250/mo + $750 setup
+ *   Pro:      $400/mo + $1,000 setup
+ *   Commerce: custom quote (not in this file)
  */
 
 export const PACKAGES = {
   starter: {
     name: "Starter",
-    monthlyPrice: 149,
-    annualTotal: 1788, // 149 * 12
+    tier: "starter" as const,
+    monthlyPrice: 150,
+    monthlyPriceInCents: 15000,
+    setupFee: 500,
+    setupFeeInCents: 50000,
+    annualTotal: 1800, // 150 * 12
     contractMonths: 12,
-    description: "Perfect for small businesses ready to establish a professional online presence.",
+    description: "For businesses that need a clean, professional website with ongoing support",
     features: [
-      "Custom 5-page website",
+      "Up to 5 pages",
       "Mobile-responsive design",
+      "Contact/quote form",
       "Basic SEO setup",
-      "Contact form integration",
-      "Monthly maintenance",
+      "Customer portal access",
+      "Monthly performance report",
+      "1 content update per month",
       "Email support",
     ],
   },
   growth: {
     name: "Growth",
-    monthlyPrice: 299,
-    annualTotal: 3588, // 299 * 12
+    tier: "growth" as const,
+    monthlyPrice: 250,
+    monthlyPriceInCents: 25000,
+    setupFee: 750,
+    setupFeeInCents: 75000,
+    annualTotal: 3000, // 250 * 12
     contractMonths: 12,
-    description: "For growing businesses that need advanced features and ongoing optimization.",
+    description: "For businesses ready to grow with more pages, features, and monthly support",
     features: [
+      "Up to 10 pages",
       "Everything in Starter",
-      "Up to 15 pages",
-      "Advanced SEO & analytics",
-      "Blog / CMS integration",
-      "Social media integration",
-      "Priority support",
-      "Quarterly strategy calls",
+      "Blog or news section",
+      "Google Analytics setup",
+      "2 content updates per month",
+      "AI-assisted recommendations",
+      "Priority email support",
+      "Add-on integrations available",
     ],
     popular: true,
   },
   premium: {
-    name: "Premium",
-    monthlyPrice: 499,
-    annualTotal: 5988, // 499 * 12
+    name: "Pro",
+    tier: "premium" as const,
+    monthlyPrice: 400,
+    monthlyPriceInCents: 40000,
+    setupFee: 1000,
+    setupFeeInCents: 100000,
+    annualTotal: 4800, // 400 * 12
     contractMonths: 12,
-    description: "Full-service digital presence for established businesses demanding the best.",
+    description: "For businesses that need advanced features, more pages, and hands-on support",
     features: [
+      "Up to 20 pages",
       "Everything in Growth",
-      "Unlimited pages",
-      "E-commerce integration",
-      "Custom animations & interactions",
-      "A/B testing",
-      "Dedicated account manager",
-      "Monthly strategy sessions",
-      "24/7 priority support",
+      "Advanced SEO pages",
+      "4 content updates per month",
+      "Review widget setup",
+      "Booking integration",
+      "SMS lead alerts",
+      "Priority support with faster response",
     ],
   },
 } as const;
@@ -63,17 +84,22 @@ export const PACKAGES = {
 export type PackageKey = keyof typeof PACKAGES;
 export const PACKAGE_KEYS: PackageKey[] = ["starter", "growth", "premium"];
 
-/** Helper to format price as "$149/mo" */
+/** Helper to format price as "$150/mo" */
 export function formatMonthlyPrice(key: PackageKey): string {
   return `$${PACKAGES[key].monthlyPrice}/mo`;
 }
 
-/** Helper to format annual total as "$1,788" */
+/** Helper to format annual total as "$1,800" */
 export function formatAnnualTotal(key: PackageKey): string {
   return `$${PACKAGES[key].annualTotal.toLocaleString()}`;
 }
 
-/** All three monthly prices as a string: "$149/$299/$499" */
+/** Helper to format setup fee as "$500" */
+export function formatSetupFee(key: PackageKey): string {
+  return `$${PACKAGES[key].setupFee.toLocaleString()}`;
+}
+
+/** All three monthly prices as a string: "$150/$250/$400" */
 export const PRICE_RANGE_SHORT = `$${PACKAGES.starter.monthlyPrice}/$${PACKAGES.growth.monthlyPrice}/$${PACKAGES.premium.monthlyPrice}`;
 
 /** Academy-friendly pricing reference */
@@ -84,4 +110,7 @@ export const ACADEMY_PRICING = {
   starterAnnual: `$${PACKAGES.starter.annualTotal.toLocaleString()}/year`,
   growthAnnual: `$${PACKAGES.growth.annualTotal.toLocaleString()}/year`,
   premiumAnnual: `$${PACKAGES.premium.annualTotal.toLocaleString()}/year`,
+  starterSetup: `$${PACKAGES.starter.setupFee} one-time setup`,
+  growthSetup: `$${PACKAGES.growth.setupFee} one-time setup`,
+  premiumSetup: `$${PACKAGES.premium.setupFee} one-time setup`,
 } as const;

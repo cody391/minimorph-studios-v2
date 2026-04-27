@@ -141,7 +141,7 @@ export const contracts = mysqlTable("contracts", {
   monthlyPrice: decimal("monthlyPrice", { precision: 8, scale: 2 }).notNull(),
   startDate: timestamp("startDate").notNull(),
   endDate: timestamp("endDate").notNull(),
-  status: mysqlEnum("status", ["active", "expiring_soon", "expired", "renewed", "cancelled"])
+  status: mysqlEnum("status", ["pending_payment", "active", "expiring_soon", "expired", "renewed", "cancelled"])
     .default("active")
     .notNull(),
   renewalStatus: mysqlEnum("renewalStatus", ["not_started", "nurturing", "proposed", "accepted", "declined"])

@@ -588,9 +588,9 @@ export const academyRouter = router({
             content: `You are a scenario generator for sales training. Create a realistic prospect persona for a ${input.scenarioType.replace(/_/g, " ")} scenario.
 
 The rep sells MiniMorph Studios services — a premium digital marketing agency offering three tiers:
-- Starter ($149/mo): Social media management, basic SEO, monthly reporting
-- Growth ($299/mo): Everything in Starter + content creation, email marketing, paid ads management
-- Premium ($499/mo): Everything in Growth + dedicated strategist, video production, advanced analytics
+- Starter ($150/mo): Social media management, basic SEO, monthly reporting
+- Growth ($250/mo): Everything in Starter + content creation, email marketing, paid ads management
+- Pro ($400/mo): Everything in Growth + dedicated strategist, video production, advanced analytics
 
 Return a JSON object with these fields:
 - name: Full name of the prospect

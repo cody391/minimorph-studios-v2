@@ -1,71 +1,48 @@
 /**
  * MiniMorph Studios — Stripe Product Definitions
- * Centralized pricing and package configuration for checkout sessions.
+ * Re-exports from shared/pricing.ts (single source of truth).
+ * This file exists for backward compatibility with dynamic imports in routers.ts.
  */
+import { PACKAGES as SHARED_PACKAGES, type PackageKey } from "../shared/pricing";
 
 export interface PackageDefinition {
   name: string;
   tier: "starter" | "growth" | "premium";
   description: string;
-  monthlyPriceInCents: number; // monthly recurring price
-  setupFeeInCents: number; // one-time setup fee
+  monthlyPriceInCents: number;
+  setupFeeInCents: number;
   features: string[];
 }
 
 export const PACKAGES: Record<string, PackageDefinition> = {
   starter: {
-    name: "Starter Package",
-    tier: "starter",
-    description: "For businesses that need a clean, professional website with ongoing support",
-    monthlyPriceInCents: 15000, // $150/month
-    setupFeeInCents: 50000, // $500 setup
-    features: [
-      "Up to 5 pages",
-      "Mobile-responsive design",
-      "Contact/quote form",
-      "Basic SEO setup",
-      "Customer portal access",
-      "Monthly performance report",
-      "1 content update per month",
-      "Email support",
-    ],
+    name: SHARED_PACKAGES.starter.name,
+    tier: SHARED_PACKAGES.starter.tier,
+    description: SHARED_PACKAGES.starter.description,
+    monthlyPriceInCents: SHARED_PACKAGES.starter.monthlyPriceInCents,
+    setupFeeInCents: SHARED_PACKAGES.starter.setupFeeInCents,
+    features: [...SHARED_PACKAGES.starter.features],
   },
   growth: {
-    name: "Growth Package",
-    tier: "growth",
-    description: "For businesses ready to grow with more pages, features, and monthly support",
-    monthlyPriceInCents: 25000, // $250/month
-    setupFeeInCents: 75000, // $750 setup
-    features: [
-      "Up to 10 pages",
-      "Everything in Starter",
-      "Blog or news section",
-      "Google Analytics setup",
-      "2 content updates per month",
-      "AI-assisted recommendations",
-      "Priority email support",
-      "Add-on integrations available",
-    ],
+    name: SHARED_PACKAGES.growth.name,
+    tier: SHARED_PACKAGES.growth.tier,
+    description: SHARED_PACKAGES.growth.description,
+    monthlyPriceInCents: SHARED_PACKAGES.growth.monthlyPriceInCents,
+    setupFeeInCents: SHARED_PACKAGES.growth.setupFeeInCents,
+    features: [...SHARED_PACKAGES.growth.features],
   },
   premium: {
-    name: "Pro Package",
-    tier: "premium",
-    description: "For businesses that need advanced features, more pages, and hands-on support",
-    monthlyPriceInCents: 40000, // $400/month
-    setupFeeInCents: 100000, // $1,000 setup
-    features: [
-      "Up to 20 pages",
-      "Everything in Growth",
-      "Advanced SEO pages",
-      "4 content updates per month",
-      "Review widget setup",
-      "Booking integration",
-      "SMS lead alerts",
-      "Priority support with faster response",
-    ],
+    name: SHARED_PACKAGES.premium.name,
+    tier: SHARED_PACKAGES.premium.tier,
+    description: SHARED_PACKAGES.premium.description,
+    monthlyPriceInCents: SHARED_PACKAGES.premium.monthlyPriceInCents,
+    setupFeeInCents: SHARED_PACKAGES.premium.setupFeeInCents,
+    features: [...SHARED_PACKAGES.premium.features],
   },
 };
 
 export function getPackage(tier: string): PackageDefinition | undefined {
   return PACKAGES[tier];
 }
+
+export { PackageKey };

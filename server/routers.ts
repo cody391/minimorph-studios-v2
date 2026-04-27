@@ -615,6 +615,7 @@ const leadsRouter = router({
         monthlyPrice: finalMonthlyPrice,
         startDate,
         endDate,
+        status: "pending_payment",
         notes: input.notes ? `${input.notes}${discountPct > 0 ? ` | ${discountPct}% rep discount applied (was $${originalPrice}/mo)` : ""}` : (discountPct > 0 ? `${discountPct}% rep discount applied (was $${originalPrice}/mo)` : undefined),
       });
 
@@ -638,7 +639,7 @@ const leadsRouter = router({
         contractId: contract.id,
         amount: commissionAmount,
         type: "initial_sale",
-        status: "approved",
+        status: "pending",
         selfSourced: isSelfSourced,
       });
 
@@ -690,7 +691,7 @@ const leadsRouter = router({
         repId: rep.id,
         type: "deal_closed",
         title: isSelfSourced ? "🌟 Self-Sourced Deal Closed!" : "Deal Closed!",
-        message: `Congratulations! You closed ${lead.businessName} for $${finalMonthlyPrice}/mo (${input.packageTier}).${discountPct > 0 ? ` ${discountPct}% discount applied.` : ""} Commission: $${commissionAmount}${isSelfSourced ? " (2x bonus!)" : ""} — approved for instant payout!`,
+        message: `Congratulations! You closed ${lead.businessName} for $${finalMonthlyPrice}/mo (${input.packageTier}).${discountPct > 0 ? ` ${discountPct}% discount applied.` : ""} Commission: $${commissionAmount}${isSelfSourced ? " (2x bonus!)" : ""} — pending payment confirmation.`,
         metadata: { contractId: contract.id, commissionAmount, selfSourced: isSelfSourced, discountPercent: discountPct },
       });
 
@@ -712,9 +713,78 @@ const leadsRouter = router({
       const selfSourcedNote = isSelfSourced ? "\n⭐ Self-sourced lead (double commission)" : "";
       await notifyOwner({
         title: `Deal Closed: ${lead.businessName}`,
-        content: `Rep ${rep.fullName} closed a ${input.packageTier} deal with ${lead.businessName} at $${finalMonthlyPrice}/mo.${discountNote}${selfSourcedNote}\nAnnual value: $${annualValue.toFixed(2)}\nCommission: $${commissionAmount} (${(rate * 100).toFixed(0)}% at ${tierKey} tier) — auto-approved for instant payout\nOnboarding project auto-created.`,
+        content: `Rep ${rep.fullName} closed a ${input.packageTier} deal with ${lead.businessName} at $${finalMonthlyPrice}/mo.${discountNote}${selfSourcedNote}\nAnnual value: $${annualValue.toFixed(2)}\nCommission: $${commissionAmount} (${(rate * 100).toFixed(0)}% at ${tierKey} tier) — pending payment confirmation\nPayment link sent to customer. Contract activates upon payment.\nOnboarding project auto-created.`,
       });
 
+      // 11. Generate Stripe payment link for the customer
+      let paymentUrl: string | null = null;
+      try {
+        const Stripe = (await import("stripe")).default;
+        const { PACKAGES } = await import("../shared/pricing");
+        const stripeKey = process.env.STRIPE_SECRET_KEY;
+        if (stripeKey) {
+          const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
+          const pkg = PACKAGES[input.packageTier as keyof typeof PACKAGES];
+          const origin = ctx.req.headers.origin || ctx.req.headers.referer || "https://minimorph-studios.manus.space";
+          const session = await stripe.checkout.sessions.create({
+            mode: "subscription",
+            customer_email: lead.email,
+            client_reference_id: String(customer.id),
+            allow_promotion_codes: true,
+            subscription_data: {
+              metadata: {
+                user_id: "",
+                package_tier: input.packageTier,
+                business_name: lead.businessName,
+                contract_id: String(contract.id),
+                rep_closed: "true",
+              },
+            },
+            metadata: {
+              user_id: "",
+              customer_email: lead.email,
+              customer_name: lead.contactName,
+              package_tier: input.packageTier,
+              business_name: lead.businessName,
+              contract_id: String(contract.id),
+              rep_closed: "true",
+            },
+            line_items: [
+              {
+                price_data: {
+                  currency: "usd",
+                  product_data: {
+                    name: `${pkg.name} Package`,
+                    description: pkg.description,
+                  },
+                  unit_amount: Math.round(discountedPrice * 100),
+                  recurring: { interval: "month" },
+                },
+                quantity: 1,
+              },
+              ...(pkg.setupFeeInCents > 0
+                ? [{
+                    price_data: {
+                      currency: "usd" as const,
+                      product_data: {
+                        name: `${pkg.name} — One-Time Setup Fee`,
+                        description: "Custom website design, build, and launch",
+                      },
+                      unit_amount: pkg.setupFeeInCents,
+                    },
+                    quantity: 1,
+                  }]
+                : []),
+            ],
+            success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${origin}/get-started?cancelled=true`,
+          });
+          paymentUrl = session.url;
+        }
+      } catch (err) {
+        console.error("[closeDeal] Failed to create Stripe checkout:", err);
+        // Non-fatal — deal is still closed, payment link can be sent manually
+      }
       return {
         success: true,
         customerId: customer.id,
@@ -722,6 +792,8 @@ const leadsRouter = router({
         commissionId: commission.id,
         commissionAmount,
         annualValue,
+        paymentUrl,
+        paymentStatus: "pending_payment",
       };
     }),
 

@@ -1,0 +1,1 @@
+ALTER TABLE `contracts` MODIFY COLUMN `status` enum('pending_payment','active','expiring_soon','expired','renewed','cancelled') NOT NULL DEFAULT 'active';

@@ -1161,3 +1161,14 @@
 - [x] Add post-submission custom quote feedback messaging (green success vs amber custom quote alert)
 - [x] Write server/stress-test-additions.test.ts — 39 tests covering answer bank, integration matrix, and quote engine expansions
 - [x] All 39 new tests passing, TypeScript compiles clean, 0 regressions
+
+### Phase 41: Final Pre-Launch Consistency Repair (Surgical Only)
+- [x] Fix 1: Pricing source of truth — unify to $150/$250/$400/custom across all files
+- [x] Fix 2: Rep-closed deal payment gap — pending_payment until Stripe confirms
+- [x] Fix 3: Fake proof language in Testimonials.tsx — rename to Example Customer Scenarios
+- [x] Fix 4: Admin role guard in AdminLayout.tsx — show Access Denied if not admin
+- [x] Fix 5: Route GovernancePanel in App.tsx + sidebar nav item
+- [x] Fix 6: GetStarted dashboard link /customer → /portal
+- [x] Fix 7: Onboarding dummy project — no fake data creation
+- [x] Fix 8: Mark/remove obsolete server/index.ts
+- [x] Validation: typecheck + tests + production build

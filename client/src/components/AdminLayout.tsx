@@ -46,6 +46,7 @@ import {
   Palette,
   Sparkles,
   Rocket,
+  Shield,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -74,6 +75,7 @@ const menuItems = [
   { icon: Palette, label: "Brand Kit", path: "/admin/social/brand" },
   { icon: Sparkles, label: "AI Content Studio", path: "/admin/social/ai" },
   { icon: Rocket, label: "X Growth Engine", path: "/admin/x-growth" },
+  { icon: Shield, label: "Governance", path: "/admin/governance" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "admin-sidebar-width";
@@ -94,6 +96,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) return <DashboardLayoutSkeleton />;
 
+  if (user && user.role !== "admin") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-cream">
+        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
+          <div className="flex flex-col items-center gap-6">
+            <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
+              <span className="text-white font-serif text-lg font-bold">!</span>
+            </div>
+            <h1 className="text-2xl font-serif text-forest text-center">
+              Access Denied
+            </h1>
+            <p className="text-sm text-forest/60 text-center max-w-sm font-sans">
+              You do not have admin privileges. Contact the site owner if you believe this is an error.
+            </p>
+          </div>
+          <Button
+            onClick={() => { window.location.href = "/"; }}
+            size="lg"
+            className="w-full bg-forest hover:bg-forest-light text-cream shadow-lg hover:shadow-xl transition-all font-sans"
+          >
+            Return to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-cream">

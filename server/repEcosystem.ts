@@ -64,7 +64,7 @@ const QUIZ_QUESTIONS = [
   {
     id: 2,
     question: "What is the starting monthly price for the Starter package?",
-    options: ["$99/mo", "$149/mo", "$199/mo", "$249/mo"],
+    options: ["$99/mo", "$150/mo", "$199/mo", "$250/mo"],
     correctAnswer: 1,
   },
   {
@@ -499,7 +499,7 @@ export const repCommsRouter = router({
             role: "system",
             content: `You are a professional email writer for MiniMorph Studios sales reps. Write a ${input.purpose} email.
 The rep's name is ${rep.fullName}. MiniMorph Studios builds premium websites for small businesses.
-Packages: Starter ($149/mo), Growth ($249/mo), Premium ($449/mo).
+Packages: Starter ($150/mo), Growth ($250/mo), Premium ($400/mo).
 Write in a professional but warm tone. Keep it concise (under 200 words).
 Return JSON: { "subject": "...", "body": "..." }`,
           },

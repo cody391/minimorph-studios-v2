@@ -232,6 +232,13 @@
       "when": 1777072199959,
       "tag": "0032_giant_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1777317491515,
+      "tag": "0033_previous_susan_delgado",
+      "breakpoints": true
     }
   ]
 }
