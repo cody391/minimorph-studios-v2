@@ -18,6 +18,11 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
+  // Don't redirect during onboarding flow — the user may have just registered
+  // and the auth cache hasn't caught up yet
+  const path = window.location.pathname;
+  if (path.startsWith("/become-rep") || path.startsWith("/rep-assessment")) return;
+
   // Redirect to local login page instead of external OAuth
   window.location.href = "/login";
 };

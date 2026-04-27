@@ -1235,3 +1235,10 @@
 - [x] Backend sendSms procedure: added smsOptIn gate before sending
 - [x] Backend sendDueOutreach: SMS steps skip if no opt-in, rep_call_reminder creates activity log
 - [x] Validation: typecheck clean, 35 test files (864/865 pass — 1 pre-existing Stripe timeout), production build OK
+
+### Phase 48: Fix Career Signup Flow — "User does not exist" Error
+- [x] Investigate career page signup → login → error flow
+- [x] Fix auth/user creation: invalidate auth.me cache after localAuth.register in BecomeRep
+- [x] Fix global UNAUTHORIZED redirect: skip redirect on /become-rep/* and /rep-assessment paths
+- [x] Fix Login page: use server redirectTo, invalidate auth cache, better error messages
+- [x] Validation: typecheck clean, 859/865 tests pass (6 pre-existing timeouts)

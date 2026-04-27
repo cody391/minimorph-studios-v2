@@ -33,6 +33,7 @@ const INDUSTRIES = [
 
 export default function BecomeRep() {
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
   const searchString = useSearch();
   const urlParams = new URLSearchParams(searchString);
   const initialStep = urlParams.get("step") ? parseInt(urlParams.get("step")!) : 1;
@@ -68,8 +69,10 @@ export default function BecomeRep() {
 
   // Mutations
   const registerMutation = trpc.localAuth.register.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Account created! Let's continue your application.");
+      // Invalidate auth cache so downstream pages recognize the new session
+      await utils.auth.me.invalidate();
       // After account creation, create the rep profile
       submitRepProfile.mutate({ fullName, email, phone, bio: "" });
     },

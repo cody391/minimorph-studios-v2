@@ -14,23 +14,27 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const utils = trpc.useUtils();
+
   const loginMutation = trpc.localAuth.login.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success("Welcome back!");
-      // Redirect based on user role
-      if (data.user.role === "admin") {
+      // Invalidate auth cache so downstream pages recognize the session
+      await utils.auth.me.invalidate();
+      // Use server-provided redirect, or fall back to role-based routing
+      if (data.redirectTo) {
+        setLocation(data.redirectTo);
+      } else if (data.user.role === "admin") {
         setLocation("/admin");
+      } else if (data.isRep) {
+        setLocation("/rep/dashboard");
       } else {
-        // Check if user is a rep or customer
-        // For now, try rep dashboard first, customer portal as fallback
-        setLocation("/rep");
+        setLocation("/customer/portal");
       }
     },
     onError: (err: any) => {
-      if (err.message.includes("not found")) {
-        toast.error("No account found with this email. Please sign up first.");
-      } else if (err.message.includes("Invalid password")) {
-        toast.error("Incorrect password. Please try again.");
+      if (err.message.includes("Invalid email or password")) {
+        toast.error("Invalid email or password. Please try again.");
       } else {
         toast.error(err.message);
       }
