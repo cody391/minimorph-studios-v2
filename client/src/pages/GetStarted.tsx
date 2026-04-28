@@ -170,10 +170,13 @@ export default function GetStarted() {
         businessName: formData.businessName,
       });
 
-      if (result.checkoutUrl) {
+      if (result.clientSecret) {
+        toast.success("Proceeding to secure checkout...");
+        setLocation(`/checkout?cs=${encodeURIComponent(result.clientSecret)}&return=/get-started`);
+      } else if (result.checkoutUrl) {
+        // Fallback for hosted checkout (e.g. email payment links)
         toast.success("Redirecting to secure checkout...");
         window.open(result.checkoutUrl, "_blank");
-        // Show success state
         setStep(5);
       }
     } catch (error: any) {
@@ -196,7 +199,7 @@ export default function GetStarted() {
             Your account has been created and your order for the <strong className="text-off-white">{PACKAGES.find((p) => p.tier === formData.selectedPackage)?.name}</strong> package has been submitted.
           </p>
           <p className="text-sm text-soft-gray font-sans mb-4">
-            A checkout window should have opened. If it didn't, click below to complete your payment.
+            Click below to complete your payment securely.
           </p>
           <div className="flex flex-col items-center gap-3">
             <Button
@@ -207,7 +210,9 @@ export default function GetStarted() {
                     packageTier: tier,
                     businessName: formData.businessName,
                   });
-                  if (result.checkoutUrl) {
+                  if (result.clientSecret) {
+                    setLocation(`/checkout?cs=${encodeURIComponent(result.clientSecret)}&return=/get-started`);
+                  } else if (result.checkoutUrl) {
                     window.open(result.checkoutUrl, "_blank");
                   }
                 } catch {

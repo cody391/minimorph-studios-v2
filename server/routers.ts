@@ -1770,6 +1770,7 @@ const ordersRouter = router({
       // Create the checkout session — monthly subscription
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
+        ui_mode: "embedded_page",
         customer_email: ctx.user.email || undefined,
         client_reference_id: ctx.user.id.toString(),
         allow_promotion_codes: true,
@@ -1801,8 +1802,7 @@ const ordersRouter = router({
             quantity: 1,
           },
         ],
-        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/get-started?cancelled=true`,
+        return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       });
 
       // Create a pending order in the database
@@ -1817,7 +1817,7 @@ const ordersRouter = router({
         businessName: input.businessName || undefined,
       });
 
-      return { checkoutUrl: session.url };
+      return { clientSecret: session.client_secret, checkoutUrl: null };
     }),
 
   // Protected: list current user's orders

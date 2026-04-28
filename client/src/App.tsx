@@ -38,6 +38,7 @@ const GetStarted = lazy(() => import("./pages/GetStarted"));
 const BecomeRep = lazy(() => import("./pages/BecomeRep"));
 const Login = lazy(() => import("./pages/Login"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const EmbeddedCheckout = lazy(() => import("./pages/EmbeddedCheckout"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Careers = lazy(() => import("./pages/Careers"));
 const FreeAudit = lazy(() => import("./pages/FreeAudit"));
@@ -149,6 +150,11 @@ function Router() {
       {/* Customer portal */}
       <Route path="/portal">
         <LazyPage><CustomerPortal /></LazyPage>
+      </Route>
+
+      {/* Embedded checkout (in-site payment) */}
+      <Route path="/checkout">
+        <LazyPage><EmbeddedCheckout /></LazyPage>
       </Route>
 
       {/* Checkout success */}

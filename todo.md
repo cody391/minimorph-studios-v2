@@ -1282,3 +1282,14 @@
 - [x] Update academy-curriculum.ts closing scripts (setup fee discount → first month free)
 - [x] Update 2 test files to expect 0 setup fees
 - [x] Validation: typecheck clean, 36 files 875/875 tests pass, production build OK
+
+### Fix Rep Payout Page + Embed Stripe Flows In-Site
+- [ ] Fix broken "Connect to Stripe" — root cause: Stripe Connect not enabled on account
+- [x] Install @stripe/stripe-js and @stripe/react-stripe-js
+- [x] Update backend checkout session (direct purchase / GetStarted flow) to use ui_mode: 'embedded_page' and return client_secret
+- [x] Create EmbeddedCheckout.tsx page component that renders Stripe checkout inline with dark premium branding
+- [x] Update GetStarted.tsx to navigate to /checkout?cs=...&return=/get-started instead of window.open
+- [x] Add /checkout route in App.tsx
+- [x] Keep rep-closed deal checkout sessions (closeDeal + resendPaymentLink) in hosted mode for email payment links
+- [x] Update step 5 success copy to remove "checkout window" language
+- [x] Validation: TypeScript 0 errors, 875/875 tests pass, production build OK
