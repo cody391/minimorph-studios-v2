@@ -27,7 +27,7 @@ export default function Login() {
       } else if (data.user.role === "admin") {
         setLocation("/admin");
       } else if (data.isRep) {
-        setLocation("/rep/dashboard");
+        setLocation("/rep");
       } else {
         setLocation("/customer/portal");
       }

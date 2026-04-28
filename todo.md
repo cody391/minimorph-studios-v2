@@ -1427,3 +1427,8 @@
 - [x] Check Quinn's account is properly linked in the database (confirmed: userId 1500531, Stripe acct created but not completed)
 - [x] Audit entire rep onboarding flow for mobile usability — fixed window.open in PayoutSetup, RepDashboard, and GetStarted
 - [x] Fix identified issues and verify flow works end-to-end (TypeScript clean, 880/880 tests pass)
+
+### Bug: Rep Login Not Working + Footer Link
+- [x] Investigate why rep login doesn't work (login redirected to /rep/dashboard but route is /rep → 404)
+- [x] Fix the rep login flow (fixed redirect in localAuth.ts and Login.tsx from /rep/dashboard to /rep)
+- [x] Add a rep login link to the website footer (added "Rep Login" and "Become a Rep" to Resources column)

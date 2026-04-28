@@ -29,6 +29,8 @@ const footerLinks = [
       { label: "FAQ", href: "#faq" },
       { label: "Get Started", href: "/get-started", isRoute: true },
       { label: "Customer Portal", href: "/portal", isRoute: true },
+      { label: "Rep Login", href: "/login", isRoute: true },
+      { label: "Become a Rep", href: "/become-rep", isRoute: true },
     ],
   },
 ];

@@ -118,7 +118,7 @@ export const localAuthRouter = router({
 
       // Determine where to redirect
       const rep = await db.getRepByUserId(user.id);
-      const redirectTo = rep ? "/rep/dashboard" : "/customer/portal";
+      const redirectTo = rep ? "/rep" : "/customer/portal";
 
       return {
         success: true,
