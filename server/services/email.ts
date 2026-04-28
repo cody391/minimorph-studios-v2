@@ -99,7 +99,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
   const resend = getResend();
 
   try {
-    const fromAddress = params.from || "MiniMorph Studios <onboarding@resend.dev>";
+    const fromAddress = params.from || "MiniMorph Studios <hello@minimorphstudios.net>";
 
     // Append CAN-SPAM footer to HTML emails unless marked transactional
     let htmlContent = params.html;
@@ -121,7 +121,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       subject: params.subject,
       headers: {
         // List-Unsubscribe header for email clients (one-click unsubscribe)
-        "List-Unsubscribe": `<mailto:unsubscribe@minimorphstudios.com?subject=unsubscribe-${encodeURIComponent(params.to)}>`,
+        "List-Unsubscribe": `<mailto:unsubscribe@minimorphstudios.net?subject=unsubscribe-${encodeURIComponent(params.to)}>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
       },
     };
