@@ -527,50 +527,57 @@ export default function SalesAcademy() {
     const colors = moduleColorMap[moduleDetail.id] || moduleColorMap["product-mastery"];
 
     return (
-      <div className="space-y-6">
-        {/* Navigation bar */}
+      <div className="space-y-4">
+        {/* Top navigation bar */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => setActiveView("overview")} className="text-soft-gray hover:text-off-white">
+          <Button variant="ghost" onClick={() => setActiveView("overview")} className="text-soft-gray hover:text-off-white font-sans text-sm">
             <ChevronLeft className="w-4 h-4 mr-1" /> Back to Academy
           </Button>
-          <div className="flex items-center gap-2 text-sm font-sans text-soft-gray">
-            <span>Lesson {currentLessonIndex + 1} of {totalLessons}</span>
-          </div>
         </div>
 
-        {/* Module header */}
+        {/* Module header with lesson tabs */}
         <Card className={`${colors.bg} ${colors.border} border`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-lg font-serif text-off-white">{moduleDetail.title}</h2>
                 <p className="text-xs text-soft-gray font-sans mt-1">
                   <Clock className="w-3 h-3 inline mr-1" />{moduleDetail.estimatedMinutes} min total
                 </p>
               </div>
-              <Progress value={(currentLessonIndex / totalLessons) * 100} className="w-32 h-2" />
+              <div className="text-right">
+                <Progress value={((moduleDetail.progress?.lessonsCompleted ?? 0) / totalLessons) * 100} className="w-28 h-2" />
+                <p className="text-[10px] text-soft-gray font-sans mt-1">{moduleDetail.progress?.lessonsCompleted ?? 0}/{totalLessons} lessons</p>
+              </div>
             </div>
-            {/* Lesson navigation dots */}
-            <div className="flex items-center gap-1.5 mt-3">
-              {moduleDetail.lessons.map((_: any, i: number) => (
-                <button
-                  key={i}
-                  onClick={() => { setCurrentLessonIndex(i); setLessonStartTime(Date.now()); }}
-                  className={`w-2.5 h-2.5 rounded-full transition-all ${
-                    i === currentLessonIndex
-                      ? "bg-electric w-6"
-                      : i < (moduleDetail.progress?.lessonsCompleted ?? 0)
-                      ? "bg-green-500"
-                      : "bg-electric/20"
-                  }`}
-                  title={`Lesson ${i + 1}`}
-                />
-              ))}
+
+            {/* Lesson tab buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {moduleDetail.lessons.map((l: any, i: number) => {
+                const isActive = i === currentLessonIndex;
+                const isCompleted = i < (moduleDetail.progress?.lessonsCompleted ?? 0);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => { setCurrentLessonIndex(i); setLessonStartTime(Date.now()); }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-sans transition-all flex items-center gap-1.5 ${
+                      isActive
+                        ? "bg-electric text-white font-medium"
+                        : isCompleted
+                        ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                        : "bg-white/5 text-soft-gray hover:bg-white/10"
+                    }`}
+                  >
+                    {isCompleted && !isActive && <CheckCircle className="w-3 h-3" />}
+                    Lesson {i + 1}
+                  </button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
 
-        {/* Lesson content */}
+        {/* Lesson content — no ScrollArea, flows naturally */}
         {lesson && (
           <Card className="border-border/50">
             <CardHeader className="pb-3">
@@ -578,88 +585,91 @@ export default function SalesAcademy() {
                 <BookOpen className="w-4 h-4 text-electric" />
                 {lesson.title}
               </CardTitle>
+              <p className="text-xs text-soft-gray font-sans">Lesson {currentLessonIndex + 1} of {totalLessons}</p>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="max-h-[60vh]">
-                <div className="prose prose-sm max-w-none text-off-white/80 font-sans">
-                  <Streamdown>{lesson.content}</Streamdown>
+            <CardContent className="space-y-6">
+              {/* Main lesson content */}
+              <div className="prose prose-sm max-w-none text-off-white/80 font-sans">
+                <Streamdown>{lesson.content}</Streamdown>
+              </div>
+
+              {/* Key Takeaways */}
+              {lesson.keyTakeaways && lesson.keyTakeaways.length > 0 && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                  <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-3">
+                    <Lightbulb className="w-4 h-4 text-amber-400" /> Key Takeaways
+                  </h4>
+                  <ul className="space-y-2">
+                    {lesson.keyTakeaways.map((t: string, i: number) => (
+                      <li key={i} className="text-xs text-soft-gray font-sans flex items-start gap-2">
+                        <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
+              )}
 
-                {/* Key Takeaways */}
-                {lesson.keyTakeaways && lesson.keyTakeaways.length > 0 && (
-                  <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                    <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-3">
-                      <Lightbulb className="w-4 h-4 text-amber-400" /> Key Takeaways
-                    </h4>
-                    <ul className="space-y-2">
-                      {lesson.keyTakeaways.map((t: string, i: number) => (
-                        <li key={i} className="text-xs text-soft-gray font-sans flex items-start gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                          <span>{t}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+              {/* Practice Script */}
+              {lesson.script && (
+                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-2">
+                    <MessageSquare className="w-4 h-4 text-blue-400" /> Practice Script
+                  </h4>
+                  <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap">{lesson.script}</div>
+                </div>
+              )}
 
-                {/* Script / Role Play */}
-                {lesson.script && (
-                  <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-2">
-                      <MessageSquare className="w-4 h-4 text-blue-400" /> Practice Script
-                    </h4>
-                    <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap">{lesson.script}</div>
-                  </div>
-                )}
+              {/* Role Play Scenario */}
+              {lesson.rolePlay && (
+                <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                  <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-purple-400" /> Role Play Scenario
+                  </h4>
+                  <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap">{lesson.rolePlay}</div>
+                </div>
+              )}
 
-                {lesson.rolePlay && (
-                  <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                    <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-2">
-                      <Zap className="w-4 h-4 text-purple-400" /> Role Play Scenario
-                    </h4>
-                    <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap">{lesson.rolePlay}</div>
-                  </div>
-                )}
-              </ScrollArea>
+              {/* ─── Bottom Navigation ─── */}
+              <div className="pt-6 border-t border-border/30">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => { setCurrentLessonIndex((prev) => prev - 1); setLessonStartTime(Date.now()); }}
+                    disabled={currentLessonIndex === 0}
+                    className="rounded-full font-sans"
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Previous Lesson
+                  </Button>
 
-              {/* Navigation buttons */}
-              <div className="flex items-center justify-between pt-6 mt-6 border-t border-border/30">
-                <Button
-                  variant="outline"
-                  onClick={() => { setCurrentLessonIndex((prev) => prev - 1); setLessonStartTime(Date.now()); }}
-                  disabled={currentLessonIndex === 0}
-                  className="rounded-full font-sans"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-                </Button>
-
-                <div className="flex items-center gap-3">
-                  {isLastLesson ? (
-                    <>
+                  <div className="flex items-center gap-3">
+                    {isLastLesson ? (
+                      <>
+                        <Button
+                          onClick={handleCompleteLesson}
+                          disabled={completeLessonMut.isPending}
+                          variant="outline"
+                          className="rounded-full font-sans"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" /> Mark Complete
+                        </Button>
+                        <Button
+                          onClick={() => openQuiz(selectedModuleId!)}
+                          className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans"
+                        >
+                          <GraduationCap className="w-4 h-4 mr-1" /> Take Quiz
+                        </Button>
+                      </>
+                    ) : (
                       <Button
                         onClick={handleCompleteLesson}
                         disabled={completeLessonMut.isPending}
-                        variant="outline"
-                        className="rounded-full font-sans"
+                        className="bg-electric hover:bg-electric-light text-white rounded-full font-sans"
                       >
-                        <CheckCircle className="w-4 h-4 mr-1" /> Mark Complete
+                        Next Lesson <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
-                      <Button
-                        onClick={() => openQuiz(selectedModuleId!)}
-                        className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans"
-                      >
-                        <GraduationCap className="w-4 h-4 mr-1" /> Take Quiz
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      onClick={handleCompleteLesson}
-                      disabled={completeLessonMut.isPending}
-                      className="bg-electric hover:bg-electric-light text-white rounded-full font-sans"
-                    >
-                      Next Lesson <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>

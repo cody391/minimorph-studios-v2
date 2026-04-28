@@ -1354,3 +1354,12 @@
 - [x] Add post-full-certification daily workflow guide in certifications tab (4-step numbered list)
 - [x] Add "Keep Going!" encouragement card for partially certified reps in certifications tab
 - [x] Validation: TypeScript 0 errors, 880/880 tests pass
+
+### Fix Module Lesson View Layout (Critical)
+- [x] Fix navigation buttons overlapping Key Takeaways content at bottom of lesson — removed ScrollArea, content flows naturally
+- [x] Fix lesson selector buttons cramped/overlapping in module header — replaced tiny dots with proper pill-button tabs ("Lesson 1", "Lesson 2", etc.)
+- [x] Ensure ScrollArea content doesn't extend behind navigation buttons — removed ScrollArea entirely, nav buttons sit cleanly below content with border-t separator
+- [x] Make the entire lesson view clean, readable, and easy to navigate — verified across Lesson 1 and Lesson 2 with all content types
+- [x] Progress bar now shows lessons completed count (e.g. "1/3 lessons")
+- [x] Completed lesson tabs show green with checkmark icon
+- [x] Validation: TypeScript 0 errors, 37 test files, 880/880 tests pass
