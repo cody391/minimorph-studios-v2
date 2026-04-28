@@ -1330,3 +1330,11 @@
 - [x] Fix weekly challenge banner: bg-green-50, bg-green-200 → bg-green-500/10, bg-green-500/20
 - [x] Fix locked scenario cards: bg-gray-100 → bg-gray-500/10
 - [x] Validation: TypeScript 0 errors, 37 test files 880/880 tests pass, production build OK
+
+### Academy & Training Full Readability Audit (Round 2)
+- [x] Locked Role Play scenario cards: opacity-60 makes title text too dim — increased to opacity-75
+- [x] Locked scenario "Complete X module first" text: changed from text-red-500/70 to text-amber-400/80
+- [x] Role Play AI header description: changed from text-off-white/50 to text-white/80
+- [x] Verified all lesson content prose renders cleanly — headings, bold, blockquotes, lists, code all readable
+- [x] Visual re-audit of all 6 tabs (Modules, Daily Training, Leaderboard, Certifications, Role Play, Lesson View) — ALL PASS
+- [x] Validation: TypeScript 0 errors, 37 test files 880/880 tests pass

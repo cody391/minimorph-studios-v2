@@ -1276,7 +1276,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
               <p className="text-xs text-white/70 font-sans">Practice sales conversations with AI-generated prospects</p>
             </div>
           </div>
-          <p className="text-xs text-off-white/50 font-sans mt-3">
+          <p className="text-xs text-white/80 font-sans mt-3">
             Choose a scenario, and our AI will generate a unique prospect with realistic pain points, personality, and objections.
             Practice your pitch, handle objections, and get scored on your performance.
           </p>
@@ -1322,7 +1322,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
           return (
             <Card
               key={scenario.value}
-              className={`border-border/50 transition-all ${unlocked ? 'hover:shadow-lg cursor-pointer group' : 'opacity-60 cursor-not-allowed'}`}
+              className={`border-border/50 transition-all ${unlocked ? 'hover:shadow-lg cursor-pointer group' : 'opacity-75 cursor-not-allowed'}`}
               onClick={() => unlocked && startMut.mutate({ scenarioType: scenario.value as any })}
             >
               <CardContent className="p-4">
@@ -1335,7 +1335,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                     {unlocked ? (
                       <p className="text-xs text-soft-gray font-sans mt-0.5">{scenario.description}</p>
                     ) : (
-                      <p className="text-xs text-red-500/70 font-sans mt-0.5">
+                      <p className="text-xs text-amber-400/80 font-sans mt-0.5">
                         Complete {missingModules.map(m => m.replace(/-/g, ' ')).join(', ')} module{missingModules.length > 1 ? 's' : ''} first
                       </p>
                     )}
