@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,7 @@ import {
   BookOpen, GraduationCap, CheckCircle, ChevronRight, ChevronLeft,
   Clock, Award, Star, Flame, Trophy, Lock, Play, RotateCcw,
   Lightbulb, MessageSquare, Zap, ArrowRight, AlertCircle,
-  CalendarCheck, ShieldCheck, AlertTriangle, Loader2,
+  CalendarCheck, ShieldCheck, AlertTriangle, Loader2, Rocket, ArrowUpRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +36,7 @@ const moduleColorMap: Record<string, { bg: string; border: string; text: string;
 };
 
 export default function SalesAcademy() {
+  const [, setLocation] = useLocation();
   const [activeView, setActiveView] = useState<"overview" | "module" | "quiz" | "results">("overview");
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
@@ -79,6 +81,100 @@ export default function SalesAcademy() {
     const completed = academyData.modules.filter((m: any) => m.progress?.quizPassed).length;
     return Math.round((completed / academyData.modules.length) * 100);
   }, [academyData]);
+
+  // ─── Compute "Your Next Step" guidance ───
+  const nextStep = useMemo(() => {
+    if (!academyData?.modules) return null;
+    const modules = academyData.modules;
+    const completedCount = modules.filter((m: any) => m.progress?.quizPassed).length;
+    const isFullyCertified = academyData.isFullyCertified;
+    const dailyCleared = dailyCheckIn?.isCleared;
+    const hasPendingReviews = (dailyCheckIn?.pendingReviews?.length ?? 0) > 0;
+
+    // State 5: Fully certified + daily cleared (or no pending reviews)
+    if (isFullyCertified && (dailyCleared || !hasPendingReviews)) {
+      return {
+        type: "ready_to_sell" as const,
+        icon: Rocket,
+        title: "You're Ready to Sell",
+        description: "Training complete and daily reviews done. Head to your Pipeline to claim leads, start outreach, and close deals.",
+        color: "border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 to-electric/10",
+        iconColor: "bg-emerald-500/20 text-emerald-400",
+        primaryAction: { label: "Go to Pipeline", onClick: () => setLocation("/rep?tab=pipeline") },
+        secondaryActions: [
+          { label: "Performance", onClick: () => setLocation("/rep?tab=performance") },
+          { label: "Comms Hub", onClick: () => setLocation("/rep?tab=comms") },
+        ],
+      };
+    }
+
+    // State 4: Fully certified but daily training not cleared
+    if (isFullyCertified && hasPendingReviews && !dailyCleared) {
+      return {
+        type: "daily_training" as const,
+        icon: CalendarCheck,
+        title: "Complete Daily Training to Unlock Your Pipeline",
+        description: `You're certified! Complete your ${dailyCheckIn?.pendingReviews?.length || 0} daily coaching review${(dailyCheckIn?.pendingReviews?.length || 0) > 1 ? "s" : ""} to access leads and start selling today.`,
+        color: "border-amber-500/20 bg-amber-500/10",
+        iconColor: "bg-amber-500/20 text-amber-400",
+        primaryAction: { label: "Start Daily Reviews", onClick: () => { /* Tab switch handled by parent Tabs */ } },
+        secondaryActions: [],
+      };
+    }
+
+    // Find next incomplete module
+    const nextModule = modules.find((m: any) => !m.progress?.quizPassed) as any;
+    const nextModuleIndex = nextModule ? (modules as any[]).indexOf(nextModule) : -1;
+
+    // State 3: Module has all lessons done but quiz not taken
+    if (nextModule?.progress && nextModule.progress.lessonsCompleted >= nextModule.lessonCount && !nextModule.progress.quizPassed) {
+      return {
+        type: "take_quiz" as const,
+        icon: GraduationCap,
+        title: `Ready for the Quiz: ${nextModule.title}`,
+        description: `You've finished all ${nextModule.lessonCount} lessons. Take the quiz now to certify this module and move on. You need ${nextModule.passingScore}% to pass.`,
+        color: "border-electric/30 bg-electric/10",
+        iconColor: "bg-electric/20 text-electric",
+        primaryAction: { label: "Take Quiz Now", onClick: () => openQuiz(nextModule.id) },
+        secondaryActions: [{ label: "Review Lessons", onClick: () => openModule(nextModule.id) }],
+        moduleId: nextModule.id,
+      };
+    }
+
+    // State 2: In progress (some modules started)
+    if (completedCount > 0 && nextModule) {
+      const lessonsLeft = nextModule.lessonCount - (nextModule.progress?.lessonsCompleted || 0);
+      return {
+        type: "continue" as const,
+        icon: BookOpen,
+        title: `Continue: ${nextModule.title}`,
+        description: `${completedCount} of ${modules.length} modules certified. ${lessonsLeft > 0 ? `${lessonsLeft} lesson${lessonsLeft > 1 ? "s" : ""} remaining in this module.` : "All lessons done — take the quiz!"}`,
+        color: "border-electric/30 bg-electric/10",
+        iconColor: "bg-electric/20 text-electric",
+        primaryAction: { label: "Continue Training", onClick: () => openModule(nextModule.id) },
+        secondaryActions: [],
+        moduleId: nextModule.id,
+        progress: { completed: completedCount, total: modules.length },
+      };
+    }
+
+    // State 1: Not started
+    if (completedCount === 0 && nextModule) {
+      return {
+        type: "not_started" as const,
+        icon: Play,
+        title: "Start Your Sales Training",
+        description: `Complete all ${modules.length} modules to get certified and start earning. Begin with Module 1: ${nextModule.title}. Certification is required before you can access leads or make calls.`,
+        color: "border-electric/30 bg-gradient-to-r from-electric/10 to-purple-500/10",
+        iconColor: "bg-electric/20 text-electric",
+        primaryAction: { label: "Begin Module 1", onClick: () => openModule(nextModule.id) },
+        secondaryActions: [],
+        moduleId: nextModule.id,
+      };
+    }
+
+    return null;
+  }, [academyData, dailyCheckIn, setLocation]);
 
   const openModule = (moduleId: string) => {
     setSelectedModuleId(moduleId);
@@ -212,13 +308,110 @@ export default function SalesAcademy() {
           </CardContent>
         </Card>
 
+        {/* ─── WHAT'S NEXT GUIDANCE ─── */}
+        {(() => {
+          if (!academyData?.modules) return null;
+          const modules = academyData.modules;
+          const completedCount = modules.filter((m: any) => m.progress?.quizPassed).length + (result.passed ? 1 : 0);
+          const totalModules = modules.length;
+
+          if (result.passed) {
+            // Check if this was the last module
+            if (completedCount >= totalModules) {
+              return (
+                <Card className="border-2 border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 to-electric/10">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                        <Rocket className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <div className="flex-1">
+                        <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-400 font-sans mb-2">
+                          <Zap className="w-3 h-3 mr-0.5" /> What's Next
+                        </Badge>
+                        <h3 className="text-base font-serif text-off-white font-medium mb-1">You're Fully Certified!</h3>
+                        <p className="text-sm text-soft-gray font-sans leading-relaxed mb-4">
+                          All {totalModules} modules complete. Your account is now active — you can access leads, make calls, and start closing deals immediately.
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <Button onClick={() => setLocation("/rep?tab=pipeline")} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm px-6">
+                            Go to Pipeline <ArrowRight className="w-4 h-4 ml-1" />
+                          </Button>
+                          <Button variant="ghost" onClick={() => setLocation("/rep?tab=performance")} className="text-soft-gray hover:text-off-white font-sans text-sm">
+                            Check Performance <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            // Find the next module to complete
+            const nextMod = modules.find((m: any) => m.id !== selectedModuleId && !m.progress?.quizPassed);
+            if (nextMod) {
+              return (
+                <Card className="border-2 border-electric/30 bg-electric/10">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-electric/20 flex items-center justify-center shrink-0">
+                        <BookOpen className="w-6 h-6 text-electric" />
+                      </div>
+                      <div className="flex-1">
+                        <Badge variant="outline" className="text-[10px] border-electric/30 text-electric font-sans mb-2">
+                          <Zap className="w-3 h-3 mr-0.5" /> What's Next
+                        </Badge>
+                        <h3 className="text-base font-serif text-off-white font-medium mb-1">Next Up: {nextMod.title}</h3>
+                        <p className="text-sm text-soft-gray font-sans leading-relaxed mb-4">
+                          {completedCount} of {totalModules} modules certified. Keep the momentum going — start the next module now.
+                        </p>
+                        <Button onClick={() => openModule(nextMod.id)} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm px-6">
+                          Start Next Module <ArrowRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+          } else {
+            // Failed quiz — guidance to retry
+            const wrongCount = result.totalQuestions - result.correctCount;
+            return (
+              <Card className="border-2 border-amber-500/20 bg-amber-500/10">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                      <Lightbulb className="w-6 h-6 text-amber-400" />
+                    </div>
+                    <div className="flex-1">
+                      <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400 font-sans mb-2">
+                        <Zap className="w-3 h-3 mr-0.5" /> How to Pass
+                      </Badge>
+                      <h3 className="text-base font-serif text-off-white font-medium mb-1">Review & Retry</h3>
+                      <p className="text-sm text-soft-gray font-sans leading-relaxed mb-4">
+                        You missed {wrongCount} question{wrongCount > 1 ? "s" : ""}. Review the explanations above, then go back through the lessons focusing on the areas you got wrong. You can retake the quiz as many times as needed.
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <Button onClick={() => openModule(selectedModuleId!)} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm px-6">
+                          Review Lessons <ArrowRight className="w-4 h-4 ml-1" />
+                        </Button>
+                        <Button variant="ghost" onClick={() => openQuiz(selectedModuleId!)} className="text-soft-gray hover:text-off-white font-sans text-sm">
+                          Retake Quiz <RotateCcw className="w-3.5 h-3.5 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }
+          return null;
+        })()}
+
         <div className="flex justify-center gap-3">
-          {!result.passed && (
-            <Button onClick={() => openQuiz(selectedModuleId!)} variant="outline" className="rounded-full font-sans">
-              <RotateCcw className="w-4 h-4 mr-1" /> Retake Quiz
-            </Button>
-          )}
-          <Button onClick={() => setActiveView("overview")} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans">
+          <Button onClick={() => setActiveView("overview")} variant="outline" className="rounded-full font-sans">
             Back to Academy
           </Button>
         </div>
@@ -558,6 +751,46 @@ export default function SalesAcademy() {
           <CardContent className="p-4 flex items-center gap-3">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
             <span className="text-sm font-sans text-green-400">Daily training complete! You're cleared to work.</span>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ─── YOUR NEXT STEP BANNER ─── */}
+      {nextStep && (
+        <Card className={`border-2 ${nextStep.color} overflow-hidden`}>
+          <CardContent className="p-5">
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-xl ${nextStep.iconColor} flex items-center justify-center shrink-0`}>
+                <nextStep.icon className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="outline" className="text-[10px] border-electric/30 text-electric font-sans">
+                    <Zap className="w-3 h-3 mr-0.5" /> Your Next Step
+                  </Badge>
+                </div>
+                <h3 className="text-base font-serif text-off-white font-medium mb-1">{nextStep.title}</h3>
+                <p className="text-sm text-soft-gray font-sans leading-relaxed">{nextStep.description}</p>
+                <div className="flex items-center gap-3 mt-4">
+                  <Button
+                    onClick={nextStep.primaryAction.onClick}
+                    className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm px-6"
+                  >
+                    {nextStep.primaryAction.label} <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                  {nextStep.secondaryActions?.map((action: any, i: number) => (
+                    <Button
+                      key={i}
+                      variant="ghost"
+                      onClick={action.onClick}
+                      className="text-soft-gray hover:text-off-white font-sans text-sm"
+                    >
+                      {action.label} <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -965,6 +1198,59 @@ export default function SalesAcademy() {
               )}
             </CardContent>
           </Card>
+
+          {/* Post-certification guidance */}
+          {academyData?.isFullyCertified && (
+            <Card className="border-2 border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 to-electric/10 mt-4">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                    <Rocket className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-serif text-off-white font-medium mb-1">You're Fully Certified — Now Start Selling</h3>
+                    <p className="text-sm text-soft-gray font-sans leading-relaxed mb-3">
+                      Your training is complete. Here's your daily workflow:
+                    </p>
+                    <ol className="text-sm text-soft-gray font-sans space-y-2 mb-4 list-decimal list-inside">
+                      <li><span className="text-off-white font-medium">Complete Daily Training</span> — coaching reviews that keep your skills sharp and unlock your pipeline each day</li>
+                      <li><span className="text-off-white font-medium">Work Your Pipeline</span> — claim leads, make calls, send emails, and move deals forward</li>
+                      <li><span className="text-off-white font-medium">Track Performance</span> — monitor your score, tier, and earnings on the Performance tab</li>
+                      <li><span className="text-off-white font-medium">Practice with Role Play</span> — sharpen specific skills with AI-powered scenarios anytime</li>
+                    </ol>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <Button onClick={() => setLocation("/rep?tab=pipeline")} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm px-6">
+                        Go to Pipeline <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                      <Button variant="ghost" onClick={() => setLocation("/rep?tab=performance")} className="text-soft-gray hover:text-off-white font-sans text-sm">
+                        Performance <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                      <Button variant="ghost" onClick={() => setLocation("/rep?tab=guide")} className="text-soft-gray hover:text-off-white font-sans text-sm">
+                        Full Guide <ArrowUpRight className="w-3.5 h-3.5 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Guidance for reps who haven't started or are in progress */}
+          {!academyData?.isFullyCertified && (academyData?.certifications?.length ?? 0) > 0 && (
+            <Card className="border border-electric/20 bg-electric/5 mt-4">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                  <Flame className="w-5 h-5 text-electric shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-off-white font-sans font-medium">Keep Going!</p>
+                    <p className="text-xs text-soft-gray font-sans mt-1">
+                      {academyData?.certifications?.length} of {academyData?.modules?.length} modules certified. Complete all modules to unlock your full sales account — leads, calls, and commissions.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* ─── ROLE PLAY TAB ─── */}

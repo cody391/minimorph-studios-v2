@@ -1341,3 +1341,16 @@
 
 ### Fix Lesson Navigation Overlap
 - [x] Previous/Next Lesson buttons overlap lesson content — moved inside Card below ScrollArea with border-t separator
+
+### Guided Next-Steps System for Reps
+- [x] Add "Your Next Step" context-aware banner below the Academy hero in overview
+- [x] State: Not started → direct to Module 1 with clear CTA (Play icon, "Begin Module 1" button)
+- [x] State: In progress → show next incomplete module with "Continue Training" CTA (BookOpen icon, lesson count)
+- [x] State: Module lessons done but quiz not taken → prompt to take quiz (GraduationCap icon, "Take Quiz Now")
+- [x] State: Fully certified but daily training pending → direct to Daily Training tab (CalendarCheck icon)
+- [x] State: Fully certified + daily cleared → direct to Pipeline/Comms with "Go to Pipeline" CTA (Rocket icon)
+- [x] Add "What's Next" guidance card after passing a quiz — shows next module or "Fully Certified" with Pipeline CTA
+- [x] Add "How to Pass" guidance card after failing a quiz — shows missed count, Review Lessons + Retake Quiz CTAs
+- [x] Add post-full-certification daily workflow guide in certifications tab (4-step numbered list)
+- [x] Add "Keep Going!" encouragement card for partially certified reps in certifications tab
+- [x] Validation: TypeScript 0 errors, 880/880 tests pass
