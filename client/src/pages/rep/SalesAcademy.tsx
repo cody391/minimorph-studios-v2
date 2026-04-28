@@ -40,6 +40,7 @@ export default function SalesAcademy() {
   const [activeView, setActiveView] = useState<"overview" | "module" | "quiz" | "results">("overview");
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState("modules");
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [quizStartTime, setQuizStartTime] = useState(0);
   const [lessonStartTime, setLessonStartTime] = useState(Date.now());
@@ -91,6 +92,14 @@ export default function SalesAcademy() {
     const dailyCleared = dailyCheckIn?.isCleared;
     const hasPendingReviews = (dailyCheckIn?.pendingReviews?.length ?? 0) > 0;
 
+    // Check role play status across all modules
+    const modulesNeedingRP = modules.filter((m: any) => {
+      const rpStatus = m.rolePlayStatus ?? [];
+      return m.progress?.quizPassed && rpStatus.length > 0 && !rpStatus.every((rp: any) => rp.passed);
+    });
+    const allQuizzesPassed = completedCount === modules.length;
+    const hasIncompleteRolePlays = modulesNeedingRP.length > 0;
+
     // State 5: Fully certified + daily cleared (or no pending reviews)
     if (isFullyCertified && (dailyCleared || !hasPendingReviews)) {
       return {
@@ -119,6 +128,22 @@ export default function SalesAcademy() {
         iconColor: "bg-amber-500/20 text-amber-400",
         primaryAction: { label: "Start Daily Reviews", onClick: () => { /* Tab switch handled by parent Tabs */ } },
         secondaryActions: [],
+      };
+    }
+
+    // State 3.5: All quizzes passed but role plays still needed
+    if (allQuizzesPassed && hasIncompleteRolePlays) {
+      const firstIncomplete = modulesNeedingRP[0];
+      const pendingRPs = (firstIncomplete.rolePlayStatus ?? []).filter((rp: any) => !rp.passed);
+      return {
+        type: "role_play_needed" as const,
+        icon: MessageSquare,
+        title: "Complete Your Role Play Scenarios",
+        description: `All quizzes passed! You have ${modulesNeedingRP.length} module${modulesNeedingRP.length > 1 ? "s" : ""} with pending role play requirements. Complete them to earn full certification.`,
+        color: "border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-electric/10",
+        iconColor: "bg-purple-500/20 text-purple-400",
+        primaryAction: { label: `Start: ${pendingRPs[0]?.label || "Role Play"}`, onClick: () => { setActiveView("overview"); setActiveTab("roleplay"); } },
+        secondaryActions: modulesNeedingRP.length > 1 ? [{ label: `${modulesNeedingRP.length} modules need role plays`, onClick: () => { setActiveView("overview"); setActiveTab("roleplay"); } }] : [],
       };
     }
 
@@ -258,9 +283,46 @@ export default function SalesAcademy() {
                 <p className="text-soft-gray font-sans mb-4">
                   You passed the {mod?.title} quiz with a score of <span className="font-bold text-emerald-400">{result.score}%</span>
                 </p>
-                <Badge className="badge-success text-sm px-4 py-1">
-                  <GraduationCap className="w-4 h-4 mr-1" /> Module Certified
-                </Badge>
+                {(() => {
+                  const rpStatus = mod?.rolePlayStatus ?? [];
+                  const hasRP = rpStatus.length > 0;
+                  const allRP = hasRP ? rpStatus.every((rp: any) => rp.passed) : true;
+                  return allRP ? (
+                    <Badge className="badge-success text-sm px-4 py-1">
+                      <GraduationCap className="w-4 h-4 mr-1" /> Module Certified
+                    </Badge>
+                  ) : (
+                    <div className="space-y-3">
+                      <Badge className="bg-amber-500/15 text-amber-400 text-sm px-4 py-1">
+                        <CheckCircle className="w-4 h-4 mr-1" /> Quiz Passed
+                      </Badge>
+                      <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mt-4 text-left">
+                        <h3 className="text-sm font-serif text-off-white font-medium flex items-center gap-2 mb-2">
+                          <MessageSquare className="w-4 h-4 text-purple-400" /> Role Play Required to Certify
+                        </h3>
+                        <p className="text-xs text-soft-gray font-sans mb-3">
+                          Complete the following role play scenario(s) with a passing score to earn your module certification:
+                        </p>
+                        <div className="space-y-2">
+                          {rpStatus.map((rp: any) => (
+                            <div key={rp.scenarioType} className="flex items-center justify-between bg-background/50 rounded-lg px-3 py-2">
+                              <span className="text-xs font-sans text-off-white">{rp.label}</span>
+                              <span className={`text-xs font-sans ${rp.passed ? "text-emerald-400" : "text-soft-gray"}`}>
+                                {rp.passed ? `Passed (${rp.bestScore}%)` : rp.bestScore !== null ? `Best: ${rp.bestScore}% (need ${rp.minScore}%)` : `Need ${rp.minScore}%`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <Button
+                          onClick={() => { setActiveView("overview"); setActiveTab("roleplay"); }}
+                          className="mt-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full font-sans text-xs w-full"
+                        >
+                          <MessageSquare className="w-3 h-3 mr-1" /> Go to Role Play
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })()}
               </>
             ) : (
               <>
@@ -316,8 +378,38 @@ export default function SalesAcademy() {
           const totalModules = modules.length;
 
           if (result.passed) {
-            // Check if this was the last module
+            // Check if this was the last module (quiz-wise)
             if (completedCount >= totalModules) {
+              // Check if role plays are still needed
+              const modsNeedingRP = modules.filter((m: any) => {
+                const rps = m.rolePlayStatus ?? [];
+                return rps.length > 0 && !rps.every((rp: any) => rp.passed);
+              });
+              if (modsNeedingRP.length > 0) {
+                return (
+                  <Card className="border-2 border-purple-500/30 bg-gradient-to-r from-purple-500/10 to-electric/10">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
+                          <MessageSquare className="w-6 h-6 text-purple-400" />
+                        </div>
+                        <div className="flex-1">
+                          <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-400 font-sans mb-2">
+                            <Zap className="w-3 h-3 mr-0.5" /> What's Next
+                          </Badge>
+                          <h3 className="text-base font-serif text-off-white font-medium mb-1">All Quizzes Passed — Role Plays Remaining</h3>
+                          <p className="text-sm text-soft-gray font-sans leading-relaxed mb-4">
+                            Great work passing all {totalModules} quizzes! Complete {modsNeedingRP.length} role play scenario{modsNeedingRP.length > 1 ? "s" : ""} to earn your full certification and unlock your pipeline.
+                          </p>
+                          <Button onClick={() => { setActiveView("overview"); setActiveTab("roleplay"); }} className="bg-purple-600 hover:bg-purple-700 text-white rounded-full font-sans text-sm px-6">
+                            Go to Role Play <ArrowRight className="w-4 h-4 ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
               return (
                 <Card className="border-2 border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 to-electric/10">
                   <CardContent className="p-6">
@@ -806,7 +898,7 @@ export default function SalesAcademy() {
       )}
 
       {/* Tabs: Modules / Leaderboard / Daily Training */}
-      <Tabs defaultValue="modules">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-electric/10">
           <TabsTrigger value="daily" className="font-sans text-xs data-[state=active]:bg-electric data-[state=active]:text-white relative">
             <CalendarCheck className="w-3.5 h-3.5 mr-1" /> Daily Training
@@ -1024,6 +1116,9 @@ export default function SalesAcademy() {
               const lessonPct = mod.progress
                 ? Math.round((mod.progress.lessonsCompleted / mod.lessonCount) * 100)
                 : 0;
+              const hasRequiredRP = mod.rolePlayStatus && mod.rolePlayStatus.length > 0;
+              const allRPPassed = hasRequiredRP ? mod.rolePlayStatus.every((rp: any) => rp.passed) : true;
+              const isModuleCertified = isPassed && allRPPassed;
 
               // Check if previous module is completed (for recommended path)
               const prevMod = index > 0 ? academyData?.modules[index - 1] : null;
@@ -1033,14 +1128,14 @@ export default function SalesAcademy() {
                 <Card
                   key={mod.id}
                   className={`border transition-all hover:shadow-lg cursor-pointer group ${
-                    isPassed ? `${colors.border} ${colors.bg}` : "border-border/50 hover:border-electric/30"
+                    isModuleCertified ? `${colors.border} ${colors.bg}` : "border-border/50 hover:border-electric/30"
                   }`}
                   onClick={() => openModule(mod.id)}
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
                       <div className={`w-12 h-12 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
-                        {isPassed ? (
+                        {isModuleCertified ? (
                           <CheckCircle className="w-6 h-6 text-emerald-400" />
                         ) : (
                           <Icon className={`w-6 h-6 ${colors.text}`} />
@@ -1049,14 +1144,24 @@ export default function SalesAcademy() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[10px] font-sans text-soft-gray/60 font-medium">MODULE {index + 1}</span>
-                          {isPassed && (
+                          {isModuleCertified && (
                             <Badge className="badge-success text-[10px]">
                               <GraduationCap className="w-3 h-3 mr-0.5" /> Certified
+                            </Badge>
+                          )}
+                          {isPassed && !allRPPassed && (
+                            <Badge className="bg-amber-500/15 text-amber-400 text-[10px]">
+                              <MessageSquare className="w-3 h-3 mr-0.5" /> Role Play Required
                             </Badge>
                           )}
                           {!prevCompleted && !isStarted && (
                             <Badge variant="outline" className="text-[10px] text-soft-gray/60">
                               <Lock className="w-3 h-3 mr-0.5" /> Recommended after Module {index}
+                            </Badge>
+                          )}
+                          {hasRequiredRP && !isPassed && (
+                            <Badge variant="outline" className="text-[10px] text-purple-400/60 border-purple-500/20">
+                              <MessageSquare className="w-3 h-3 mr-0.5" /> + Role Play
                             </Badge>
                           )}
                         </div>
@@ -1073,6 +1178,11 @@ export default function SalesAcademy() {
                           <span className="flex items-center gap-1">
                             <GraduationCap className="w-3 h-3" /> {mod.quizQuestionCount} questions
                           </span>
+                          {hasRequiredRP && (
+                            <span className="flex items-center gap-1 text-purple-400/60">
+                              <MessageSquare className="w-3 h-3" /> role play
+                            </span>
+                          )}
                         </div>
 
                         {isStarted && !isPassed && (
@@ -1086,10 +1196,16 @@ export default function SalesAcademy() {
                         )}
 
                         {isPassed && mod.progress?.quizScore && (
-                          <div className="mt-2 flex items-center gap-2">
+                          <div className="mt-2 flex items-center gap-2 flex-wrap">
                             <Badge className={colors.badge + " text-[10px]"}>
-                              <Star className="w-3 h-3 mr-0.5" /> Quiz Score: {mod.progress.quizScore}%
+                              <Star className="w-3 h-3 mr-0.5" /> Quiz: {mod.progress.quizScore}%
                             </Badge>
+                            {hasRequiredRP && mod.rolePlayStatus.map((rp: any) => (
+                              <Badge key={rp.scenarioType} className={rp.passed ? "badge-success text-[10px]" : "bg-gray-500/15 text-soft-gray text-[10px]"}>
+                                <MessageSquare className="w-3 h-3 mr-0.5" />
+                                {rp.label}: {rp.bestScore !== null ? `${rp.bestScore}%` : "Not attempted"}
+                              </Badge>
+                            ))}
                           </div>
                         )}
                       </div>

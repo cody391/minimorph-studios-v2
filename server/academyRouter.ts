@@ -77,6 +77,7 @@ export const academyRouter = router({
       lessonCount: mod.lessons.length,
       quizQuestionCount: mod.quiz.length,
       passingScore: mod.passingScore,
+      requiredRolePlay: mod.requiredRolePlay || null,
     }));
 
     // Get progress for this rep
@@ -107,11 +108,41 @@ export const academyRouter = router({
         .where(eq(academyCertifications.repId, repId));
     }
 
+    // Get role play sessions for this rep (scored sessions only)
+    let rolePlayMap: Record<string, { scenarioType: string; score: number; status: string }[]> = {};
+    if (repId) {
+      const rpSessions = await db.select()
+        .from(rolePlaySessions)
+        .where(and(eq(rolePlaySessions.repId, repId), eq(rolePlaySessions.status, "scored")));
+      for (const rp of rpSessions) {
+        if (!rolePlayMap[rp.scenarioType]) rolePlayMap[rp.scenarioType] = [];
+        rolePlayMap[rp.scenarioType].push({ scenarioType: rp.scenarioType, score: rp.score ?? 0, status: rp.status });
+      }
+    }
+
     return {
-      modules: modules.map((m) => ({
-        ...m,
-        progress: progressMap[m.id] || null,
-      })),
+      modules: modules.map((m) => {
+        // Compute role play completion status for this module
+        let rolePlayStatus: { scenarioType: string; label: string; minScore: number; passed: boolean; bestScore: number | null }[] | null = null;
+        if (m.requiredRolePlay && m.requiredRolePlay.length > 0) {
+          rolePlayStatus = m.requiredRolePlay.map(rp => {
+            const sessions = rolePlayMap[rp.scenarioType] || [];
+            const bestScore = sessions.length > 0 ? Math.max(...sessions.map(s => s.score)) : null;
+            return {
+              scenarioType: rp.scenarioType,
+              label: rp.label,
+              minScore: rp.minScore,
+              passed: bestScore !== null && bestScore >= rp.minScore,
+              bestScore,
+            };
+          });
+        }
+        return {
+          ...m,
+          progress: progressMap[m.id] || null,
+          rolePlayStatus,
+        };
+      }),
       totalQuestions: getTotalQuizQuestions(),
       totalMinutes: getTotalEstimatedMinutes(),
       certifications,
@@ -315,7 +346,20 @@ export const academyRouter = router({
         // Include current module since we just passed it
         passedModules.add(input.moduleId);
 
-        if (ACADEMY_MODULES.every((m) => passedModules.has(m.id))) {
+        // Also check if all required role plays are completed
+        const rpSessions = await db.select()
+          .from(rolePlaySessions)
+          .where(and(eq(rolePlaySessions.repId, repId), eq(rolePlaySessions.status, "scored")));
+        const rpScoreMap: Record<string, number> = {};
+        for (const rp of rpSessions) {
+          rpScoreMap[rp.scenarioType] = Math.max(rpScoreMap[rp.scenarioType] ?? 0, rp.score ?? 0);
+        }
+        const allRolePlaysCompleted = ACADEMY_MODULES.every((m) => {
+          if (!m.requiredRolePlay || m.requiredRolePlay.length === 0) return true;
+          return m.requiredRolePlay.every(rp => (rpScoreMap[rp.scenarioType] ?? 0) >= rp.minScore);
+        });
+
+        if (ACADEMY_MODULES.every((m) => passedModules.has(m.id)) && allRolePlaysCompleted) {
           const existingFull = await db
             .select()
             .from(academyCertifications)
@@ -832,6 +876,56 @@ Evaluate the rep's performance and return a JSON object.`,
           completedAt: new Date(),
         })
         .where(eq(rolePlaySessions.id, input.sessionId));
+
+      // Check if this role play completion triggers full certification
+      // (all quizzes passed + all required role plays passed)
+      const rpRepId = rep[0].id;
+      const allProgress = await db.select().from(academyProgress).where(eq(academyProgress.repId, rpRepId));
+      const passedModules = new Set(allProgress.filter((p) => p.quizPassed).map((p) => p.moduleId));
+      const allQuizzesPassed = ACADEMY_MODULES.every((m) => passedModules.has(m.id));
+
+      if (allQuizzesPassed) {
+        // Get all scored role play sessions including this one
+        const allRpSessions = await db.select()
+          .from(rolePlaySessions)
+          .where(and(eq(rolePlaySessions.repId, rpRepId), eq(rolePlaySessions.status, "scored")));
+        const rpScoreMap: Record<string, number> = {};
+        for (const rp of allRpSessions) {
+          rpScoreMap[rp.scenarioType] = Math.max(rpScoreMap[rp.scenarioType] ?? 0, rp.score ?? 0);
+        }
+        const allRolePlaysCompleted = ACADEMY_MODULES.every((m) => {
+          if (!m.requiredRolePlay || m.requiredRolePlay.length === 0) return true;
+          return m.requiredRolePlay.every(rp => (rpScoreMap[rp.scenarioType] ?? 0) >= rp.minScore);
+        });
+
+        if (allRolePlaysCompleted) {
+          const existingFull = await db.select()
+            .from(academyCertifications)
+            .where(and(eq(academyCertifications.repId, rpRepId), eq(academyCertifications.certificationType, "full")))
+            .limit(1);
+
+          if (existingFull.length === 0) {
+            const avgScore = Math.round(
+              allProgress.reduce((sum, p) => sum + (p.quizScore ?? 0), 0) / ACADEMY_MODULES.length
+            );
+            await db.insert(academyCertifications).values({
+              repId: rpRepId,
+              certificationType: "full",
+              score: avgScore,
+            });
+            await db.update(reps)
+              .set({ status: "active", certifiedAt: new Date(), trainingProgress: 100 })
+              .where(eq(reps.id, rpRepId));
+
+            await createRepNotification({
+              repId: rpRepId,
+              type: "general",
+              title: "🎉 Welcome to the Team — You're Officially Active!",
+              message: `Congratulations! You've completed all Academy modules, passed every quiz, and proven your skills in Role Play scenarios. Your account is now active — you can access leads, make calls, and start closing deals immediately.\n\nHere's what to do next:\n1. Check your Pipeline for available leads\n2. Review your daily check-in each morning\n3. Start reaching out — your first commission is waiting!\n\nWe're excited to have you on the team. Go make it happen! 🚀`,
+            });
+          }
+        }
+      }
 
       return {
         score: evaluation.score,

@@ -33,6 +33,11 @@ export interface AcademyModule {
   lessons: LessonContent[];
   quiz: QuizQuestion[];
   passingScore: number; // percentage
+  requiredRolePlay?: {
+    scenarioType: string; // matches role_play_sessions.scenario_type enum
+    minScore: number; // minimum score to pass (0-100)
+    label: string; // human-readable label for the UI
+  }[];
 }
 
 export const ACADEMY_MODULES: AcademyModule[] = [
@@ -288,10 +293,36 @@ Here's the path every MiniMorph rep follows:
 
 1. **Complete all 9 Academy modules** — Each module covers a critical sales skill, from product knowledge to advanced closing techniques
 2. **Pass the certification quiz** for each module — You must score above the passing threshold to earn certification
-3. **Earn your full certification** — Once all 9 modules are passed, your account is activated for live work
-4. **Start your daily workflow** — Access leads, make calls, close deals, and keep growing
+3. **Complete the required Role Play** for each module — Most modules (3-9) require you to pass an AI-powered role play scenario with a minimum score of 70%. This is where you prove you can actually USE the skills you learned, not just memorize them
+4. **Earn your full certification** — Once all quizzes AND role plays are passed across all 9 modules, your account is activated for live work
+5. **Start your daily workflow** — Access leads, make calls, close deals, and keep growing
 
-Until you're fully certified, you won't have access to leads or the ability to make live calls. This protects both you and our clients — we never put an unprepared rep in front of a prospect.
+Until you're fully certified (quizzes + role plays), you won't have access to leads or the ability to make live calls. This protects both you and our clients — we never put an unprepared rep in front of a prospect.
+
+## Mandatory Role Plays — Prove You Can Do It
+
+Reading about sales techniques is one thing. Actually doing them is another. That's why most modules require you to complete a matching **AI Role Play scenario** before you earn certification.
+
+Here's how it works:
+
+1. **Finish the module lessons** — Learn the concepts and techniques
+2. **Pass the quiz** — Prove you understand the material
+3. **Complete the role play** — Have a simulated conversation with our AI prospect. The AI plays the role of a real customer, and you practice the skills you just learned
+4. **Score 70% or higher** — The AI Coach scores your performance. If you don't hit 70%, review the lessons and try again
+
+The role play scenarios are mapped to specific modules:
+
+- **Psychology of Selling** → Price Negotiation role play
+- **Discovery Call** → Discovery Call role play
+- **Objection Handling** → Objection Handling role play
+- **Closing Techniques** → Closing role play
+- **Digital Prospecting** → Cold Call role play
+- **Account Management** → Follow Up + Upsell role play
+- **Advanced Tactics** → Angry Customer role play
+
+Modules 1 (Values & Ethics) and 2 (Product Mastery) are knowledge-based and don't have role play requirements.
+
+You can attempt role plays as many times as you need. Each attempt is scored, and your best score counts. The more you practice, the better you'll be when you're talking to real prospects.
 
 ## Daily Training — Your Morning Warm-Up
 
@@ -790,6 +821,7 @@ When a prospect says "I'm also looking at..." you need to respond instantly with
       }
     ],
     passingScore: 80
+    // No requiredRolePlay — knowledge-based module
   },
 
   /* ═══════════════════════════════════════════════════════
@@ -1018,7 +1050,10 @@ I wanted to chat because I think there's a real opportunity to make your digital
         difficulty: "medium"
       }
     ],
-    passingScore: 80
+    passingScore: 80,
+    requiredRolePlay: [
+      { scenarioType: "price_negotiation", minScore: 70, label: "Price Negotiation" }
+    ]
   },
 
   /* ═══════════════════════════════════════════════════════
@@ -1202,7 +1237,10 @@ When they mention something emotional, simply say "Tell me more about that." It'
         difficulty: "medium"
       }
     ],
-    passingScore: 80
+    passingScore: 80,
+    requiredRolePlay: [
+      { scenarioType: "discovery_call", minScore: 70, label: "Discovery Call" }
+    ]
   },
 
   /* ═══════════════════════════════════════════════════════
@@ -1371,7 +1409,10 @@ If someone isn't interested, they don't object — they just say "no thanks" and
         difficulty: "hard"
       }
     ],
-    passingScore: 80
+    passingScore: 80,
+    requiredRolePlay: [
+      { scenarioType: "objection_handling", minScore: 70, label: "Objection Handling" }
+    ]
   },
 
   /* ═══════════════════════════════════════════════════════
@@ -1500,7 +1541,10 @@ The prospect came to you because they have a problem. You have the solution. Clo
         difficulty: "easy"
       }
     ],
-    passingScore: 80
+    passingScore: 80,
+    requiredRolePlay: [
+      { scenarioType: "closing", minScore: 70, label: "Closing" }
+    ]
   },
 
   /* ═══════════════════════════════════════════════════════
@@ -1636,7 +1680,10 @@ Don't ask them to do the work. Offer to:
         difficulty: "medium"
       }
     ],
-    passingScore: 80
+    passingScore: 80,
+    requiredRolePlay: [
+      { scenarioType: "cold_call", minScore: 70, label: "Cold Call" }
+    ]
   },
 
   /* ═══════════════════════════════════════════════════════
@@ -1730,7 +1777,11 @@ This positions you as a strategic partner, not just a vendor.`,
         difficulty: "hard"
       }
     ],
-    passingScore: 80
+    passingScore: 80,
+    requiredRolePlay: [
+      { scenarioType: "follow_up", minScore: 70, label: "Follow Up" },
+      { scenarioType: "upsell", minScore: 70, label: "Upsell" }
+    ]
   },
 
   /* ═══════════════════════════════════════════════════════
@@ -1830,7 +1881,10 @@ For larger deals, shift your language:
         difficulty: "medium"
       }
     ],
-    passingScore: 80
+    passingScore: 80,
+    requiredRolePlay: [
+      { scenarioType: "angry_customer", minScore: 70, label: "Angry Customer" }
+    ]
   }
 ];
 

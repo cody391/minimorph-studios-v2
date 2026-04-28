@@ -1373,3 +1373,16 @@
 - [x] Add 3 quiz questions testing platform knowledge (daily training purpose, Bronze tier reviews, AI Coach function)
 - [x] Module 1 updated: 5 lessons, 40 min, 13 questions — all dynamic, no hardcoded references needed
 - [x] Verified in browser: all content renders cleanly, navigation works, Key Takeaways visible
+
+### Make Role Play Mandatory for Certification
+- [x] Define which role play scenario is required for each module (Modules 3-9 mapped to 7 scenarios)
+- [x] Add requiredRolePlay field to ACADEMY_MODULES curriculum definition (scenarioType, label, minScore: 70)
+- [x] Backend: Include role play completion status in listModules responses (rolePlayStatus array per module)
+- [x] Backend: Block full certification until all required role plays are completed (score >= 70)
+- [x] Backend: Check role play completion in both submitQuiz AND scoreRolePlay procedures
+- [x] Frontend: Show "Role Play Required" amber badge on module cards when quiz passed but RP pending
+- [x] Frontend: Show "+ Role Play" purple badge and "role play" metadata on all module cards with RP requirements
+- [x] Frontend: Update "Your Next Step" banner with role_play_needed state (directs to Role Play tab)
+- [x] Frontend: Updated What's Next guidance after quiz pass to show role play requirement before certification
+- [x] Frontend: Certification tab shows role play status per module
+- [x] Update the platform lesson (Lesson 5 in Module 1) to mention mandatory role plays — added full "Mandatory Role Plays" section with module-to-scenario mapping and 5-step certification path
