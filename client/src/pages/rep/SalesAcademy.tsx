@@ -24,14 +24,14 @@ const iconMap: Record<string, any> = {
 };
 
 const moduleColorMap: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-  "product-mastery": { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", badge: "badge-info" },
-  "psychology-selling": { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-700", badge: "badge-purple" },
-  "discovery-call": { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-700" },
-  "objection-handling": { bg: "bg-red-50", border: "border-red-200", text: "text-red-700", badge: "badge-danger" },
-  "closing-techniques": { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-700", badge: "badge-pending-payment" },
-  "digital-prospecting": { bg: "bg-cyan-50", border: "border-cyan-200", text: "text-cyan-700", badge: "bg-cyan-100 text-cyan-700" },
-  "account-management": { bg: "bg-teal-50", border: "border-teal-200", text: "text-teal-700", badge: "bg-teal-100 text-teal-700" },
-  "advanced-tactics": { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-indigo-700", badge: "bg-indigo-100 text-indigo-700" },
+  "product-mastery": { bg: "bg-blue-500/10", border: "border-blue-500/30", text: "text-blue-400", badge: "badge-info" },
+  "psychology-selling": { bg: "bg-purple-500/10", border: "border-purple-500/30", text: "text-purple-400", badge: "badge-purple" },
+  "discovery-call": { bg: "bg-emerald-500/10", border: "border-emerald-500/30", text: "text-emerald-400", badge: "bg-emerald-500/15 text-emerald-400" },
+  "objection-handling": { bg: "bg-red-500/10", border: "border-red-500/30", text: "text-red-400", badge: "badge-danger" },
+  "closing-techniques": { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-400", badge: "badge-pending-payment" },
+  "digital-prospecting": { bg: "bg-cyan-500/10", border: "border-cyan-500/30", text: "text-cyan-400", badge: "bg-cyan-500/15 text-cyan-400" },
+  "account-management": { bg: "bg-teal-500/10", border: "border-teal-500/30", text: "text-teal-400", badge: "bg-teal-500/15 text-teal-400" },
+  "advanced-tactics": { bg: "bg-indigo-500/10", border: "border-indigo-500/30", text: "text-indigo-400", badge: "bg-indigo-500/15 text-indigo-400" },
 };
 
 export default function SalesAcademy() {
@@ -151,11 +151,11 @@ export default function SalesAcademy() {
           <ChevronLeft className="w-4 h-4 mr-1" /> Back to Academy
         </Button>
 
-        <Card className={`border-2 ${result.passed ? "border-green-300 bg-green-50/50" : "border-red-300 bg-red-50/50"}`}>
+        <Card className={`border-2 ${result.passed ? "border-green-500/30 bg-green-500/10" : "border-red-500/30 bg-red-500/10"}`}>
           <CardContent className="p-8 text-center">
             {result.passed ? (
               <>
-                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
                   <Trophy className="w-10 h-10 text-emerald-400" />
                 </div>
                 <h2 className="text-2xl font-serif text-off-white mb-2">Congratulations!</h2>
@@ -168,12 +168,12 @@ export default function SalesAcademy() {
               </>
             ) : (
               <>
-                <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-                  <RotateCcw className="w-10 h-10 text-red-600" />
+                <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                  <RotateCcw className="w-10 h-10 text-red-400" />
                 </div>
                 <h2 className="text-2xl font-serif text-off-white mb-2">Not Quite There</h2>
                 <p className="text-soft-gray font-sans mb-4">
-                  You scored <span className="font-bold text-red-600">{result.score}%</span> — you need {result.passingScore}% to pass.
+                  You scored <span className="font-bold text-red-400">{result.score}%</span> — you need {result.passingScore}% to pass.
                   Review the material and try again.
                 </p>
                 <Button onClick={() => openModule(selectedModuleId!)} className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans">
@@ -194,10 +194,10 @@ export default function SalesAcademy() {
           </CardHeader>
           <CardContent className="space-y-4">
             {result.results.map((r: any, i: number) => (
-              <div key={r.questionId} className={`p-4 rounded-lg border ${r.correct ? "border-green-200 bg-green-50/50" : "border-red-200 bg-red-50/50"}`}>
+              <div key={r.questionId} className={`p-4 rounded-lg border ${r.correct ? "border-green-500/30 bg-green-500/10" : "border-red-500/30 bg-red-500/10"}`}>
                 <div className="flex items-start gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${r.correct ? "bg-green-100" : "bg-red-100"}`}>
-                    {r.correct ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${r.correct ? "bg-green-500/20" : "bg-red-500/20"}`}>
+                    {r.correct ? <CheckCircle className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-red-400" />}
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-sans text-off-white font-medium">Question {i + 1}</p>
@@ -411,18 +411,18 @@ export default function SalesAcademy() {
 
                 {/* Script / Role Play */}
                 {lesson.script && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                     <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-2">
-                      <MessageSquare className="w-4 h-4 text-blue-600" /> Practice Script
+                      <MessageSquare className="w-4 h-4 text-blue-400" /> Practice Script
                     </h4>
                     <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap">{lesson.script}</div>
                   </div>
                 )}
 
                 {lesson.rolePlay && (
-                  <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="mt-4 p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
                     <h4 className="text-sm font-serif text-off-white flex items-center gap-2 mb-2">
-                      <Zap className="w-4 h-4 text-purple-600" /> Role Play Scenario
+                      <Zap className="w-4 h-4 text-purple-400" /> Role Play Scenario
                     </h4>
                     <div className="text-xs text-soft-gray font-sans whitespace-pre-wrap">{lesson.rolePlay}</div>
                   </div>
@@ -507,7 +507,7 @@ export default function SalesAcademy() {
             </div>
             {academyData?.isFullyCertified && (
               <div className="px-4 border-l border-white/20">
-                <Badge className="bg-amber-400 text-amber-900 text-sm px-3 py-1">
+                <Badge className="bg-amber-500/20 text-amber-400 text-sm px-3 py-1">
                   <Trophy className="w-4 h-4 mr-1" /> Elite Certified
                 </Badge>
               </div>
@@ -524,14 +524,14 @@ export default function SalesAcademy() {
         <Card className="border-2 border-amber-300 bg-amber-500/10/80">
           <CardContent className="p-5">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-6 h-6 text-amber-400" />
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-serif text-off-white font-medium mb-1">Daily Training Required</h3>
                 <p className="text-xs text-soft-gray font-sans mb-3">
                   Complete your daily coaching reviews before accessing leads and making calls.
-                  You have <span className="font-bold text-amber-700">{dailyCheckIn.pendingReviews.length}</span> review{dailyCheckIn.pendingReviews.length > 1 ? "s" : ""} to complete today.
+                  You have <span className="font-bold text-amber-400">{dailyCheckIn.pendingReviews.length}</span> review{dailyCheckIn.pendingReviews.length > 1 ? "s" : ""} to complete today.
                   {dailyCheckIn.config && (
                     <span className="text-soft-gray/60 ml-1">
                       ({dailyCheckIn.level.charAt(0).toUpperCase() + dailyCheckIn.level.slice(1)} tier: max {dailyCheckIn.config.maxDailyReviews}/day)
@@ -554,10 +554,10 @@ export default function SalesAcademy() {
       )}
 
       {dailyCheckIn?.isCleared && dailyCheckIn.checkIn && dailyCheckIn.checkIn.reviewsRequired > 0 && (
-        <Card className="border border-green-200 bg-green-50/50">
+        <Card className="border border-green-500/30 bg-green-500/10">
           <CardContent className="p-4 flex items-center gap-3">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            <span className="text-sm font-sans text-green-700">Daily training complete! You're cleared to work.</span>
+            <span className="text-sm font-sans text-green-400">Daily training complete! You're cleared to work.</span>
           </CardContent>
         </Card>
       )}
@@ -596,7 +596,7 @@ export default function SalesAcademy() {
           ) : dailyCheckIn?.pendingReviews.length === 0 ? (
             <Card className="border-border/50">
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
                   <ShieldCheck className="w-8 h-8 text-emerald-400" />
                 </div>
                 <h3 className="text-lg font-serif text-off-white mb-2">All Clear!</h3>
@@ -631,19 +631,19 @@ export default function SalesAcademy() {
 
                 return (
                   <Card key={review.id} className={`border transition-all ${
-                    review.priority === "critical" ? "border-red-200 bg-red-50/30" :
+                    review.priority === "critical" ? "border-red-500/30 bg-red-500/10" :
                     review.priority === "important" ? "border-amber-500/20 bg-amber-500/10/30" :
                     "border-border/50"
                   }`}>
                     <CardContent className="p-5">
                       <div className="flex items-start gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          review.priority === "critical" ? "bg-red-100" :
-                          review.priority === "important" ? "bg-amber-100" :
+                          review.priority === "critical" ? "bg-red-500/20" :
+                          review.priority === "important" ? "bg-amber-500/20" :
                           "bg-electric/10"
                         }`}>
                           <Brain className={`w-4 h-4 ${
-                            review.priority === "critical" ? "text-red-600" :
+                            review.priority === "critical" ? "text-red-400" :
                             review.priority === "important" ? "text-amber-400" :
                             "text-soft-gray"
                           }`} />
@@ -652,8 +652,8 @@ export default function SalesAcademy() {
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="text-sm font-sans text-off-white font-medium">{review.title}</h4>
                             <Badge variant="outline" className={`text-[10px] ${
-                              review.priority === "critical" ? "border-red-300 text-red-600" :
-                              review.priority === "important" ? "border-amber-300 text-amber-400" :
+                              review.priority === "critical" ? "border-red-500/30 text-red-400" :
+                              review.priority === "important" ? "border-amber-500/30 text-amber-400" :
                               "border-electric/30 text-soft-gray"
                             }`}>
                               {review.priority}
@@ -882,8 +882,8 @@ export default function SalesAcademy() {
                   {leaderboard.map((rep: any, index: number) => (
                     <div key={rep.repId} className={`flex items-center gap-4 p-3 rounded-lg border ${
                       index === 0 ? "border-amber-500/20 bg-amber-500/10/50" :
-                      index === 1 ? "border-gray-200 bg-gray-50/50" :
-                      index === 2 ? "border-orange-200 bg-orange-50/50" :
+                      index === 1 ? "border-gray-500/30 bg-gray-500/10" :
+                      index === 2 ? "border-orange-500/30 bg-orange-500/10" :
                       "border-border/30"
                     }`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold font-sans ${
@@ -941,9 +941,9 @@ export default function SalesAcademy() {
                     const mod = academyData.modules.find((m: any) => m.id === cert.moduleId);
                     const isFull = cert.certificationType === "full";
                     return (
-                      <Card key={cert.id} className={`border-2 ${isFull ? "border-amber-300 bg-gradient-to-br from-graphite to-yellow-50" : "border-green-200 bg-green-50/50"}`}>
+                      <Card key={cert.id} className={`border-2 ${isFull ? "border-amber-500/30 bg-gradient-to-br from-graphite to-amber-500/10" : "border-green-500/30 bg-green-500/10"}`}>
                         <CardContent className="p-5 text-center">
-                          <div className={`w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center ${isFull ? "bg-amber-100" : "bg-green-100"}`}>
+                          <div className={`w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center ${isFull ? "bg-amber-500/20" : "bg-green-500/20"}`}>
                             {isFull ? <Trophy className="w-8 h-8 text-amber-400" /> : <GraduationCap className="w-8 h-8 text-emerald-400" />}
                           </div>
                           <h3 className="text-sm font-serif text-off-white font-medium">
@@ -980,14 +980,14 @@ export default function SalesAcademy() {
    ROLE PLAY TAB — AI-powered sales practice
    ═══════════════════════════════════════════════════════ */
 const SCENARIO_TYPES = [
-  { value: "cold_call", label: "Cold Call", icon: Phone, description: "Practice calling a prospect who doesn't know you", color: "badge-info border-blue-200" },
-  { value: "discovery_call", label: "Discovery Call", icon: Search, description: "Uncover pain points and qualify the prospect", color: "badge-success border-green-200" },
+  { value: "cold_call", label: "Cold Call", icon: Phone, description: "Practice calling a prospect who doesn't know you", color: "badge-info border-blue-500/30" },
+  { value: "discovery_call", label: "Discovery Call", icon: Search, description: "Uncover pain points and qualify the prospect", color: "badge-success border-green-500/30" },
   { value: "objection_handling", label: "Objection Handling", icon: Shield, description: "Handle tough pushback and turn objections into opportunities", color: "badge-pending-payment border-amber-500/20" },
-  { value: "closing", label: "Closing", icon: Target, description: "Practice closing techniques to seal the deal", color: "badge-danger border-red-200" },
-  { value: "follow_up", label: "Follow Up", icon: ArrowRight, description: "Re-engage a prospect who went cold", color: "badge-purple border-purple-200" },
-  { value: "upsell", label: "Upsell", icon: TrendingUp, description: "Upgrade an existing client to a higher tier", color: "bg-teal-100 text-teal-700 border-teal-200" },
-  { value: "angry_customer", label: "Angry Customer", icon: AlertCircle, description: "De-escalate and retain an unhappy client", color: "badge-pending-payment border-orange-200" },
-  { value: "price_negotiation", label: "Price Negotiation", icon: Crown, description: "Defend your pricing and demonstrate value", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+  { value: "closing", label: "Closing", icon: Target, description: "Practice closing techniques to seal the deal", color: "badge-danger border-red-500/30" },
+  { value: "follow_up", label: "Follow Up", icon: ArrowRight, description: "Re-engage a prospect who went cold", color: "badge-purple border-purple-500/30" },
+  { value: "upsell", label: "Upsell", icon: TrendingUp, description: "Upgrade an existing client to a higher tier", color: "bg-teal-500/15 text-teal-400 border-teal-500/30" },
+  { value: "angry_customer", label: "Angry Customer", icon: AlertCircle, description: "De-escalate and retain an unhappy client", color: "badge-pending-payment border-orange-500/30" },
+  { value: "price_negotiation", label: "Price Negotiation", icon: Crown, description: "Defend your pricing and demonstrate value", color: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30" },
 ] as const;
 
 // Map scenario types to the modules that should be completed first
@@ -1113,13 +1113,13 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
           <ChevronLeft className="w-4 h-4 mr-1" /> Back to Scenarios
         </Button>
 
-        <Card className={`border-2 ${result.score >= 70 ? "border-green-300 bg-green-50/50" : result.score >= 50 ? "border-amber-300 bg-amber-500/10/50" : "border-red-300 bg-red-50/50"}`}>
+        <Card className={`border-2 ${result.score >= 70 ? "border-green-500/30 bg-green-500/10" : result.score >= 50 ? "border-amber-500/30 bg-amber-500/10" : "border-red-500/30 bg-red-500/10"}`}>
           <CardContent className="p-8 text-center">
             <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              result.score >= 70 ? "bg-green-100" : result.score >= 50 ? "bg-amber-100" : "bg-red-100"
+              result.score >= 70 ? "bg-green-500/20" : result.score >= 50 ? "bg-amber-500/20" : "bg-red-500/20"
             }`}>
               <span className={`text-3xl font-serif font-bold ${
-                result.score >= 70 ? "text-emerald-400" : result.score >= 50 ? "text-amber-400" : "text-red-600"
+                result.score >= 70 ? "text-emerald-400" : result.score >= 50 ? "text-amber-400" : "text-red-400"
               }`}>{result.score}</span>
             </div>
             <h2 className="text-2xl font-serif text-off-white mb-2">
@@ -1135,10 +1135,10 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
         </Card>
 
         {/* Key Moment */}
-        <Card className="border-border/50 bg-purple-50/30">
+        <Card className="border-border/50 bg-purple-500/10">
           <CardContent className="p-5">
             <h3 className="text-sm font-serif text-off-white mb-2 flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-purple-600" /> Key Moment
+              <Lightbulb className="w-4 h-4 text-purple-400" /> Key Moment
             </h3>
             <p className="text-sm text-soft-gray font-sans">{result.keyMoment}</p>
           </CardContent>
@@ -1146,7 +1146,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Strengths */}
-          <Card className="border-green-200 bg-green-50/30">
+          <Card className="border-green-500/30 bg-green-500/10">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-serif text-off-white flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-400" /> Strengths
@@ -1163,7 +1163,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
           </Card>
 
           {/* Improvements */}
-          <Card className="border-amber-500/20 bg-amber-500/10/30">
+          <Card className="border-amber-500/20 bg-amber-500/10">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-serif text-off-white flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-400" /> Areas to Improve
@@ -1213,7 +1213,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
             onClick={handleEndSession}
             disabled={scoreMut.isPending || chatMessages.filter(m => m.role === "user").length < 2}
             variant="outline"
-            className="rounded-full font-sans text-xs border-red-300 text-red-600 hover:bg-red-50"
+            className="rounded-full font-sans text-xs border-red-500/30 text-red-400 hover:bg-red-500/10"
           >
             {scoreMut.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Target className="w-3 h-3 mr-1" />}
             End & Score Session
@@ -1221,17 +1221,17 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
         </div>
 
         {/* Prospect info card */}
-        <Card className="border-purple-200 bg-purple-50/30">
+        <Card className="border-purple-500/30 bg-purple-500/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <span className="text-lg font-serif text-purple-700">{persona.name?.charAt(0)}</span>
+              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <span className="text-lg font-serif text-purple-400">{persona.name?.charAt(0)}</span>
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-sans font-medium text-off-white">{persona.name}</h3>
                 <p className="text-xs text-soft-gray font-sans">{persona.company} • {persona.industry} • {persona.companySize} employees</p>
               </div>
-              <Badge variant="outline" className="text-[10px] border-purple-300 text-purple-600">
+              <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-400">
                 {scenarioType.replace(/_/g, " ")}
               </Badge>
             </div>
@@ -1285,11 +1285,11 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
       </Card>
 
       {/* Weekly Challenge Banner */}
-      <Card className={`border-2 ${weeklyCompleted ? 'border-green-400 bg-green-50' : 'border-amber-400 bg-amber-500/10'} overflow-hidden`}>
+      <Card className={`border-2 ${weeklyCompleted ? 'border-green-500/30 bg-green-500/10' : 'border-amber-500/30 bg-amber-500/10'} overflow-hidden`}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${weeklyCompleted ? 'bg-green-200' : 'bg-amber-200'}`}>
-              {weeklyCompleted ? <Trophy className="w-5 h-5 text-green-700" /> : <Target className="w-5 h-5 text-amber-700" />}
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${weeklyCompleted ? 'bg-green-500/20' : 'bg-amber-500/20'}`}>
+              {weeklyCompleted ? <Trophy className="w-5 h-5 text-green-400" /> : <Target className="w-5 h-5 text-amber-400" />}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -1327,7 +1327,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${unlocked ? scenario.color : 'bg-gray-100 text-gray-400 border-gray-200'}`}>
+                  <div className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${unlocked ? scenario.color : 'bg-gray-500/10 text-gray-500 border-gray-500/30'}`}>
                     {unlocked ? <Icon className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                   </div>
                   <div className="flex-1">
@@ -1347,7 +1347,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                       <Play className="w-4 h-4 text-soft-gray/40 group-hover:text-soft-gray transition-colors" />
                     )
                   ) : (
-                    <Lock className="w-4 h-4 text-gray-300" />
+                    <Lock className="w-4 h-4 text-gray-500" />
                   )}
                 </div>
               </CardContent>
@@ -1372,8 +1372,8 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                        <span className="text-sm font-serif text-purple-700">{persona.name?.charAt(0)}</span>
+                      <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                        <span className="text-sm font-serif text-purple-400">{persona.name?.charAt(0)}</span>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">

@@ -1310,3 +1310,23 @@
 - [x] Webhook route registered with express.raw before express.json (confirmed in _core/index.ts)
 - [x] Webhook returns 200 with valid JSON in all cases
 - [x] User created webhook destinations in Stripe dashboard (sandbox): snapshot + thin payload
+
+### Fix Academy Lesson Text Legibility
+- [x] Fix headings in lesson content that are invisible/illegible on dark background
+- [x] Add comprehensive prose dark-theme overrides in index.css (headings, bold, links, code, blockquotes, tables, list markers)
+- [x] Review all lesson markdown content rendering for proper contrast
+- [x] Ensure all h1, h2, h3, h4 headings are clearly visible
+- [x] Fix moduleColorMap: all 8 modules from light bg (bg-blue-50, etc.) to dark-theme (bg-blue-500/10, etc.)
+- [x] Fix Practice Script section: bg-blue-50 → bg-blue-500/10, text-blue-600 → text-blue-400
+- [x] Fix Role Play section: bg-purple-50 → bg-purple-500/10, text-purple-600 → text-purple-400
+- [x] Fix quiz results cards: bg-green-50/50, bg-red-50/50 → bg-green-500/10, bg-red-500/10
+- [x] Fix daily training gate: bg-amber-100, bg-green-50, text-green-700, text-amber-700 → dark-theme variants
+- [x] Fix coaching review priority icons: bg-red-100, bg-amber-100 → bg-red-500/20, bg-amber-500/20
+- [x] Fix leaderboard podium: bg-gray-50, bg-orange-50 → bg-gray-500/10, bg-orange-500/10
+- [x] Fix certification cards: bg-green-50, bg-yellow-50 → bg-green-500/10, bg-amber-500/10
+- [x] Fix role play scorecard: bg-green-50, bg-red-50, bg-purple-50 → dark-theme variants
+- [x] Fix role play session UI: bg-purple-50, bg-purple-100, text-purple-700 → dark-theme variants
+- [x] Fix scenario type colors: bg-teal-100, bg-indigo-100, border-*-200 → dark-theme variants
+- [x] Fix weekly challenge banner: bg-green-50, bg-green-200 → bg-green-500/10, bg-green-500/20
+- [x] Fix locked scenario cards: bg-gray-100 → bg-gray-500/10
+- [x] Validation: TypeScript 0 errors, 37 test files 880/880 tests pass, production build OK
