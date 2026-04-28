@@ -1432,3 +1432,10 @@
 - [x] Investigate why rep login doesn't work (login redirected to /rep/dashboard but route is /rep → 404)
 - [x] Fix the rep login flow (fixed redirect in localAuth.ts and Login.tsx from /rep/dashboard to /rep)
 - [x] Add a rep login link to the website footer (added "Rep Login" and "Become a Rep" to Resources column)
+
+### Remove Sample/Placeholder Data from Dashboards
+- [x] Audit database for test/sample reps, leads, commissions, activities
+- [x] Remove all fake reps from DB (166 fake reps removed, kept Jodi 1050003, Quinn 1110017, Chelsea 600008)
+- [x] Remove test leads, commissions, and activities not linked to real reps (170 commissions, 6 users, 172 chat logs, 378 scraped businesses, 6 check-ins, 5 academy progress, 1 cert, 1 assessment, 2 onboarding records)
+- [x] Remove any hardcoded sample/mock data in frontend components (none found — all data-driven from API)
+- [x] Verify admin and rep dashboards show only real data (3 reps, 2 leads, $199 MRR)
