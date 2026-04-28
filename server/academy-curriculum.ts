@@ -45,7 +45,7 @@ export const ACADEMY_MODULES: AcademyModule[] = [
     title: "Values & Ethics: The MiniMorph Standard",
     description: "This is the most important module in the entire academy. Before you learn a single sales technique, you need to understand WHO we are, WHAT we stand for, and WHY we hold every representative to the highest standard. If you can't live these values, nothing else matters.",
     icon: "Shield",
-    estimatedMinutes: 30,
+    estimatedMinutes: 40,
     lessons: [
       {
         title: "Why Values Come First",
@@ -275,6 +275,120 @@ You're behind on your monthly numbers. A prospect is on the fence. You could cre
           "Report brand-damaging behavior immediately",
           "Never create false urgency — address real concerns instead"
         ]
+      },
+      {
+        title: "Your MiniMorph Platform — How Everything Works",
+        content: `## Welcome to Your Command Center
+
+Before you dive into the sales training modules, you need to understand exactly how the MiniMorph platform works. This isn't just a training tool — it's your daily operating system. Every feature is designed to make you sharper, faster, and more effective.
+
+## The Training Journey
+
+Here's the path every MiniMorph rep follows:
+
+1. **Complete all 9 Academy modules** — Each module covers a critical sales skill, from product knowledge to advanced closing techniques
+2. **Pass the certification quiz** for each module — You must score above the passing threshold to earn certification
+3. **Earn your full certification** — Once all 9 modules are passed, your account is activated for live work
+4. **Start your daily workflow** — Access leads, make calls, close deals, and keep growing
+
+Until you're fully certified, you won't have access to leads or the ability to make live calls. This protects both you and our clients — we never put an unprepared rep in front of a prospect.
+
+## Daily Training — Your Morning Warm-Up
+
+Every day when you log in, you'll see a **Daily Training** section. Think of it like a professional athlete's morning practice — short, focused, and non-negotiable (at least when you're starting out).
+
+**Where do daily training reviews come from?**
+
+Two sources:
+
+1. **AI Coaching Analysis** — After every conversation you have (calls, emails, SMS), our AI Coach analyzes your performance. It identifies what you did well and where you can improve. Those improvement areas become personalized micro-lessons in your daily queue. If you struggled with objection handling on a call yesterday, you'll get a targeted lesson on that exact skill today.
+
+2. **Academy Reinforcement** — When you're new and haven't had many conversations yet, the system pulls review material from the Academy modules you've already completed. This keeps your skills sharp while you're building up real conversation data.
+
+Each review is a short lesson (2-3 minutes to read) followed by a quiz question. Complete all your assigned reviews and you're cleared to work for the day.
+
+## Accountability Tiers — Your Rank Matters
+
+MiniMorph uses a tier system that rewards consistent performance. As you rank up, your daily training requirements decrease because you've proven you can maintain high standards.
+
+### Bronze (Starting Tier)
+- **Commission:** 10%
+- **Daily Reviews:** Up to 10 per day
+- **Quiz Required:** On every review (critical, important, AND suggested)
+- **Reviews Expire:** Never — you must complete them all
+- **Lead Priority:** Standard assignment
+
+### Silver
+- **Commission:** 12%
+- **Daily Reviews:** Up to 7 per day
+- **Quiz Required:** Critical and important reviews only
+- **Reviews Expire:** Never
+- **Lead Priority:** Improved
+
+### Gold
+- **Commission:** 14%
+- **Daily Reviews:** Up to 3 per day
+- **Quiz Required:** Critical reviews only
+- **Can Skip:** Suggested reviews
+- **Reviews Expire:** After 48 hours
+- **Lead Priority:** Priority assignment
+
+### Platinum
+- **Commission:** 15%
+- **Daily Reviews:** Exempt from daily training
+- **Lead Priority:** First pick on high-value leads
+- **Status:** Mentor — you help train other reps
+
+The message is clear: **prove yourself, and the system gets out of your way.** But everyone starts at Bronze, and everyone earns their way up.
+
+## The AI Coach — Your Personal Trainer
+
+After every conversation, the AI Coach generates a detailed analysis:
+
+- **Overall Score** (0-100) — How well did you handle the conversation?
+- **Strengths** — What you did right (so you keep doing it)
+- **Areas for Improvement** — Specific skills to work on
+- **Tone Analysis** — Were you confident? Empathetic? Pushy?
+- **Key Takeaways** — Actionable insights for your next conversation
+- **Suggested Follow-Up** — What to do next with this prospect
+
+The improvement areas automatically become coaching reviews in your daily queue. This means your training is always personalized to YOUR actual performance — not generic material everyone gets.
+
+## Your Daily Workflow (After Certification)
+
+Once you're fully certified, here's what a typical day looks like:
+
+1. **Log in** → The system checks for pending training reviews
+2. **Complete Daily Training** (5-10 minutes) → Read your micro-lessons, answer quiz questions
+3. **Daily Training Cleared** → Pipeline and calls are now unlocked
+4. **Work Your Pipeline** → Access leads, make calls, send emails, close deals
+5. **AI Coach Analyzes** → Every conversation gets reviewed automatically
+6. **New Reviews Generated** → Tomorrow's training is personalized based on today's performance
+7. **Check Performance** → Review your stats, scores, and progress toward the next tier
+
+This cycle repeats every day. The better you perform, the less training you need, the higher your commission rate, and the better leads you get.
+
+## The Guide Tab
+
+If you ever forget how something works, click the **Guide** tab in your sidebar. It has detailed explanations of every feature in the platform — from the daily check-in system to the gamification tiers to how leads are assigned.
+
+## Why This System Exists
+
+MiniMorph isn't a typical sales job where you get a script and a phone list. We use AI and structured training because:
+
+- **Clients deserve prepared reps** — Every person you talk to is a real business owner making a real decision
+- **You deserve to succeed** — The training makes you genuinely better, not just compliant
+- **The system is fair** — Everyone starts at the same level and advances based on merit
+- **It compounds** — Small daily improvements create massive long-term results
+
+The reps who embrace this system — who actually read their coaching reviews, who study the material, who treat daily training as a competitive advantage — are the ones who hit Platinum and earn top commissions.`,
+        keyTakeaways: [
+          "Complete all 9 Academy modules and pass each quiz to earn full certification and unlock leads/calls",
+          "Daily Training is a personalized morning warm-up generated from your real conversation performance",
+          "Accountability tiers (Bronze → Platinum) reward performance with less training, higher commissions, and better leads",
+          "The AI Coach analyzes every conversation and turns improvement areas into tomorrow's training",
+          "Daily workflow: Training → Pipeline → Calls → AI Analysis → Repeat"
+        ]
       }
     ],
     quiz: [
@@ -416,6 +530,48 @@ You're behind on your monthly numbers. A prospect is on the fence. You could cre
         ],
         correctAnswer: 3,
         explanation: "The Values & Ethics module requires a 90% passing score — higher than any other module. This reflects how seriously MiniMorph takes its values.",
+        difficulty: "easy"
+      },
+      {
+        id: "ve-11",
+        question: "What must you complete every day before you can access leads and make calls?",
+        type: "multiple_choice",
+        options: [
+          "Watch a motivational video",
+          "Complete your assigned Daily Training reviews",
+          "Send a report to your manager",
+          "Log into the CRM and update your notes"
+        ],
+        correctAnswer: 1,
+        explanation: "Daily Training reviews are your morning warm-up. They're personalized micro-lessons generated from your real conversation performance. Complete them all and your pipeline unlocks for the day.",
+        difficulty: "easy"
+      },
+      {
+        id: "ve-12",
+        question: "Where do your Daily Training coaching reviews come from?",
+        type: "multiple_choice",
+        options: [
+          "A manager manually assigns them each morning",
+          "They're the same generic lessons for every rep",
+          "AI analysis of your real conversations plus Academy reinforcement material",
+          "You choose which topics to study each day"
+        ],
+        correctAnswer: 2,
+        explanation: "Daily Training reviews come from two sources: AI coaching analysis of your actual conversations (personalized to your performance gaps) and Academy curriculum reinforcement. This means your training is always relevant to YOU.",
+        difficulty: "medium"
+      },
+      {
+        id: "ve-13",
+        question: "As you rank up from Bronze to Platinum, what happens to your daily training requirements?",
+        type: "multiple_choice",
+        options: [
+          "They increase because higher tiers have harder material",
+          "They stay the same — everyone does the same amount",
+          "They decrease — Platinum reps are exempt from daily training entirely",
+          "They're replaced with weekly training instead"
+        ],
+        correctAnswer: 2,
+        explanation: "The tier system rewards proven performance. Bronze reps do up to 10 reviews/day, Silver does 7, Gold does 3, and Platinum is exempt. Prove yourself and the system gets out of your way.",
         difficulty: "easy"
       }
     ],

@@ -1363,3 +1363,13 @@
 - [x] Progress bar now shows lessons completed count (e.g. "1/3 lessons")
 - [x] Completed lesson tabs show green with checkmark icon
 - [x] Validation: TypeScript 0 errors, 37 test files, 880/880 tests pass
+
+### Add "Your MiniMorph Platform" Lesson to Academy
+- [x] Add new lesson to Module 1 (Values & Ethics) as Lesson 5 — "Your MiniMorph Platform — How Everything Works"
+- [x] Cover: Daily Training system, how coaching reviews are generated from real conversations
+- [x] Cover: Accountability Tiers (Bronze → Platinum) with commission rates, review limits, lead priority
+- [x] Cover: Post-certification daily workflow (7-step numbered list)
+- [x] Cover: How the AI Coach analyzes conversations and creates personalized training
+- [x] Add 3 quiz questions testing platform knowledge (daily training purpose, Bronze tier reviews, AI Coach function)
+- [x] Module 1 updated: 5 lessons, 40 min, 13 questions — all dynamic, no hardcoded references needed
+- [x] Verified in browser: all content renders cleanly, navigation works, Key Takeaways visible
