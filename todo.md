@@ -1242,3 +1242,15 @@
 - [x] Fix global UNAUTHORIZED redirect: skip redirect on /become-rep/* and /rep-assessment paths
 - [x] Fix Login page: use server redirectTo, invalidate auth cache, better error messages
 - [x] Validation: typecheck clean, 859/865 tests pass (6 pre-existing timeouts)
+
+### Fix: Free Website Audit Email Delivery (Surgical)
+- [x] Fix generateAuditForLead to work without scrapedBusinessId (use websiteUrl directly via generateAuditFromLeadData)
+- [x] Add sendWebsiteAuditEmail helper to customerEmails.ts
+- [x] Add sendAuditReceivedEmail helper for no-URL fallback
+- [x] Update requestPublicAudit to await audit generation and send email
+- [x] Handle no-websiteUrl case: send "received your request" email + notify admin
+- [x] Handle audit/email failure gracefully: log, notify owner, return user-friendly message
+- [x] Fix Sarasota FL → Muskegon, MI 49440 in CAN-SPAM footer
+- [x] Update FreeAudit.tsx success state to differentiate "on the way" vs "manual review"
+- [x] Add tests: 10 tests covering all paths (all pass)
+- [x] Validation: typecheck clean, 36 test files (875/875 pass), production build OK

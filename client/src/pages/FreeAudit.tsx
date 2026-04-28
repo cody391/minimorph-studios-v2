@@ -13,12 +13,14 @@ export default function FreeAudit() {
   const [businessName, setBusinessName] = useState("");
   const [contactName, setContactName] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [responseMessage, setResponseMessage] = useState("");
   const [step, setStep] = useState<"form" | "details">("form");
 
   const requestAudit = trpc.leadGen.requestPublicAudit.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setSubmitted(true);
-      toast.success("Your free website audit is being generated!");
+      setResponseMessage(data.message);
+      toast.success(data.message);
     },
     onError: (err: any) => {
       toast.error(err.message || "Something went wrong. Please try again.");
@@ -57,11 +59,14 @@ export default function FreeAudit() {
               <CheckCircle className="w-10 h-10 text-primary" />
             </div>
             <h2 className="text-2xl font-bold text-foreground" style={{ fontFamily: "'DM Serif Display', serif" }}>
-              Your Audit is Being Generated!
+              {responseMessage.includes("on the way") ? "Your Audit is Being Generated!" : "Request Received!"}
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Our AI is analyzing {websiteUrl || businessName} right now. You'll receive a detailed
-              report at <span className="text-primary font-medium">{email}</span> within the next few minutes.
+              {responseMessage.includes("on the way") ? (
+                <>Our AI is analyzing {websiteUrl || businessName} right now. You'll receive a detailed report at <span className="text-primary font-medium">{email}</span> within the next few minutes.</>
+              ) : (
+                <>We received your request for <strong>{businessName || "your business"}</strong>. A team member will review it and reach out to <span className="text-primary font-medium">{email}</span> within 1 business day.</>
+              )}
             </p>
             <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2 border border-border">
               <p className="text-sm font-medium text-foreground">Your report will include:</p>

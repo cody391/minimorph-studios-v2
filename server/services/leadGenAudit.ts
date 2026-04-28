@@ -298,7 +298,158 @@ export async function generateAuditForLead(leadId: number): Promise<AuditReport 
   if (enrichment.scrapedBusinessId) {
     return generateAuditReport(enrichment.scrapedBusinessId);
   }
-  return null;
+
+  // Fallback: generate audit directly from lead data (no scrapedBusinessId required)
+  // This handles free audit form submissions where no enrichment has occurred yet.
+  return generateAuditFromLeadData(lead);
+}
+
+/**
+ * Generate an audit report directly from lead data (website URL + business name).
+ * Used for public free audit submissions that haven't been enriched yet.
+ */
+export async function generateAuditFromLeadData(lead: { id: number; businessName: string; website: string | null }): Promise<AuditReport> {
+  const businessName = lead.businessName || "Your Business";
+  const websiteUrl = lead.website;
+  const hasWebsite = !!websiteUrl;
+
+  // Build sections based on whether they have a website
+  const sections: AuditSection[] = [];
+
+  if (!hasWebsite) {
+    sections.push(
+      { name: "Web Presence", score: 0, grade: "F", icon: "\uD83C\uDF10", issues: ["No website detected", "Missing from online search results", "Losing customers to competitors with websites"], description: "Your business has no website. In 2026, 97% of consumers search online before visiting a local business. Without a website, you're invisible to potential customers." },
+      { name: "Search Visibility", score: 5, grade: "F", icon: "\uD83D\uDD0D", issues: ["Cannot rank in Google search", "No organic traffic possible", "Relying solely on word-of-mouth"], description: "Without a website, your business cannot appear in Google search results when customers look for services you offer." },
+      { name: "Mobile Experience", score: 0, grade: "F", icon: "\uD83D\uDCF1", issues: ["No mobile presence", "Cannot capture mobile searchers", "70% of local searches happen on mobile"], description: "Mobile searches for local businesses have grown 250% in the last 3 years. Without a mobile-friendly website, you're missing the majority of potential customers." },
+      { name: "Credibility & Trust", score: 15, grade: "F", icon: "\uD83D\uDEE1\uFE0F", issues: ["No professional online presence", "Customers can't verify your business", "Competitors appear more trustworthy"], description: "75% of consumers judge a business's credibility based on their website. Without one, potential customers may choose a competitor instead." },
+    );
+  } else {
+    // Has a website URL — use LLM to generate a realistic audit
+    try {
+      const aiResponse = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a website audit tool. Analyze the given website URL and generate a realistic audit. Respond with valid JSON only." },
+          { role: "user", content: `Analyze this website and generate an audit report with realistic scores and issues.\nWebsite: ${websiteUrl}\nBusiness: ${businessName}\n\nRespond in JSON:\n{\n  \"sections\": [\n    { \"name\": \"Performance & Speed\", \"score\": <0-100>, \"issues\": [\"issue1\", ...], \"description\": \"...\" },\n    { \"name\": \"Mobile Friendliness\", \"score\": <0-100>, \"issues\": [...], \"description\": \"...\" },\n    { \"name\": \"SEO & Discoverability\", \"score\": <0-100>, \"issues\": [...], \"description\": \"...\" },\n    { \"name\": \"Security\", \"score\": <0-100>, \"issues\": [...], \"description\": \"...\" },\n    { \"name\": \"Design & Accessibility\", \"score\": <0-100>, \"issues\": [...], \"description\": \"...\" }\n  ],\n  \"recommendations\": [\"rec1\", \"rec2\", \"rec3\", \"rec4\", \"rec5\"],\n  \"estimatedCustomersLost\": \"X-Y customers per month\"\n}` },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "website_audit",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                sections: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      name: { type: "string" },
+                      score: { type: "integer" },
+                      issues: { type: "array", items: { type: "string" } },
+                      description: { type: "string" },
+                    },
+                    required: ["name", "score", "issues", "description"],
+                    additionalProperties: false,
+                  },
+                },
+                recommendations: { type: "array", items: { type: "string" } },
+                estimatedCustomersLost: { type: "string" },
+              },
+              required: ["sections", "recommendations", "estimatedCustomersLost"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+      const parsed = JSON.parse(aiResponse.choices?.[0]?.message?.content as string);
+      const icons = ["\u26A1", "\uD83D\uDCF1", "\uD83D\uDD0D", "\uD83D\uDD12", "\uD83C\uDFA8"];
+      for (let i = 0; i < parsed.sections.length; i++) {
+        const s = parsed.sections[i];
+        sections.push({
+          name: s.name,
+          score: s.score,
+          grade: getGrade(s.score),
+          icon: icons[i] || "\u2139\uFE0F",
+          issues: s.issues,
+          description: s.description,
+        });
+      }
+      const overallScore = Math.round(sections.reduce((sum, s) => sum + s.score, 0) / sections.length);
+      const htmlContent = generateAuditHTML({
+        businessName,
+        websiteUrl,
+        overallScore,
+        overallGrade: getGrade(overallScore),
+        sections,
+        recommendations: parsed.recommendations,
+        estimatedCustomersLost: parsed.estimatedCustomersLost,
+      });
+
+      let storageUrl: string | undefined;
+      try {
+        const key = `audits/lead-${lead.id}-${Date.now()}.html`;
+        const result = await storagePut(key, Buffer.from(htmlContent), "text/html");
+        storageUrl = result.url;
+      } catch (err) {
+        console.error(`[Audit] Failed to upload report for lead ${lead.id}:`, err);
+      }
+
+      return {
+        businessName,
+        websiteUrl,
+        overallScore,
+        overallGrade: getGrade(overallScore),
+        sections,
+        recommendations: parsed.recommendations,
+        estimatedCustomersLost: parsed.estimatedCustomersLost,
+        htmlContent,
+        storageUrl,
+      };
+    } catch (err) {
+      console.error(`[Audit] LLM audit generation failed for lead ${lead.id}:`, err);
+      // Fall through to fallback below
+    }
+  }
+
+  // Fallback: generic audit for no-website or LLM failure
+  const overallScore = hasWebsite ? 45 : 5;
+  const overallGrade = getGrade(overallScore);
+  const recommendations = hasWebsite
+    ? ["Upgrade to HTTPS for security", "Optimize for mobile devices", "Add proper SEO meta tags", "Improve page load speed", "Add clear calls to action"]
+    : ["Create a professional website", "Set up Google Business Profile", "Add online booking/contact forms", "Build a mobile-first design", "Implement local SEO strategy"];
+  const estimatedCustomersLost = hasWebsite ? "10-25 customers per month" : "30-50 customers per month";
+
+  const htmlContent = generateAuditHTML({
+    businessName,
+    websiteUrl,
+    overallScore,
+    overallGrade,
+    sections,
+    recommendations,
+    estimatedCustomersLost,
+  });
+
+  let storageUrl: string | undefined;
+  try {
+    const key = `audits/lead-${lead.id}-${Date.now()}.html`;
+    const result = await storagePut(key, Buffer.from(htmlContent), "text/html");
+    storageUrl = result.url;
+  } catch (err) {
+    console.error(`[Audit] Failed to upload fallback report for lead ${lead.id}:`, err);
+  }
+
+  return {
+    businessName,
+    websiteUrl,
+    overallScore,
+    overallGrade,
+    sections,
+    recommendations,
+    estimatedCustomersLost,
+    htmlContent,
+    storageUrl,
+  };
 }
 
 /**

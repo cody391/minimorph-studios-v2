@@ -463,3 +463,99 @@ export async function sendPaymentLinkReminderEmail(params: {
     transactional: true,
   });
 }
+
+/* ═══════════════════════════════════════════════════════
+   8. WEBSITE AUDIT EMAIL
+   Sent after free audit generation completes.
+   Contains the audit score/grade and a link to the full report.
+   ═══════════════════════════════════════════════════════ */
+export async function sendWebsiteAuditEmail(params: {
+  to: string;
+  businessName: string;
+  contactName?: string;
+  websiteUrl?: string;
+  auditUrl?: string;
+  score: number;
+  grade: string;
+}) {
+  const gradeColor = params.grade === "A" ? "#22c55e" : params.grade === "B" ? "#84cc16" : params.grade === "C" ? "#eab308" : params.grade === "D" ? "#f97316" : "#ef4444";
+  const greeting = params.contactName ? `Hi ${params.contactName},` : "Hi there,";
+  const viewReportButton = params.auditUrl
+    ? `<div style="text-align:center;margin:24px 0;">
+        <a href="${params.auditUrl}" style="display:inline-block;padding:14px 32px;background:#2d4a3e;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">
+          View Full Audit Report
+        </a>
+      </div>`
+    : "";
+
+  const html = brandWrap(`
+    <h2 style="color:#2d4a3e;margin:0 0 16px;font-size:24px;">Your Website Audit is Ready</h2>
+    <p style="margin:0 0 16px;">${greeting}</p>
+    <p style="margin:0 0 16px;">
+      We've completed the free website audit for <strong>${params.businessName}</strong>${params.websiteUrl ? ` (${params.websiteUrl})` : ""}. Here's your overall score:
+    </p>
+    <div style="text-align:center;margin:24px 0;padding:24px;background:#f8f6f3;border-radius:12px;">
+      <div style="display:inline-block;width:80px;height:80px;border-radius:50%;border:6px solid ${gradeColor};line-height:68px;text-align:center;">
+        <span style="font-size:32px;font-weight:800;color:${gradeColor};">${params.grade}</span>
+      </div>
+      <p style="margin:12px 0 0;font-size:20px;font-weight:600;color:#2d4a3e;">${params.score}/100</p>
+    </div>
+    ${viewReportButton}
+    <p style="margin:0 0 16px;font-size:14px;color:#6b7c6e;">
+      Your report includes performance analysis, mobile responsiveness, SEO review, security assessment, and actionable recommendations.
+    </p>
+    <div style="margin:24px 0;padding:16px;background:#f0fdf4;border-radius:8px;border-left:4px solid #22c55e;">
+      <p style="margin:0;font-size:14px;color:#2d4a3e;">
+        <strong>Want help fixing these issues?</strong><br/>
+        Our team specializes in building modern, high-performing websites. Reply to this email or
+        <a href="https://minimorphstudios.net/get-started" style="color:#2d4a3e;font-weight:600;">get a free consultation</a>.
+      </p>
+    </div>
+    <p style="margin:0;color:#6b7c6e;">— The MiniMorph Studios Team</p>
+  `);
+
+  return sendEmail({
+    to: params.to,
+    subject: `Your Website Audit Results: Grade ${params.grade} (${params.score}/100) — ${params.businessName}`,
+    html,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   9. AUDIT REQUEST RECEIVED EMAIL (No Website URL)
+   Sent when a visitor requests an audit but provides no website URL.
+   Lets them know we received the request and will review manually.
+   ═══════════════════════════════════════════════════════ */
+export async function sendAuditReceivedEmail(params: {
+  to: string;
+  businessName: string;
+  contactName?: string;
+}) {
+  const greeting = params.contactName ? `Hi ${params.contactName},` : "Hi there,";
+  const html = brandWrap(`
+    <h2 style="color:#2d4a3e;margin:0 0 16px;font-size:24px;">We Received Your Request</h2>
+    <p style="margin:0 0 16px;">${greeting}</p>
+    <p style="margin:0 0 16px;">
+      Thank you for your interest in a website audit for <strong>${params.businessName}</strong>.
+    </p>
+    <p style="margin:0 0 16px;">
+      Since we didn't receive a website URL, one of our team members will review your request
+      and reach out within 1 business day with personalized recommendations for your online presence.
+    </p>
+    <div style="margin:24px 0;padding:16px;background:#f8f6f3;border-radius:8px;border-left:4px solid #c0705a;">
+      <p style="margin:0;font-size:14px;color:#2d4a3e;">
+        <strong>In the meantime:</strong> If you'd like to get started right away, you can
+        <a href="https://minimorphstudios.net/get-started" style="color:#c0705a;font-weight:600;">explore our packages</a>
+        or reply to this email with any questions.
+      </p>
+    </div>
+    <p style="margin:0;color:#6b7c6e;">— The MiniMorph Studios Team</p>
+  `);
+
+  return sendEmail({
+    to: params.to,
+    subject: `We received your audit request — ${params.businessName}`,
+    html,
+    transactional: true,
+  });
+}

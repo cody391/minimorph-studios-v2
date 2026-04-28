@@ -19,6 +19,8 @@ import { runMultiSourceScrape, enrichWithCompetitors } from "./services/leadGenM
 import { generateProposal, getRepPerformanceMetrics, findBestRepByPerformance } from "./services/leadGenProposal";
 import { batchEnrichContacts, getEnrichmentStatus, enrichBusinessContact } from "./services/contactEnrichment";
 import { dedupOrNull } from "./services/leadDedup";
+import { sendWebsiteAuditEmail, sendAuditReceivedEmail } from "./services/customerEmails";
+import { notifyOwner } from "./_core/notification";
 import { runAdaptiveScaling, getAdaptiveScalingSummary, analyzeRepCapacity } from "./services/leadGenAdaptive";
 import { handleConversation, buildBusinessIntelligence } from "./services/leadGenConversationAI";
 import { getDb } from "./db";
@@ -501,14 +503,55 @@ export const leadGenRouter = router({
         leadId = newLead.id;
       }
 
-      // Trigger audit generation in background (don't await)
+      // Generate audit and send email
       if (input.websiteUrl) {
-        generateAuditForLead(leadId).catch(err =>
-          console.error("[PublicAudit] Audit generation failed:", err)
-        );
+        // Has website URL — generate audit and email the report
+        try {
+          const audit = await generateAuditForLead(leadId);
+          if (audit) {
+            const emailResult = await sendWebsiteAuditEmail({
+              to: input.email,
+              businessName: input.businessName || input.websiteUrl || "Your Business",
+              contactName: input.contactName || undefined,
+              websiteUrl: input.websiteUrl,
+              auditUrl: audit.storageUrl || undefined,
+              score: audit.overallScore,
+              grade: audit.overallGrade,
+            });
+            if (!emailResult.success) {
+              console.error("[PublicAudit] Email send failed:", emailResult.error);
+              await notifyOwner({ title: "Free Audit Email Failed", content: `Audit generated for ${input.email} (${input.websiteUrl}) but email delivery failed: ${emailResult.error}` });
+            } else {
+              console.log(`[PublicAudit] Audit email sent to ${input.email} (score: ${audit.overallScore}, grade: ${audit.overallGrade})`);
+            }
+            return { success: true, message: "Your audit report is on the way." };
+          } else {
+            // Audit generation returned null (should not happen with new fallback, but handle gracefully)
+            console.error("[PublicAudit] generateAuditForLead returned null for lead", leadId);
+            await notifyOwner({ title: "Free Audit Generation Returned Null", content: `Lead ${leadId} (${input.email}, ${input.websiteUrl}) — audit returned null. Manual review needed.` });
+            await sendAuditReceivedEmail({ to: input.email, businessName: input.businessName || input.websiteUrl || "Your Business", contactName: input.contactName || undefined });
+            return { success: true, message: "We received your request and will review it manually." };
+          }
+        } catch (err: any) {
+          console.error("[PublicAudit] Audit generation failed:", err);
+          await notifyOwner({ title: "Free Audit Generation Error", content: `Lead ${leadId} (${input.email}, ${input.websiteUrl}) — error: ${err?.message || "Unknown"}. Manual review needed.` }).catch(() => {});
+          // Still send a fallback email so the user isn't left hanging
+          await sendAuditReceivedEmail({ to: input.email, businessName: input.businessName || input.websiteUrl || "Your Business", contactName: input.contactName || undefined }).catch(() => {});
+          return { success: true, message: "We received your request and will review it manually." };
+        }
+      } else {
+        // No website URL — send "received your request" email and notify admin
+        await sendAuditReceivedEmail({
+          to: input.email,
+          businessName: input.businessName || "Your Business",
+          contactName: input.contactName || undefined,
+        }).catch(err => console.error("[PublicAudit] Received email failed:", err));
+        await notifyOwner({
+          title: "Free Audit Request (No Website)",
+          content: `${input.contactName || "Visitor"} (${input.email}) requested an audit for "${input.businessName || "Unknown"}" but provided no website URL. Manual outreach needed.`,
+        }).catch(() => {});
+        return { success: true, message: "We received your request and will review it manually." };
       }
-
-      return { success: true, message: "Your audit is being generated. Check your email shortly!" };
     }),
 
   // ─── SMS Opt-In Recording ───

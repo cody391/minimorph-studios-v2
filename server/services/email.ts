@@ -39,7 +39,7 @@ function getResend(): Resend {
 const CAN_SPAM_FOOTER = `
 <div style="background:#f1ede7;padding:16px 32px;border-top:1px solid #e0d9cf;text-align:center;">
   <p style="margin:0 0 8px;font-size:11px;color:#8a8a8a;line-height:1.5;">
-    MiniMorph Studios &bull; Sarasota, FL 34236<br/>
+    MiniMorph Studios &bull; Muskegon, MI 49440<br/>
     You received this email because you inquired about our services or were contacted by a MiniMorph representative.
   </p>
   <p style="margin:0;font-size:11px;color:#8a8a8a;">
