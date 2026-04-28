@@ -1220,8 +1220,16 @@ function StripeConnectSetup() {
   const { data: connectStatus, isLoading } = trpc.reps.connectStatus.useQuery();
   const createOnboarding = trpc.reps.createConnectOnboarding.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, "_blank");
-      toast.success("Stripe Connect onboarding opened in a new tab.");
+      // On mobile: redirect in same window (new tabs are unreliable on phones)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) || window.innerWidth < 768;
+      if (isMobile) {
+        window.location.href = data.url;
+      } else {
+        window.open(data.url, "_blank");
+        toast.success("Stripe Connect onboarding opened in a new tab.");
+      }
     },
     onError: () => toast.error("Failed to create onboarding link. Please try again."),
   });

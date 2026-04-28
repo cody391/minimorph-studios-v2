@@ -14,23 +14,40 @@ import {
   Loader2,
   DollarSign,
   Zap,
+  SkipForward,
 } from "lucide-react";
+
+/** Detect mobile/tablet — used to decide redirect vs new tab */
+function isMobileDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  ) || window.innerWidth < 768;
+}
 
 export default function PayoutSetup() {
   const { user, loading: authLoading } = useAuth();
   const [, navigate] = useLocation();
 
-  const { data: connectStatus, isLoading: statusLoading } =
-    trpc.reps.connectStatus.useQuery(undefined, { enabled: !!user });
-
   const createOnboarding = trpc.reps.createConnectOnboarding.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, "_blank");
-      toast.success("Stripe Connect opened in a new tab. Complete the setup there.");
+      if (isMobileDevice()) {
+        // On mobile: redirect in the same window — new tabs are unreliable
+        window.location.href = data.url;
+      } else {
+        // On desktop: open in new tab so they don't lose their place
+        window.open(data.url, "_blank");
+        toast.success(
+          "Stripe Connect opened in a new tab. Complete the setup there."
+        );
+      }
     },
     onError: () =>
       toast.error("Failed to create onboarding link. Please try again."),
   });
+
+  const { data: connectStatus, isLoading: statusLoading } =
+    trpc.reps.connectStatus.useQuery(undefined, { enabled: !!user });
 
   if (authLoading || statusLoading) {
     return (
@@ -46,7 +63,9 @@ export default function PayoutSetup() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <Lock className="w-12 h-12 text-electric mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-off-white mb-2">Login Required</h2>
+            <h2 className="text-xl font-bold text-off-white mb-2">
+              Login Required
+            </h2>
             <p className="text-muted-foreground mb-4">
               Please log in to continue setup.
             </p>
@@ -96,24 +115,24 @@ export default function PayoutSetup() {
     <div className="min-h-screen bg-midnight">
       <OnboardingProgress currentStep={7} />
       {/* Header */}
-      <div className="bg-charcoal text-off-white py-10 px-4">
+      <div className="bg-charcoal text-off-white py-8 sm:py-10 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
             <div className="flex items-center gap-1.5 text-white/50 text-xs font-sans">
               <CheckCircle className="w-3.5 h-3.5 text-green-400" />
               <span>Application</span>
             </div>
-            <div className="w-6 h-px bg-charcoal/20" />
+            <div className="w-4 sm:w-6 h-px bg-charcoal/20" />
             <div className="flex items-center gap-1.5 text-white/50 text-xs font-sans">
               <CheckCircle className="w-3.5 h-3.5 text-green-400" />
               <span>Paperwork</span>
             </div>
-            <div className="w-6 h-px bg-charcoal/20" />
+            <div className="w-4 sm:w-6 h-px bg-charcoal/20" />
             <div className="flex items-center gap-1.5 text-white text-xs font-sans font-semibold">
               <CreditCard className="w-3.5 h-3.5 text-electric" />
               <span>Payout Setup</span>
             </div>
-            <div className="w-6 h-px bg-charcoal/20" />
+            <div className="w-4 sm:w-6 h-px bg-charcoal/20" />
             <div className="flex items-center gap-1.5 text-white/30 text-xs font-sans">
               <Zap className="w-3.5 h-3.5" />
               <span>Academy</span>
@@ -131,14 +150,14 @@ export default function PayoutSetup() {
       </div>
 
       {/* Content */}
-      <div className="max-w-lg mx-auto px-4 py-10">
+      <div className="max-w-lg mx-auto px-4 py-8 sm:py-10">
         <Card className="border-border/50 shadow-lg">
-          <CardContent className="pt-8 pb-8">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-full bg-[#635BFF]/10 flex items-center justify-center mx-auto mb-4">
-                <CreditCard className="w-8 h-8 text-[#635BFF]" />
+          <CardContent className="pt-6 sm:pt-8 pb-6 sm:pb-8">
+            <div className="text-center mb-6 sm:mb-8">
+              <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-full bg-[#635BFF]/10 flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="w-7 sm:w-8 h-7 sm:h-8 text-[#635BFF]" />
               </div>
-              <h2 className="text-xl font-bold text-off-white mb-2 font-serif">
+              <h2 className="text-lg sm:text-xl font-bold text-off-white mb-2 font-serif">
                 Stripe Connect
               </h2>
               <p className="text-sm text-muted-foreground font-sans max-w-sm mx-auto">
@@ -149,7 +168,7 @@ export default function PayoutSetup() {
             </div>
 
             {/* What Stripe collects */}
-            <div className="space-y-3 mb-8">
+            <div className="space-y-3 mb-6 sm:mb-8">
               {[
                 {
                   icon: Shield,
@@ -191,7 +210,7 @@ export default function PayoutSetup() {
                 })
               }
               disabled={createOnboarding.isPending}
-              className="bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans rounded-full w-full py-5"
+              className="bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans rounded-full w-full py-5 min-h-[52px]"
               size="lg"
             >
               {createOnboarding.isPending ? (
@@ -211,19 +230,24 @@ export default function PayoutSetup() {
               SSN.
             </p>
 
-            {/* Skip option — they can do it later but will be reminded */}
-            <div className="mt-6 pt-6 border-t border-border/10 text-center">
-              <button
+            {/* Skip option — prominent enough to find on mobile */}
+            <div className="mt-6 pt-6 border-t border-border/10">
+              <Button
+                variant="outline"
                 onClick={() => {
                   toast.info(
                     "You can set up payouts later from your dashboard. Heading to the Academy now."
                   );
                   navigate("/rep?tab=training");
                 }}
-                className="text-xs text-soft-gray/60 hover:text-soft-gray font-sans underline transition-colors"
+                className="w-full rounded-full py-4 min-h-[48px] text-soft-gray hover:text-off-white border-border/30 hover:border-border/60 font-sans text-sm"
               >
+                <SkipForward className="w-4 h-4 mr-2" />
                 Skip for now — I'll set this up later
-              </button>
+              </Button>
+              <p className="text-[10px] text-soft-gray/40 font-sans text-center mt-2">
+                You can always connect your payout account from Settings in your dashboard.
+              </p>
             </div>
           </CardContent>
         </Card>

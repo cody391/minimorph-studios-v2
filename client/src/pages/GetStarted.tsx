@@ -176,8 +176,14 @@ export default function GetStarted() {
       } else if (result.checkoutUrl) {
         // Fallback for hosted checkout (e.g. email payment links)
         toast.success("Redirecting to secure checkout...");
-        window.open(result.checkoutUrl, "_blank");
-        setStep(5);
+        // On mobile: redirect in same window (new tabs unreliable on phones)
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+        if (isMobile) {
+          window.location.href = result.checkoutUrl;
+        } else {
+          window.open(result.checkoutUrl, "_blank");
+          setStep(5);
+        }
       }
     } catch (error: any) {
       toast.error(error.message || "Something went wrong. Please try again.");
@@ -213,7 +219,12 @@ export default function GetStarted() {
                   if (result.clientSecret) {
                     setLocation(`/checkout?cs=${encodeURIComponent(result.clientSecret)}&return=/get-started`);
                   } else if (result.checkoutUrl) {
-                    window.open(result.checkoutUrl, "_blank");
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+                    if (isMobile) {
+                      window.location.href = result.checkoutUrl;
+                    } else {
+                      window.open(result.checkoutUrl, "_blank");
+                    }
                   }
                 } catch {
                   toast.error("Failed to create checkout session");
