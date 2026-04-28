@@ -231,21 +231,21 @@ function generateProposalHTML(params: {
 }): string {
   const sectionsHTML = params.sections.map(s => `
     <div style="margin-bottom:28px;">
-      <h3 style="color:#2d5a3d;font-size:20px;margin:0 0 10px 0;font-weight:700;">${s.title}</h3>
-      <p style="color:#334155;font-size:15px;line-height:1.7;margin:0;white-space:pre-line;">${s.content}</p>
+      <h3 style="color:#4a9eff;font-size:20px;margin:0 0 10px 0;font-weight:700;">${s.title}</h3>
+      <p style="color:#c8c8d8;font-size:15px;line-height:1.7;margin:0;white-space:pre-line;">${s.content}</p>
     </div>
   `).join("");
 
   const competitorHTML = params.competitors && params.competitors.length > 0 ? `
-    <div style="background:#fef3c7;border-radius:12px;padding:24px;margin:24px 0;">
-      <h3 style="color:#92400e;font-size:18px;margin:0 0 16px 0;">Your Competitors Are Already Online</h3>
+    <div style="background:#2a2a1a;border-radius:12px;padding:24px;margin:24px 0;border:1px solid #3d3d2a;">
+      <h3 style="color:#d4a853;font-size:18px;margin:0 0 16px 0;">Your Competitors Are Already Online</h3>
       ${params.competitors.map(c => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #fde68a;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #3d3d2a;">
           <div>
-            <strong style="color:#78350f;">${c.competitorName}</strong>
-            <p style="color:#92400e;font-size:13px;margin:4px 0 0 0;">${c.comparisonSummary}</p>
+            <strong style="color:#eaeaf0;">${c.competitorName}</strong>
+            <p style="color:#9898a8;font-size:13px;margin:4px 0 0 0;">${c.comparisonSummary}</p>
           </div>
-          <span style="color:#059669;font-weight:600;font-size:13px;">${c.competitorScore}/100</span>
+          <span style="color:#22c55e;font-weight:600;font-size:13px;">${c.competitorScore}/100</span>
         </div>
       `).join("")}
     </div>
@@ -258,50 +258,50 @@ function generateProposalHTML(params: {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Proposal for ${params.businessName} - MiniMorph Studios</title>
 </head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:680px;margin:0 auto;background:white;">
-    <div style="background:linear-gradient(135deg,#1a3a2a 0%,#2d5a3d 100%);padding:48px 32px;text-align:center;">
-      <p style="color:#a7c4b5;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px 0;">Custom Proposal</p>
-      <h1 style="color:white;margin:0 0 8px 0;font-size:32px;font-weight:800;">${params.businessName}</h1>
-      <p style="color:#7fa895;margin:0;font-size:15px;">Prepared for ${params.contactName} • ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+<body style="margin:0;padding:0;background:#111122;font-family:'Inter',Helvetica,Arial,sans-serif;">
+  <div style="max-width:680px;margin:0 auto;background:#1c1c30;border-radius:8px;overflow:hidden;margin-top:24px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.4);">
+    <div style="background:linear-gradient(135deg,#1c1c30 0%,#222240 100%);padding:48px 32px;text-align:center;border-bottom:1px solid #2d2d45;">
+      <p style="color:#4a9eff;font-size:13px;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px 0;">Custom Proposal</p>
+      <h1 style="color:#eaeaf0;margin:0 0 8px 0;font-size:32px;font-weight:800;">${params.businessName}</h1>
+      <p style="color:#7a7a90;margin:0;font-size:15px;">Prepared for ${params.contactName} • ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
     </div>
 
-    <div style="padding:32px;">
+    <div style="padding:32px;color:#eaeaf0;">
       ${sectionsHTML}
       ${competitorHTML}
     </div>
 
     <!-- ROI Box -->
-    <div style="background:#f0fdf4;padding:32px;margin:0 32px 32px;border-radius:12px;border:2px solid #bbf7d0;">
-      <h3 style="color:#166534;font-size:20px;margin:0 0 16px 0;text-align:center;">Expected Return on Investment</h3>
+    <div style="background:#1a2a1a;padding:32px;margin:0 32px 32px;border-radius:12px;border:1px solid #2d4a2d;">
+      <h3 style="color:#22c55e;font-size:20px;margin:0 0 16px 0;text-align:center;">Expected Return on Investment</h3>
       <div style="display:flex;justify-content:space-around;text-align:center;">
         <div>
-          <p style="color:#166534;font-size:28px;font-weight:800;margin:0;">${params.roiEstimate.monthlyCustomersGained}</p>
-          <p style="color:#4ade80;font-size:12px;margin:4px 0 0 0;">New Customers/Month</p>
+          <p style="color:#22c55e;font-size:28px;font-weight:800;margin:0;">${params.roiEstimate.monthlyCustomersGained}</p>
+          <p style="color:#86efac;font-size:12px;margin:4px 0 0 0;">New Customers/Month</p>
         </div>
         <div>
-          <p style="color:#166534;font-size:28px;font-weight:800;margin:0;">${params.roiEstimate.monthlyRevenueIncrease}</p>
-          <p style="color:#4ade80;font-size:12px;margin:4px 0 0 0;">Revenue Increase</p>
+          <p style="color:#22c55e;font-size:28px;font-weight:800;margin:0;">${params.roiEstimate.monthlyRevenueIncrease}</p>
+          <p style="color:#86efac;font-size:12px;margin:4px 0 0 0;">Revenue Increase</p>
         </div>
         <div>
-          <p style="color:#166534;font-size:28px;font-weight:800;margin:0;">${params.roiEstimate.paybackPeriod}</p>
-          <p style="color:#4ade80;font-size:12px;margin:4px 0 0 0;">Payback Period</p>
+          <p style="color:#22c55e;font-size:28px;font-weight:800;margin:0;">${params.roiEstimate.paybackPeriod}</p>
+          <p style="color:#86efac;font-size:12px;margin:4px 0 0 0;">Payback Period</p>
         </div>
       </div>
     </div>
 
     <!-- Pricing -->
-    <div style="text-align:center;padding:32px;background:#f8fafc;border-top:2px solid #e2e8f0;">
-      <p style="color:#64748b;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px 0;">Recommended Package</p>
-      <h2 style="color:#1e293b;font-size:28px;margin:0 0 4px 0;">${params.recommendedPackage}</h2>
-      <p style="color:#2d5a3d;font-size:36px;font-weight:800;margin:0;">$${params.packagePrice.toLocaleString()}</p>
-      <p style="color:#94a3b8;font-size:13px;margin:8px 0 24px 0;">One-time investment + optional monthly maintenance</p>
-      <a href="#" style="display:inline-block;background:#2d5a3d;color:white;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;font-size:17px;">Let's Get Started</a>
-      <p style="color:#94a3b8;font-size:12px;margin:16px 0 0 0;">Questions? Reply to this email or call us anytime.</p>
+    <div style="text-align:center;padding:32px;background:#151526;border-top:1px solid #2d2d45;">
+      <p style="color:#7a7a90;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px 0;">Recommended Package</p>
+      <h2 style="color:#eaeaf0;font-size:28px;margin:0 0 4px 0;">${params.recommendedPackage}</h2>
+      <p style="color:#4a9eff;font-size:36px;font-weight:800;margin:0;">$${params.packagePrice.toLocaleString()}</p>
+      <p style="color:#7a7a90;font-size:13px;margin:8px 0 24px 0;">One-time investment + optional monthly maintenance</p>
+      <a href="https://minimorphstudios.net/get-started" style="display:inline-block;background:#4a9eff;color:#111122;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;font-size:17px;">Let's Get Started</a>
+      <p style="color:#7a7a90;font-size:12px;margin:16px 0 0 0;">Questions? Reply to this email or call us anytime.</p>
     </div>
 
-    <div style="padding:24px 32px;text-align:center;border-top:1px solid #e2e8f0;">
-      <p style="color:#94a3b8;font-size:12px;margin:0;">MiniMorph Studios • Building the web, one business at a time</p>
+    <div style="padding:24px 32px;text-align:center;border-top:1px solid #2d2d45;">
+      <p style="color:#7a7a90;font-size:12px;margin:0;">MiniMorph Studios &bull; Building the web, one business at a time</p>
     </div>
   </div>
 </body>

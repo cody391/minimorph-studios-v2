@@ -32,19 +32,19 @@ function getResend(): Resend {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CAN-SPAM COMPLIANCE FOOTER
+   CAN-SPAM COMPLIANCE FOOTER — Dark Premium Brand
    Federal law requires: physical address, sender identification,
    and a working unsubscribe mechanism in all commercial emails.
    ═══════════════════════════════════════════════════════ */
 const CAN_SPAM_FOOTER = `
-<div style="background:#f1ede7;padding:16px 32px;border-top:1px solid #e0d9cf;text-align:center;">
-  <p style="margin:0 0 8px;font-size:11px;color:#8a8a8a;line-height:1.5;">
+<div style="background:#151526;padding:16px 32px;border-top:1px solid #2d2d45;text-align:center;">
+  <p style="margin:0 0 8px;font-size:11px;color:#7a7a90;line-height:1.5;">
     MiniMorph Studios &bull; Muskegon, MI 49440<br/>
     You received this email because you inquired about our services or were contacted by a MiniMorph representative.
   </p>
-  <p style="margin:0;font-size:11px;color:#8a8a8a;">
-    <a href="{{unsubscribe_url}}" style="color:#6b7c6e;text-decoration:underline;">Unsubscribe</a> &bull;
-    <a href="{{privacy_url}}" style="color:#6b7c6e;text-decoration:underline;">Privacy Policy</a>
+  <p style="margin:0;font-size:11px;color:#7a7a90;">
+    <a href="{{unsubscribe_url}}" style="color:#4a9eff;text-decoration:underline;">Unsubscribe</a> &bull;
+    <a href="{{privacy_url}}" style="color:#4a9eff;text-decoration:underline;">Privacy Policy</a>
   </p>
 </div>`;
 
@@ -53,9 +53,7 @@ const CAN_SPAM_FOOTER = `
  * Uses the app's origin for unsubscribe and privacy links.
  */
 function buildCanSpamFooter(recipientEmail: string): string {
-  // Encode the email for the unsubscribe link
   const encoded = encodeURIComponent(recipientEmail);
-  // Use a generic unsubscribe endpoint — the frontend will handle the confirmation
   const unsubUrl = `/unsubscribe?email=${encoded}`;
   const privacyUrl = `/privacy`;
   return CAN_SPAM_FOOTER
@@ -82,12 +80,9 @@ export interface SendEmailResult {
 
 /**
  * Send a real email via Resend.
- * Uses the default "from" address based on the configured domain,
- * or falls back to Resend's onboarding address for testing.
  * Automatically appends CAN-SPAM compliance footer to commercial emails.
  */
 export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
-  // CAN-SPAM: Check unsubscribe list before sending commercial emails
   if (!params.transactional) {
     const unsubscribed = await isEmailUnsubscribed(params.to);
     if (unsubscribed) {
@@ -101,10 +96,8 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
   try {
     const fromAddress = params.from || "MiniMorph Studios <hello@minimorphstudios.net>";
 
-    // Append CAN-SPAM footer to HTML emails unless marked transactional
     let htmlContent = params.html;
     if (htmlContent && !params.transactional) {
-      // Insert footer before closing </body> or </html> tags, or append
       const footer = buildCanSpamFooter(params.to);
       if (htmlContent.includes("</body>")) {
         htmlContent = htmlContent.replace("</body>", `${footer}</body>`);
@@ -120,7 +113,6 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       to: [params.to],
       subject: params.subject,
       headers: {
-        // List-Unsubscribe header for email clients (one-click unsubscribe)
         "List-Unsubscribe": `<mailto:unsubscribe@minimorphstudios.net?subject=unsubscribe-${encodeURIComponent(params.to)}>`,
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
       },
@@ -145,6 +137,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
 
 /**
  * Send a branded proposal email with HTML content.
+ * Uses the dark premium MiniMorph brand template.
  */
 export async function sendProposalEmail(params: {
   to: string;
@@ -157,19 +150,19 @@ export async function sendProposalEmail(params: {
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f8f6f3;font-family:Georgia,'Times New Roman',serif;">
-  <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;margin-top:24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-    <div style="background:#2d4a3e;padding:24px 32px;">
-      <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:600;">MiniMorph Studios</h1>
-      <p style="color:#c8b89a;margin:4px 0 0;font-size:13px;">Proposal from ${params.repName}</p>
+<body style="margin:0;padding:0;background-color:#111122;font-family:'Inter',Helvetica,Arial,sans-serif;">
+  <div style="max-width:640px;margin:0 auto;background:#1c1c30;border-radius:8px;overflow:hidden;margin-top:24px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.4);">
+    <div style="background:linear-gradient(135deg,#1c1c30 0%,#222240 100%);padding:28px 32px;border-bottom:1px solid #2d2d45;">
+      <h1 style="color:#eaeaf0;margin:0;font-size:22px;font-weight:700;letter-spacing:-0.3px;">MiniMorph Studios</h1>
+      <p style="color:#4a9eff;margin:6px 0 0;font-size:13px;font-weight:500;">Proposal from ${params.repName}</p>
     </div>
-    <div style="padding:32px;">
+    <div style="padding:32px;color:#eaeaf0;line-height:1.7;">
       ${params.htmlContent}
     </div>
-    <div style="background:#f8f6f3;padding:20px 32px;border-top:1px solid #e8e2d8;">
-      <p style="margin:0;font-size:12px;color:#6b7c6e;">
-        Sent by ${params.repName}${params.repEmail ? ` — ${params.repEmail}` : ""}<br/>
-        MiniMorph Studios — Beautiful websites for growing businesses
+    <div style="background:#151526;padding:20px 32px;border-top:1px solid #2d2d45;">
+      <p style="margin:0;font-size:12px;color:#7a7a90;">
+        Sent by ${params.repName}${params.repEmail ? ` &mdash; ${params.repEmail}` : ""}<br/>
+        MiniMorph Studios &mdash; Beautiful websites for growing businesses
       </p>
     </div>
   </div>
@@ -186,6 +179,7 @@ export async function sendProposalEmail(params: {
 
 /**
  * Send a nurture/check-in email to a customer.
+ * Uses the dark premium MiniMorph brand template.
  */
 export async function sendNurtureEmail(params: {
   to: string;
@@ -197,18 +191,18 @@ export async function sendNurtureEmail(params: {
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f8f6f3;font-family:Georgia,'Times New Roman',serif;">
-  <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;margin-top:24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-    <div style="background:#2d4a3e;padding:24px 32px;">
-      <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:600;">MiniMorph Studios</h1>
+<body style="margin:0;padding:0;background-color:#111122;font-family:'Inter',Helvetica,Arial,sans-serif;">
+  <div style="max-width:640px;margin:0 auto;background:#1c1c30;border-radius:8px;overflow:hidden;margin-top:24px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.4);">
+    <div style="background:linear-gradient(135deg,#1c1c30 0%,#222240 100%);padding:28px 32px;border-bottom:1px solid #2d2d45;">
+      <h1 style="color:#eaeaf0;margin:0;font-size:22px;font-weight:700;letter-spacing:-0.3px;">MiniMorph Studios</h1>
     </div>
-    <div style="padding:32px;line-height:1.7;color:#2d4a3e;">
+    <div style="padding:32px;line-height:1.7;color:#eaeaf0;">
       <p style="margin:0 0 16px;">Hi ${params.customerName},</p>
-      ${params.content.split("\n").map((p) => `<p style="margin:0 0 12px;">${p}</p>`).join("")}
+      ${params.content.split("\n").map((p) => `<p style="margin:0 0 12px;color:#c8c8d8;">${p}</p>`).join("")}
     </div>
-    <div style="background:#f8f6f3;padding:20px 32px;border-top:1px solid #e8e2d8;">
-      <p style="margin:0;font-size:12px;color:#6b7c6e;">
-        MiniMorph Studios — Beautiful websites for growing businesses
+    <div style="background:#151526;padding:20px 32px;border-top:1px solid #2d2d45;">
+      <p style="margin:0;font-size:12px;color:#7a7a90;">
+        MiniMorph Studios &mdash; Beautiful websites for growing businesses
       </p>
     </div>
   </div>

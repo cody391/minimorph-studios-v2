@@ -279,14 +279,14 @@ const repsRouter = router({
 export function buildEmailSignature(rep: { fullName: string; email: string; phone?: string | null; profilePhotoUrl?: string | null }) {
   const photoHtml = rep.profilePhotoUrl
     ? `<img src="${rep.profilePhotoUrl}" alt="${rep.fullName}" width="60" height="60" style="border-radius:50%;object-fit:cover;margin-right:12px;" />`
-    : `<div style="width:60px;height:60px;border-radius:50%;background:#2d5a3d;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;margin-right:12px;">${rep.fullName.charAt(0)}</div>`;
+    : `<div style="width:60px;height:60px;border-radius:50%;background:#4a9eff;color:#111122;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;margin-right:12px;">${rep.fullName.charAt(0)}</div>`;
   const phoneHtml = rep.phone ? `<br/><span style="color:#666;">📱 ${rep.phone}</span>` : "";
   return `
-<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#333;margin-top:20px;border-top:2px solid #2d5a3d;padding-top:12px;">
+<table cellpadding="0" cellspacing="0" border="0" style="font-family:'Inter',Helvetica,Arial,sans-serif;font-size:13px;color:#c8c8d8;margin-top:20px;border-top:2px solid #4a9eff;padding-top:12px;">
   <tr>
     <td style="vertical-align:top;padding-right:12px;">${photoHtml}</td>
     <td style="vertical-align:top;">
-      <strong style="font-size:14px;color:#2d5a3d;">${rep.fullName}</strong><br/>
+      <strong style="font-size:14px;color:#eaeaf0;">${rep.fullName}</strong><br/>
       <span style="color:#666;">Sales Representative — MiniMorph Studios</span><br/>
       <span style="color:#666;">✉️ ${rep.email}</span>${phoneHtml}
     </td>

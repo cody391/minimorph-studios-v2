@@ -1254,3 +1254,13 @@
 - [x] Update FreeAudit.tsx success state to differentiate "on the way" vs "manual review"
 - [x] Add tests: 10 tests covering all paths (all pass)
 - [x] Validation: typecheck clean, 36 test files (875/875 pass), production build OK
+
+### Email Branding Update
+- [x] Audit current site brand colors from index.css (#111122 bg, #1c1c30 card, #4a9eff accent, #eaeaf0 text)
+- [x] Rewrite email.ts: brandWrap, CAN-SPAM footer, sendProposalEmail, sendNurtureEmail — all dark premium
+- [x] Rewrite customerEmails.ts: brandWrap, welcome, payment link, audit, receipt, onboarding emails — all dark premium
+- [x] Rewrite leadGenAudit.ts: audit report HTML template — dark bg, blue accents, light text
+- [x] Rewrite leadGenProposal.ts: proposal HTML template — sections, ROI box, pricing CTA, competitor box
+- [x] Rewrite rep email signature in routers.ts — blue accent avatar, dark text
+- [x] Verified zero old brand colors (#2d5a3d, #1a3a2a, #f8fafc, #1e293b, etc.) remain in server/*.ts
+- [x] Validation: typecheck clean, 36 files 875/875 tests pass, production build OK

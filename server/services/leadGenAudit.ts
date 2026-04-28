@@ -467,22 +467,22 @@ function generateAuditHTML(params: {
   const gradeColor = getGradeColor(params.overallGrade);
 
   const sectionHTML = params.sections.map(s => `
-    <div style="background:#f8fafc;border-radius:12px;padding:24px;margin-bottom:16px;">
+    <div style="background:#222240;border-radius:12px;padding:24px;margin-bottom:16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 style="margin:0;font-size:18px;color:#1e293b;">${s.icon} ${s.name}</h3>
-        <div style="background:${getGradeColor(s.grade)};color:white;font-weight:bold;font-size:14px;padding:4px 12px;border-radius:20px;">
+        <h3 style="margin:0;font-size:18px;color:#eaeaf0;">${s.icon} ${s.name}</h3>
+        <div style="background:${getGradeColor(s.grade)};color:#111122;font-weight:bold;font-size:14px;padding:4px 12px;border-radius:20px;">
           ${s.grade} (${s.score}/100)
         </div>
       </div>
-      <p style="color:#475569;font-size:14px;line-height:1.6;margin:0 0 12px 0;">${s.description}</p>
+      <p style="color:#9898a8;font-size:14px;line-height:1.6;margin:0 0 12px 0;">${s.description}</p>
       ${s.issues.length > 0 ? `
-        <div style="background:#fef2f2;border-left:4px solid #ef4444;padding:12px 16px;border-radius:0 8px 8px 0;">
-          <p style="margin:0 0 8px 0;font-weight:600;color:#991b1b;font-size:13px;">Issues Found:</p>
-          ${s.issues.map(i => `<p style="margin:0 0 4px 0;color:#7f1d1d;font-size:13px;">• ${i}</p>`).join("")}
+        <div style="background:#2a1a1a;border-left:4px solid #ef4444;padding:12px 16px;border-radius:0 8px 8px 0;">
+          <p style="margin:0 0 8px 0;font-weight:600;color:#fca5a5;font-size:13px;">Issues Found:</p>
+          ${s.issues.map(i => `<p style="margin:0 0 4px 0;color:#fca5a5;font-size:13px;">• ${i}</p>`).join("")}
         </div>
       ` : `
-        <div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:12px 16px;border-radius:0 8px 8px 0;">
-          <p style="margin:0;color:#166534;font-size:13px;">✓ No issues found in this area</p>
+        <div style="background:#1a2a1a;border-left:4px solid #22c55e;padding:12px 16px;border-radius:0 8px 8px 0;">
+          <p style="margin:0;color:#86efac;font-size:13px;">✓ No issues found in this area</p>
         </div>
       `}
     </div>
@@ -490,8 +490,8 @@ function generateAuditHTML(params: {
 
   const recsHTML = params.recommendations.map((r, i) => `
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;">
-      <div style="background:#2d5a3d;color:white;font-weight:bold;font-size:13px;min-width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;">${i + 1}</div>
-      <p style="margin:0;color:#334155;font-size:14px;line-height:1.6;">${r}</p>
+      <div style="background:#4a9eff;color:#111122;font-weight:bold;font-size:13px;min-width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;">${i + 1}</div>
+      <p style="margin:0;color:#c8c8d8;font-size:14px;line-height:1.6;">${r}</p>
     </div>
   `).join("");
 
@@ -502,52 +502,52 @@ function generateAuditHTML(params: {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Website Audit Report - ${params.businessName}</title>
 </head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:680px;margin:0 auto;background:white;">
+<body style="margin:0;padding:0;background:#111122;font-family:'Inter',Helvetica,Arial,sans-serif;">
+  <div style="max-width:680px;margin:0 auto;background:#1c1c30;border-radius:8px;overflow:hidden;margin-top:24px;margin-bottom:24px;box-shadow:0 4px 24px rgba(0,0,0,0.4);">
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#1a3a2a 0%,#2d5a3d 100%);padding:40px 32px;text-align:center;">
-      <h1 style="color:white;margin:0 0 8px 0;font-size:28px;font-weight:700;">Website Audit Report</h1>
-      <p style="color:#a7c4b5;margin:0;font-size:16px;">${params.businessName}</p>
-      ${params.websiteUrl ? `<p style="color:#7fa895;margin:8px 0 0 0;font-size:13px;">${params.websiteUrl}</p>` : ""}
-      <p style="color:#7fa895;margin:8px 0 0 0;font-size:12px;">Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+    <div style="background:linear-gradient(135deg,#1c1c30 0%,#222240 100%);padding:40px 32px;text-align:center;border-bottom:1px solid #2d2d45;">
+      <h1 style="color:#eaeaf0;margin:0 0 8px 0;font-size:28px;font-weight:700;">Website Audit Report</h1>
+      <p style="color:#4a9eff;margin:0;font-size:16px;">${params.businessName}</p>
+      ${params.websiteUrl ? `<p style="color:#7a7a90;margin:8px 0 0 0;font-size:13px;">${params.websiteUrl}</p>` : ""}
+      <p style="color:#7a7a90;margin:8px 0 0 0;font-size:12px;">Generated ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
     </div>
 
     <!-- Overall Score -->
     <div style="text-align:center;padding:32px;">
-      <p style="color:#64748b;font-size:14px;margin:0 0 12px 0;text-transform:uppercase;letter-spacing:1px;">Overall Score</p>
+      <p style="color:#7a7a90;font-size:14px;margin:0 0 12px 0;text-transform:uppercase;letter-spacing:1px;">Overall Score</p>
       <div style="display:inline-block;width:120px;height:120px;border-radius:50%;border:8px solid ${gradeColor};display:flex;align-items:center;justify-content:center;position:relative;">
         <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
           <span style="font-size:42px;font-weight:800;color:${gradeColor};">${params.overallGrade}</span>
         </div>
       </div>
-      <p style="color:#334155;font-size:20px;font-weight:600;margin:16px 0 4px 0;">${params.overallScore}/100</p>
+      <p style="color:#eaeaf0;font-size:20px;font-weight:600;margin:16px 0 4px 0;">${params.overallScore}/100</p>
       <p style="color:#ef4444;font-size:14px;margin:0;">Estimated impact: <strong>${params.estimatedCustomersLost}</strong> lost</p>
     </div>
 
     <!-- Sections -->
     <div style="padding:0 32px 24px;">
-      <h2 style="color:#1e293b;font-size:22px;margin:0 0 20px 0;padding-bottom:12px;border-bottom:2px solid #e2e8f0;">Detailed Analysis</h2>
+      <h2 style="color:#eaeaf0;font-size:22px;margin:0 0 20px 0;padding-bottom:12px;border-bottom:2px solid #2d2d45;">Detailed Analysis</h2>
       ${sectionHTML}
     </div>
 
     <!-- Recommendations -->
     <div style="padding:0 32px 32px;">
-      <h2 style="color:#1e293b;font-size:22px;margin:0 0 20px 0;padding-bottom:12px;border-bottom:2px solid #e2e8f0;">Our Recommendations</h2>
+      <h2 style="color:#eaeaf0;font-size:22px;margin:0 0 20px 0;padding-bottom:12px;border-bottom:2px solid #2d2d45;">Our Recommendations</h2>
       ${recsHTML}
     </div>
 
     <!-- CTA -->
-    <div style="background:#f8fafc;padding:32px;text-align:center;border-top:2px solid #e2e8f0;">
-      <h3 style="color:#1e293b;margin:0 0 12px 0;font-size:20px;">Ready to fix these issues?</h3>
-      <p style="color:#64748b;margin:0 0 20px 0;font-size:14px;">MiniMorph Studios specializes in building modern, high-performing websites for businesses like yours.</p>
-      <a href="#" style="display:inline-block;background:#2d5a3d;color:white;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:16px;">Get Your Free Consultation</a>
-      <p style="color:#94a3b8;margin:16px 0 0 0;font-size:12px;">No commitment required. We'll show you exactly how we can help.</p>
+    <div style="background:#151526;padding:32px;text-align:center;border-top:1px solid #2d2d45;">
+      <h3 style="color:#eaeaf0;margin:0 0 12px 0;font-size:20px;">Ready to fix these issues?</h3>
+      <p style="color:#9898a8;margin:0 0 20px 0;font-size:14px;">MiniMorph Studios specializes in building modern, high-performing websites for businesses like yours.</p>
+      <a href="https://minimorphstudios.net/get-started" style="display:inline-block;background:#4a9eff;color:#111122;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:16px;">Get Your Free Consultation</a>
+      <p style="color:#7a7a90;margin:16px 0 0 0;font-size:12px;">No commitment required. We'll show you exactly how we can help.</p>
     </div>
 
     <!-- Footer -->
-    <div style="padding:24px 32px;text-align:center;border-top:1px solid #e2e8f0;">
-      <p style="color:#94a3b8;font-size:12px;margin:0;">This report was generated by MiniMorph Studios</p>
-      <p style="color:#94a3b8;font-size:11px;margin:4px 0 0 0;">Scores are based on automated analysis and industry benchmarks.</p>
+    <div style="padding:24px 32px;text-align:center;border-top:1px solid #2d2d45;">
+      <p style="color:#7a7a90;font-size:12px;margin:0;">This report was generated by MiniMorph Studios</p>
+      <p style="color:#7a7a90;font-size:11px;margin:4px 0 0 0;">Scores are based on automated analysis and industry benchmarks.</p>
     </div>
   </div>
 </body>
