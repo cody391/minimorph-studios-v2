@@ -17,6 +17,7 @@ import {
   Clock, Award, Star, Flame, Trophy, Lock, Play, RotateCcw,
   Lightbulb, MessageSquare, Zap, ArrowRight, AlertCircle,
   CalendarCheck, ShieldCheck, AlertTriangle, Loader2, Rocket, ArrowUpRight,
+  User, Briefcase, Eye, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -1392,14 +1393,14 @@ export default function SalesAcademy() {
    ROLE PLAY TAB — AI-powered sales practice
    ═══════════════════════════════════════════════════════ */
 const SCENARIO_TYPES = [
-  { value: "cold_call", label: "Cold Call", icon: Phone, description: "Practice calling a prospect who doesn't know you", color: "badge-info border-blue-500/30" },
-  { value: "discovery_call", label: "Discovery Call", icon: Search, description: "Uncover pain points and qualify the prospect", color: "badge-success border-green-500/30" },
-  { value: "objection_handling", label: "Objection Handling", icon: Shield, description: "Handle tough pushback and turn objections into opportunities", color: "badge-pending-payment border-amber-500/20" },
-  { value: "closing", label: "Closing", icon: Target, description: "Practice closing techniques to seal the deal", color: "badge-danger border-red-500/30" },
-  { value: "follow_up", label: "Follow Up", icon: ArrowRight, description: "Re-engage a prospect who went cold", color: "badge-purple border-purple-500/30" },
-  { value: "upsell", label: "Upsell", icon: TrendingUp, description: "Upgrade an existing client to a higher tier", color: "bg-teal-500/15 text-teal-400 border-teal-500/30" },
-  { value: "angry_customer", label: "Angry Customer", icon: AlertCircle, description: "De-escalate and retain an unhappy client", color: "badge-pending-payment border-orange-500/30" },
-  { value: "price_negotiation", label: "Price Negotiation", icon: Crown, description: "Defend your pricing and demonstrate value", color: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30" },
+  { value: "cold_call", label: "Cold Call", icon: Phone, description: "Cold call Mike Barrett at Shoreline Concrete & Coatings — a busy contractor who doesn't know you", personName: "Mike Barrett", businessName: "Shoreline Concrete & Coatings", difficulty: "Intermediate" as const, color: "badge-info border-blue-500/30" },
+  { value: "discovery_call", label: "Discovery Call", icon: Search, description: "Discover pain points with Quinn Hayes at Q's Landscaping — budget-aware and practical", personName: "Quinn Hayes", businessName: "Q's Landscaping", difficulty: "Beginner" as const, color: "badge-success border-green-500/30" },
+  { value: "objection_handling", label: "Objection Handling", icon: Shield, description: "Handle price objections from Jordan Miller at Lakeshore Auto Detailing — interested but cautious", personName: "Jordan Miller", businessName: "Lakeshore Auto Detailing", difficulty: "Intermediate" as const, color: "badge-pending-payment border-amber-500/20" },
+  { value: "closing", label: "Closing", icon: Target, description: "Close the deal with Alyssa Moreno at Velvet & Vine Studio — she's ready to buy", personName: "Alyssa Moreno", businessName: "Velvet & Vine Studio", difficulty: "Intermediate" as const, color: "badge-danger border-red-500/30" },
+  { value: "follow_up", label: "Follow Up", icon: ArrowRight, description: "Re-engage Mark Ellis at G&L Chillidog — interested last week but went silent", personName: "Mark Ellis", businessName: "G&L Chillidog", difficulty: "Intermediate" as const, color: "badge-purple border-purple-500/30" },
+  { value: "upsell", label: "Upsell", icon: TrendingUp, description: "Upsell Darnell Reed at Northside Fitness Lab — wants the basic plan but needs more", personName: "Darnell Reed", businessName: "Northside Fitness Lab", difficulty: "Advanced" as const, color: "bg-teal-500/15 text-teal-400 border-teal-500/30" },
+  { value: "angry_customer", label: "Angry Customer", icon: AlertCircle, description: "De-escalate Rick Donovan at Hammerstone Builds — a paying client who feels ignored", personName: "Rick Donovan", businessName: "Hammerstone Builds", difficulty: "Advanced" as const, color: "badge-pending-payment border-orange-500/30" },
+  { value: "price_negotiation", label: "Price Negotiation", icon: Crown, description: "Defend pricing with Samantha Lee at Ember & Oak Coffee Co. — smart and negotiating", personName: "Samantha Lee", businessName: "Ember & Oak Coffee Co.", difficulty: "Advanced" as const, color: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30" },
 ] as const;
 
 // Map scenario types to the modules that should be completed first
@@ -1435,10 +1436,12 @@ function getWeeklyChallenge() {
 
 function RolePlayTab({ academyData, overallProgress }: { academyData: any; overallProgress: number }) {
   const [activeSession, setActiveSession] = useState<number | null>(null);
-  const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string; timestamp?: number }>>([]);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string; timestamp?: number }>>([]); 
   const [persona, setPersona] = useState<any>(null);
   const [scenarioType, setScenarioType] = useState<string>("");
   const [showScorecard, setShowScorecard] = useState(false);
+  const [briefing, setBriefing] = useState<any>(null);
+  const [showBriefing, setShowBriefing] = useState(false);
 
   const { data: sessions, isLoading: sessionsLoading } = trpc.academy.rolePlaySessions.useQuery();
 
@@ -1468,6 +1471,8 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
       setChatMessages(data.messages);
       setPersona(data.persona);
       setScenarioType(data.scenarioType);
+      setBriefing((data as any).briefing || null);
+      setShowBriefing(true);
       utils.academy.rolePlaySessions.invalidate();
     },
   });
@@ -1503,6 +1508,8 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
     setPersona(null);
     setScenarioType("");
     setShowScorecard(false);
+    setBriefing(null);
+    setShowBriefing(false);
   };
 
   // Resume an existing session
@@ -1615,6 +1622,150 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
 
   /* ─── ACTIVE SESSION VIEW ─── */
   if (activeSession && persona) {
+    const difficultyColor = briefing?.difficulty === "Advanced" ? "bg-red-500/20 text-red-400 border-red-500/30"
+      : briefing?.difficulty === "Intermediate" ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+      : "bg-green-500/20 text-green-400 border-green-500/30";
+
+    /* ── Pre-session briefing card ── */
+    if (showBriefing && briefing) {
+      return (
+        <div className="space-y-4">
+          <Button variant="ghost" onClick={handleBackToScenarios} className="text-soft-gray hover:text-off-white">
+            <ChevronLeft className="w-4 h-4 mr-1" /> Back to Scenarios
+          </Button>
+
+          <Card className="border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-purple-900/10 overflow-hidden">
+            <CardContent className="p-6 space-y-5">
+              {/* Persona identity row */}
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0">
+                  <span className="text-2xl font-serif text-purple-400">{persona.name?.charAt(0)}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-serif text-off-white">{persona.name}</h2>
+                  <p className="text-sm text-soft-gray font-sans">{persona.role || persona.personRole} — {persona.company}</p>
+                  <p className="text-xs text-soft-gray/70 font-sans mt-0.5">{persona.industry} • {persona.businessType || persona.companySize}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <Badge variant="outline" className={`text-[10px] border ${difficultyColor}`}>
+                    {briefing.difficulty}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-400">
+                    {scenarioType.replace(/_/g, " ")}
+                  </Badge>
+                </div>
+              </div>
+
+              <Separator className="bg-purple-500/20" />
+
+              {/* Conversation stage & context */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <MessageSquare className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-sans font-medium text-off-white">Conversation Stage</p>
+                    <p className="text-xs text-soft-gray font-sans mt-0.5">{briefing.conversationStage}</p>
+                  </div>
+                </div>
+                {briefing.priorContext && (
+                  <div className="flex items-start gap-2">
+                    <BookOpen className="w-4 h-4 text-purple-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-xs font-sans font-medium text-off-white">Prior Context</p>
+                      <p className="text-xs text-soft-gray font-sans mt-0.5">{briefing.priorContext}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Separator className="bg-purple-500/20" />
+
+              {/* Rep objective */}
+              <div className="flex items-start gap-2">
+                <Target className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-sans font-medium text-off-white">Your Objective</p>
+                  <p className="text-xs text-soft-gray font-sans mt-0.5">{briefing.repObjective}</p>
+                </div>
+              </div>
+
+              {/* Success criteria checklist */}
+              {briefing.successCriteria && briefing.successCriteria.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+                    <p className="text-xs font-sans font-medium text-off-white">Success Criteria</p>
+                  </div>
+                  <div className="grid gap-1.5 pl-6">
+                    {briefing.successCriteria.map((criterion: string, i: number) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500/50 mt-1.5 shrink-0" />
+                        <p className="text-xs text-soft-gray font-sans">{criterion}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Ideal behaviors */}
+              {briefing.idealBehaviors && briefing.idealBehaviors.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-blue-400 shrink-0" />
+                    <p className="text-xs font-sans font-medium text-off-white">Tips for Success</p>
+                  </div>
+                  <div className="grid gap-1.5 pl-6">
+                    {briefing.idealBehaviors.map((behavior: string, i: number) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500/50 mt-1.5 shrink-0" />
+                        <p className="text-xs text-soft-gray font-sans">{behavior}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Forbidden behaviors */}
+              {briefing.forbiddenBehaviors && briefing.forbiddenBehaviors.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    <p className="text-xs font-sans font-medium text-off-white">Avoid These Mistakes</p>
+                  </div>
+                  <div className="grid gap-1.5 pl-6">
+                    {briefing.forbiddenBehaviors.map((behavior: string, i: number) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500/50 mt-1.5 shrink-0" />
+                        <p className="text-xs text-soft-gray font-sans">{behavior}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Separator className="bg-purple-500/20" />
+
+              {/* Start button */}
+              <div className="text-center pt-2">
+                <Button
+                  size="lg"
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-sans px-8"
+                  onClick={() => setShowBriefing(false)}
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  I'm Ready — Start Conversation
+                </Button>
+                <p className="text-[10px] text-soft-gray/50 font-sans mt-2">
+                  {persona.name} will speak first. Respond naturally as a MiniMorph sales rep.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    /* ── Active conversation view (after dismissing briefing) ── */
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -1632,7 +1783,7 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
           </Button>
         </div>
 
-        {/* Prospect info card */}
+        {/* Compact prospect info card */}
         <Card className="border-purple-500/30 bg-purple-500/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -1641,11 +1792,18 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-sans font-medium text-off-white">{persona.name}</h3>
-                <p className="text-xs text-soft-gray font-sans">{persona.company} • {persona.industry} • {persona.companySize} employees</p>
+                <p className="text-xs text-soft-gray font-sans">{persona.company} • {persona.role || persona.industry} • {persona.businessType || `${persona.companySize} employees`}</p>
               </div>
-              <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-400">
-                {scenarioType.replace(/_/g, " ")}
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                {briefing?.difficulty && (
+                  <Badge variant="outline" className={`text-[10px] border ${difficultyColor}`}>
+                    {briefing.difficulty}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-[10px] border-purple-500/30 text-purple-400">
+                  {scenarioType.replace(/_/g, " ")}
+                </Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1685,12 +1843,11 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
             </div>
             <div>
               <h2 className="text-lg font-serif">AI Role Play</h2>
-              <p className="text-xs text-white/70 font-sans">Practice sales conversations with AI-generated prospects</p>
+              <p className="text-xs text-white/70 font-sans">Practice with realistic, pre-built sales scenarios</p>
             </div>
           </div>
           <p className="text-xs text-white/80 font-sans mt-3">
-            Choose a scenario, and our AI will generate a unique prospect with realistic pain points, personality, and objections.
-            Practice your pitch, handle objections, and get scored on your performance.
+            Each scenario features a unique business, personality, and challenge. Read the briefing, practice your pitch, handle objections, and get scored on your performance.
           </p>
         </CardContent>
         <div className="absolute top-0 right-0 w-32 h-32 bg-charcoal/5 rounded-full -translate-y-1/2 translate-x-1/3" />
@@ -1731,6 +1888,9 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
           const unlocked = isScenarioUnlocked(scenario.value);
           const requiredModules = SCENARIO_MODULE_REQUIREMENTS[scenario.value] || [];
           const missingModules = requiredModules.filter(m => !completedModules.has(m));
+          const diffBadgeColor = scenario.difficulty === "Advanced" ? "bg-red-500/20 text-red-400 border-red-500/30"
+            : scenario.difficulty === "Intermediate" ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+            : "bg-green-500/20 text-green-400 border-green-500/30";
           return (
             <Card
               key={scenario.value}
@@ -1742,10 +1902,18 @@ function RolePlayTab({ academyData, overallProgress }: { academyData: any; overa
                   <div className={`w-10 h-10 rounded-lg border flex items-center justify-center shrink-0 ${unlocked ? scenario.color : 'bg-gray-500/10 text-gray-500 border-gray-500/30'}`}>
                     {unlocked ? <Icon className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
                   </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-sans font-medium text-off-white">{scenario.label}</h4>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-sans font-medium text-off-white">{scenario.label}</h4>
+                      <Badge variant="outline" className={`text-[9px] border ${diffBadgeColor}`}>
+                        {scenario.difficulty}
+                      </Badge>
+                    </div>
                     {unlocked ? (
-                      <p className="text-xs text-soft-gray font-sans mt-0.5">{scenario.description}</p>
+                      <>
+                        <p className="text-xs text-purple-400/90 font-sans font-medium mt-0.5">{scenario.personName} — {scenario.businessName}</p>
+                        <p className="text-xs text-soft-gray/80 font-sans mt-0.5">{scenario.description}</p>
+                      </>
                     ) : (
                       <p className="text-xs text-amber-400/80 font-sans mt-0.5">
                         Complete {missingModules.map(m => m.replace(/-/g, ' ')).join(', ')} module{missingModules.length > 1 ? 's' : ''} first

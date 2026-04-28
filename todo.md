@@ -1386,3 +1386,20 @@
 - [x] Frontend: Updated What's Next guidance after quiz pass to show role play requirement before certification
 - [x] Frontend: Certification tab shows role play status per module
 - [x] Update the platform lesson (Lesson 5 in Module 1) to mention mandatory role plays — added full "Mandatory Role Plays" section with module-to-scenario mapping and 5-step certification path
+
+### Refine AI Roleplay Scenarios (8 existing)
+- [x] Create SCENARIO_PROFILES with unique business/person profiles for all 8 scenarios
+- [x] Add stage-accurate opening messages per scenario
+- [x] Add priorContextSummary, conversationStage, scoringFocus, hiddenInfo per scenario
+- [x] Mark 7 scenarios as prospect_sales, Angry Customer as current_client_retention
+- [x] Update AI prospect prompt builder to use scenario-specific profiles
+- [x] Update rep briefing card UI to show scenario context before starting
+- [x] Update scoring/evaluation to use scenario-specific criteria
+- [x] Remove any setup fee references from scenarios
+- [x] Add Phase 8 tests (13 assertions)
+- [x] Run TypeScript, tests, production build
+- [x] Rich pre-session briefing card: persona identity, difficulty badge, conversation stage, prior context, rep objective, success criteria, tips for success, mistakes to avoid, "I'm Ready — Start Conversation" button
+- [x] Compact prospect info card during active conversation with difficulty badge
+- [x] Updated SCENARIO_TYPES with specific person names, business names, and difficulty levels from profiles
+- [x] Scenario selection cards show person name, business name, difficulty badge when unlocked
+- [x] Updated Role Play header description to reflect pre-built scenarios (not AI-generated)

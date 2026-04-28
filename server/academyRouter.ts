@@ -18,6 +18,7 @@ import {
 } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { getScenarioProfile } from "./scenario-profiles";
 import {
   getCertificationStatus,
   getDailyCheckIn,
@@ -624,87 +625,32 @@ export const academyRouter = router({
       const rep = await db.select().from(reps).where(eq(reps.userId, ctx.user.id)).limit(1);
       if (rep.length === 0) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
 
-      // Generate a unique prospect persona using LLM
-      const personaResult = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are a scenario generator for sales training. Create a realistic prospect persona for a ${input.scenarioType.replace(/_/g, " ")} scenario.
+      // Use pre-built scenario profile instead of LLM-generated persona
+      const profile = getScenarioProfile(input.scenarioType);
+      if (!profile) throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown scenario type" });
 
-The rep sells MiniMorph Studios services — a premium digital marketing agency offering three tiers:
-- Starter ($150/mo): Social media management, basic SEO, monthly reporting
-- Growth ($250/mo): Everything in Starter + content creation, email marketing, paid ads management
-- Pro ($400/mo): Everything in Growth + dedicated strategist, video production, advanced analytics
+      // Build a persona object from the profile for backward compatibility
+      const persona = {
+        name: profile.personName,
+        company: profile.businessName,
+        industry: profile.industry,
+        companySize: 0,
+        painPoints: profile.likelyObjectionsOrComplaints.slice(0, 3),
+        personality: profile.personPersonality,
+        budget: "",
+        objections: profile.likelyObjectionsOrComplaints,
+        backstory: profile.priorContextSummary,
+        // Extended profile fields
+        role: profile.personRole,
+        businessType: profile.businessType,
+        emotionalState: profile.emotionalState,
+        conversationStage: profile.conversationStage,
+        scenarioType: profile.scenarioType,
+        difficulty: profile.difficulty,
+      };
 
-Return a JSON object with these fields:
-- name: Full name of the prospect
-- company: Company name
-- industry: Their industry
-- companySize: Number of employees
-- painPoints: Array of 2-3 specific pain points
-- personality: One of "analytical", "expressive", "driver", "amiable"
-- budget: Their approximate monthly marketing budget
-- objections: Array of 1-2 likely objections they'll raise
-- backstory: 2-3 sentences of context about their situation`,
-          },
-          { role: "user", content: `Generate a prospect persona for a ${input.scenarioType.replace(/_/g, " ")} scenario.` },
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "prospect_persona",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                name: { type: "string" },
-                company: { type: "string" },
-                industry: { type: "string" },
-                companySize: { type: "number" },
-                painPoints: { type: "array", items: { type: "string" } },
-                personality: { type: "string", enum: ["analytical", "expressive", "driver", "amiable"] },
-                budget: { type: "string" },
-                objections: { type: "array", items: { type: "string" } },
-                backstory: { type: "string" },
-              },
-              required: ["name", "company", "industry", "companySize", "painPoints", "personality", "budget", "objections", "backstory"],
-              additionalProperties: false,
-            },
-          },
-        },
-      });
-
-      const persona = JSON.parse(personaResult.choices[0].message.content as string);
-
-      // Generate the prospect's opening message
-      const openingResult = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `You are ${persona.name}, ${persona.backstory}
-
-You are a ${persona.personality} personality type. Your pain points are: ${persona.painPoints.join(", ")}.
-Your objections are: ${persona.objections.join(", ")}.
-
-This is a ${input.scenarioType.replace(/_/g, " ")} scenario. Respond naturally as this prospect would.
-Keep your response to 1-3 sentences. Be realistic — don't be too eager or too hostile.`,
-          },
-          {
-            role: "user",
-            content: input.scenarioType === "cold_call"
-              ? "*Phone rings* Hello?"
-              : input.scenarioType === "discovery_call"
-              ? "Hi, thanks for taking the time to chat today. I'm with MiniMorph Studios."
-              : input.scenarioType === "angry_customer"
-              ? "*You receive a call from an existing client who sounds upset*"
-              : input.scenarioType === "follow_up"
-              ? "*You're following up with a prospect who showed interest last week*"
-              : "Hi, I'm calling from MiniMorph Studios.",
-          },
-        ],
-      });
-
-      const openingMessage = openingResult.choices[0].message.content as string;
+      // Use the stage-accurate opening message from the profile
+      const openingMessage = profile.openingMessage;
 
       const initialMessages = [
         { role: "assistant", content: openingMessage, timestamp: Date.now() },
@@ -724,6 +670,15 @@ Keep your response to 1-3 sentences. Be realistic — don't be too eager or too 
         persona,
         messages: initialMessages,
         scenarioType: input.scenarioType,
+        briefing: {
+          repObjective: profile.repObjective,
+          successCriteria: profile.successCriteria,
+          conversationStage: profile.conversationStage,
+          priorContext: profile.priorContextSummary,
+          idealBehaviors: profile.idealRepBehaviors,
+          forbiddenBehaviors: profile.forbiddenRepBehaviors,
+          difficulty: profile.difficulty,
+        },
       };
     }),
 
@@ -749,22 +704,35 @@ Keep your response to 1-3 sentences. Be realistic — don't be too eager or too 
       const persona = JSON.parse(session.prospectPersona);
       const existingMessages = (session.messages as any[]) || [];
 
-      // Build conversation history for LLM
-      const llmMessages = [
-        {
-          role: "system" as const,
-          content: `You are ${persona.name}, the ${persona.personality} ${persona.industry} business owner of ${persona.company} (${persona.companySize} employees).
+      // Build conversation history for LLM using scenario-specific profile
+      const profile = getScenarioProfile(session.scenarioType);
+      const systemPrompt = profile
+        ? `${profile.aiPersonBehaviorInstructions}
+
+IMPORTANT RULES:
+- Stay in character at all times. Never break character or mention that you are an AI.
+- Keep responses to 1-4 sentences. Be conversational, not robotic.
+- Your emotional state: ${profile.emotionalState}
+- Your conversation stage: ${profile.conversationStage}
+- If the rep does a great job, gradually warm up. If they're pushy, scripted, or miss the mark, become more resistant.
+- Your likely objections: ${profile.likelyObjectionsOrComplaints.join("; ")}
+- Hidden info to reveal ONLY if the rep asks the right questions: ${profile.hiddenInfoToRevealOnlyIfAsked.join("; ")}
+- NEVER mention setup fees.
+- NEVER volunteer information the rep hasn't asked about.`
+        : `You are ${persona.name}, the ${persona.personality} ${persona.industry} business owner of ${persona.company}.
 
 ${persona.backstory}
 
 Your pain points: ${persona.painPoints.join(", ")}
 Your objections: ${persona.objections.join(", ")}
-Your budget: ${persona.budget}
 
 This is a ${session.scenarioType.replace(/_/g, " ")} scenario. Stay in character at all times.
-Respond naturally as this prospect would. Be realistic — push back on things that don't make sense, ask questions, raise objections when appropriate.
-Keep responses to 1-4 sentences. Never break character or mention that you're an AI.
-If the rep does a great job addressing your concerns, gradually warm up. If they're pushy or miss the mark, become more resistant.`,
+Respond naturally. Keep responses to 1-4 sentences. Never break character or mention that you're an AI.`;
+
+      const llmMessages = [
+        {
+          role: "system" as const,
+          content: systemPrompt,
         },
         ...existingMessages.map((m: any) => ({
           role: (m.role === "assistant" ? "assistant" : "user") as "system" | "user" | "assistant",
