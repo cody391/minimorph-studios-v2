@@ -31,4 +31,8 @@ export const ENV = {
   // Scheduler
   schedulerSecret: process.env.SCHEDULER_SECRET ?? "",
   enableInternalScheduler: process.env.ENABLE_INTERNAL_SCHEDULER === "true",
+  // Stripe — prefer CUSTOM_* keys (Connect-enabled account) over built-in ones
+  stripeSecretKey: process.env.CUSTOM_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || "",
+  stripePublishableKey: process.env.CUSTOM_STRIPE_PUBLISHABLE_KEY || process.env.VITE_STRIPE_PUBLISHABLE_KEY || "",
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
 };

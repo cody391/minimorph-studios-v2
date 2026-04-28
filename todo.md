@@ -1284,7 +1284,7 @@
 - [x] Validation: typecheck clean, 36 files 875/875 tests pass, production build OK
 
 ### Fix Rep Payout Page + Embed Stripe Flows In-Site
-- [ ] Fix broken "Connect to Stripe" — root cause: Stripe Connect not enabled on account
+- [x] Fix broken "Connect to Stripe" — switched to mini morph studios sandbox with Connect enabled
 - [x] Install @stripe/stripe-js and @stripe/react-stripe-js
 - [x] Update backend checkout session (direct purchase / GetStarted flow) to use ui_mode: 'embedded_page' and return client_secret
 - [x] Create EmbeddedCheckout.tsx page component that renders Stripe checkout inline with dark premium branding
@@ -1293,3 +1293,20 @@
 - [x] Keep rep-closed deal checkout sessions (closeDeal + resendPaymentLink) in hosted mode for email payment links
 - [x] Update step 5 success copy to remove "checkout window" language
 - [x] Validation: TypeScript 0 errors, 875/875 tests pass, production build OK
+
+### Switch to New Stripe Account (mini morph studios sandbox)
+- [x] Set CUSTOM_STRIPE_SECRET_KEY and CUSTOM_STRIPE_PUBLISHABLE_KEY env vars with Connect-enabled sandbox keys
+- [x] Set VITE_CUSTOM_STRIPE_PUBLISHABLE_KEY for frontend access
+- [x] Update server/_core/env.ts to prefer custom keys over built-in keys
+- [x] Update all server Stripe references (routers.ts, stripe-webhook.ts) to use ENV.stripeSecretKey
+- [x] Update EmbeddedCheckout.tsx to prefer VITE_CUSTOM_STRIPE_PUBLISHABLE_KEY
+- [x] Test Stripe Connect API — confirmed: create Express accounts + onboarding links work
+- [x] Webhook endpoint verified: returns { verified: true } for test events
+- [x] Validation: TypeScript 0 errors, all Stripe key tests pass
+- [ ] Live keys blocked: Manus Payment Settings Save button not working (platform UI bug — report to help.manus.im)
+
+### Fix Stripe Webhook Endpoint
+- [x] Webhook already returns valid JSON with { verified: true } for test events
+- [x] Webhook route registered with express.raw before express.json (confirmed in _core/index.ts)
+- [x] Webhook returns 200 with valid JSON in all cases
+- [x] User created webhook destinations in Stripe dashboard (sandbox): snapshot + thin payload

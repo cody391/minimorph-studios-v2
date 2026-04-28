@@ -9,7 +9,7 @@ import { ArrowLeft, Shield, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ""
+  import.meta.env.VITE_CUSTOM_STRIPE_PUBLISHABLE_KEY || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ""
 );
 
 export default function EmbeddedCheckout() {

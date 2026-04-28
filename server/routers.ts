@@ -26,6 +26,7 @@ import { sendOnboardingStageEmail } from "./services/customerEmails";
 import { teamFeedRouter } from "./teamFeedRouter";
 import { invokeLLM } from "./_core/llm";
 import { assertRepOwnership, assertCustomerOwnership, assertProjectOwnership, assertLeadOwnership, assertAssetOwnership } from "./ownership";
+import { ENV } from "./_core/env";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -105,7 +106,7 @@ const repsRouter = router({
       const rep = await db.getRepByUserId(ctx.user.id);
       if (!rep) throw new Error("Not a rep");
       const Stripe = (await import("stripe")).default;
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+      const stripe = new Stripe(ENV.stripeSecretKey || "");
       let accountId = rep.stripeConnectAccountId;
       if (!accountId) {
         const account = await stripe.accounts.create({
@@ -134,7 +135,7 @@ const repsRouter = router({
     if (rep.stripeConnectOnboarded) return { hasAccount: true, onboarded: true };
     // Check with Stripe
     const Stripe = (await import("stripe")).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+    const stripe = new Stripe(ENV.stripeSecretKey || "");
     try {
       const account = await stripe.accounts.retrieve(rep.stripeConnectAccountId);
       const onboarded = account.details_submitted === true;
@@ -158,7 +159,7 @@ const repsRouter = router({
       if (!rep) throw new Error("Rep not found");
       if (!rep.stripeConnectAccountId) throw new Error("Rep has no Stripe Connect account");
       const Stripe = (await import("stripe")).default;
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
+      const stripe = new Stripe(ENV.stripeSecretKey || "");
       const amount = Math.round(parseFloat(commission.amount || "0") * 100);
       if (amount <= 0) throw new Error("Invalid amount");
       const transfer = await stripe.transfers.create({
@@ -722,7 +723,7 @@ const leadsRouter = router({
       try {
         const Stripe = (await import("stripe")).default;
         const { PACKAGES } = await import("../shared/pricing");
-        const stripeKey = process.env.STRIPE_SECRET_KEY;
+        const stripeKey = ENV.stripeSecretKey;
         if (stripeKey) {
           const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
           const pkg = PACKAGES[input.packageTier as keyof typeof PACKAGES];
@@ -1091,7 +1092,7 @@ const contractsRouter = router({
       // 4. Create new Stripe checkout session (does NOT create duplicate contract/customer)
       const Stripe = (await import("stripe")).default;
       const { PACKAGES } = await import("../shared/pricing");
-      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      const stripeKey = ENV.stripeSecretKey;
       if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
 
       const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
@@ -1758,7 +1759,7 @@ const ordersRouter = router({
       const Stripe = (await import("stripe")).default;
       const { getPackage } = await import("./stripe-products");
 
-      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      const stripeKey = ENV.stripeSecretKey;
       if (!stripeKey) throw new Error("Stripe not configured");
 
       const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });

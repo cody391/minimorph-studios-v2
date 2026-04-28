@@ -11,7 +11,7 @@ import { repTiers } from "../drizzle/schema";
 import { PACKAGES, type PackageKey } from "../shared/pricing";
 
 function getStripe(): Stripe | null {
-  const key = (ENV as any).stripeSecretKey || process.env.STRIPE_SECRET_KEY;
+  const key = ENV.stripeSecretKey;
   if (!key) return null;
   return new Stripe(key, { apiVersion: "2025-04-30.basil" as any });
 }
@@ -30,8 +30,7 @@ export function registerStripeWebhook(app: Express) {
       }
 
       const sig = req.headers["stripe-signature"] as string;
-      const webhookSecret =
-        (ENV as any).stripeWebhookSecret || process.env.STRIPE_WEBHOOK_SECRET;
+      const webhookSecret = ENV.stripeWebhookSecret;
 
       if (!webhookSecret) {
         console.error("[Stripe Webhook] Webhook secret not configured");
