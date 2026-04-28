@@ -428,50 +428,50 @@ export default function SalesAcademy() {
                   </div>
                 )}
               </ScrollArea>
+
+              {/* Navigation buttons */}
+              <div className="flex items-center justify-between pt-6 mt-6 border-t border-border/30">
+                <Button
+                  variant="outline"
+                  onClick={() => { setCurrentLessonIndex((prev) => prev - 1); setLessonStartTime(Date.now()); }}
+                  disabled={currentLessonIndex === 0}
+                  className="rounded-full font-sans"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                </Button>
+
+                <div className="flex items-center gap-3">
+                  {isLastLesson ? (
+                    <>
+                      <Button
+                        onClick={handleCompleteLesson}
+                        disabled={completeLessonMut.isPending}
+                        variant="outline"
+                        className="rounded-full font-sans"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" /> Mark Complete
+                      </Button>
+                      <Button
+                        onClick={() => openQuiz(selectedModuleId!)}
+                        className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans"
+                      >
+                        <GraduationCap className="w-4 h-4 mr-1" /> Take Quiz
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={handleCompleteLesson}
+                      disabled={completeLessonMut.isPending}
+                      className="bg-electric hover:bg-electric-light text-white rounded-full font-sans"
+                    >
+                      Next Lesson <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
-
-        {/* Navigation buttons */}
-        <div className="flex items-center justify-between pt-2 pb-8">
-          <Button
-            variant="outline"
-            onClick={() => { setCurrentLessonIndex((prev) => prev - 1); setLessonStartTime(Date.now()); }}
-            disabled={currentLessonIndex === 0}
-            className="rounded-full font-sans"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-          </Button>
-
-          <div className="flex items-center gap-3">
-            {isLastLesson ? (
-              <>
-                <Button
-                  onClick={handleCompleteLesson}
-                  disabled={completeLessonMut.isPending}
-                  variant="outline"
-                  className="rounded-full font-sans"
-                >
-                  <CheckCircle className="w-4 h-4 mr-1" /> Mark Complete
-                </Button>
-                <Button
-                  onClick={() => openQuiz(selectedModuleId!)}
-                  className="bg-electric hover:bg-electric/90 text-white rounded-full font-sans"
-                >
-                  <GraduationCap className="w-4 h-4 mr-1" /> Take Quiz
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={handleCompleteLesson}
-                disabled={completeLessonMut.isPending}
-                className="bg-electric hover:bg-electric-light text-white rounded-full font-sans"
-              >
-                Next Lesson <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            )}
-          </div>
-        </div>
       </div>
     );
   }

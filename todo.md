@@ -1338,3 +1338,6 @@
 - [x] Verified all lesson content prose renders cleanly — headings, bold, blockquotes, lists, code all readable
 - [x] Visual re-audit of all 6 tabs (Modules, Daily Training, Leaderboard, Certifications, Role Play, Lesson View) — ALL PASS
 - [x] Validation: TypeScript 0 errors, 37 test files 880/880 tests pass
+
+### Fix Lesson Navigation Overlap
+- [x] Previous/Next Lesson buttons overlap lesson content — moved inside Card below ScrollArea with border-t separator
