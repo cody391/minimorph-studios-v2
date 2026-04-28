@@ -1421,9 +1421,9 @@
 
 ### Bug: Rep Onboarding Payment/Skip Not Working
 - [x] Investigate why rep onboarding payment step fails (window.open blocked/hidden on mobile)
-- [x] Investigate why skip button doesn't work during onboarding (too small touch target on mobile)
+- [x] Investigate why skip button doesn't work during onboarding (redirect loop: RepDashboard gate blocked access and looped back)
 - [x] Fix Stripe Connect to use window.location.href (same window) on mobile instead of window.open (new tab)
-- [x] Fix skip button: upgraded from tiny underlined text to full-width Button with min-h-[48px] touch target
+- [x] Fix skip button: removed RepDashboard Stripe gate (was causing redirect loop), upgraded to full-width Button, use window.location.href
 - [x] Check Quinn's account is properly linked in the database (confirmed: userId 1500531, Stripe acct created but not completed)
 - [x] Audit entire rep onboarding flow for mobile usability — fixed window.open in PayoutSetup, RepDashboard, and GetStarted
 - [x] Fix identified issues and verify flow works end-to-end (TypeScript clean, 880/880 tests pass)

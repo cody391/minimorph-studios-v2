@@ -159,26 +159,9 @@ export default function RepDashboard() {
     );
   }
 
-  // 2. If Stripe Connect not set up, redirect to payout setup
-  if (!repProfile.stripeConnectOnboarded && repProfile.status === "training") {
-    return (
-      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
-        <Card className="max-w-md w-full border-border/50 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-[#635BFF]/10 rounded-full flex items-center justify-center mx-auto mb-5">
-              <DollarSign className="h-8 w-8 text-[#635BFF]" />
-            </div>
-            <h2 className="text-xl font-serif text-off-white mb-2">Set Up Your Payouts</h2>
-            <p className="text-sm text-soft-gray font-sans mb-6">Connect your bank account through Stripe so you can receive commission payouts.</p>
-            <Button onClick={() => setLocation("/become-rep/payout-setup")} className="bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans rounded-full px-8 py-5 w-full" size="lg">
-              <DollarSign className="w-4 h-4 mr-2" /> Set Up Payouts
-            </Button>
-            <button onClick={() => setLocation("/rep?tab=training")} className="mt-4 text-xs text-soft-gray/60 hover:text-soft-gray font-sans underline transition-colors block mx-auto">Skip for now</button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // 2. Stripe Connect not set up — show a non-blocking reminder (no longer gates access)
+  //    Reps can still access the dashboard and Academy without completing payout setup.
+  //    They'll see a reminder banner in the Settings tab instead.
 
   const currentTier = (accountabilityTier?.tier || "bronze") as string;
   const TierIcon = tierIcons[currentTier] || Shield;

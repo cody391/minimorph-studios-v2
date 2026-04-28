@@ -238,7 +238,8 @@ export default function PayoutSetup() {
                   toast.info(
                     "You can set up payouts later from your dashboard. Heading to the Academy now."
                   );
-                  navigate("/rep?tab=training");
+                  // Use window.location for reliable navigation on mobile
+                  window.location.href = "/rep?tab=training";
                 }}
                 className="w-full rounded-full py-4 min-h-[48px] text-soft-gray hover:text-off-white border-border/30 hover:border-border/60 font-sans text-sm"
               >
