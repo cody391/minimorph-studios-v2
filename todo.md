@@ -1264,3 +1264,6 @@
 - [x] Rewrite rep email signature in routers.ts — blue accent avatar, dark text
 - [x] Verified zero old brand colors (#2d5a3d, #1a3a2a, #f8fafc, #1e293b, etc.) remain in server/*.ts
 - [x] Validation: typecheck clean, 36 files 875/875 tests pass, production build OK
+
+### Bug Fix: Audit Report URL in Email
+- [x] Fix audit report URL to use full domain (https://minimorphstudios.net/manus-storage/...) instead of relative path
