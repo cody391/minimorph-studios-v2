@@ -12,8 +12,8 @@ import {
 } from "./academy-curriculum";
 
 describe("Academy Curriculum", () => {
-  it("should have 9 training modules (including values-ethics)", () => {
-    expect(ACADEMY_MODULES.length).toBe(9);
+  it("should have 10 training modules (including values-ethics and lead-pipeline)", () => {
+    expect(ACADEMY_MODULES.length).toBe(10);
   });
 
   it("should have unique module IDs", () => {
@@ -46,6 +46,7 @@ describe("Academy Curriculum", () => {
       "digital-prospecting",
       "account-management",
       "advanced-tactics",
+      "lead-pipeline",
     ];
     const actualIds = ACADEMY_MODULES.map((m) => m.id);
     expect(actualIds).toEqual(expectedIds);
@@ -272,7 +273,7 @@ describe("Academy Module Ordering", () => {
     expect(discIndex).toBeLessThan(objIndex);
   });
 
-  it("should end with advanced tactics", () => {
-    expect(ACADEMY_MODULES[ACADEMY_MODULES.length - 1].id).toBe("advanced-tactics");
+  it("should end with lead-pipeline", () => {
+    expect(ACADEMY_MODULES[ACADEMY_MODULES.length - 1].id).toBe("lead-pipeline");
   });
 });

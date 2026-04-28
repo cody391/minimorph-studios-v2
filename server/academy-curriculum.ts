@@ -291,10 +291,10 @@ Before you dive into the sales training modules, you need to understand exactly 
 
 Here's the path every MiniMorph rep follows:
 
-1. **Complete all 9 Academy modules** — Each module covers a critical sales skill, from product knowledge to advanced closing techniques
+1. **Complete all Academy modules** — Each module covers a critical sales skill, from product knowledge to advanced closing techniques
 2. **Pass the certification quiz** for each module — You must score above the passing threshold to earn certification
 3. **Complete the required Role Play** for each module — Most modules (3-9) require you to pass an AI-powered role play scenario with a minimum score of 70%. This is where you prove you can actually USE the skills you learned, not just memorize them
-4. **Earn your full certification** — Once all quizzes AND role plays are passed across all 9 modules, your account is activated for live work
+4. **Earn your full certification** — Once all quizzes AND role plays are passed across all modules, your account is activated for live work
 5. **Start your daily workflow** — Access leads, make calls, close deals, and keep growing
 
 Until you're fully certified (quizzes + role plays), you won't have access to leads or the ability to make live calls. This protects both you and our clients — we never put an unprepared rep in front of a prospect.
@@ -414,7 +414,7 @@ MiniMorph isn't a typical sales job where you get a script and a phone list. We 
 
 The reps who embrace this system — who actually read their coaching reviews, who study the material, who treat daily training as a competitive advantage — are the ones who hit Platinum and earn top commissions.`,
         keyTakeaways: [
-          "Complete all 9 Academy modules and pass each quiz to earn full certification and unlock leads/calls",
+          "Complete all Academy modules and pass each quiz to earn full certification and unlock leads/calls",
           "Daily Training is a personalized morning warm-up generated from your real conversation performance",
           "Accountability tiers (Bronze → Platinum) reward performance with less training, higher commissions, and better leads",
           "The AI Coach analyzes every conversation and turns improvement areas into tomorrow's training",
@@ -1885,6 +1885,452 @@ For larger deals, shift your language:
     requiredRolePlay: [
       { scenarioType: "angry_customer", minScore: 70, label: "Angry Customer" }
     ]
+  },
+
+  /* ═══════════════════════════════════════════════════
+     MODULE 9: YOUR LEAD PIPELINE (SYSTEM KNOWLEDGE)
+     How leads find you, how to work them, and what
+     the system expects from you at every stage.
+     ═══════════════════════════════════════════════════ */
+  {
+    id: "lead-pipeline",
+    title: "Your Lead Pipeline: How the System Works",
+    description: "This module teaches you exactly how leads arrive in your pipeline, what the AI does before you ever see them, how to claim and work leads, and what the system expects from you at every stage. Master this and you'll never wonder where your next deal is coming from.",
+    icon: "Target",
+    estimatedMinutes: 35,
+    lessons: [
+      {
+        title: "How Leads Find You (The Auto-Feed System)",
+        content: `## You Never Have to Prospect — The System Does It For You
+
+At MiniMorph, we operate on the Uber model: you open the app, and work is waiting for you. Here's exactly how that happens.
+
+### The Lead Generation Engine
+
+Our AI continuously generates leads through multiple channels:
+
+1. **AI Web Scraping** — The system scans Google Maps, business directories, and industry databases for local businesses in your service area that need a better website. It identifies businesses with outdated sites, no mobile optimization, or missing online presence.
+
+2. **Website Inquiries** — When a prospect fills out the "Start My Website Build" form on our public site, they become a lead instantly.
+
+3. **AI Outreach & Warming** — Before you ever see a lead, our AI has already reached out via email and SMS. It handles initial conversations, answers basic questions, overcomes early objections, and warms the prospect up. By the time a lead reaches you, they already know who MiniMorph is.
+
+4. **Referrals** — Happy customers refer other businesses. These come in as warm leads with high conversion potential.
+
+### The Auto-Feed System
+
+The system monitors your pipeline capacity in real-time:
+- **Minimum threshold:** You'll always have at least 5 active leads in your pipeline
+- **Maximum capacity:** You won't receive more than 15-20 leads at once (prevents overwhelm)
+- **When you close or lose a lead**, the system automatically backfills with a new one
+
+This means you NEVER have to worry about "where's my next lead coming from?" — the system handles it.
+
+### What Makes You Eligible for Leads
+
+The system only feeds leads to reps who meet ALL of these criteria:
+- ✅ **Fully certified** (all Academy modules passed + required role plays)
+- ✅ **Daily check-in cleared** (coaching reviews completed each morning)
+- ✅ **Performance score above 40** (out of 100)
+- ✅ **Under capacity** (fewer than 20 active leads)
+- ✅ **Service area configured** (the system needs to know WHERE to find leads for you)
+
+If ANY of these aren't met, the auto-feed pauses until you fix it. This is by design — it protects both you and the prospects from subpar experiences.
+
+### How the System Chooses Which Rep Gets Which Lead
+
+When a lead is ready for assignment, the algorithm considers:
+- **Location match** — Leads in your service area get priority (+50 points)
+- **Current load** — Reps with fewer active leads get priority
+- **Performance score** — Higher performers get first pick on hot leads
+- **Tier level** — Platinum and Gold reps get priority on high-value leads`,
+        keyTakeaways: [
+          "The system auto-feeds you 5-15 leads at all times — you never have to prospect",
+          "Leads are pre-warmed by AI before they reach you — they already know MiniMorph",
+          "You must be certified, cleared daily check-in, score above 40, and have a service area to receive leads",
+          "Higher performance score = better leads assigned to you first",
+          "When you close or lose a lead, a new one automatically backfills"
+        ]
+      },
+      {
+        title: "The Lead Pool & Claiming Leads",
+        content: `## Two Ways Leads Reach You
+
+There are two paths for leads to enter your pipeline:
+
+### Path 1: Auto-Assignment (Most Common)
+
+The system automatically assigns leads to you based on the algorithm described in the previous lesson. You'll get a notification: "New Lead Assigned" or "🔥 Hot Lead Assigned" (for AI-warmed leads). The lead appears in your Pipeline tab under the "Assigned" column.
+
+**Your responsibility:** When you receive an auto-assigned lead, you have **4 hours** to accept and make first contact. If you don't, the lead gets reassigned to the next available rep. This protects the prospect from going cold.
+
+### Path 2: The Lead Pool (Self-Service)
+
+In addition to auto-assignment, there's a shared **Lead Pool** visible on your Pipeline tab. These are leads that haven't been assigned to anyone yet — they're available for any certified rep to claim.
+
+To claim a lead:
+1. Click "Claim Lead" on your Pipeline tab
+2. Browse available leads (you'll see business name, industry, temperature, and qualification score)
+3. Click "Claim" on the one you want
+4. It's instantly assigned to you — no one else can grab it
+
+**Why claim from the pool?**
+- You want more leads beyond your auto-assigned ones
+- You see a lead in an industry you're particularly good at
+- You want to build volume faster
+
+### Path 3: Self-Sourced Leads (Double Commission!)
+
+You can also add your OWN leads — businesses you find through networking, referrals, or personal outreach. Click "Add My Lead" on the Pipeline tab.
+
+**The incentive:** Self-sourced leads earn you **double commission** because you did the prospecting work yourself. They're auto-assigned to you immediately.
+
+### Lead Temperature Explained
+
+Every lead has a temperature indicator:
+- 🧊 **Cold** — New lead, hasn't engaged yet. Needs warming.
+- ☀️ **Warm** — Has shown interest (replied to outreach, visited site, etc.)
+- 🔥 **Hot** — Actively looking for a solution. High buying intent detected.
+
+Focus on hot leads first — they're ready to buy NOW. Warm leads need nurturing. Cold leads need the most work.
+
+### Lead Qualification Score
+
+The AI assigns each lead a qualification score (0-100) based on:
+- Business size and revenue potential
+- Current website quality (worse = more likely to buy)
+- Online engagement signals
+- Industry fit for our services
+- Decision-maker accessibility
+
+Higher scores = higher likelihood of closing. Prioritize 70+ score leads.`,
+        keyTakeaways: [
+          "Auto-assigned leads give you 4 hours to make first contact or they get reassigned",
+          "The Lead Pool lets you claim additional leads beyond your auto-assignments",
+          "Self-sourced leads earn DOUBLE commission — add your own leads anytime",
+          "Lead temperature (cold/warm/hot) tells you buying intent level — prioritize hot leads",
+          "Qualification score (0-100) predicts close probability — focus on 70+ first"
+        ]
+      },
+      {
+        title: "Working Your Pipeline: Stage by Stage",
+        content: `## The Pipeline Stages — What to Do at Each One
+
+Your pipeline is a kanban board with forward-only progression. Here's exactly what happens at each stage and what's expected of you:
+
+### Stage 1: ASSIGNED
+**What it means:** A lead just landed in your pipeline (auto-assigned or claimed).
+**Your job:**
+- Review the lead card: business name, contact info, enrichment data, AI conversation history
+- Check the AI's prior conversation — know what's already been discussed
+- Make first contact within 4 hours (call preferred, email acceptable)
+- Move to "Contacted" once you've reached out
+
+**Pro tip:** The enrichment data includes decision-maker names, direct phone numbers, and business insights. Use them.
+
+### Stage 2: CONTACTED
+**What it means:** You've made first contact with the prospect.
+**Your job:**
+- Run a discovery call using SPIN methodology (from Module 3)
+- Identify their pain points, budget, timeline, and decision-making process
+- Build rapport and establish yourself as their trusted advisor
+- Move to "Proposal Sent" once you've sent a formal proposal
+
+**Pro tip:** Log your call outcomes (connected, voicemail, no answer, scheduled). The system tracks your activity.
+
+### Stage 3: PROPOSAL SENT
+**What it means:** You've sent a formal proposal with pricing.
+**Your job:**
+- Use the "Generate Proposal" button — AI creates a personalized proposal based on the lead's needs
+- Choose the right package tier (Starter $149/mo, Growth $299/mo, Premium $499/mo)
+- Follow up within 48 hours if no response
+- Handle objections using LAER framework (from Module 4)
+- Move to "Negotiating" if they push back on price/terms
+
+**Pro tip:** AI-generated proposals are personalized to the lead's industry and pain points. They close better than generic templates.
+
+### Stage 4: NEGOTIATING
+**What it means:** The prospect is interested but wants to discuss terms.
+**Your job:**
+- Apply negotiation principles from Module 8 (trade, don't discount)
+- Address final concerns
+- Create urgency with deadlines
+- Move to "Closed Won" when they sign, or "Closed Lost" if they decline
+
+### Stage 5: CLOSED WON 🎉
+**What it means:** Deal done! Customer signed up.
+**What happens automatically:**
+- Customer account is created
+- Contract is generated
+- Your commission is calculated and queued for payout
+- The system backfills your pipeline with a new lead
+
+### Stage 6: CLOSED LOST
+**What it means:** The prospect declined.
+**Your job:**
+- Select a reason (price, timing, competitor, not interested, etc.)
+- Add notes about what happened — this feeds your AI coaching
+- Move on. Not every lead converts, and that's okay.
+- The system backfills your pipeline with a new lead
+
+### IMPORTANT: Forward-Only Movement
+
+You can only move leads FORWARD through stages. You cannot move a lead backward. This ensures data integrity and accurate pipeline reporting. If a lead goes cold after being contacted, keep working it in the current stage — don't try to move it back.`,
+        keyTakeaways: [
+          "Pipeline stages are forward-only: Assigned → Contacted → Proposal Sent → Negotiating → Closed",
+          "Make first contact within 4 hours of assignment or the lead gets reassigned",
+          "Use the AI Proposal Generator — it creates personalized proposals that close better than templates",
+          "Package tiers: Starter ($149/mo), Growth ($299/mo), Premium ($499/mo)",
+          "When you close a deal, commission is auto-calculated and a new lead backfills your pipeline",
+          "Log every interaction — the system tracks activity and it affects your performance score"
+        ]
+      },
+      {
+        title: "SMS, Calls & Email: Communication Rules",
+        content: `## How to Communicate With Leads (And What the System Enforces)
+
+The platform gives you three communication channels. Here's how each works and what rules you MUST follow:
+
+### Phone Calls
+- Click-to-call directly from any lead card
+- Calls are logged automatically with duration and outcome
+- The AI analyzes your calls and generates coaching feedback
+- Log your outcome after every call: Connected, Voicemail, No Answer, Scheduled
+
+### SMS Messaging
+- Send text messages directly from the lead card
+- **CRITICAL RULE: You MUST record SMS consent before sending any text**
+- The system blocks SMS sending until you've confirmed the lead opted in
+- To record consent: Click the SMS icon → Confirm opt-in dialog → Then you can text
+- If a lead opts out, the system permanently blocks SMS to that number
+- Never text someone who hasn't consented — this is a legal requirement (TCPA compliance)
+
+### Email
+- Compose emails with AI-assisted drafting
+- Use the "AI Draft" button for personalized copy based on the lead's profile
+- Templates are available for common scenarios (intro, follow-up, proposal, check-in)
+- All emails are tracked — opens, clicks, and replies are logged
+
+### AI Outreach (What Happens Before You)
+
+Before a lead reaches you, the AI has already:
+1. Sent initial outreach emails/SMS
+2. Handled early replies and objections
+3. Warmed the prospect with relevant information
+4. Determined the lead needs a human touch
+
+**Always check the conversation history** before reaching out. The lead may have already discussed pricing, timeline, or specific needs with the AI. Don't ask questions they've already answered — it makes you look unprepared.
+
+### Communication Best Practices
+- **Speed-to-lead:** Respond to hot leads within 5 minutes. Every minute of delay reduces conversion by 10%.
+- **Multi-channel:** Use calls + emails + SMS together. Different people prefer different channels.
+- **Follow-up cadence:** Day 1 (call + email), Day 3 (SMS), Day 5 (call), Day 7 (email), Day 14 (final attempt)
+- **Always add value:** Every touchpoint should provide useful information, not just "checking in"
+
+### What Gets Tracked (And Affects Your Score)
+- Response time to new leads
+- Number of touches per lead
+- Call duration and outcomes
+- Email open/reply rates
+- SMS consent compliance
+- Overall activity volume`,
+        keyTakeaways: [
+          "You MUST record SMS consent before texting any lead — the system enforces this",
+          "Always check AI conversation history before contacting a lead — know what's been discussed",
+          "Speed-to-lead is critical: respond to hot leads within 5 minutes",
+          "Every communication is AI-analyzed and generates coaching feedback",
+          "Activity volume, response time, and outcomes all affect your performance score",
+          "Use multi-channel outreach: calls + emails + SMS together for best results"
+        ]
+      },
+      {
+        title: "Your Performance Score & What Happens If You Don't Perform",
+        content: `## The Performance Score: Your Lifeline to Leads
+
+Your performance score (0-100) directly controls how many and how good your leads are. Here's exactly how it works:
+
+### How Your Score Is Calculated
+
+Four factors, weighted equally:
+1. **Activity Score** — Are you making calls, sending emails, following up consistently?
+2. **Close Rate** — What percentage of your leads convert to deals?
+3. **Client Satisfaction** — Are your closed customers happy? (Based on onboarding feedback)
+4. **Values Compliance** — Are you following the MiniMorph Code of Conduct?
+
+### What Your Score Means
+
+| Score Range | Rating | What Happens |
+|-------------|--------|-------------|
+| 80-100 | Excellent | Priority lead assignment, hot leads, fast-track to next tier |
+| 60-79 | Good | Normal lead flow, standard assignment |
+| 40-59 | Needs Improvement | Reduced lead quality, coaching intensifies |
+| Below 40 | FROZEN | No new leads until score improves |
+
+### The Freeze Threshold (Score < 40)
+
+If your score drops below 40, the system **freezes your lead flow**. This means:
+- No new auto-assigned leads
+- Cannot claim from the Lead Pool
+- Must complete additional training to recover
+- Your existing leads remain, but no new ones arrive
+
+This protects prospects from being assigned to underperforming reps. To unfreeze: improve your activity, complete coaching reviews, and demonstrate improvement.
+
+### The 4-Hour Acceptance Window
+
+When a lead is assigned to you, you have **4 hours** to accept it (make first contact). If you don't:
+- The lead is automatically reassigned to the next available rep
+- This counts against your activity score
+- Repeated timeouts trigger a performance review
+
+### Strikes & Deactivation
+
+Serious violations earn strikes:
+- 3 strikes in a 6-month rolling window = account deactivation
+- Instant deactivation for: fraud, confidentiality breach, or client harm
+- Strikes are tracked and visible in your Performance Hub
+
+### How to Keep Your Score High
+1. **Be consistent** — Daily activity matters more than occasional bursts
+2. **Respond fast** — Speed-to-lead is the easiest score booster
+3. **Complete training** — Daily check-ins and coaching reviews maintain your values score
+4. **Close deals** — Even small deals (Starter tier) count toward your close rate
+5. **Follow the process** — Log outcomes, use the tools, don't cut corners
+
+### Your Tier Progression
+
+Your accountability tier determines your commission rate:
+- **Bronze** (starting): 10% commission
+- **Silver**: 12% commission
+- **Gold**: 14% commission  
+- **Platinum**: 15% commission + mentor status + first pick on enterprise leads
+
+Higher tiers also mean fewer daily training requirements and priority lead assignment. Performance score is the primary factor in tier advancement.`,
+        keyTakeaways: [
+          "Performance score below 40 = lead flow FROZEN until you improve",
+          "4-hour acceptance window: make first contact or the lead gets reassigned",
+          "Score is based on: activity, close rate, client satisfaction, and values compliance",
+          "3 strikes in 6 months = account deactivation",
+          "Higher tier = higher commission: Bronze 10%, Silver 12%, Gold 14%, Platinum 15%",
+          "Consistency beats intensity — daily activity matters more than sporadic bursts"
+        ]
+      }
+    ],
+    quiz: [
+      {
+        id: "lp-1",
+        question: "What is the MINIMUM number of active leads the system tries to maintain in your pipeline?",
+        type: "multiple_choice",
+        options: [
+          "3 leads",
+          "5 leads",
+          "10 leads",
+          "20 leads"
+        ],
+        correctAnswer: 1,
+        explanation: "The auto-feed system maintains a minimum of 5 active leads per rep. When you close or lose a lead, it automatically backfills. The maximum capacity is 15-20 leads to prevent overwhelm.",
+        difficulty: "easy"
+      },
+      {
+        id: "lp-2",
+        question: "A new lead was just auto-assigned to you. How long do you have to make first contact before it gets reassigned?",
+        type: "multiple_choice",
+        options: [
+          "1 hour",
+          "4 hours",
+          "24 hours",
+          "48 hours"
+        ],
+        correctAnswer: 1,
+        explanation: "You have a 4-hour acceptance window. After that, the lead is automatically reassigned to the next available rep. This protects prospects from going cold and counts against your activity score if you miss it.",
+        difficulty: "easy"
+      },
+      {
+        id: "lp-3",
+        question: "You want to send an SMS to a new lead. What MUST you do first?",
+        type: "scenario",
+        options: [
+          "Just send the text — speed matters most",
+          "Record SMS consent in the system before sending any text message",
+          "Ask your manager for permission",
+          "Send an email first, then text"
+        ],
+        correctAnswer: 1,
+        explanation: "You MUST record SMS consent before sending any text. The system enforces this — it will block the send if consent isn't recorded. This is a legal requirement under TCPA. Sending unsolicited texts can result in massive fines.",
+        difficulty: "medium"
+      },
+      {
+        id: "lp-4",
+        question: "Your performance score drops to 35. What happens?",
+        type: "scenario",
+        options: [
+          "Nothing — you just get a warning email",
+          "Your commission rate decreases by 2%",
+          "Your lead flow is FROZEN — no new leads until your score improves above 40",
+          "You're immediately deactivated"
+        ],
+        correctAnswer: 2,
+        explanation: "A score below 40 triggers a lead freeze. No new auto-assigned leads, and you can't claim from the pool. Your existing leads remain, but no new ones arrive until you improve through consistent activity and completed training.",
+        difficulty: "medium"
+      },
+      {
+        id: "lp-5",
+        question: "What's the benefit of adding a self-sourced lead (one you found yourself)?",
+        type: "multiple_choice",
+        options: [
+          "It counts as two leads toward your quota",
+          "You earn DOUBLE commission on self-sourced leads",
+          "It improves your performance score by 10 points",
+          "You get to skip the proposal stage"
+        ],
+        correctAnswer: 1,
+        explanation: "Self-sourced leads earn double commission because you did the prospecting work yourself. They're auto-assigned to you immediately and incentivize reps to supplement the system's auto-feed with their own networking and outreach.",
+        difficulty: "easy"
+      },
+      {
+        id: "lp-6",
+        question: "Before calling a lead that was warmed by the AI, you should:",
+        type: "scenario",
+        options: [
+          "Start fresh — introduce yourself and the company from scratch",
+          "Review the AI conversation history so you know what's already been discussed",
+          "Send an email first to re-introduce yourself",
+          "Wait for the lead to call you"
+        ],
+        correctAnswer: 1,
+        explanation: "Always check the AI conversation history before contacting a lead. The prospect may have already discussed pricing, timeline, or specific needs. Asking questions they've already answered makes you look unprepared and wastes their time.",
+        difficulty: "medium"
+      },
+      {
+        id: "lp-7",
+        question: "Which of these will NOT prevent you from receiving auto-assigned leads?",
+        type: "scenario",
+        options: [
+          "Not completing your daily check-in",
+          "Having a performance score of 35",
+          "Having 12 active leads in your pipeline",
+          "Not having a service area configured"
+        ],
+        correctAnswer: 2,
+        explanation: "Having 12 active leads is fine — the maximum capacity is 15-20. But missing daily check-in, having a score below 40, or not having a service area configured will all block lead assignment.",
+        difficulty: "hard"
+      },
+      {
+        id: "lp-8",
+        question: "A lead in your pipeline is at the 'Proposal Sent' stage but goes cold. Can you move it back to 'Contacted'?",
+        type: "multiple_choice",
+        options: [
+          "Yes — drag it back to the previous column",
+          "No — pipeline stages are forward-only. Keep working it in the current stage.",
+          "Yes — but only if you call them first",
+          "No — you must close it as lost and get a new lead"
+        ],
+        correctAnswer: 1,
+        explanation: "Pipeline stages are forward-only. You cannot move a lead backward. If a lead goes cold after receiving a proposal, continue follow-up efforts in the current stage. This ensures data integrity and accurate pipeline reporting.",
+        difficulty: "hard"
+      }
+    ],
+    passingScore: 80,
   }
 ];
 

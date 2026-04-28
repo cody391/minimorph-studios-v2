@@ -36,7 +36,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
     details: [
       "After signing up, you'll land on the Rep Dashboard. This is your command center for everything.",
       "Before you can access leads or make calls, you MUST complete the Sales Training Academy. This ensures every rep meets our quality standards.",
-      "Complete all 9 Academy modules and pass each quiz with 80% or higher to earn your Full Certification.",
+      "Complete all Academy modules and pass each quiz with 80% or higher to earn your Full Certification.",
       "Once certified, the system automatically activates your account — leads start flowing and your phone goes live.",
       "Check the Overview tab daily for your key metrics: active leads, deals won, earnings, and conversion rate.",
     ],
@@ -51,7 +51,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
     title: "Sales Training Academy",
     icon: GraduationCap,
     color: "text-purple-600 bg-purple-50",
-    summary: "9 comprehensive modules that transform you into a psychological selling machine.",
+    summary: "Comprehensive modules that transform you into a psychological selling machine.",
     details: [
       "Module 0: Values & Ethics — The MiniMorph Standard. Our six core values, Code of Conduct, and how they apply in real sales scenarios.",
       "Module 1: Product Mastery — Every service, pricing tier, feature, and competitive advantage MiniMorph offers.",
@@ -62,6 +62,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
       "Module 6: Digital Prospecting — Cold email/SMS frameworks, social selling, LinkedIn outreach, and referral generation strategies.",
       "Module 7: Account Management — Upselling, cross-selling, retention, QBRs, and expansion revenue playbooks.",
       "Module 8: Advanced Tactics — Enterprise selling, multi-stakeholder deals, negotiation, and contract structuring.",
+      "Module 9: Your Lead Pipeline — How leads find you, the auto-feed system, claiming leads, working pipeline stages, communication rules, and performance scoring.",
       "Each module includes real scripts, role-play scenarios, and key takeaways you can use immediately.",
       "Quizzes are scenario-based — they present real sales situations and test your decision-making.",
     ],
@@ -191,7 +192,7 @@ const GUIDE_SECTIONS: GuideSection[] = [
     summary: "A structured roadmap for your first 3 months — from certification to consistent production.",
     details: [
       "WEEK 1-2: CERTIFICATION PHASE",
-      "• Complete all 9 Academy modules and pass every quiz (80%+ required)",
+      "• Complete all Academy modules and pass every quiz (80%+ required)",
       "• Focus on Values & Ethics first — it sets the foundation for everything",
       "• Use AI Role Play to practice before real calls — try cold call and discovery scenarios",
       "• Goal: Full certification and account activation",

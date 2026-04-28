@@ -80,7 +80,7 @@ const CATEGORY_MODULE_MAP: Record<string, string> = {
 };
 
 /**
- * Check if a rep is fully certified (passed all 9 academy modules)
+ * Check if a rep is fully certified (passed all academy modules)
  */
 export async function isRepCertified(repId: number): Promise<boolean> {
   const db = await getDb();

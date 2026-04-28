@@ -1403,3 +1403,18 @@
 - [x] Updated SCENARIO_TYPES with specific person names, business names, and difficulty levels from profiles
 - [x] Scenario selection cards show person name, business name, difficulty badge when unlocked
 - [x] Updated Role Play header description to reflect pre-built scenarios (not AI-generated)
+
+### Investigate Rep Not Receiving Leads
+- [x] Check database for certified reps and their lead counts
+- [x] Identify why auto-feed isn't assigning leads to the certified rep
+- [x] Fix any blockers (gatekeeper, daily check-in, service area, lead pool)
+
+### New Training Module: How Leads Work (Pipeline Explained)
+- [x] Create Module 10: "Your Lead Pipeline" — explains how leads arrive, auto-feed, claiming, working leads, closing deals
+- [x] Include lessons: How Leads Find You, The Lead Pool, Working Your Pipeline, Closing the Deal
+- [x] Add quiz questions testing pipeline knowledge
+- [x] Register module in academy curriculum
+- [x] Fix all hardcoded '9 modules' references across codebase (curriculum, router, gatekeeper, AppGuide)
+- [x] Update academy test expectations (10 modules, new ID list, new last module)
+- [x] Add moduleColorMap entry for lead-pipeline in SalesAcademy.tsx
+- [x] Update AppGuide training-academy section with Module 9 listing

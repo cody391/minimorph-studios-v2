@@ -34,6 +34,7 @@ const moduleColorMap: Record<string, { bg: string; border: string; text: string;
   "digital-prospecting": { bg: "bg-cyan-500/10", border: "border-cyan-500/30", text: "text-cyan-400", badge: "bg-cyan-500/15 text-cyan-400" },
   "account-management": { bg: "bg-teal-500/10", border: "border-teal-500/30", text: "text-teal-400", badge: "bg-teal-500/15 text-teal-400" },
   "advanced-tactics": { bg: "bg-indigo-500/10", border: "border-indigo-500/30", text: "text-indigo-400", badge: "bg-indigo-500/15 text-indigo-400" },
+  "lead-pipeline": { bg: "bg-green-500/10", border: "border-green-500/30", text: "text-green-400", badge: "bg-green-500/15 text-green-400" },
 };
 
 export default function SalesAcademy() {

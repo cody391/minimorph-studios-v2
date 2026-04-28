@@ -391,7 +391,7 @@ export const academyRouter = router({
               repId,
               type: "general",
               title: "🎉 Welcome to the Team — You're Officially Active!",
-              message: `Congratulations! You've completed all 9 Academy modules and earned your full MiniMorph certification. Your account is now active — you can access leads, make calls, and start closing deals immediately.\n\nHere's what to do next:\n1. Check your Pipeline for available leads\n2. Review your daily check-in each morning\n3. Start reaching out — your first commission is waiting!\n\nWe're excited to have you on the team. Go make it happen! 🚀`,
+              message: `Congratulations! You've completed all Academy modules and earned your full MiniMorph certification. Your account is now active — you can access leads, make calls, and start closing deals immediately.\n\nHere's what to do next:\n1. Check your Pipeline for available leads\n2. Review your daily check-in each morning\n3. Start reaching out — your first commission is waiting!\n\nWe're excited to have you on the team. Go make it happen! 🚀`,
               metadata: { event: "full_certification_welcome", avgScore: avgScore },
             });
           }
