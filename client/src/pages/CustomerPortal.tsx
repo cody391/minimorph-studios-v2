@@ -551,9 +551,7 @@ function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
                 <div>
                   <span className="text-base font-serif text-off-white">${Number(widget.monthlyPrice).toLocaleString()}</span>
                   <span className="text-[10px] text-soft-gray/60 font-sans">/mo</span>
-                  {widget.setupFee && Number(widget.setupFee) > 0 && (
-                    <span className="text-[10px] text-soft-gray/60 font-sans ml-2">+ ${Number(widget.setupFee)} setup</span>
-                  )}
+
                 </div>
                 <Button
                   size="sm"

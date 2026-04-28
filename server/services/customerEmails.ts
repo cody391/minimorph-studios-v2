@@ -403,7 +403,6 @@ export async function sendPaymentLinkEmail(params: {
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
         <strong style="color:#eaeaf0;">Package:</strong> ${pkg.name}<br/>
         <strong style="color:#eaeaf0;">Monthly:</strong> $${pkg.monthlyPrice}/mo<br/>
-        ${pkg.setupFeeInCents > 0 ? `<strong style="color:#eaeaf0;">One-time setup:</strong> $${(pkg.setupFeeInCents / 100).toFixed(0)}<br/>` : ""}
         <strong style="color:#eaeaf0;">Includes:</strong> ${pkg.features.slice(0, 4).join(", ")}
       </p>
     </div>
@@ -451,7 +450,6 @@ export async function sendPaymentLinkReminderEmail(params: {
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
         <strong style="color:#eaeaf0;">Package:</strong> ${pkg.name}<br/>
         <strong style="color:#eaeaf0;">Monthly:</strong> $${pkg.monthlyPrice}/mo<br/>
-        ${pkg.setupFeeInCents > 0 ? `<strong style="color:#eaeaf0;">One-time setup:</strong> $${(pkg.setupFeeInCents / 100).toFixed(0)}<br/>` : ""}
       </p>
     </div>
     <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>

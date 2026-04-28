@@ -10,6 +10,7 @@ export interface PackageDefinition {
   tier: "starter" | "growth" | "premium";
   description: string;
   monthlyPriceInCents: number;
+  monthlyPrice: number;
   setupFeeInCents: number;
   features: string[];
 }
@@ -20,7 +21,8 @@ export const PACKAGES: Record<string, PackageDefinition> = {
     tier: SHARED_PACKAGES.starter.tier,
     description: SHARED_PACKAGES.starter.description,
     monthlyPriceInCents: SHARED_PACKAGES.starter.monthlyPriceInCents,
-    setupFeeInCents: SHARED_PACKAGES.starter.setupFeeInCents,
+    monthlyPrice: SHARED_PACKAGES.starter.monthlyPrice,
+    setupFeeInCents: 0,
     features: [...SHARED_PACKAGES.starter.features],
   },
   growth: {
@@ -28,7 +30,8 @@ export const PACKAGES: Record<string, PackageDefinition> = {
     tier: SHARED_PACKAGES.growth.tier,
     description: SHARED_PACKAGES.growth.description,
     monthlyPriceInCents: SHARED_PACKAGES.growth.monthlyPriceInCents,
-    setupFeeInCents: SHARED_PACKAGES.growth.setupFeeInCents,
+    monthlyPrice: SHARED_PACKAGES.growth.monthlyPrice,
+    setupFeeInCents: 0,
     features: [...SHARED_PACKAGES.growth.features],
   },
   premium: {
@@ -36,7 +39,8 @@ export const PACKAGES: Record<string, PackageDefinition> = {
     tier: SHARED_PACKAGES.premium.tier,
     description: SHARED_PACKAGES.premium.description,
     monthlyPriceInCents: SHARED_PACKAGES.premium.monthlyPriceInCents,
-    setupFeeInCents: SHARED_PACKAGES.premium.setupFeeInCents,
+    monthlyPrice: SHARED_PACKAGES.premium.monthlyPrice,
+    setupFeeInCents: 0,
     features: [...SHARED_PACKAGES.premium.features],
   },
 };

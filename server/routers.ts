@@ -769,19 +769,6 @@ const leadsRouter = router({
                 },
                 quantity: 1,
               },
-              ...(pkg.setupFeeInCents > 0
-                ? [{
-                    price_data: {
-                      currency: "usd" as const,
-                      product_data: {
-                        name: `${pkg.name} — One-Time Setup Fee`,
-                        description: "Custom website design, build, and launch",
-                      },
-                      unit_amount: pkg.setupFeeInCents,
-                    },
-                    quantity: 1,
-                  }]
-                : []),
             ],
             success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/get-started?cancelled=true`,
@@ -1154,19 +1141,6 @@ const contractsRouter = router({
             },
             quantity: 1,
           },
-          ...(pkg.setupFeeInCents > 0
-            ? [{
-                price_data: {
-                  currency: "usd" as const,
-                  product_data: {
-                    name: `${pkg.name} — One-Time Setup Fee`,
-                    description: "Custom website design, build, and launch",
-                  },
-                  unit_amount: pkg.setupFeeInCents,
-                },
-                quantity: 1,
-              }]
-            : []),
         ],
         success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/get-started?cancelled=true`,
@@ -1716,7 +1690,7 @@ const upsellsRouter = router({
       });
       notifyOwner({
         title: `Widget Interest: ${widget.name}`,
-        content: `Customer ${customer?.businessName || "#" + input.customerId} is interested in ${widget.name} ($${widget.monthlyPrice}/mo).\nSetup fee: $${widget.setupFee || 0}\n\nReach out to close this upsell.`,
+        content: `Customer ${customer?.businessName || "#" + input.customerId} is interested in ${widget.name} ($${widget.monthlyPrice}/mo).\n\nReach out to close this upsell.`,
       }).catch(() => {});
       return { success: true, widgetName: widget.name };
     }),
@@ -1826,21 +1800,6 @@ const ordersRouter = router({
             },
             quantity: 1,
           },
-          ...(pkg.setupFeeInCents > 0
-            ? [
-                {
-                  price_data: {
-                    currency: "usd" as const,
-                    product_data: {
-                      name: `${pkg.name} — One-Time Setup Fee`,
-                      description: "Custom website design, build, and launch",
-                    },
-                    unit_amount: pkg.setupFeeInCents,
-                  },
-                  quantity: 1,
-                },
-              ]
-            : []),
         ],
         success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/get-started?cancelled=true`,

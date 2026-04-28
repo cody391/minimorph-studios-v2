@@ -178,7 +178,7 @@ describe("Expanded Integration Matrix — Stress-Test Coverage", () => {
     const item = getIntegration("extra-revisions");
     expect(item).toBeDefined();
     expect(item!.tier).toBe("upsell");
-    expect(item!.setupFee).toBe(149);
+    expect(item!.setupFee).toBe(0);
   });
 
   it("should classify GBP optimization as upsell", () => {

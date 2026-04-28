@@ -122,7 +122,6 @@ export default function Contracts() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-soft-gray text-xs">Package</span><p className="text-off-white capitalize">{selected.packageTier}</p></div>
                 <div><span className="text-soft-gray text-xs">Monthly Rate</span><p className="text-off-white">${Number(selected.monthlyRate).toLocaleString()}</p></div>
-                <div><span className="text-soft-gray text-xs">Setup Fee</span><p className="text-off-white">${Number(selected.setupFee).toLocaleString()}</p></div>
                 <div><span className="text-soft-gray text-xs">Duration</span><p className="text-off-white">{formatDate(selected.startDate)} — {formatDate(selected.endDate)}</p></div>
               </div>
               <div>

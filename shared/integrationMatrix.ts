@@ -22,7 +22,7 @@ export interface IntegrationItem {
   includedInPlans?: ("starter" | "growth" | "pro" | "all")[];
   /** Monthly price if tier === "upsell" */
   monthlyPrice?: number;
-  /** One-time setup if tier === "upsell" */
+  /** One-time setup if tier === "upsell" (deprecated — no longer charged) */
   setupFee?: number;
   /** Why it requires custom quote */
   customQuoteReason?: string;
@@ -189,7 +189,7 @@ export const INTEGRATION_MATRIX: IntegrationItem[] = [
     name: "Extra Pages Pack",
     description: "Add 5 additional pages beyond your plan limit",
     tier: "upsell",
-    setupFee: 499,
+    setupFee: 0,
     monthlyPrice: 0,
     category: "core",
   },
@@ -215,7 +215,7 @@ export const INTEGRATION_MATRIX: IntegrationItem[] = [
     description: "Mailchimp or similar integration with signup forms and basic automation",
     tier: "upsell",
     monthlyPrice: 149,
-    setupFee: 299,
+    setupFee: 0,
     category: "marketing",
   },
 
@@ -334,7 +334,7 @@ export const INTEGRATION_MATRIX: IntegrationItem[] = [
     description: "Verify and configure Google Search Console for your domain",
     tier: "upsell",
     monthlyPrice: 0,
-    setupFee: 99,
+    setupFee: 0,
     category: "analytics",
   },
   {
@@ -343,7 +343,7 @@ export const INTEGRATION_MATRIX: IntegrationItem[] = [
     description: "Additional round of design/content revisions beyond the included 3",
     tier: "upsell",
     monthlyPrice: 0,
-    setupFee: 149,
+    setupFee: 0,
     category: "core",
   },
   {
@@ -360,7 +360,7 @@ export const INTEGRATION_MATRIX: IntegrationItem[] = [
     description: "Full Google Business Profile setup, verification, and optimization",
     tier: "upsell",
     monthlyPrice: 0,
-    setupFee: 199,
+    setupFee: 0,
     category: "marketing",
   },
   {
@@ -369,7 +369,7 @@ export const INTEGRATION_MATRIX: IntegrationItem[] = [
     description: "Install and configure Meta (Facebook/Instagram) or TikTok tracking pixels",
     tier: "upsell",
     monthlyPrice: 0,
-    setupFee: 99,
+    setupFee: 0,
     category: "analytics",
   },
   {

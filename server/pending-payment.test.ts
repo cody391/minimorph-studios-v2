@@ -14,10 +14,10 @@ describe("Pending Payment Flow", () => {
       expect(PACKAGES.premium.monthlyPrice).toBe(400);
     });
 
-    it("all package tiers have correct setup fees", () => {
-      expect(PACKAGES.starter.setupFeeInCents).toBe(50000);
-      expect(PACKAGES.growth.setupFeeInCents).toBe(75000);
-      expect(PACKAGES.premium.setupFeeInCents).toBe(100000);
+    it("all package tiers have zero setup fees (monthly only)", () => {
+      expect(PACKAGES.starter.setupFeeInCents).toBe(0);
+      expect(PACKAGES.growth.setupFeeInCents).toBe(0);
+      expect(PACKAGES.premium.setupFeeInCents).toBe(0);
     });
 
     it("commerce tier is not in PACKAGES (custom quote only)", () => {

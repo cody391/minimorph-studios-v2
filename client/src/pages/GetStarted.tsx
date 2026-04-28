@@ -26,7 +26,6 @@ const PACKAGES = [
     tier: "starter" as const,
     name: "Starter",
     price: 150,
-    setup: 500,
     pages: 5,
     features: ["Up to 5 pages", "Mobile-responsive design", "Contact/quote form", "Basic SEO setup", "Customer portal access", "Monthly performance report", "1 content update per month", "Email support"],
     popular: false,
@@ -35,7 +34,6 @@ const PACKAGES = [
     tier: "growth" as const,
     name: "Growth",
     price: 250,
-    setup: 750,
     pages: 10,
     features: ["Up to 10 pages", "Everything in Starter", "Blog or news section", "Google Analytics setup", "2 content updates per month", "AI-assisted recommendations", "Priority email support", "Add-on integrations available"],
     popular: true,
@@ -44,7 +42,6 @@ const PACKAGES = [
     tier: "premium" as const,
     name: "Pro",
     price: 400,
-    setup: 1000,
     pages: 20,
     features: ["Up to 20 pages", "Everything in Growth", "Advanced SEO pages", "4 content updates per month", "Review widget setup", "Booking integration", "SMS lead alerts", "Priority support with faster response"],
     popular: false,
@@ -444,7 +441,6 @@ export default function GetStarted() {
                   <span className="text-2xl font-serif text-off-white">${pkg.price}</span>
                   <span className="text-sm text-soft-gray font-sans">/mo</span>
                 </div>
-                <p className="text-[10px] text-soft-gray/60 font-sans mb-0.5">${pkg.setup} one-time setup fee</p>
                 <p className="text-[10px] text-soft-gray/50 font-sans mb-0.5">${pkg.price * 12} total over 12 months</p>
                 <p className="text-[10px] text-soft-gray/40 font-sans mb-4">12-month contract, billed monthly</p>
                 <ul className="space-y-2">
@@ -557,7 +553,6 @@ export default function GetStarted() {
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-serif text-off-white">${pkg.price}<span className="text-sm text-soft-gray">/mo</span></p>
-                          <p className="text-[10px] text-soft-gray/60 font-sans">+ ${pkg.setup} setup</p>
                           <p className="text-[10px] text-soft-gray/40 font-sans">${pkg.price * 12}/yr total</p>
                         </div>
                       </div>

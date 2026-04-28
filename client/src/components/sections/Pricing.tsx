@@ -12,7 +12,6 @@ import { useLocation } from "wouter";
 interface Tier {
   name: string;
   price: string;
-  setup: string;
   annual?: string;
   description: string;
   highlight?: boolean;
@@ -26,7 +25,6 @@ const tiers: Tier[] = [
   {
     name: "Starter",
     price: "$150/mo",
-    setup: "$500 setup",
     annual: "$1,800",
     description: "You need a website that doesn't embarrass you. Clean, fast, professional. We handle the rest.",
     features: [
@@ -44,7 +42,6 @@ const tiers: Tier[] = [
   {
     name: "Growth",
     price: "$250/mo",
-    setup: "$750 setup",
     annual: "$3,000",
     description: "The sweet spot. More pages, a blog, AI recommendations, and enough updates to keep things fresh.",
     highlight: true,
@@ -64,7 +61,6 @@ const tiers: Tier[] = [
   {
     name: "Pro",
     price: "$400/mo",
-    setup: "$1,000 setup",
     annual: "$4,800",
     description: "For the business that's serious. Booking, reviews, SMS alerts, and the kind of SEO that actually moves the needle.",
     features: [
@@ -82,7 +78,6 @@ const tiers: Tier[] = [
   {
     name: "Commerce",
     price: "Custom",
-    setup: "Custom setup",
     description: "You're selling things online. That's a different animal. Let's talk about what you actually need.",
     features: [
       "Unlimited pages",
@@ -205,7 +200,6 @@ export default function Pricing() {
                     {tier.annual} total over 12 months
                   </span>
                 )}
-                <span className="text-xs font-sans text-off-white/40">{tier.setup}</span>
                 {tier.price !== "Custom" && (
                   <span className="text-[10px] font-sans text-off-white/40 block mt-1">12-month contract</span>
                 )}
@@ -289,7 +283,7 @@ export default function Pricing() {
         {/* Legal disclaimers */}
         <div className="max-w-3xl mx-auto mt-12 text-center space-y-2">
           <p className="text-xs text-off-white/25 font-sans">
-            All prices are in USD. Setup fees are one-time. Monthly fees are billed on a 12-month agreement. Prices may change with 30 days notice.
+            All prices are in USD. Monthly fees are billed on a 12-month agreement. Prices may change with 30 days notice.
           </p>
           <p className="text-xs text-off-white/25 font-sans">
             Add-on pricing varies by feature and complexity. Ecommerce, product migration, and custom API integrations require a custom quote.

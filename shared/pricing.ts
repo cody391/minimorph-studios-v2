@@ -8,9 +8,9 @@
  * reference these constants. Never hardcode dollar amounts.
  *
  * Intended pricing (confirmed):
- *   Starter:  $150/mo + $500 setup
- *   Growth:   $250/mo + $750 setup
- *   Pro:      $400/mo + $1,000 setup
+ *   Starter:  $150/mo (no setup fee)
+ *   Growth:   $250/mo (no setup fee)
+ *   Pro:      $400/mo (no setup fee)
  *   Commerce: custom quote (not in this file)
  */
 
@@ -20,8 +20,8 @@ export const PACKAGES = {
     tier: "starter" as const,
     monthlyPrice: 150,
     monthlyPriceInCents: 15000,
-    setupFee: 500,
-    setupFeeInCents: 50000,
+    setupFee: 0,
+    setupFeeInCents: 0,
     annualTotal: 1800, // 150 * 12
     contractMonths: 12,
     description: "For businesses that need a clean, professional website with ongoing support",
@@ -41,8 +41,8 @@ export const PACKAGES = {
     tier: "growth" as const,
     monthlyPrice: 250,
     monthlyPriceInCents: 25000,
-    setupFee: 750,
-    setupFeeInCents: 75000,
+    setupFee: 0,
+    setupFeeInCents: 0,
     annualTotal: 3000, // 250 * 12
     contractMonths: 12,
     description: "For businesses ready to grow with more pages, features, and monthly support",
@@ -63,8 +63,8 @@ export const PACKAGES = {
     tier: "premium" as const,
     monthlyPrice: 400,
     monthlyPriceInCents: 40000,
-    setupFee: 1000,
-    setupFeeInCents: 100000,
+    setupFee: 0,
+    setupFeeInCents: 0,
     annualTotal: 4800, // 400 * 12
     contractMonths: 12,
     description: "For businesses that need advanced features, more pages, and hands-on support",
@@ -94,7 +94,7 @@ export function formatAnnualTotal(key: PackageKey): string {
   return `$${PACKAGES[key].annualTotal.toLocaleString()}`;
 }
 
-/** Helper to format setup fee as "$500" */
+/** Helper to format setup fee — now always $0 (kept for backward compat) */
 export function formatSetupFee(key: PackageKey): string {
   return `$${PACKAGES[key].setupFee.toLocaleString()}`;
 }
@@ -110,7 +110,4 @@ export const ACADEMY_PRICING = {
   starterAnnual: `$${PACKAGES.starter.annualTotal.toLocaleString()}/year`,
   growthAnnual: `$${PACKAGES.growth.annualTotal.toLocaleString()}/year`,
   premiumAnnual: `$${PACKAGES.premium.annualTotal.toLocaleString()}/year`,
-  starterSetup: `$${PACKAGES.starter.setupFee} one-time setup`,
-  growthSetup: `$${PACKAGES.growth.setupFee} one-time setup`,
-  premiumSetup: `$${PACKAGES.premium.setupFee} one-time setup`,
 } as const;

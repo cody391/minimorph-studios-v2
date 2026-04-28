@@ -1256,7 +1256,7 @@ The prospect came to you because they have a problem. You have the solution. Clo
 **When to use:** When there's a genuine reason to act now.
 **How it works:** Create real (never fake) urgency.
 
-**Script:** "We're currently running our spring launch special — $500 off the setup fee for projects started this month. After that, it goes back to full price. Want to lock that in?"
+**Script:** "We're currently running our spring launch special — your first month free for projects started this month. After that, it goes back to full price. Want to lock that in?"
 
 ### 5. The Puppy Dog Close
 **When to use:** When the prospect is interested but afraid to commit.

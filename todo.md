@@ -1267,3 +1267,18 @@
 
 ### Bug Fix: Audit Report URL in Email
 - [x] Fix audit report URL to use full domain (https://minimorphstudios.net/manus-storage/...) instead of relative path
+
+### Remove Upfront Fees — Monthly Only Pricing
+- [x] Audit all files for upfront/setup/one-time fee references (15 files, 50+ locations)
+- [x] Remove upfront fees from shared/pricing.ts (all setupFeeInCents → 0, setupFee → 0)
+- [x] Remove upfront fees from server/stripe-products.ts (all setupFeeInCents → 0)
+- [x] Remove upfront fees from public pricing UI (Pricing.tsx tier data + display + disclaimer)
+- [x] Remove upfront fees from onboarding/wizard UI (GetStarted.tsx package data + step 2 + step 4 review)
+- [x] Remove upfront fees from email templates (customerEmails.ts — 2 payment templates)
+- [x] Remove upfront fees from admin UI (Contracts.tsx detail, WidgetCatalog.tsx form + display, CustomerPortal.tsx widget cards)
+- [x] Update Stripe checkout to only charge monthly (removed 3 setup fee line_items from routers.ts)
+- [x] Zero out all setupFee values in shared/integrationMatrix.ts (7 widgets)
+- [x] Update shared/answerBank.ts pricing answers ("no setup fee" messaging preserved)
+- [x] Update academy-curriculum.ts closing scripts (setup fee discount → first month free)
+- [x] Update 2 test files to expect 0 setup fees
+- [x] Validation: typecheck clean, 36 files 875/875 tests pass, production build OK

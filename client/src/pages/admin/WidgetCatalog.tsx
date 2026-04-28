@@ -153,9 +153,7 @@ export default function WidgetCatalog() {
                     <span className="text-lg font-serif text-off-white">${Number(widget.monthlyPrice).toLocaleString()}</span>
                     <span className="text-xs text-soft-gray font-sans">/mo</span>
                   </div>
-                  {widget.setupFee && Number(widget.setupFee) > 0 && (
-                    <span className="text-xs text-soft-gray font-sans">+ ${Number(widget.setupFee)} setup</span>
-                  )}
+
                 </div>
                 <Badge className="text-[10px] font-sans bg-midnight-dark/30 text-soft-gray mb-3">
                   {categoryLabels[widget.category] ?? widget.category}
@@ -214,10 +212,7 @@ export default function WidgetCatalog() {
                 <label className="text-xs text-soft-gray block mb-1">Monthly Price ($)</label>
                 <Input type="number" value={form.monthlyPrice} onChange={(e) => setForm(f => ({ ...f, monthlyPrice: e.target.value }))} placeholder="299" />
               </div>
-              <div>
-                <label className="text-xs text-soft-gray block mb-1">Setup Fee ($)</label>
-                <Input type="number" value={form.setupFee} onChange={(e) => setForm(f => ({ ...f, setupFee: e.target.value }))} placeholder="0" />
-              </div>
+
             </div>
             <div>
               <label className="text-xs text-soft-gray block mb-1">Features (comma-separated)</label>
@@ -235,7 +230,7 @@ export default function WidgetCatalog() {
                 category: form.category as "ai_agent" | "widget" | "service" | "integration",
                 description: form.description,
                 monthlyPrice: form.monthlyPrice,
-                setupFee: form.setupFee || "0",
+                setupFee: "0",
                 features: form.features ? form.features.split(",").map(f => f.trim()) : [],
               })}
             >

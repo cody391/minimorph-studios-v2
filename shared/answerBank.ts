@@ -29,7 +29,7 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "pricing",
     question: "How much does the Starter plan cost?",
     answer:
-      "The Starter plan is $150/month with a $500 one-time setup fee. It includes up to 5 pages, mobile-responsive design, a contact/quote form, basic SEO, customer portal access, a monthly performance report, 1 content update per month, and email support. All plans require a 12-month commitment billed monthly.",
+      "The Starter plan is $150/month with no setup fee. It includes up to 5 pages, mobile-responsive design, a contact/quote form, basic SEO, customer portal access, a monthly performance report, 1 content update per month, and email support. All plans require a 12-month commitment billed monthly.",
   },
   {
     id: "pricing_growth",
@@ -38,7 +38,7 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "pricing",
     question: "How much does the Growth plan cost?",
     answer:
-      "The Growth plan is $250/month with a $750 one-time setup fee. It includes everything in Starter plus up to 10 pages, a blog or news section, Google Analytics setup, 2 content updates per month, AI-assisted recommendations, priority email support, and access to add-on integrations.",
+      "The Growth plan is $250/month with no setup fee. It includes everything in Starter plus up to 10 pages, a blog or news section, Google Analytics setup, 2 content updates per month, AI-assisted recommendations, priority email support, and access to add-on integrations.",
   },
   {
     id: "pricing_pro",
@@ -47,7 +47,7 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "pricing",
     question: "How much does the Pro plan cost?",
     answer:
-      "The Pro plan is $400/month with a $1,000 one-time setup fee. It includes everything in Growth plus up to 20 pages, advanced SEO pages, 4 content updates per month, review widget setup, booking integration, SMS lead alerts, and priority support with faster response times.",
+      "The Pro plan is $400/month with no setup fee. It includes everything in Growth plus up to 20 pages, advanced SEO pages, 4 content updates per month, review widget setup, booking integration, SMS lead alerts, and priority support with faster response times.",
   },
   {
     id: "pricing_commerce",
@@ -61,12 +61,12 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
   },
   {
     id: "pricing_setup_fee",
-    patterns: ["setup fee", "one-time fee", "upfront cost", "initial cost", "why setup fee"],
+    patterns: ["setup fee", "one-time fee", "upfront cost", "initial cost", "why no setup fee"],
     classification: "answer",
     category: "pricing",
-    question: "What is the setup fee for?",
+    question: "Is there a setup fee?",
     answer:
-      "The one-time setup fee covers the initial design, development, and launch of your website. This includes custom design work, content setup, SEO configuration, form integrations, and quality assurance testing before your site goes live. After launch, your monthly fee covers ongoing maintenance, updates, hosting, and support.",
+      "No, there is no setup fee. All of our plans are billed monthly with no upfront costs. Your monthly fee covers everything — design, development, launch, ongoing maintenance, updates, hosting, and support.",
   },
   {
     id: "pricing_contract",
