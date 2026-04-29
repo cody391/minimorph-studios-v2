@@ -27,6 +27,8 @@ export default function LeadGenEngine() {
   const { data: businesses } = trpc.leadGen.listScrapedBusinesses.useQuery({ limit: 20 });
   const { data: enterpriseProspects } = trpc.leadGen.listEnterpriseProspects.useQuery();
 
+  const utils = trpc.useUtils();
+
   // Mutations
   const createScrapeJob = trpc.leadGen.createScrapeJob.useMutation({
     onSuccess: (data) => {
@@ -429,7 +431,7 @@ export default function LeadGenEngine() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => trpc.useUtils().leadGen.listOutreachSequences.invalidate()}
+                  onClick={() => utils.leadGen.listOutreachSequences.invalidate()}
                   className="border-electric/10"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />

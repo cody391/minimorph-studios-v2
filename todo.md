@@ -1450,3 +1450,6 @@
 - [x] Test full flow end-to-end (TypeScript clean, 874/880 tests pass — 6 failures are pre-existing API timeouts)
 - [x] Fixed React hooks rule: moved onboardingStatus useQuery before conditional returns
 - [x] Fixed Jodi's deleted user account (recreated with temp password MiniMorph2026!)
+
+### Bug: Invalid Hook Call on /admin/lead-gen
+- [x] Fix trpc.useUtils() called inside onClick handler (line 432) — moved to top-level `const utils = trpc.useUtils()` and used `utils.leadGen.listOutreachSequences.invalidate()` in handler
