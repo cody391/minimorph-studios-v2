@@ -9,7 +9,7 @@ import { protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { repOnboardingData, reps, users } from "../drizzle/schema";
+import { repOnboardingData, reps, users, repApplications, repAssessments } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
 /* ─── NDA Content ─── */
@@ -453,5 +453,116 @@ export const onboardingDataRouter = router({
       .set({ paperworkCompletedAt: new Date() })
       .where(eq(reps.id, rep[0].id));
     return { success: true };
+  }),
+
+  /**
+   * Get onboarding status — determines which step the rep should be on.
+   * Returns the next incomplete step so the UI can route them correctly.
+   * This is the "pick up where you left off" engine.
+   */
+  getOnboardingStatus: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db)
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+    const userId = ctx.user.id;
+
+    // Step 1: Check if rep profile exists (account created + rep record)
+    const repResult = await db.select().from(reps).where(eq(reps.userId, userId)).limit(1);
+    const rep = repResult[0];
+    if (!rep) {
+      // No rep record — they need to start the application
+      return {
+        currentStep: 1,
+        nextRoute: "/become-rep/values",
+        completedSteps: [] as string[],
+        isFullyOnboarded: false,
+      };
+    }
+
+    const completedSteps: string[] = ["values", "account"];
+
+    // Step 2: Check trust gate (NDA + identity)
+    const trustResult = await db
+      .select({ ndaSignedAt: repOnboardingData.ndaSignedAt })
+      .from(repOnboardingData)
+      .where(eq(repOnboardingData.userId, userId))
+      .limit(1);
+    const trustCompleted = trustResult.length > 0 && !!trustResult[0].ndaSignedAt;
+    if (!trustCompleted) {
+      return {
+        currentStep: 3,
+        nextRoute: "/become-rep/trust-gate",
+        completedSteps,
+        isFullyOnboarded: false,
+      };
+    }
+    completedSteps.push("trust-gate");
+
+    // Step 3: Check assessment
+    const assessResult = await db
+      .select({ status: repAssessments.status })
+      .from(repAssessments)
+      .where(eq(repAssessments.userId, userId))
+      .limit(1);
+    const assessPassed = assessResult.length > 0 && assessResult[0].status === "passed";
+    if (!assessPassed) {
+      return {
+        currentStep: 4,
+        nextRoute: "/rep-assessment",
+        completedSteps,
+        isFullyOnboarded: false,
+      };
+    }
+    completedSteps.push("assessment");
+
+    // Step 4: Check extended application
+    const appResult = await db
+      .select({ id: repApplications.id })
+      .from(repApplications)
+      .where(eq(repApplications.repId, rep.id))
+      .limit(1);
+    const appCompleted = appResult.length > 0;
+    if (!appCompleted) {
+      return {
+        currentStep: 5,
+        nextRoute: "/become-rep?step=2",
+        completedSteps,
+        isFullyOnboarded: false,
+      };
+    }
+    completedSteps.push("application");
+
+    // Step 5: Check paperwork
+    if (!rep.paperworkCompletedAt) {
+      return {
+        currentStep: 6,
+        nextRoute: "/become-rep/paperwork",
+        completedSteps,
+        isFullyOnboarded: false,
+      };
+    }
+    completedSteps.push("paperwork");
+
+    // Step 6: Check payout setup (Stripe Connect)
+    // This is the only "skippable" step — but we still route them here if not done
+    if (!rep.stripeConnectOnboarded) {
+      return {
+        currentStep: 7,
+        nextRoute: "/become-rep/payout-setup",
+        completedSteps,
+        isFullyOnboarded: false,
+      };
+    }
+    completedSteps.push("payout");
+
+    // All onboarding complete — they belong in the Academy/Dashboard
+    completedSteps.push("academy");
+    return {
+      currentStep: 8,
+      nextRoute: "/rep?tab=training",
+      completedSteps,
+      isFullyOnboarded: true,
+    };
   }),
 });

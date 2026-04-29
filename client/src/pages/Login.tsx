@@ -21,13 +21,22 @@ export default function Login() {
       toast.success("Welcome back!");
       // Invalidate auth cache so downstream pages recognize the session
       await utils.auth.me.invalidate();
-      // Use server-provided redirect, or fall back to role-based routing
-      if (data.redirectTo) {
-        setLocation(data.redirectTo);
-      } else if (data.user.role === "admin") {
+      // Route based on role
+      if (data.user.role === "admin") {
         setLocation("/admin");
       } else if (data.isRep) {
-        setLocation("/rep");
+        // For reps, check onboarding status to route to correct step
+        try {
+          const status = await utils.repOnboarding.getOnboardingStatus.fetch();
+          if (status.isFullyOnboarded) {
+            setLocation("/rep");
+          } else {
+            setLocation(status.nextRoute);
+          }
+        } catch {
+          // Fallback if onboarding check fails
+          setLocation("/rep");
+        }
       } else {
         setLocation("/customer/portal");
       }

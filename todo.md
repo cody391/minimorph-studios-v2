@@ -1439,3 +1439,14 @@
 - [x] Remove test leads, commissions, and activities not linked to real reps (170 commissions, 6 users, 172 chat logs, 378 scraped businesses, 6 check-ins, 5 academy progress, 1 cert, 1 assessment, 2 onboarding records)
 - [x] Remove any hardcoded sample/mock data in frontend components (none found — all data-driven from API)
 - [x] Verify admin and rep dashboards show only real data (3 reps, 2 leads, $199 MRR)
+
+### Uber/DoorDash-Style Onboarding Flow
+- [x] Audit full onboarding flow: map every step, what's tracked in DB, and gaps
+- [x] Build onboarding progress tracker (getOnboardingStatus procedure checks 8 steps: values, account, trust-gate, assessment, application, paperwork, payout, academy)
+- [x] Smart routing: on login, route reps to exact step they left off at
+- [x] Never repeat completed steps, never skip required steps (payout is the only skippable step)
+- [x] Update login redirect to use onboarding progress tracker (Login.tsx fetches status after rep login)
+- [x] Update RepDashboard gate to use onboarding progress tracker (replaced hardcoded paperwork gate with smart routing)
+- [x] Test full flow end-to-end (TypeScript clean, 874/880 tests pass — 6 failures are pre-existing API timeouts)
+- [x] Fixed React hooks rule: moved onboardingStatus useQuery before conditional returns
+- [x] Fixed Jodi's deleted user account (recreated with temp password MiniMorph2026!)

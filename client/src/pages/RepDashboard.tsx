@@ -68,6 +68,12 @@ export default function RepDashboard() {
   const { data: sentEmails } = trpc.repComms.mySentEmails.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
   const { data: accessCheck } = trpc.academy.canAccessLeads.useQuery(undefined, { enabled: isAuthenticated && !!repProfile });
 
+  // Smart onboarding routing — check which step the rep should be on
+  const { data: onboardingStatus, isLoading: onboardingLoading } = trpc.repOnboarding.getOnboardingStatus.useQuery(
+    undefined,
+    { enabled: isAuthenticated && !!repProfile && repProfile.status === "training" }
+  );
+
   const activeLeads = useMemo(() => (myLeads ?? []).filter((l: any) => !["closed_won", "closed_lost"].includes(l.stage)), [myLeads]);
   const wonLeads = useMemo(() => (myLeads ?? []).filter((l: any) => l.stage === "closed_won"), [myLeads]);
   const totalEarnings = useMemo(() => commissions?.filter((c: any) => c.status !== "cancelled").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
@@ -138,30 +144,41 @@ export default function RepDashboard() {
     </div>
   );
 
-  // ── Onboarding gates ──
-  // 1. If paperwork not completed, redirect to paperwork
-  if (!repProfile.paperworkCompletedAt && repProfile.status === "training") {
-    return (
-      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
-        <Card className="max-w-md w-full border-border/50 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-5">
-              <FileText className="h-8 w-8 text-electric" />
-            </div>
-            <h2 className="text-xl font-serif text-off-white mb-2">Complete Your Paperwork</h2>
-            <p className="text-sm text-soft-gray font-sans mb-6">Before you can access your dashboard, you need to complete your HR & accounting paperwork.</p>
-            <Button onClick={() => setLocation("/become-rep/paperwork")} className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8 py-5 w-full" size="lg">
-              <FileText className="w-4 h-4 mr-2" /> Complete Paperwork
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  // ── Smart onboarding routing ──
+  // If the rep is in training and hasn't completed all onboarding steps, redirect them
+  if (repProfile.status === "training" && onboardingStatus && !onboardingStatus.isFullyOnboarded) {
+    // Only redirect if they're not already on the payout step (which is skippable)
+    if (onboardingStatus.currentStep < 7) {
+      return (
+        <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
+          <Card className="max-w-md w-full border-border/50 shadow-lg">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                <FileText className="h-8 w-8 text-electric" />
+              </div>
+              <h2 className="text-xl font-serif text-off-white mb-2">Continue Your Onboarding</h2>
+              <p className="text-sm text-soft-gray font-sans mb-4">
+                You have a few more steps to complete before you can access your dashboard. Pick up right where you left off.
+              </p>
+              <div className="text-xs text-soft-gray/60 font-sans mb-6">
+                Step {onboardingStatus.currentStep} of 8 — {onboardingStatus.completedSteps.length} steps completed
+              </div>
+              <Button
+                onClick={() => window.location.href = onboardingStatus.nextRoute}
+                className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8 py-5 w-full min-h-[48px]"
+                size="lg"
+              >
+                Continue Onboarding <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
   }
 
-  // 2. Stripe Connect not set up — show a non-blocking reminder (no longer gates access)
-  //    Reps can still access the dashboard and Academy without completing payout setup.
-  //    They'll see a reminder banner in the Settings tab instead.
+  // Stripe Connect not set up — non-blocking (payout step is skippable)
+  // Reps can access the dashboard and Academy without completing payout setup.
 
   const currentTier = (accountabilityTier?.tier || "bronze") as string;
   const TierIcon = tierIcons[currentTier] || Shield;
