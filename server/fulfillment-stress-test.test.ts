@@ -153,7 +153,7 @@ describe("Answer Bank — findAnswers", () => {
     const starter = results.find((r) => r.id === "pricing_starter");
     expect(starter).toBeDefined();
     expect(starter!.classification).toBe("answer");
-    expect(starter!.answer).toContain("$150");
+    expect(starter!.answer).toContain("$195");
   });
 
   it("should classify ecommerce pricing as escalate", () => {

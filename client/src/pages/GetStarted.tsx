@@ -9,8 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowRight, Check, Sparkles,
-  Shield, ChevronLeft, Eye, EyeOff, Lock, AlertTriangle,
+  Shield, ChevronLeft, Eye, EyeOff, Lock, AlertTriangle, FileText,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 
@@ -25,7 +26,7 @@ const PACKAGES = [
   {
     tier: "starter" as const,
     name: "Starter",
-    price: 150,
+    price: 195,
     pages: 5,
     features: ["Up to 5 pages", "Mobile-responsive design", "Contact/quote form", "Basic SEO setup", "Customer portal access", "Monthly performance report", "1 content update per month", "Email support"],
     popular: false,
@@ -33,7 +34,7 @@ const PACKAGES = [
   {
     tier: "growth" as const,
     name: "Growth",
-    price: 250,
+    price: 295,
     pages: 10,
     features: ["Up to 10 pages", "Everything in Starter", "Blog or news section", "Google Analytics setup", "2 content updates per month", "AI-assisted recommendations", "Priority email support", "Add-on integrations available"],
     popular: true,
@@ -41,9 +42,17 @@ const PACKAGES = [
   {
     tier: "premium" as const,
     name: "Pro",
-    price: 400,
+    price: 395,
     pages: 20,
     features: ["Up to 20 pages", "Everything in Growth", "Advanced SEO pages", "4 content updates per month", "Review widget setup", "Booking integration", "SMS lead alerts", "Priority support with faster response"],
+    popular: false,
+  },
+  {
+    tier: "enterprise" as const,
+    name: "Enterprise",
+    price: 495,
+    pages: 999,
+    features: ["Everything in Pro", "Large ecommerce (unlimited products)", "Custom portals", "Membership/subscription systems", "Multi-location support", "Custom integrations", "Priority build queue"],
     popular: false,
   },
 ];
@@ -69,6 +78,7 @@ export default function GetStarted() {
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contractAgreed, setContractAgreed] = useState(false);
   const [formData, setFormData] = useState({
     businessName: "",
     contactName: "",
@@ -105,7 +115,7 @@ export default function GetStarted() {
         return formData.businessName && formData.contactName && formData.email && passwordLongEnough && passwordsMatch;
       case 2: return !!formData.selectedPackage;
       case 3: return !!formData.stylePreference;
-      case 4: return true;
+      case 4: return contractAgreed;
       default: return false;
     }
   }, [step, formData, isAuthenticated, passwordLongEnough, passwordsMatch]);
@@ -164,7 +174,7 @@ export default function GetStarted() {
       });
 
       // Step 3: Create Stripe checkout session
-      const tier = formData.selectedPackage as "starter" | "growth" | "premium";
+      const tier = formData.selectedPackage as "starter" | "growth" | "premium" | "enterprise";
       const result = await checkoutMutation.mutateAsync({
         packageTier: tier,
         businessName: formData.businessName,
@@ -211,7 +221,7 @@ export default function GetStarted() {
             <Button
               onClick={async () => {
                 try {
-                  const tier = formData.selectedPackage as "starter" | "growth" | "premium";
+                  const tier = formData.selectedPackage as "starter" | "growth" | "premium" | "enterprise";
                   const result = await checkoutMutation.mutateAsync({
                     packageTier: tier,
                     businessName: formData.businessName,
@@ -590,6 +600,65 @@ export default function GetStarted() {
               </CardContent>
             </Card>
 
+            {/* Service Agreement */}
+            {(() => {
+              const pkg = PACKAGES.find((p) => p.tier === formData.selectedPackage);
+              if (!pkg) return null;
+              const endDate = new Date();
+              endDate.setFullYear(endDate.getFullYear() + 1);
+              return (
+                <div className="border border-border/40 rounded-xl overflow-hidden">
+                  <div className="bg-charcoal/60 px-4 py-3 flex items-center gap-2 border-b border-border/30">
+                    <FileText className="h-4 w-4 text-soft-gray/60" />
+                    <p className="text-sm font-medium text-off-white font-sans">12-Month Service Agreement</p>
+                  </div>
+                  <div className="p-4 max-h-48 overflow-y-auto bg-midnight/40">
+                    <pre className="text-xs text-soft-gray font-sans whitespace-pre-wrap leading-relaxed">
+{`WEBSITE DESIGN & SERVICES AGREEMENT — MiniMorph Studios
+
+Package: ${pkg.name} — $${pkg.price}/mo
+Term: 12 months, billed monthly
+Total commitment: $${pkg.price * 12}
+
+WHAT'S INCLUDED
+✓ Professional website design & development
+✓ Mobile-responsive design
+✓ SSL certificate (included, auto-renewed)
+✓ Enterprise hosting & CDN (99.9% uptime)
+✓ DNS management & domain handling
+✓ Daily backups & security monitoring
+✓ Up to 3 revision rounds
+✓ Ongoing maintenance & updates
+✓ SEO optimization
+✓ Monthly performance reports
+✓ Customer support
+
+KEY TERMS
+• 12-month minimum commitment from start date
+• First payment due upon checkout completion
+• After 12 months: cancel with 30 days written notice
+• Early termination requires payment of remaining months
+• Additional revisions beyond 3 rounds: $149/round
+• Governing law: Michigan, United States
+
+Domain: ${pkg.tier === "starter" ? "$15/year" : "Free first year, then $15/yr"} (registered & managed by MiniMorph Studios)`}
+                    </pre>
+                  </div>
+                  <div className="px-4 py-3 border-t border-border/30 flex items-start gap-3">
+                    <Checkbox
+                      id="contractAgreed"
+                      checked={contractAgreed}
+                      onCheckedChange={(v) => setContractAgreed(!!v)}
+                      className="mt-0.5"
+                    />
+                    <label htmlFor="contractAgreed" className="text-xs text-soft-gray font-sans cursor-pointer leading-relaxed">
+                      I have read and agree to the 12-month service agreement above. I understand this is a monthly subscription with a 12-month minimum commitment at <strong className="text-off-white">${pkg.price}/mo</strong>.
+                    </label>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="bg-electric/5 rounded-xl p-4 flex items-start gap-3">
               <Shield className="h-5 w-5 text-soft-gray/60 shrink-0 mt-0.5" />
               <div>
@@ -626,7 +695,7 @@ export default function GetStarted() {
           ) : (
             <Button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !contractAgreed}
               className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm rounded-full px-8 min-h-[44px]"
             >
               {isSubmitting ? (

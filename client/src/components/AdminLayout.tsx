@@ -39,7 +39,6 @@ import {
   Activity,
   ShoppingCart,
   ClipboardList,
-  Bot,
   Brain,
   Share2,
   Calendar,
@@ -47,41 +46,46 @@ import {
   Sparkles,
   Rocket,
   Shield,
+  Globe,
+  Radio,
+  Headphones,
+  Package,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
+import { trpc } from "@/lib/trpc";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Overview", path: "/admin" },
-  { icon: Users, label: "Reps", path: "/admin/reps" },
-  { icon: Target, label: "Leads", path: "/admin/leads" },
-  { icon: Building2, label: "Customers", path: "/admin/customers" },
-  { icon: FileText, label: "Contracts", path: "/admin/contracts" },
-  { icon: DollarSign, label: "Commissions", path: "/admin/commissions" },
-  { icon: Heart, label: "Nurture", path: "/admin/nurture" },
-  { icon: BarChart3, label: "Reports", path: "/admin/reports" },
-  { icon: TrendingUp, label: "Upsells", path: "/admin/upsells" },
-  { icon: RefreshCw, label: "Renewals", path: "/admin/renewals" },
-  { icon: MessageSquare, label: "Submissions", path: "/admin/submissions" },
-  { icon: Activity, label: "Analytics", path: "/admin/analytics" },
-  { icon: ShoppingCart, label: "Orders", path: "/admin/orders" },
-  { icon: ClipboardList, label: "Onboarding", path: "/admin/onboarding" },
-  { icon: Brain, label: "Lead Gen Engine", path: "/admin/lead-gen" },
-  { icon: Bot, label: "Widget Catalog", path: "/admin/widgets" },
-  { icon: Share2, label: "Social Media", path: "/admin/social" },
-  { icon: Calendar, label: "Content Calendar", path: "/admin/social/calendar" },
-  { icon: Palette, label: "Brand Kit", path: "/admin/social/brand" },
-  { icon: Sparkles, label: "AI Content Studio", path: "/admin/social/ai" },
-  { icon: Rocket, label: "X Growth Engine", path: "/admin/x-growth" },
-  { icon: Shield, label: "Governance", path: "/admin/governance" },
-];
+type MenuItem = {
+  icon: React.ElementType;
+  label: string;
+  path: string;
+  badge?: number;
+};
+
+type Section = {
+  label: string;
+  items: MenuItem[];
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
+};
 
 const SIDEBAR_WIDTH_KEY = "admin-sidebar-width";
 const DEFAULT_WIDTH = 260;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 400;
+
+function Badge({ count }: { count: number }) {
+  if (!count) return null;
+  return (
+    <span className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full bg-electric/20 px-1 text-[10px] font-semibold text-electric leading-none">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -104,18 +108,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="w-12 h-12 bg-red-500/20 border border-red-500/30 rounded-xl flex items-center justify-center">
               <span className="text-red-400 font-serif text-lg font-bold">!</span>
             </div>
-            <h1 className="text-2xl font-serif text-off-white text-center">
-              Access Denied
-            </h1>
+            <h1 className="text-2xl font-serif text-off-white text-center">Access Denied</h1>
             <p className="text-sm text-soft-gray text-center max-w-sm font-sans">
               You do not have admin privileges. Contact the site owner if you believe this is an error.
             </p>
           </div>
-          <Button
-            onClick={() => { window.location.href = "/"; }}
-            size="lg"
-            className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans"
-          >
+          <Button onClick={() => { window.location.href = "/"; }} size="lg" className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans">
             Return to Home
           </Button>
         </div>
@@ -130,18 +128,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="w-12 h-12 bg-electric/20 border border-electric/30 rounded-xl flex items-center justify-center">
               <span className="text-electric font-serif text-lg font-bold">M</span>
             </div>
-            <h1 className="text-2xl font-serif text-off-white text-center">
-              Admin Access Required
-            </h1>
+            <h1 className="text-2xl font-serif text-off-white text-center">Admin Access Required</h1>
             <p className="text-sm text-soft-gray text-center max-w-sm font-sans">
               Sign in with your admin account to access the MiniMorph Studios platform.
             </p>
           </div>
-          <Button
-            onClick={() => { window.location.href = getLoginUrl(); }}
-            size="lg"
-            className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans"
-          >
+          <Button onClick={() => { window.location.href = getLoginUrl(); }} size="lg" className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans">
             Sign in
           </Button>
         </div>
@@ -168,9 +160,80 @@ function AdminLayoutContent({
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
+  const [marketingOpen, setMarketingOpen] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find((item) => item.path === location);
   const isMobile = useIsMobile();
+
+  // Notification counts — poll every 60s
+  const { data: counts } = trpc.notifCounts.admin.useQuery(undefined, {
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
+  const sections: Section[] = [
+    {
+      label: "OVERVIEW",
+      items: [
+        { icon: LayoutDashboard, label: "Overview", path: "/admin" },
+      ],
+    },
+    {
+      label: "SALES",
+      items: [
+        { icon: Target, label: "Leads", path: "/admin/leads" },
+        { icon: MessageSquare, label: "Submissions", path: "/admin/submissions", badge: 0 },
+        { icon: Users, label: "Reps", path: "/admin/reps", badge: counts?.unreadRepMessages },
+        { icon: Shield, label: "Governance", path: "/admin/governance" },
+        { icon: DollarSign, label: "Commissions", path: "/admin/commissions" },
+      ],
+    },
+    {
+      label: "CUSTOMERS",
+      items: [
+        { icon: Building2, label: "Customers", path: "/admin/customers" },
+        { icon: FileText, label: "Contracts", path: "/admin/contracts" },
+        { icon: ShoppingCart, label: "Orders", path: "/admin/orders" },
+        { icon: RefreshCw, label: "Renewals", path: "/admin/renewals" },
+        { icon: Headphones, label: "Support", path: "/admin/support", badge: counts?.openTickets },
+      ],
+    },
+    {
+      label: "DELIVERY",
+      items: [
+        { icon: ClipboardList, label: "Onboarding", path: "/admin/onboarding" },
+        { icon: Globe, label: "Sites", path: "/admin/sites" },
+      ],
+    },
+    {
+      label: "RETENTION",
+      items: [
+        { icon: Heart, label: "Nurture", path: "/admin/nurture" },
+        { icon: TrendingUp, label: "Upsells", path: "/admin/upsells" },
+        { icon: BarChart3, label: "Reports", path: "/admin/reports" },
+        { icon: Radio, label: "Broadcasts", path: "/admin/broadcasts" },
+      ],
+    },
+    {
+      label: "PRODUCTS & SETTINGS",
+      items: [
+        { icon: Package, label: "Products", path: "/admin/products" },
+        { icon: Brain, label: "Lead Gen Engine", path: "/admin/lead-gen" },
+        { icon: Activity, label: "Analytics", path: "/admin/analytics" },
+      ],
+    },
+  ];
+
+  const marketingItems: MenuItem[] = [
+    { icon: Share2, label: "Social Media", path: "/admin/social" },
+    { icon: Calendar, label: "Content Calendar", path: "/admin/social/calendar" },
+    { icon: Palette, label: "Brand Kit", path: "/admin/social/brand" },
+    { icon: Sparkles, label: "AI Content Studio", path: "/admin/social/ai" },
+    { icon: Rocket, label: "X Growth Engine", path: "/admin/x-growth" },
+  ];
+
+  const activeLabel = sections.flatMap(s => s.items).find(i => i.path === location)?.label
+    ?? marketingItems.find(i => i.path === location)?.label
+    ?? "Admin";
 
   useEffect(() => {
     if (isCollapsed) setIsResizing(false);
@@ -198,6 +261,28 @@ function AdminLayoutContent({
     };
   }, [isResizing, setSidebarWidth]);
 
+  const renderItem = (item: MenuItem) => {
+    const isActive = location === item.path;
+    return (
+      <SidebarMenuItem key={item.path}>
+        <SidebarMenuButton
+          isActive={isActive}
+          onClick={() => setLocation(item.path)}
+          tooltip={item.label}
+          className={`h-9 transition-all font-sans text-sm ${
+            isActive
+              ? "bg-electric/15 text-electric font-medium"
+              : "text-soft-gray hover:bg-graphite hover:text-off-white"
+          }`}
+        >
+          <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-electric" : "text-soft-gray"}`} />
+          <span className="truncate">{item.label}</span>
+          {item.badge ? <Badge count={item.badge} /> : null}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  };
+
   return (
     <>
       <div className="relative" ref={sidebarRef}>
@@ -223,37 +308,45 @@ function AdminLayoutContent({
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0 pt-2">
-            <SidebarMenu className="px-2 py-1">
-              {menuItems.map((item) => {
-                const isActive = location === item.path;
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      onClick={() => setLocation(item.path)}
-                      tooltip={item.label}
-                      className={`h-9 transition-all font-sans text-sm ${
-                        isActive
-                          ? "bg-electric/15 text-electric font-medium"
-                          : "text-soft-gray hover:bg-graphite hover:text-off-white"
-                      }`}
-                    >
-                      <item.icon className={`h-4 w-4 ${isActive ? "text-electric" : "text-soft-gray"}`} />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+          <SidebarContent className="gap-0 pt-1 overflow-y-auto">
+            {sections.map((section) => (
+              <div key={section.label} className="px-2 pt-2">
+                {!isCollapsed && (
+                  <div className="px-2 pb-1 text-[10px] font-semibold text-muted-foreground/50 tracking-widest uppercase">
+                    {section.label}
+                  </div>
+                )}
+                <SidebarMenu className="gap-0">
+                  {section.items.map(renderItem)}
+                </SidebarMenu>
+              </div>
+            ))}
 
-            {/* Back to website link */}
-            <div className="px-3 mt-4 pt-4 border-t border-border/30">
+            {/* MINIMORPH MARKETING — collapsible */}
+            <div className="px-2 pt-2">
+              {!isCollapsed ? (
+                <button
+                  onClick={() => setMarketingOpen(!marketingOpen)}
+                  className="flex items-center justify-between w-full px-2 pb-1 text-[10px] font-semibold text-muted-foreground/50 tracking-widest uppercase hover:text-muted-foreground/70 transition-colors"
+                >
+                  <span>MINIMORPH MARKETING</span>
+                  {marketingOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                </button>
+              ) : null}
+              {(marketingOpen || isCollapsed) && (
+                <SidebarMenu className="gap-0">
+                  {marketingItems.map(renderItem)}
+                </SidebarMenu>
+              )}
+            </div>
+
+            {/* Back to website */}
+            <div className="px-3 mt-4 pt-4 border-t border-border/30 pb-2">
               <button
                 onClick={() => setLocation("/")}
                 className="flex items-center gap-2 text-xs text-soft-gray hover:text-electric transition-colors font-sans w-full group-data-[collapsible=icon]:justify-center"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden">Back to website</span>
               </button>
             </div>
@@ -279,10 +372,7 @@ function AdminLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                >
+                <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign out</span>
                 </DropdownMenuItem>
@@ -302,7 +392,7 @@ function AdminLayoutContent({
           <div className="flex border-b border-border/30 h-14 items-center justify-between bg-charcoal/95 px-2 backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="h-11 w-11 rounded-lg" aria-label="Toggle sidebar" />
-              <span className="font-serif text-off-white text-sm">{activeMenuItem?.label ?? "Admin"}</span>
+              <span className="font-serif text-off-white text-sm">{activeLabel}</span>
             </div>
           </div>
         )}

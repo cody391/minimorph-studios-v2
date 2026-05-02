@@ -30,12 +30,11 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
-      );
+    if (ENV.oAuthServerUrl) {
+      console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
     }
+    // OAUTH_SERVER_URL is only required when running on the Manus platform.
+    // Self-hosted deployments use local email/password auth instead.
   }
 
   private decodeState(state: string): string {
@@ -270,8 +269,13 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
+    // If user not in DB, attempt to sync from OAuth server (Manus platform only).
+    // Local users (openId starts with "local_") are always created at registration
+    // and should never need syncing — if they're missing, their session is stale.
     if (!user) {
+      if (sessionUserId.startsWith("local_")) {
+        throw ForbiddenError("Session expired, please log in again");
+      }
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({

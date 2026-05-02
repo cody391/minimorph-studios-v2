@@ -10,10 +10,10 @@ import {
 import { useLocation } from "wouter";
 
 const EARNINGS_EXAMPLES = [
-  { deals: 5, avgDeal: 1499, monthly: "$749", annual: "$8,993", level: "Part-Time Closer" },
-  { deals: 10, avgDeal: 1999, monthly: "$1,999", annual: "$23,988", level: "Full-Time Rep" },
-  { deals: 20, avgDeal: 2499, monthly: "$4,998", annual: "$59,976", level: "Top Performer" },
-  { deals: 30, avgDeal: 3499, monthly: "$10,497", annual: "$125,964", level: "Platinum Rep" },
+  { deals: 5, avgDeal: 2340, monthly: "$1,170", annual: "$14,040", level: "Part-Time Closer" },
+  { deals: 10, avgDeal: 2940, monthly: "$2,940", annual: "$35,280", level: "Full-Time Rep" },
+  { deals: 20, avgDeal: 3540, monthly: "$7,080", annual: "$84,960", level: "Top Performer" },
+  { deals: 30, avgDeal: 4740, monthly: "$21,330", annual: "$255,960", level: "Platinum Rep" },
 ];
 
 const BENEFITS = [

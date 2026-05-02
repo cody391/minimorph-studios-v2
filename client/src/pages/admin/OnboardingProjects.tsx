@@ -20,6 +20,9 @@ import {
   ArrowUpRight,
   AlertTriangle,
   ShieldAlert,
+  Zap,
+  ExternalLink,
+  CheckCircle,
 } from "lucide-react";
 import { FLAG_DESCRIPTIONS } from "@shared/quoteEngine";
 
@@ -39,10 +42,13 @@ const ALL_STAGES = ["intake", "questionnaire", "assets_upload", "design", "revie
 
 export default function OnboardingProjects() {
   const [filterStage, setFilterStage] = useState<string>("all");
+  const [markLiveForms, setMarkLiveForms] = useState<Record<number, { open: boolean; liveUrl: string; domainName: string }>>({});
   const projectsQuery = trpc.onboarding.list.useQuery(
     filterStage === "all" ? {} : { stage: filterStage }
   );
   const updateStageMutation = trpc.onboarding.updateStage.useMutation();
+  const markSiteLiveMutation = trpc.onboarding.markSiteLive.useMutation();
+  const triggerGenerationMutation = trpc.onboarding.triggerGeneration.useMutation();
 
   const projects = projectsQuery.data || [];
 
@@ -57,6 +63,49 @@ export default function OnboardingProjects() {
       projectsQuery.refetch();
     } catch {
       toast.error("Failed to update project stage");
+    }
+  };
+
+  const handleTriggerGeneration = async (projectId: number) => {
+    try {
+      await triggerGenerationMutation.mutateAsync({ projectId });
+      toast.success("Site generation triggered");
+      projectsQuery.refetch();
+    } catch {
+      toast.error("Failed to trigger generation");
+    }
+  };
+
+  const handleMarkLive = async (projectId: number) => {
+    const form = markLiveForms[projectId];
+    if (!form?.liveUrl?.trim()) {
+      toast.error("Live URL is required");
+      return;
+    }
+    try {
+      await markSiteLiveMutation.mutateAsync({
+        projectId,
+        liveUrl: form.liveUrl.trim(),
+        domainName: form.domainName.trim() || undefined,
+      });
+      toast.success("Site marked as live!");
+      setMarkLiveForms(prev => ({ ...prev, [projectId]: { open: false, liveUrl: "", domainName: "" } }));
+      projectsQuery.refetch();
+    } catch {
+      toast.error("Failed to mark site live");
+    }
+  };
+
+  const openPreview = (generatedSiteHtml: string) => {
+    try {
+      const pages = JSON.parse(generatedSiteHtml) as Record<string, string>;
+      const firstPage = Object.values(pages)[0];
+      if (!firstPage) return;
+      const blob = new Blob([firstPage], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch {
+      toast.error("Could not open preview");
     }
   };
 
@@ -214,8 +263,8 @@ export default function OnboardingProjects() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-3">
-                    {nextStage && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {nextStage && project.stage !== "final_approval" && (
                       <Button
                         size="sm"
                         onClick={() => handleStageUpdate(project.id, nextStage)}
@@ -229,7 +278,7 @@ export default function OnboardingProjects() {
                       value={project.stage}
                       onValueChange={(val) => handleStageUpdate(project.id, val)}
                     >
-                      <SelectTrigger className="w-48 h-8 text-sm">
+                      <SelectTrigger className="w-44 h-8 text-sm">
                         <SelectValue placeholder="Jump to stage..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -240,7 +289,112 @@ export default function OnboardingProjects() {
                         ))}
                       </SelectContent>
                     </Select>
+
+                    {/* Trigger generation */}
+                    {project.generationStatus !== "complete" && project.generationStatus !== "generating" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleTriggerGeneration(project.id)}
+                        disabled={triggerGenerationMutation.isPending}
+                        className="border-purple-400 text-purple-600 hover:bg-purple-50 h-8"
+                      >
+                        {triggerGenerationMutation.isPending ? (
+                          <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                        ) : (
+                          <Zap className="w-3 h-3 mr-1" />
+                        )}
+                        Generate
+                      </Button>
+                    )}
+
+                    {/* View preview */}
+                    {project.generatedSiteHtml && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openPreview(project.generatedSiteHtml)}
+                        className="border-blue-400 text-blue-600 hover:bg-blue-50 h-8"
+                      >
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Preview
+                      </Button>
+                    )}
+
+                    {/* Mark live — final_approval stage */}
+                    {project.stage === "final_approval" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setMarkLiveForms(prev => ({
+                          ...prev,
+                          [project.id]: prev[project.id]?.open
+                            ? { ...prev[project.id], open: false }
+                            : { open: true, liveUrl: project.liveUrl || "", domainName: project.domainName || "" }
+                        }))}
+                        className="border-green-500 text-green-600 hover:bg-green-50 h-8"
+                      >
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Mark Live
+                      </Button>
+                    )}
                   </div>
+
+                  {/* Mark Live inline form */}
+                  {markLiveForms[project.id]?.open && (
+                    <div className="mt-3 p-4 rounded-lg border border-green-200 bg-green-50 space-y-3">
+                      <p className="text-sm font-medium text-green-800">Mark site as live</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs text-green-700 block mb-1">Live URL *</label>
+                          <Input
+                            value={markLiveForms[project.id]?.liveUrl || ""}
+                            onChange={e => setMarkLiveForms(prev => ({
+                              ...prev,
+                              [project.id]: { ...prev[project.id], liveUrl: e.target.value }
+                            }))}
+                            placeholder="https://theirclientsite.com"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-green-700 block mb-1">Domain name</label>
+                          <Input
+                            value={markLiveForms[project.id]?.domainName || ""}
+                            onChange={e => setMarkLiveForms(prev => ({
+                              ...prev,
+                              [project.id]: { ...prev[project.id], domainName: e.target.value }
+                            }))}
+                            placeholder="theirclientsite.com"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleMarkLive(project.id)}
+                          disabled={markSiteLiveMutation.isPending || !markLiveForms[project.id]?.liveUrl?.trim()}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {markSiteLiveMutation.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                          ) : (
+                            <Rocket className="w-3 h-3 mr-1" />
+                          )}
+                          Confirm — Mark Live
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setMarkLiveForms(prev => ({ ...prev, [project.id]: { open: false, liveUrl: "", domainName: "" } }))}
+                          className="text-gray-500"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

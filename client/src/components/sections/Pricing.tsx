@@ -24,8 +24,8 @@ interface Tier {
 const tiers: Tier[] = [
   {
     name: "Starter",
-    price: "$150/mo",
-    annual: "$1,800",
+    price: "$195/mo",
+    annual: "$2,340 total over 12 months",
     description: "You need a website that doesn't embarrass you. Clean, fast, professional. We handle the rest.",
     features: [
       "Up to 5 pages",
@@ -41,8 +41,8 @@ const tiers: Tier[] = [
   },
   {
     name: "Growth",
-    price: "$250/mo",
-    annual: "$3,000",
+    price: "$295/mo",
+    annual: "$3,540 total over 12 months",
     description: "The sweet spot. More pages, a blog, AI recommendations, and enough updates to keep things fresh.",
     highlight: true,
     badge: "Most Popular",
@@ -60,8 +60,8 @@ const tiers: Tier[] = [
   },
   {
     name: "Pro",
-    price: "$400/mo",
-    annual: "$4,800",
+    price: "$395/mo",
+    annual: "$4,740 total over 12 months",
     description: "For the business that's serious. Booking, reviews, SMS alerts, and the kind of SEO that actually moves the needle.",
     features: [
       "Up to 20 pages",
@@ -76,44 +76,43 @@ const tiers: Tier[] = [
     cta: "Start with Pro",
   },
   {
-    name: "Commerce",
-    price: "Custom",
-    description: "You're selling things online. That's a different animal. Let's talk about what you actually need.",
+    name: "Enterprise",
+    price: "$495/mo",
+    annual: "$5,940 total over 12 months",
+    description: "For large, complex builds — ecommerce, portals, memberships, and multi-location businesses",
     features: [
-      "Unlimited pages",
       "Everything in Pro",
-      "Ecommerce store setup",
-      "Product catalog & categories",
-      "Cart/checkout integration",
-      "Shopify/WooCommerce review",
-      "Product migration support",
-      "Custom API integrations",
+      "Large ecommerce (unlimited products)",
+      "Custom customer portals",
+      "Membership/subscription systems",
+      "Multi-location support",
+      "Custom integrations",
+      "Priority build queue",
     ],
-    cta: "Request a Quote",
-    note: "Ecommerce and complex builds require a custom quote. We review your needs during onboarding.",
+    cta: "Get a Custom Quote",
   },
 ];
 
-type FeatureRow = { feature: string; starter: boolean | string; growth: boolean | string; pro: boolean | string; commerce: boolean | string };
+type FeatureRow = { feature: string; starter: boolean | string; growth: boolean | string; pro: boolean | string; enterprise: boolean | string };
 
 const comparisonRows: FeatureRow[] = [
-  { feature: "Pages included", starter: "Up to 5", growth: "Up to 10", pro: "Up to 20", commerce: "Unlimited" },
-  { feature: "Mobile-responsive", starter: true, growth: true, pro: true, commerce: true },
-  { feature: "Contact/quote form", starter: true, growth: true, pro: true, commerce: true },
-  { feature: "Basic SEO", starter: true, growth: true, pro: true, commerce: true },
-  { feature: "Customer portal", starter: true, growth: true, pro: true, commerce: true },
-  { feature: "Monthly report", starter: true, growth: true, pro: true, commerce: true },
-  { feature: "Content updates/mo", starter: "1", growth: "2", pro: "4", commerce: "Custom" },
-  { feature: "Blog/news section", starter: false, growth: true, pro: true, commerce: true },
-  { feature: "Google Analytics", starter: false, growth: true, pro: true, commerce: true },
-  { feature: "AI recommendations", starter: false, growth: true, pro: true, commerce: true },
-  { feature: "Advanced SEO pages", starter: false, growth: false, pro: true, commerce: true },
-  { feature: "Review widget", starter: false, growth: false, pro: true, commerce: true },
-  { feature: "Booking integration", starter: false, growth: false, pro: true, commerce: true },
-  { feature: "SMS lead alerts", starter: false, growth: false, pro: true, commerce: true },
-  { feature: "Ecommerce store", starter: false, growth: false, pro: false, commerce: true },
-  { feature: "Product migration", starter: false, growth: false, pro: false, commerce: true },
-  { feature: "Custom API integrations", starter: false, growth: false, pro: false, commerce: true },
+  { feature: "Pages included", starter: "Up to 5", growth: "Up to 10", pro: "Up to 20", enterprise: "Unlimited" },
+  { feature: "Mobile-responsive", starter: true, growth: true, pro: true, enterprise: true },
+  { feature: "Contact/quote form", starter: true, growth: true, pro: true, enterprise: true },
+  { feature: "Basic SEO", starter: true, growth: true, pro: true, enterprise: true },
+  { feature: "Customer portal", starter: true, growth: true, pro: true, enterprise: true },
+  { feature: "Monthly report", starter: true, growth: true, pro: true, enterprise: true },
+  { feature: "Content updates/mo", starter: "1", growth: "2", pro: "4", enterprise: "Custom" },
+  { feature: "Blog/news section", starter: false, growth: true, pro: true, enterprise: true },
+  { feature: "Google Analytics", starter: false, growth: true, pro: true, enterprise: true },
+  { feature: "AI recommendations", starter: false, growth: true, pro: true, enterprise: true },
+  { feature: "Advanced SEO pages", starter: false, growth: false, pro: true, enterprise: true },
+  { feature: "Review widget", starter: false, growth: false, pro: true, enterprise: true },
+  { feature: "Booking integration", starter: false, growth: false, pro: true, enterprise: true },
+  { feature: "SMS lead alerts", starter: false, growth: false, pro: true, enterprise: true },
+  { feature: "Ecommerce store", starter: false, growth: false, pro: false, enterprise: true },
+  { feature: "Custom portals/membership", starter: false, growth: false, pro: false, enterprise: true },
+  { feature: "Custom API integrations", starter: false, growth: false, pro: false, enterprise: true },
 ];
 
 function CellValue({ value }: { value: boolean | string }) {
@@ -262,7 +261,7 @@ export default function Pricing() {
                   <th className="text-center py-3 px-4 text-off-white/50 font-medium">Starter</th>
                   <th className="text-center py-3 px-4 text-electric font-medium">Growth</th>
                   <th className="text-center py-3 px-4 text-off-white/50 font-medium">Pro</th>
-                  <th className="text-center py-3 px-4 text-off-white/50 font-medium">Commerce</th>
+                  <th className="text-center py-3 px-4 text-off-white/50 font-medium">Enterprise</th>
                 </tr>
               </thead>
               <tbody>
@@ -272,7 +271,7 @@ export default function Pricing() {
                     <td className="py-3 px-4 text-center"><CellValue value={row.starter} /></td>
                     <td className="py-3 px-4 text-center bg-electric/3"><CellValue value={row.growth} /></td>
                     <td className="py-3 px-4 text-center"><CellValue value={row.pro} /></td>
-                    <td className="py-3 px-4 text-center"><CellValue value={row.commerce} /></td>
+                    <td className="py-3 px-4 text-center"><CellValue value={row.enterprise} /></td>
                   </tr>
                 ))}
               </tbody>

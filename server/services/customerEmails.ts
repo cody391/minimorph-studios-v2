@@ -632,3 +632,385 @@ export async function sendAuditReceivedEmail(params: {
     transactional: true,
   });
 }
+
+/* ═══════════════════════════════════════════════════════
+   11. MONTHLY ANNIVERSARY REPORT EMAIL
+   One email per month on the customer's anniversary date.
+   Month 1-11: analytics + competitive analysis + PDF invoice.
+   Month 12: same + renewal notice paragraph.
+   ═══════════════════════════════════════════════════════ */
+export async function sendMonthlyReportEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  monthLabel: string;        // "May 2026"
+  competitiveReport: string;
+  isRenewalMonth: boolean;
+  renewalDate?: Date;
+  monthlyPrice?: string;     // "199.00"
+  packageTier?: string;      // "Growth"
+  invoiceHtmlBase64?: string;
+  invoiceFilename?: string;
+}) {
+  const formattedReport = params.competitiveReport
+    .split("\n")
+    .map(line => {
+      if (line.startsWith("##")) {
+        return `<h3 style="color:#4a9eff;margin:20px 0 8px;font-size:16px;">${line.replace(/^#+\s*/, "")}</h3>`;
+      }
+      if (line.startsWith("#")) {
+        return `<h2 style="color:#eaeaf0;margin:20px 0 10px;font-size:18px;">${line.replace(/^#+\s*/, "")}</h2>`;
+      }
+      if (line.startsWith("- ") || line.startsWith("• ")) {
+        return `<li style="color:#c8c8d8;margin-bottom:4px;">${line.replace(/^[-•]\s*/, "")}</li>`;
+      }
+      if (line.trim() === "") return "";
+      return `<p style="margin:0 0 12px;color:#c8c8d8;">${line}</p>`;
+    })
+    .join("\n");
+
+  const renewalNotice = params.isRenewalMonth && params.renewalDate
+    ? `<div style="margin:28px 0;padding:20px;background:#1a2a1a;border-radius:8px;border-left:4px solid #22c55e;">
+        <p style="margin:0;font-size:14px;color:#c8c8d8;line-height:1.7;">
+          <strong style="color:#eaeaf0;">Quick heads up</strong> &mdash; your 12-month agreement renews automatically in 30 days on
+          <strong style="color:#eaeaf0;">${params.renewalDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</strong>.
+          Your service, your site, everything continues seamlessly at
+          ${params.monthlyPrice ? `<strong style="color:#eaeaf0;">$${params.monthlyPrice}/mo</strong>` : "the same rate"}.
+          If you ever have questions or want to make any changes to your plan, just reply to this email or log into your portal.
+          Otherwise, we'll see you next month! &mdash; The MiniMorph Team
+        </p>
+      </div>`
+    : "";
+
+  const invoiceNote = params.invoiceHtmlBase64
+    ? `<div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
+        <p style="margin:0;font-size:14px;color:#c8c8d8;">
+          <strong style="color:#eaeaf0;">Invoice attached</strong> — your ${params.monthLabel} invoice is included as an attachment.
+        </p>
+      </div>`
+    : "";
+
+  const subject = params.isRenewalMonth
+    ? `Your ${params.monthLabel} Report + Renewal Notice — ${params.businessName}`
+    : `Your ${params.monthLabel} Report — ${params.businessName}`;
+
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Your ${params.monthLabel} Report</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 24px;color:#c8c8d8;">
+      Here's your monthly update for <strong style="color:#eaeaf0;">${params.businessName}</strong>.
+    </p>
+
+    <h3 style="color:#eaeaf0;margin:0 0 12px;font-size:18px;">Analytics</h3>
+    <p style="margin:0 0 24px;color:#c8c8d8;">
+      Your full analytics &mdash; traffic, conversions, and performance trends &mdash; are always available in your
+      <a href="https://minimorphstudios.net/portal" style="color:#4a9eff;">Customer Portal</a> under the Insights tab.
+    </p>
+
+    <h3 style="color:#eaeaf0;margin:0 0 12px;font-size:18px;">Competitive Intelligence</h3>
+    <div style="background:#1c1c30;border:1px solid #2d2d45;border-radius:8px;padding:24px;margin-bottom:24px;">
+      ${formattedReport}
+    </div>
+
+    ${invoiceNote}
+    ${renewalNotice}
+
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      Have questions or want us to act on any of these insights? Reply to this email or use the Support tab in your portal.
+    </p>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+
+  return sendEmail({
+    to: params.to,
+    subject,
+    html,
+    attachments: params.invoiceHtmlBase64 && params.invoiceFilename
+      ? [{ filename: params.invoiceFilename, content: params.invoiceHtmlBase64 }]
+      : undefined,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   12. BUILD STARTED EMAIL
+   Sent when Elena hands brief to build team
+   ═══════════════════════════════════════════════════════ */
+export async function sendBuildStartedEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  portalUrl: string;
+}) {
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">We're on it &mdash; building your website now!</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      Elena has handed your brief to our build team. We're generating your <strong style="color:#eaeaf0;">${params.businessName}</strong> website right now.
+    </p>
+    <p style="margin:0 0 24px;color:#c8c8d8;">
+      You'll receive another email the moment your preview is ready &mdash; usually within a few minutes. In the meantime, you can track progress in your portal.
+    </p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${params.portalUrl}" style="display:inline-block;padding:14px 32px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;">
+        Track Progress in Portal
+      </a>
+    </div>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `We're on it — your site is being built`,
+    html,
+    transactional: true,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   13. PREVIEW READY EMAIL
+   Sent when site generation completes
+   ═══════════════════════════════════════════════════════ */
+export async function sendPreviewReadyEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  pageNames: string[];
+  portalUrl: string;
+  revisionsRemaining: number;
+}) {
+  const pageList = params.pageNames
+    .map(p => `<li style="color:#c8c8d8;margin-bottom:6px;">${p.charAt(0).toUpperCase() + p.slice(1)} page</li>`)
+    .join("");
+
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Your ${params.businessName} website preview is ready!</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      We built something really great for you. Your site preview is waiting in your portal &mdash; take a look, explore every page, and let us know what you think.
+    </p>
+    <h3 style="color:#4a9eff;margin:20px 0 10px;font-size:16px;">Pages Generated</h3>
+    <ul style="margin:0 0 20px;padding-left:20px;">
+      ${pageList}
+    </ul>
+    <div style="margin:20px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
+      <p style="margin:0;font-size:14px;color:#c8c8d8;">
+        <strong style="color:#eaeaf0;">Revision Policy:</strong> You have <strong style="color:#eaeaf0;">${params.revisionsRemaining} round${params.revisionsRemaining !== 1 ? "s" : ""} of revisions</strong> included.
+        Request any changes directly in the portal and we'll turn them around fast.
+      </p>
+    </div>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${params.portalUrl}" style="display:inline-block;padding:14px 40px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;">
+        Review Your Site
+      </a>
+    </div>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `Your ${params.businessName} website preview is ready for review`,
+    html,
+    transactional: true,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   14. CHANGES RECEIVED EMAIL
+   Sent immediately when customer submits a change request
+   ═══════════════════════════════════════════════════════ */
+export async function sendChangesReceivedEmail(params: {
+  to: string;
+  customerName: string;
+  portalUrl: string;
+}) {
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Got it &mdash; working on your changes</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      We received your change request and we're on it. You'll get an email the moment your updated preview is ready &mdash; usually within a few minutes.
+    </p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${params.portalUrl}" style="display:inline-block;padding:12px 32px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;">
+        Track in Portal
+      </a>
+    </div>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `Got it — working on your changes`,
+    html,
+    transactional: true,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   15. UPDATED PREVIEW READY EMAIL
+   Sent when processSiteChangeRequest() completes
+   ═══════════════════════════════════════════════════════ */
+export async function sendUpdatedPreviewReadyEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  portalUrl: string;
+  revisionsRemaining: number;
+}) {
+  const revisionsNote = params.revisionsRemaining > 0
+    ? `You have <strong style="color:#eaeaf0;">${params.revisionsRemaining} revision round${params.revisionsRemaining !== 1 ? "s" : ""}</strong> remaining.`
+    : `You've used all your included revision rounds. Additional rounds are available at $149/round — reply to request one.`;
+
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Your changes are live in preview</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      We've made your requested changes to <strong style="color:#eaeaf0;">${params.businessName}</strong>. Take a look and let us know if it's perfect or if you'd like any more adjustments.
+    </p>
+    <div style="margin:20px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
+      <p style="margin:0;font-size:14px;color:#c8c8d8;">${revisionsNote}</p>
+    </div>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${params.portalUrl}" style="display:inline-block;padding:14px 40px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;">
+        Review Updated Site
+      </a>
+    </div>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `Your changes are live in preview — ${params.businessName}`,
+    html,
+    transactional: true,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   16. APPROVAL CONFIRMATION EMAIL
+   Sent when customer clicks "Approve & Launch"
+   ═══════════════════════════════════════════════════════ */
+export async function sendApprovalConfirmationEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  expectedLaunchDate: string;
+}) {
+  const html = brandWrap(`
+    <h2 style="color:#22c55e;margin:0 0 16px;font-size:24px;">Site approved &mdash; preparing your launch!</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      You've approved your <strong style="color:#eaeaf0;">${params.businessName}</strong> website. Our team is now handling the final launch steps.
+    </p>
+    <h3 style="color:#4a9eff;margin:20px 0 10px;font-size:16px;">What's Happening Now</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="padding:10px 16px;border-bottom:1px solid #2d2d45;vertical-align:top;width:36px;">
+          <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#4a9eff;color:#111122;text-align:center;line-height:24px;font-size:12px;font-weight:700;">1</span>
+        </td>
+        <td style="padding:10px 16px;border-bottom:1px solid #2d2d45;color:#c8c8d8;font-size:14px;">Connecting your domain to the new site</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 16px;border-bottom:1px solid #2d2d45;vertical-align:top;">
+          <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#4a9eff;color:#111122;text-align:center;line-height:24px;font-size:12px;font-weight:700;">2</span>
+        </td>
+        <td style="padding:10px 16px;border-bottom:1px solid #2d2d45;color:#c8c8d8;font-size:14px;">Setting up SSL certificate and configuring DNS</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 16px;vertical-align:top;">
+          <span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:#4a9eff;color:#111122;text-align:center;line-height:24px;font-size:12px;font-weight:700;">3</span>
+        </td>
+        <td style="padding:10px 16px;color:#c8c8d8;font-size:14px;">Final QA and going live</td>
+      </tr>
+    </table>
+    <div style="margin:24px 0;padding:16px;background:#1a2a1a;border-radius:8px;border-left:4px solid #22c55e;">
+      <p style="margin:0;font-size:14px;color:#c8c8d8;">
+        <strong style="color:#eaeaf0;">Expected timeline:</strong> ${params.expectedLaunchDate}. DNS propagation can take 24-48 hours &mdash; your site will be fully live worldwide during this window.
+      </p>
+    </div>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      You'll receive one more email the moment your site is officially live. We're almost there!
+    </p>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `Site approved — preparing your launch`,
+    html,
+    transactional: true,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   17. SITE LIVE CELEBRATION EMAIL
+   Sent by admin.markSiteLive — the big one
+   ═══════════════════════════════════════════════════════ */
+export async function sendSiteLiveEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  liveUrl: string;
+  portalUrl: string;
+}) {
+  const html = brandWrap(`
+    <h2 style="color:#22c55e;margin:0 0 16px;font-size:26px;">${params.businessName} is LIVE!</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      Congratulations &mdash; your website is officially live on the internet. Visit it right now:
+    </p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${params.liveUrl}" style="display:inline-block;padding:16px 44px;background:#22c55e;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:18px;">
+        Visit ${params.businessName}
+      </a>
+    </div>
+    <h3 style="color:#4a9eff;margin:28px 0 12px;font-size:17px;">Here's what happens next</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;vertical-align:top;width:28px;font-size:18px;">📊</td>
+        <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;">
+          <strong style="color:#eaeaf0;">Monthly Performance Reports</strong><br/>
+          <span style="color:#c8c8d8;font-size:14px;">Every month on your anniversary date, we'll send you a full performance report including analytics, competitive analysis with three specific recommendations, and your invoice &mdash; all in one email.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;vertical-align:top;font-size:18px;">🔍</td>
+        <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;">
+          <strong style="color:#eaeaf0;">Competitive Intelligence</strong><br/>
+          <span style="color:#c8c8d8;font-size:14px;">We track your competitors so you don't have to. Every month you'll know exactly what they're doing and how to stay ahead.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;vertical-align:top;font-size:18px;">🎛️</td>
+        <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;">
+          <strong style="color:#eaeaf0;">Your Customer Portal</strong><br/>
+          <span style="color:#c8c8d8;font-size:14px;">Log in anytime to request changes, view reports, manage your plan, or get help from our AI assistant. It's your command center.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;vertical-align:top;font-size:18px;">🔄</td>
+        <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;">
+          <strong style="color:#eaeaf0;">Auto-Renewal</strong><br/>
+          <span style="color:#c8c8d8;font-size:14px;">Your 12-month plan renews automatically at the same rate &mdash; no action needed. You'll get a heads-up in your Month 12 report. Cancel or change anytime through the portal.</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;vertical-align:top;font-size:18px;">🏠</td>
+        <td style="padding:12px 16px;">
+          <strong style="color:#eaeaf0;">You Own Your Site</strong><br/>
+          <span style="color:#c8c8d8;font-size:14px;">Your website, your content, your domain &mdash; it all belongs to you. We're the team that keeps it running beautifully, but you own everything.</span>
+        </td>
+      </tr>
+    </table>
+    <div style="margin:28px 0;padding:20px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
+      <p style="margin:0 0 8px;font-size:14px;color:#c8c8d8;">
+        <strong style="color:#eaeaf0;">Bookmark your portal:</strong>
+      </p>
+      <a href="${params.portalUrl}" style="color:#4a9eff;font-size:14px;">${params.portalUrl}</a>
+    </div>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      Share your new site with the world, and don't hesitate to reach out if you need anything. We're your long-term web partner &mdash; we're not going anywhere.
+    </p>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `${params.businessName} is LIVE!`,
+    html,
+    transactional: true,
+  });
+}

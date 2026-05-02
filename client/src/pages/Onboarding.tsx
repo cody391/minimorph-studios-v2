@@ -1,80 +1,135 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  CheckCircle2,
-  Upload,
-  Globe,
-  FileText,
-  Palette,
-  Image as ImageIcon,
-  Trash2,
-  ArrowRight,
-  ArrowLeft,
   Loader2,
-  ClipboardList,
-  Rocket,
-  MessageSquare,
-  X,
+  Send,
+  Upload,
+  CheckCircle2,
+  ArrowRight,
+  Sparkles,
+  Star,
+  Palette,
+  Users,
+  Package,
+  FileText,
+  Image as ImageIcon,
+  Globe,
 } from "lucide-react";
 import { Link } from "wouter";
-import { AIChatBox } from "@/components/AIChatBox";
-import { QuestionnaireWizard } from "@/components/QuestionnaireWizard";
+import { Streamdown } from "streamdown";
 
 /* ═══════════════════════════════════════════════════════
    TYPES
    ═══════════════════════════════════════════════════════ */
-type OnboardingStage =
-  | "questionnaire"
-  | "assets_upload"
-  | "domain"
-  | "review_status";
-
-const STAGE_LABELS: Record<OnboardingStage, string> = {
-  questionnaire: "Brand Questionnaire",
-  assets_upload: "Upload Your Assets",
-  domain: "Domain Setup",
-  review_status: "Project Status",
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+  uploadRequests?: UploadRequest[];
+  addonsAccepted?: AddonAccepted[];
 };
 
-const STAGE_ICONS: Record<OnboardingStage, React.ReactNode> = {
-  questionnaire: <ClipboardList className="w-5 h-5" />,
-  assets_upload: <Upload className="w-5 h-5" />,
-  domain: <Globe className="w-5 h-5" />,
-  review_status: <Rocket className="w-5 h-5" />,
+type UploadRequest = {
+  type: string;
+  label: string;
+  hint: string;
 };
 
-const PROJECT_STAGES = [
-  "intake",
-  "questionnaire",
-  "assets_upload",
-  "design",
-  "review",
-  "revisions",
-  "final_approval",
-  "launch",
-  "complete",
-] as const;
+type AddonAccepted = {
+  product: string;
+  price: string;
+  label: string;
+};
 
-const STAGE_DISPLAY: Record<string, { label: string; color: string }> = {
-  intake: { label: "Getting Started", color: "bg-gray-200 text-gray-700" },
-  questionnaire: { label: "Questionnaire", color: "bg-amber-100 text-amber-800" },
-  assets_upload: { label: "Uploading Assets", color: "bg-blue-100 text-blue-800" },
-  design: { label: "Designing", color: "bg-purple-100 text-purple-800" },
-  review: { label: "Ready for Review", color: "bg-emerald-100 text-emerald-800" },
-  revisions: { label: "Revisions", color: "bg-orange-100 text-orange-800" },
-  final_approval: { label: "Final Approval", color: "bg-teal-100 text-teal-800" },
-  launch: { label: "Launching", color: "bg-green-100 text-green-800" },
-  complete: { label: "Live!", color: "bg-green-200 text-green-900" },
+type SummaryData = {
+  businessType?: string;
+  brandTone?: string;
+  brandColors?: string[];
+  targetAudience?: string;
+  contentPreference?: string;
+  addons?: AddonAccepted[];
+  assetsRequested?: UploadRequest[];
+  questionnaire?: Record<string, unknown>;
+};
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════════ */
+function getAttr(tag: string, name: string): string {
+  const m = tag.match(new RegExp(`${name}="([^"]*)"`));
+  return m ? m[1] : "";
+}
+
+function parseUploadRequests(text: string): UploadRequest[] {
+  const requests: UploadRequest[] = [];
+  // [^>]* stops at > so it handles any attribute values including those with /
+  const tagRegex = /<upload_request\b[^>]*\/>/g;
+  let m;
+  while ((m = tagRegex.exec(text)) !== null) {
+    const tag = m[0];
+    const type = getAttr(tag, "type");
+    const label = getAttr(tag, "label") || type;
+    const hint = getAttr(tag, "hint");
+    if (type) requests.push({ type, label, hint });
+  }
+  return requests;
+}
+
+function parseAddonsAccepted(text: string): AddonAccepted[] {
+  const addons: AddonAccepted[] = [];
+  const tagRegex = /<addon_accepted\b[^>]*\/>/g;
+  let m;
+  while ((m = tagRegex.exec(text)) !== null) {
+    const tag = m[0];
+    const product = getAttr(tag, "product");
+    const price = getAttr(tag, "price");
+    const label = getAttr(tag, "label") || product;
+    if (product) addons.push({ product, price, label });
+  }
+  return addons;
+}
+
+function stripXmlTags(text: string): string {
+  return text
+    .replace(/<upload_request\b[^>]*\/>/g, "")
+    .replace(/<addon_accepted\b[^>]*\/>/g, "")
+    .replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/g, "")
+    .replace(/<addons_selected>[\s\S]*?<\/addons_selected>/g, "")
+    .trim();
+}
+
+const PHASES = [
+  "Opening",
+  "Business Discovery",
+  "Brand & Identity",
+  "Industry Details",
+  "Add-on Suggestions",
+  "Asset Collection",
+  "Confirmation",
+  "Handoff",
+];
+
+function getPhaseFromMessages(msgs: ChatMessage[]): number {
+  const count = msgs.filter(m => m.role === "assistant").length;
+  if (count <= 1) return 0;
+  if (count <= 3) return 1;
+  if (count <= 5) return 2;
+  if (count <= 7) return 3;
+  if (count <= 9) return 4;
+  if (count <= 11) return 5;
+  if (count <= 13) return 6;
+  return 7;
+}
+
+const BUSINESS_TYPE_LABELS: Record<string, string> = {
+  service_business: "Service Business",
+  restaurant: "Restaurant / Food",
+  contractor: "Contractor / Trades",
+  ecommerce: "E-Commerce",
+  other: "Other",
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -82,773 +137,631 @@ const STAGE_DISPLAY: Record<string, { label: string; color: string }> = {
    ═══════════════════════════════════════════════════════ */
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth();
-  const [currentStage, setCurrentStage] = useState<OnboardingStage>("questionnaire");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [summary, setSummary] = useState<SummaryData>({});
+  const [completed, setCompleted] = useState(false);
   const [projectId, setProjectId] = useState<number | null>(null);
+  const [uploadingFor, setUploadingFor] = useState<UploadRequest | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasSentInit = useRef(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // If user has a project, load it
-  const projectQuery = trpc.onboarding.myProject.useQuery(
-    { id: projectId! },
-    { enabled: !!projectId }
+  const myProjectQuery = trpc.onboarding.myCurrentProject.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  const chatMutation = trpc.ai.onboardingChat.useMutation();
+  const saveQuestionnaireMutation = trpc.onboarding.saveQuestionnaire.useMutation();
+  const uploadAssetMutation = trpc.onboarding.uploadAsset.useMutation();
+
+  // sendMessage defined before the effects that reference it so bundlers don't see a forward reference
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const isInit = text === "INIT";
+      const displayText = isInit ? "" : text;
+
+      const history = messages.map(m => ({
+        role: m.role as "user" | "assistant",
+        content: m.role === "assistant" ? stripXmlTags(m.content) : m.content,
+      }));
+
+      if (!isInit) {
+        setMessages(prev => [...prev, { role: "user", content: displayText }]);
+      }
+      setInput("");
+      setIsLoading(true);
+
+      // Build message for API — init sends a specific trigger
+      const apiMessage = isInit
+        ? `Hello! My name is ${user?.name || "there"}. I just completed my purchase and I'm ready to start my website project.`
+        : text;
+
+      try {
+        // mutateAsync is a stable reference in tRPC v11 / React Query v5
+        const result = await chatMutation.mutateAsync({
+          projectId: projectId ?? undefined,
+          message: apiMessage,
+          history,
+        });
+
+        const raw = result.response;
+        const uploadRequests = parseUploadRequests(raw);
+        const addonsAccepted = parseAddonsAccepted(raw);
+        const cleaned = stripXmlTags(raw);
+
+        setMessages(prev => [
+          ...prev,
+          {
+            role: "assistant",
+            content: cleaned,
+            uploadRequests: uploadRequests.length ? uploadRequests : undefined,
+            addonsAccepted: addonsAccepted.length ? addonsAccepted : undefined,
+          },
+        ]);
+
+        // Update live summary from extractedData
+        if (result.extractedData) {
+          const d = result.extractedData as Record<string, unknown>;
+          setSummary(prev => ({
+            ...prev,
+            businessType: (d.websiteType as string) || prev.businessType,
+            brandTone: (d.brandTone as string) || prev.brandTone,
+            brandColors: (d.brandColors as string[]) || prev.brandColors,
+            targetAudience: (d.targetAudience as string) || prev.targetAudience,
+            contentPreference: (d.contentPreference as string) || prev.contentPreference,
+            questionnaire: d,
+          }));
+
+          // Fire saveQuestionnaire when we get final questionnaire data
+          if (projectId) {
+            try {
+              await saveQuestionnaireMutation.mutateAsync({
+                projectId,
+                questionnaire: d,
+              });
+            } catch { /* best-effort */ }
+          }
+          setCompleted(true);
+        }
+
+        // Update add-ons in summary
+        if (addonsAccepted.length) {
+          setSummary(prev => ({
+            ...prev,
+            addons: [...(prev.addons || []), ...addonsAccepted],
+          }));
+        }
+
+        // Update assets requested in summary
+        if (uploadRequests.length) {
+          setSummary(prev => ({
+            ...prev,
+            assetsRequested: [...(prev.assetsRequested || []), ...uploadRequests],
+          }));
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[sendMessage] error:", msg);
+        const isLlmError = msg.includes("LLM invoke failed") || msg.includes("ANTHROPIC") || msg.includes("authentication");
+        toast.error(isLlmError
+          ? "AI service is temporarily unavailable. Please try again in a moment."
+          : "Failed to send message. Please try again.");
+      } finally {
+        setIsLoading(false);
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [messages, projectId, user]
   );
+
+  // Set projectId from user's existing project
+  useEffect(() => {
+    if (myProjectQuery.data?.id) {
+      setProjectId(myProjectQuery.data.id);
+    }
+  }, [myProjectQuery.data]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  // Auto-send opening message once user is available
+  useEffect(() => {
+    if (!user || hasSentInit.current || authLoading) return;
+    hasSentInit.current = true;
+    sendMessage("INIT");
+  }, [user, authLoading, sendMessage]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && !isLoading) sendMessage(input.trim());
+    }
+  };
+
+  const handleFileUpload = useCallback(
+    async (req: UploadRequest, file: File) => {
+      if (!projectId) {
+        toast.error("No project found. Please complete your purchase first.");
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File too large. Max 10MB.");
+        return;
+      }
+      setUploading(true);
+      setUploadingFor(req);
+      try {
+        const buffer = await file.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+        );
+        await uploadAssetMutation.mutateAsync({
+          projectId,
+          fileName: file.name,
+          fileBase64: base64,
+          mimeType: file.type,
+          category: req.type as any,
+        });
+        toast.success(`${req.label} uploaded!`);
+        setUploadingFor(null);
+        // Tell Elena the file was uploaded
+        sendMessage(`I've just uploaded the ${req.label}: ${file.name}`);
+      } catch {
+        toast.error("Upload failed. Please try again.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [projectId, uploadAssetMutation, sendMessage]
+  );
+
+  const currentPhase = getPhaseFromMessages(messages);
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAF6F1" }}>
-        <Loader2 className="w-8 h-8 animate-spin text-electric" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a14]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#4a9eff]" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#FAF6F1" }}>
-        <Card className="max-w-md w-full mx-4">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-serif text-electric">Welcome to Your Project</CardTitle>
-            <CardDescription>Sign in to access your onboarding portal and track your website project.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <a href="/login">
-              <Button className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]">
-                Sign In to Continue
-              </Button>
-            </a>
-            <p className="text-sm text-gray-500 mt-4">
-              Don't have a project yet?{" "}
-              <Link href="/get-started" className="text-electric hover:underline">
-                Get started here
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a14]">
+        <div className="max-w-md w-full mx-4 bg-[#13131f] border border-[#2a2a40] rounded-2xl p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-[#4a9eff]/10 flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-8 h-8 text-[#4a9eff]" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Welcome to Your Project</h2>
+          <p className="text-gray-400 mb-6">Sign in to meet Elena and start your onboarding.</p>
+          <a href="/login">
+            <Button className="bg-[#4a9eff] hover:bg-[#3a8eef] text-white w-full min-h-[44px]">
+              Sign In to Continue
+            </Button>
+          </a>
+          <p className="text-sm text-gray-500 mt-4">
+            Don't have a project yet?{" "}
+            <Link href="/get-started" className="text-[#4a9eff] hover:underline">
+              Get started here
+            </Link>
+          </p>
+        </div>
       </div>
     );
   }
 
-  const stages: OnboardingStage[] = ["questionnaire", "assets_upload", "domain", "review_status"];
-
   return (
-    <div className="min-h-screen" style={{ background: "#FAF6F1" }}>
-      {/* Header */}
-      <header className="border-b border-electric/10 bg-charcoal/60 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <Link href="/">
-            <div className="flex items-center gap-3 cursor-pointer">
-              <div className="w-9 h-9 rounded-lg bg-electric flex items-center justify-center text-white font-bold text-sm">
-                M
-              </div>
-              <span className="font-serif text-xl text-electric">MiniMorph</span>
+    <div className="h-screen flex flex-col bg-[#0a0a14] overflow-hidden">
+      {/* Top bar */}
+      <header className="flex-none h-14 border-b border-[#1e1e30] flex items-center justify-between px-6 bg-[#0d0d1a]">
+        <Link href="/">
+          <div className="flex items-center gap-2 cursor-pointer">
+            <div className="w-7 h-7 rounded-lg bg-[#4a9eff] flex items-center justify-center text-white font-bold text-xs">
+              M
             </div>
-          </Link>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">Welcome, {user.name || "there"}</span>
-            <Badge variant="outline" className="border-electric/30 text-electric">
-              Onboarding
-            </Badge>
+            <span className="font-bold text-white text-sm">MiniMorph Studios</span>
           </div>
+        </Link>
+        {/* Phase progress bar */}
+        <div className="hidden md:flex items-center gap-1">
+          {PHASES.map((phase, i) => (
+            <div
+              key={phase}
+              title={phase}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                i <= currentPhase ? "bg-[#4a9eff] w-8" : "bg-[#1e1e30] w-4"
+              }`}
+            />
+          ))}
+          <span className="text-xs text-gray-500 ml-2">
+            {PHASES[currentPhase]}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">
+            {user.name || user.email}
+          </span>
+          {completed && (
+            <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3 h-3" />
+              Complete
+            </span>
+          )}
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center mb-12 gap-1">
-          {stages.map((stage, i) => {
-            const isActive = stage === currentStage;
-            const isPast = stages.indexOf(currentStage) > i;
-            return (
-              <div key={stage} className="flex items-center">
-                <button
-                  onClick={() => setCurrentStage(stage)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-electric text-white shadow-md"
-                      : isPast
-                      ? "bg-electric/10 text-electric"
-                      : "bg-gray-100 text-gray-400"
-                  }`}
-                >
-                  {isPast ? <CheckCircle2 className="w-4 h-4" /> : STAGE_ICONS[stage]}
-                  <span className="hidden sm:inline">{STAGE_LABELS[stage]}</span>
-                  <span className="sm:hidden">{i + 1}</span>
-                </button>
-                {i < stages.length - 1 && (
-                  <div className={`w-8 h-0.5 mx-1 ${isPast ? "bg-electric/30" : "bg-gray-200"}`} />
-                )}
+      {/* Main two-panel layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* LEFT PANEL — Elena chat (60%) */}
+        <div className="flex flex-col w-full md:w-[60%] border-r border-[#1e1e30]">
+          {/* Elena header */}
+          <div className="flex-none px-6 py-4 border-b border-[#1e1e30] bg-[#0d0d1a] flex items-center gap-3">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                E
               </div>
-            );
-          })}
-        </div>
-
-        {/* Stage Content */}
-        {currentStage === "questionnaire" && (
-          <QuestionnaireWizard
-            projectId={projectId}
-            onNext={() => setCurrentStage("assets_upload")}
-            onProjectCreated={setProjectId}
-          />
-        )}
-        {currentStage === "assets_upload" && (
-          <AssetUploadStep
-            projectId={projectId}
-            onNext={() => setCurrentStage("domain")}
-            onBack={() => setCurrentStage("questionnaire")}
-          />
-        )}
-        {currentStage === "domain" && (
-          <DomainStep
-            projectId={projectId}
-            onNext={() => setCurrentStage("review_status")}
-            onBack={() => setCurrentStage("assets_upload")}
-          />
-        )}
-        {currentStage === "review_status" && (
-          <ProjectStatusStep
-            projectId={projectId}
-            project={projectQuery.data}
-            onBack={() => setCurrentStage("domain")}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-/* ═══════════════════════════════════════════════════════
-   STEP 1: QUESTIONNAIRE (moved to QuestionnaireWizard.tsx)
-   ═══════════════════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════════════════
-   STEP 2: ASSET UPLOAD
-   ═══════════════════════════════════════════════════════ */
-function AssetUploadStep({
-  projectId,
-  onNext,
-  onBack,
-}: {
-  projectId: number | null;
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("logo");
-
-  const assetsQuery = trpc.onboarding.listAssets.useQuery(
-    { projectId: projectId! },
-    { enabled: !!projectId }
-  );
-  const uploadMutation = trpc.onboarding.uploadAsset.useMutation();
-  const deleteMutation = trpc.onboarding.deleteAsset.useMutation();
-
-  const handleFileUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!projectId || !e.target.files?.length) return;
-      setUploading(true);
-
-      try {
-        for (const file of Array.from(e.target.files)) {
-          // Check file size (max 5MB)
-          if (file.size > 5 * 1024 * 1024) {
-            toast.error(`${file.name} is too large. Max 5MB per file.`);
-            continue;
-          }
-
-          const buffer = await file.arrayBuffer();
-          const base64 = btoa(
-            new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
-          );
-
-          await uploadMutation.mutateAsync({
-            projectId,
-            fileName: file.name,
-            fileBase64: base64,
-            mimeType: file.type,
-            category: selectedCategory as any,
-          });
-        }
-        toast.success("Files uploaded!");
-        assetsQuery.refetch();
-      } catch (err) {
-        toast.error("Upload failed. Please try again.");
-      } finally {
-        setUploading(false);
-        e.target.value = "";
-      }
-    },
-    [projectId, selectedCategory, uploadMutation, assetsQuery]
-  );
-
-  const handleDelete = async (id: number) => {
-    try {
-      await deleteMutation.mutateAsync({ id });
-      toast.success("File removed");
-      assetsQuery.refetch();
-    } catch {
-      toast.error("Failed to remove file");
-    }
-  };
-
-  const assets = assetsQuery.data || [];
-
-  const categoryIcons: Record<string, React.ReactNode> = {
-    logo: <Palette className="w-4 h-4" />,
-    photo: <ImageIcon className="w-4 h-4" />,
-    brand_guidelines: <FileText className="w-4 h-4" />,
-    copy: <FileText className="w-4 h-4" />,
-    document: <FileText className="w-4 h-4" />,
-    other: <FileText className="w-4 h-4" />,
-  };
-
-  return (
-    <div className="max-w-3xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-serif text-electric mb-2">Upload Your Assets</h2>
-        <p className="text-gray-600">
-          Share your logo, photos, brand guidelines, and any content you'd like on your website.
-          Don't worry if you don't have everything — we can work with what you have.
-        </p>
-      </div>
-
-      <Card className="border-electric/10 mb-6">
-        <CardContent className="p-8">
-          {/* Category selector */}
-          <div className="mb-6">
-            <Label className="text-electric font-medium mb-2 block">What are you uploading?</Label>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { value: "logo", label: "Logo" },
-                { value: "photo", label: "Photos" },
-                { value: "brand_guidelines", label: "Brand Guidelines" },
-                { value: "copy", label: "Written Content" },
-                { value: "document", label: "Documents" },
-                { value: "other", label: "Other" },
-              ].map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => setSelectedCategory(cat.value)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    selectedCategory === cat.value
-                      ? "bg-electric text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {categoryIcons[cat.value]}
-                  {cat.label}
-                </button>
-              ))}
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-[#0d0d1a]" />
+            </div>
+            <div>
+              <p className="font-semibold text-white text-sm">Elena Brooks</p>
+              <p className="text-xs text-gray-400">Creative Director · MiniMorph Studios</p>
             </div>
           </div>
 
-          {/* Upload area */}
-          <label className="block border-2 border-dashed border-electric/20 rounded-xl p-10 text-center cursor-pointer hover:border-electric/40 transition-colors">
-            <input
-              type="file"
-              multiple
-              onChange={handleFileUpload}
-              className="hidden"
-              accept="image/*,.pdf,.doc,.docx,.txt,.rtf"
-              disabled={!projectId || uploading}
+          {/* Messages scroll area */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            {messages.length === 0 && isLoading && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                  E
+                </div>
+                <div className="bg-[#13131f] border border-[#1e1e30] rounded-2xl rounded-tl-sm px-4 py-3 max-w-[80%]">
+                  <div className="flex gap-1 items-center h-5">
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:300ms]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {messages.map((msg, i) => (
+              <div key={i}>
+                {msg.role === "assistant" ? (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5">
+                      E
+                    </div>
+                    <div className="space-y-2 max-w-[80%]">
+                      <div className="bg-[#13131f] border border-[#1e1e30] rounded-2xl rounded-tl-sm px-4 py-3">
+                        <div className="text-sm text-gray-200 leading-relaxed prose prose-invert prose-sm max-w-none">
+                          <Streamdown>{msg.content}</Streamdown>
+                        </div>
+                      </div>
+
+                      {/* Upload request cards */}
+                      {msg.uploadRequests?.map((req, ri) => (
+                        <div
+                          key={ri}
+                          className="border border-[#4a9eff]/30 bg-[#4a9eff]/5 rounded-xl p-3"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <Upload className="w-4 h-4 text-[#4a9eff]" />
+                            <span className="text-sm font-medium text-[#4a9eff]">
+                              {req.label}
+                            </span>
+                          </div>
+                          {req.hint && (
+                            <p className="text-xs text-gray-400 mb-2">{req.hint}</p>
+                          )}
+                          <label className="block">
+                            <input
+                              type="file"
+                              className="hidden"
+                              disabled={uploading}
+                              onChange={e => {
+                                const f = e.target.files?.[0];
+                                if (f) handleFileUpload(req, f);
+                                e.target.value = "";
+                              }}
+                              accept="image/*,.pdf,.doc,.docx,.txt"
+                            />
+                            <span className="inline-flex items-center gap-1.5 text-xs bg-[#4a9eff] hover:bg-[#3a8eef] text-white px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                              {uploading && uploadingFor?.label === req.label ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Upload className="w-3 h-3" />
+                              )}
+                              Upload {req.label}
+                            </span>
+                          </label>
+                        </div>
+                      ))}
+
+                      {/* Add-on accepted cards */}
+                      {msg.addonsAccepted?.map((addon, ai) => (
+                        <div
+                          key={ai}
+                          className="border border-green-500/30 bg-green-500/5 rounded-xl p-3 flex items-center gap-3"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-green-400">
+                              Added to plan: {addon.product}
+                            </p>
+                            <p className="text-xs text-gray-400">{addon.price} · {addon.label}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-end">
+                    <div className="bg-[#4a9eff]/15 border border-[#4a9eff]/20 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[75%]">
+                      <p className="text-sm text-gray-200">{msg.content}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Loading indicator (mid-conversation) */}
+            {isLoading && messages.length > 0 && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                  E
+                </div>
+                <div className="bg-[#13131f] border border-[#1e1e30] rounded-2xl rounded-tl-sm px-4 py-3">
+                  <div className="flex gap-1 items-center h-5">
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:300ms]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Completed state */}
+          {completed ? (
+            <div className="flex-none border-t border-[#1e1e30] p-4 bg-[#0d0d1a]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-400" />
+                  <span className="text-sm text-green-400 font-medium">
+                    Onboarding complete — your site is being built!
+                  </span>
+                </div>
+                <Link href="/portal">
+                  <Button size="sm" className="bg-[#4a9eff] hover:bg-[#3a8eef] text-white min-h-[36px]">
+                    View Status <ArrowRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-none border-t border-[#1e1e30] p-4 bg-[#0d0d1a]">
+              <div className="flex gap-3 items-end">
+                <Textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message… (Enter to send, Shift+Enter for newline)"
+                  className="flex-1 resize-none bg-[#13131f] border-[#2a2a40] text-gray-200 placeholder-gray-500 text-sm min-h-[44px] max-h-32 focus:border-[#4a9eff]/50 rounded-xl"
+                  rows={1}
+                  disabled={isLoading}
+                />
+                <Button
+                  onClick={() => { if (input.trim() && !isLoading) sendMessage(input.trim()); }}
+                  disabled={!input.trim() || isLoading}
+                  className="bg-[#4a9eff] hover:bg-[#3a8eef] text-white min-h-[44px] px-4 rounded-xl"
+                >
+                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                Prefer a form?{" "}
+                <Link href="/onboarding/form" className="text-[#4a9eff] hover:underline">
+                  Use the questionnaire instead
+                </Link>
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT PANEL — Live summary card (40%) — hidden on mobile */}
+        <div className="hidden md:flex flex-col w-[40%] overflow-y-auto bg-[#0d0d1a]">
+          <div className="p-6 border-b border-[#1e1e30]">
+            <h3 className="font-semibold text-white text-sm mb-1">Your Website Brief</h3>
+            <p className="text-xs text-gray-400">Updates as Elena learns about your business</p>
+          </div>
+
+          <div className="flex-1 p-6 space-y-4">
+            {/* Phase progress */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs text-gray-400">
+                <span>Discovery Progress</span>
+                <span>{Math.round(((currentPhase + 1) / PHASES.length) * 100)}%</span>
+              </div>
+              <div className="h-1.5 bg-[#1e1e30] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#4a9eff] to-[#7c5cfc] rounded-full transition-all duration-700"
+                  style={{ width: `${((currentPhase + 1) / PHASES.length) * 100}%` }}
+                />
+              </div>
+              <p className="text-xs text-[#4a9eff]">{PHASES[currentPhase]}</p>
+            </div>
+
+            <div className="border-t border-[#1e1e30]" />
+
+            {/* Business type */}
+            <SummaryField
+              icon={<Package className="w-4 h-4" />}
+              label="Business Type"
+              value={summary.businessType ? BUSINESS_TYPE_LABELS[summary.businessType] || summary.businessType : undefined}
             />
-            {uploading ? (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-10 h-10 animate-spin text-electric" />
-                <p className="text-electric font-medium">Uploading...</p>
+
+            {/* Brand tone */}
+            <SummaryField
+              icon={<Star className="w-4 h-4" />}
+              label="Brand Tone"
+              value={summary.brandTone ? capitalize(summary.brandTone) : undefined}
+            />
+
+            {/* Brand colors */}
+            {summary.brandColors?.length ? (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <Palette className="w-4 h-4" />
+                  <span>Brand Colors</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {summary.brandColors.map((color, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <div
+                        className="w-5 h-5 rounded-full border border-white/10"
+                        style={{ background: color }}
+                      />
+                      <span className="text-xs text-gray-300 font-mono">{color}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3">
-                <Upload className="w-10 h-10 text-electric/40" />
-                <p className="text-gray-600">
-                  <span className="text-electric font-medium">Click to upload</span> or drag and drop
-                </p>
-                <p className="text-sm text-gray-400">Images, PDFs, and documents up to 5MB each</p>
-                <p className="text-[10px] text-gray-300 mt-1">Recommended: PNG or SVG for logos • JPG at 1200px+ for photos • PDF for brand guides</p>
-              </div>
+              <SummaryField icon={<Palette className="w-4 h-4" />} label="Brand Colors" value={undefined} />
             )}
-          </label>
 
-          {!projectId && (
-            <p className="text-sm text-amber-400 mt-3 text-center">
-              Please complete the questionnaire first to start uploading assets.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Uploaded files list */}
-      {assets.length > 0 && (
-        <Card className="border-electric/10 mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg text-electric">Uploaded Files ({assets.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {assets.map((asset: any) => (
-                <div
-                  key={asset.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    {categoryIcons[asset.category] || <FileText className="w-4 h-4" />}
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{asset.fileName}</p>
-                      <p className="text-xs text-gray-500">
-                        {asset.category.replace("_", " ")} •{" "}
-                        {asset.fileSize ? `${(asset.fileSize / 1024).toFixed(1)} KB` : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDelete(asset.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Navigation */}
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack} className="border-border/50 text-off-white min-h-[44px]">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        <Button onClick={onNext} className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]">
-          Continue to Domain Setup
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════
-   STEP 3: DOMAIN SETUP
-   ═══════════════════════════════════════════════════════ */
-function DomainStep({
-  projectId,
-  onNext,
-  onBack,
-}: {
-  projectId: number | null;
-  onNext: () => void;
-  onBack: () => void;
-}) {
-  const [domainOption, setDomainOption] = useState<string>("undecided");
-  const [existingDomain, setExistingDomain] = useState("");
-  const [domainRegistrar, setDomainRegistrar] = useState("");
-  const [domainNotes, setDomainNotes] = useState("");
-
-  const setDomainMutation = trpc.onboarding.setDomain.useMutation();
-
-  const handleSubmit = async () => {
-    if (!projectId) {
-      toast.error("Please complete the questionnaire first.");
-      return;
-    }
-
-    try {
-      await setDomainMutation.mutateAsync({
-        projectId,
-        domainOption: domainOption as any,
-        existingDomain: domainOption === "existing" ? existingDomain : undefined,
-        domainRegistrar: domainOption === "existing" ? domainRegistrar : undefined,
-        domainNotes,
-      });
-      toast.success("Domain preferences saved!");
-      onNext();
-    } catch {
-      toast.error("Failed to save domain preferences.");
-    }
-  };
-
-  return (
-    <div className="max-w-3xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-serif text-electric mb-2">Domain Setup</h2>
-        <p className="text-gray-600">
-          Already have a domain? We'll connect it. Need a new one? We'll help you choose and register it.
-        </p>
-      </div>
-
-      <Card className="border-electric/10">
-        <CardContent className="p-8 space-y-6">
-          {/* Domain option selection */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              {
-                value: "existing",
-                title: "I Have a Domain",
-                desc: "I already own a domain and want to use it",
-                icon: <Globe className="w-6 h-6" />,
-              },
-              {
-                value: "new",
-                title: "I Need a New Domain",
-                desc: "Help me choose and register a new domain",
-                icon: <Rocket className="w-6 h-6" />,
-              },
-              {
-                value: "undecided",
-                title: "Not Sure Yet",
-                desc: "I'll decide later — let's focus on design first",
-                icon: <MessageSquare className="w-6 h-6" />,
-              },
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setDomainOption(option.value)}
-                className={`p-5 rounded-xl border-2 text-left transition-all ${
-                  domainOption === option.value
-                    ? "border-electric bg-electric/5"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                <div
-                  className={`mb-3 ${
-                    domainOption === option.value ? "text-electric" : "text-gray-400"
-                  }`}
-                >
-                  {option.icon}
-                </div>
-                <h4 className="font-medium text-gray-800 mb-1">{option.title}</h4>
-                <p className="text-sm text-gray-500">{option.desc}</p>
-              </button>
-            ))}
-          </div>
-
-          {/* Existing domain fields */}
-          {domainOption === "existing" && (
-            <div className="space-y-4 p-5 bg-electric/5 rounded-xl">
-              <div className="space-y-2">
-                <Label className="text-electric font-medium">Your domain name</Label>
-                <Input
-                  value={existingDomain}
-                  onChange={(e) => setExistingDomain(e.target.value)}
-                  placeholder="e.g. mybusiness.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-electric font-medium">Where is it registered? (optional)</Label>
-                <Input
-                  value={domainRegistrar}
-                  onChange={(e) => setDomainRegistrar(e.target.value)}
-                  placeholder="e.g. GoDaddy, Namecheap, Google Domains"
-                />
-              </div>
-              <p className="text-sm text-gray-500">
-                We'll send you simple instructions to point your domain to your new website. No technical knowledge required.
-              </p>
-            </div>
-          )}
-
-          {domainOption === "new" && (
-            <div className="p-5 bg-electric/5 rounded-xl space-y-4">
-              <p className="text-gray-700">
-                We'll help you find the perfect domain name for your business. After your website design is approved,
-                we'll present you with available options and handle the registration.
-              </p>
-              <div className="bg-charcoal rounded-lg p-4 border border-electric/10">
-                <h4 className="font-medium text-electric mb-3 text-sm">Domain Pricing</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">.com domain</span>
-                    <div className="text-right">
-                      <span className="font-medium text-electric">FREE first year</span>
-                      <span className="text-gray-400 text-xs ml-1">(with Growth or Premium)</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Renewal (year 2+)</span>
-                    <span className="text-gray-700">$15/year</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Starter package</span>
-                    <span className="text-gray-700">$15/year from day one</span>
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <p className="text-xs text-gray-500">We handle registration, DNS setup, SSL certificates, and renewals. No technical knowledge required.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Additional notes */}
-          <div className="space-y-2">
-            <Label className="text-electric font-medium">Any notes about your domain? (optional)</Label>
-            <Textarea
-              value={domainNotes}
-              onChange={(e) => setDomainNotes(e.target.value)}
-              placeholder="e.g. I also have email set up on this domain, I need specific subdomains, etc."
-              rows={3}
+            {/* Target audience */}
+            <SummaryField
+              icon={<Users className="w-4 h-4" />}
+              label="Target Audience"
+              value={summary.targetAudience}
             />
-          </div>
 
-          {/* Navigation */}
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={onBack} className="border-border/50 text-off-white min-h-[44px]">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={setDomainMutation.isPending}
-              className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]"
-            >
-              {setDomainMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <ArrowRight className="w-4 h-4 mr-2" />
-              )}
-              Save & View Project Status
-            </Button>
+            {/* Content preference */}
+            <SummaryField
+              icon={<FileText className="w-4 h-4" />}
+              label="Content"
+              value={
+                summary.contentPreference === "we_write"
+                  ? "MiniMorph writes it"
+                  : summary.contentPreference === "customer_provides"
+                  ? "I'll provide it"
+                  : summary.contentPreference === "mix"
+                  ? "Mix of both"
+                  : undefined
+              }
+            />
+
+            {/* Assets requested */}
+            {(summary.assetsRequested?.length ?? 0) > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Assets Requested</span>
+                </div>
+                <div className="space-y-1">
+                  {summary.assetsRequested?.map((req, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-gray-300">
+                      <Upload className="w-3 h-3 text-[#4a9eff]" />
+                      {req.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add-ons selected */}
+            {(summary.addons?.length ?? 0) > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Add-ons Selected</span>
+                </div>
+                <div className="space-y-1.5">
+                  {summary.addons?.map((addon, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between bg-green-500/5 border border-green-500/20 rounded-lg px-3 py-2"
+                    >
+                      <span className="text-xs text-green-300">{addon.product}</span>
+                      <span className="text-xs text-gray-400">{addon.price}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Completed state */}
+            {completed && (
+              <div className="mt-4 p-4 bg-gradient-to-br from-[#4a9eff]/10 to-[#7c5cfc]/10 border border-[#4a9eff]/20 rounded-xl space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#4a9eff]" />
+                  <span className="text-sm font-medium text-white">Building your website</span>
+                </div>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Our AI is generating your site now. You'll receive an email when your preview is ready — typically within 2–3 minutes.
+                </p>
+                <Link href="/portal">
+                  <Button size="sm" className="w-full bg-[#4a9eff] hover:bg-[#3a8eef] text-white mt-1">
+                    Track Progress <ArrowRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            )}
+
+            {/* Empty state prompt */}
+            {!summary.businessType && !isLoading && messages.length > 2 && (
+              <div className="text-center py-8">
+                <Globe className="w-8 h-8 text-[#1e1e30] mx-auto mb-2" />
+                <p className="text-xs text-gray-600">
+                  Your brief will appear here as Elena learns about your business.
+                </p>
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
 
 /* ═══════════════════════════════════════════════════════
-   STEP 4: PROJECT STATUS TRACKER
+   HELPERS
    ═══════════════════════════════════════════════════════ */
-function ProjectStatusStep({
-  projectId,
-  project,
-  onBack,
+function SummaryField({
+  icon,
+  label,
+  value,
 }: {
-  projectId: number | null;
-  project: any;
-  onBack: () => void;
+  icon: React.ReactNode;
+  label: string;
+  value?: string;
 }) {
-  const feedbackMutation = trpc.onboarding.submitFeedback.useMutation();
-  const approveMutation = trpc.onboarding.approveLaunch.useMutation();
-  const [feedbackText, setFeedbackText] = useState("");
-
-  const currentStageIndex = project
-    ? PROJECT_STAGES.indexOf(project.stage)
-    : 0;
-
-  const handleFeedback = async () => {
-    if (!projectId || !feedbackText.trim()) return;
-    try {
-      await feedbackMutation.mutateAsync({
-        projectId,
-        feedbackNotes: feedbackText,
-      });
-      toast.success("Feedback submitted! We'll review and make revisions.");
-      setFeedbackText("");
-    } catch {
-      toast.error("Failed to submit feedback.");
-    }
-  };
-
-  const handleApprove = async () => {
-    if (!projectId) return;
-    try {
-      await approveMutation.mutateAsync({ projectId });
-      toast.success("Approved for launch! We'll have your site live soon.");
-    } catch {
-      toast.error("Failed to approve.");
-    }
-  };
-
-  if (!project) {
-    return (
-      <div className="max-w-3xl mx-auto text-center">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-serif text-electric mb-2">Your Project Status</h2>
-          <p className="text-gray-600">
-            Complete the previous steps to start tracking your project.
-          </p>
-        </div>
-        <Card className="border-electric/10 p-10">
-          <div className="flex flex-col items-center gap-4">
-            <Rocket className="w-12 h-12 text-gray-300" />
-            <p className="text-gray-500">No project found. Complete the questionnaire to get started.</p>
-            <Button variant="outline" onClick={onBack} className="border-border/50 text-off-white min-h-[44px]">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Back
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-serif text-electric mb-2">Your Project Status</h2>
-        <p className="text-gray-600">
-          Track the progress of your website from design through launch.
-        </p>
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 text-xs text-gray-400">
+        {icon}
+        <span>{label}</span>
       </div>
-
-      {/* Progress timeline */}
-      <Card className="border-electric/10 mb-6">
-        <CardContent className="p-8">
-          <div className="space-y-4">
-            {PROJECT_STAGES.map((stage, i) => {
-              const isComplete = i < currentStageIndex;
-              const isCurrent = i === currentStageIndex;
-              const display = STAGE_DISPLAY[stage];
-              return (
-                <div key={stage} className="flex items-center gap-4">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isComplete
-                        ? "bg-electric text-white"
-                        : isCurrent
-                        ? "bg-electric text-white"
-                        : "bg-gray-100 text-gray-400"
-                    }`}
-                  >
-                    {isComplete ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : (
-                      <span className="text-xs font-bold">{i + 1}</span>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`font-medium ${
-                          isCurrent ? "text-electric" : isComplete ? "text-electric" : "text-gray-400"
-                        }`}
-                      >
-                        {display.label}
-                      </span>
-                      {isCurrent && (
-                        <Badge className={display.color}>Current</Badge>
-                      )}
-                    </div>
-                  </div>
-                  {i < PROJECT_STAGES.length - 1 && (
-                    <div
-                      className={`hidden sm:block w-16 h-0.5 ${
-                        isComplete ? "bg-electric" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Design review section (shown when in review or revisions stage) */}
-      {(project.stage === "review" || project.stage === "revisions") && (
-        <Card className="border-electric/10 mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg text-electric">Review Your Design</CardTitle>
-            <CardDescription>
-              {project.designMockupUrl
-                ? "Your design mockup is ready for review. Share your feedback below."
-                : "Your design is being prepared. You'll be able to review it here soon."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {project.designMockupUrl && (
-              <div className="border rounded-lg overflow-hidden">
-                <img
-                  src={project.designMockupUrl}
-                  alt="Design mockup" loading="lazy"
-                  className="w-full"
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label className="text-electric font-medium">Your Feedback</Label>
-              <Textarea
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="Tell us what you think — what you love, what you'd change, any specific requests..."
-                rows={4}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={handleFeedback}
-                disabled={!feedbackText.trim() || feedbackMutation.isPending}
-                variant="outline"
-                className="border-electric text-electric hover:bg-electric/10"
-              >
-                {feedbackMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                )}
-                Request Changes
-              </Button>
-              <Button
-                onClick={handleApprove}
-                disabled={approveMutation.isPending}
-                className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]"
-              >
-                {approveMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                )}
-                Approve for Launch
-              </Button>
-            </div>
-
-            {project.revisionsCount > 0 && (
-              <p className="text-sm text-gray-500">
-                Revisions so far: {project.revisionsCount}
-              </p>
-            )}
-            <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <p className="text-xs text-amber-800 font-sans">
-                <strong>Revision Policy:</strong> Your package includes <strong>3 rounds of revisions</strong> at no extra cost.
-                {project.revisionsCount >= 3
-                  ? " You've used all included revisions. Additional rounds are $149 each."
-                  : ` You have ${3 - (project.revisionsCount || 0)} revision(s) remaining.`}
-                {" "}Additional revision rounds are available at $149 per round.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {value ? (
+        <p className="text-sm text-gray-200 pl-6">{value}</p>
+      ) : (
+        <div className="pl-6 h-4 bg-[#1a1a2e] rounded animate-pulse w-3/4" />
       )}
-
-      {/* Live URL (shown when launched) */}
-      {(project.stage === "launch" || project.stage === "complete") && project.liveUrl && (
-        <Card className="border-green-200 bg-green-50 mb-6">
-          <CardContent className="p-6 text-center">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-            <h3 className="text-xl font-serif text-green-800 mb-2">Your Website is Live!</h3>
-            <a
-              href={project.liveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-electric font-medium hover:underline text-lg"
-            >
-              {project.liveUrl}
-            </a>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Navigation */}
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack} className="border-border/50 text-off-white min-h-[44px]">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        <Link href="/portal">
-          <Button className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]">
-            Go to Customer Portal
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </Link>
-      </div>
     </div>
   );
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

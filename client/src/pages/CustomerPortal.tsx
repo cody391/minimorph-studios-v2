@@ -10,7 +10,7 @@ import {
   FileText, BarChart3, HeadphonesIcon, ArrowLeft,
   Calendar, TrendingUp, Eye, Users as UsersIcon,
   Clock, CheckCircle, AlertCircle, Shield, Rocket,
-  Gift, Send, Mail, MessageSquare,
+  Gift, Send, Mail, MessageSquare, Download,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -510,10 +510,14 @@ function OnboardingProjectTab({
   onNavigateToOnboarding: () => void;
 }) {
   const [changeRequest, setChangeRequest] = useState("");
+  const [selectedPage, setSelectedPage] = useState("");
+  const [priority, setPriority] = useState<"nice_to_have" | "important" | "must_fix">("important");
   const [previewPage, setPreviewPage] = useState("index");
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [reviewMessages, setReviewMessages] = useState<Array<{role: string; content: string}>>([]);
   const requestChangeMutation = trpc.onboarding.requestChange.useMutation();
   const approveMutation = trpc.onboarding.approveLaunch.useMutation();
+  const reviewChatMutation = trpc.ai.onboardingChat.useMutation();
 
   // Parse generated pages (stable across re-renders)
   const pages = useMemo<Record<string, string>>(() => {
@@ -541,10 +545,13 @@ function OnboardingProjectTab({
 
   const handleRequestChange = async () => {
     if (!project?.id || !changeRequest.trim()) return;
+    const priorityLabel = { nice_to_have: "Nice to have", important: "Important", must_fix: "Must fix" }[priority];
+    const page = selectedPage || pageNames[0] || "General";
+    const fullRequest = `[Page: ${page}] [Priority: ${priorityLabel}]\n${changeRequest.trim()}`;
     try {
       await requestChangeMutation.mutateAsync({
         projectId: project.id,
-        changeRequest: changeRequest.trim(),
+        changeRequest: fullRequest,
       });
       toast.success("Change request submitted — your site is being updated.");
       setChangeRequest("");
@@ -552,6 +559,34 @@ function OnboardingProjectTab({
       toast.error(err.message || "Failed to submit change request.");
     }
   };
+
+  const handleDownloadPreview = () => {
+    if (!previewHtml) return;
+    const blob = new Blob([previewHtml], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(project?.businessName || "preview").replace(/\s+/g, "-")}-${previewPage}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleReviewMessage = useCallback(async (message: string) => {
+    const newMessages = [...reviewMessages, { role: "user" as const, content: message }];
+    setReviewMessages(newMessages);
+    try {
+      const result = await reviewChatMutation.mutateAsync({
+        message,
+        projectId: project?.id,
+        context: "review",
+        history: newMessages.slice(-10).map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
+      });
+      setReviewMessages(prev => [...prev, { role: "assistant", content: result.response }]);
+      return result.response;
+    } catch {
+      return "I'm having trouble connecting right now. Please try again.";
+    }
+  }, [reviewMessages, reviewChatMutation, project?.id]);
 
   const handleApprove = async () => {
     if (!project?.id) return;
@@ -683,30 +718,44 @@ function OnboardingProjectTab({
 
   // Site ready for review
   if (project.generationStatus === "complete" && project.generatedSiteHtml) {
+    const revisionsLeft = project.revisionsRemaining ?? Math.max(0, (project.maxRevisions || 3) - (project.revisionsCount || 0));
+
     return (
       <div className="space-y-6">
         {/* Preview */}
         <Card className="border-border/50">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
                 <Eye className="h-4 w-4 text-electric" />
                 Site Preview
               </CardTitle>
-              <div className="flex gap-1">
-                {pageNames.map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setPreviewPage(page)}
-                    className={`text-xs px-3 py-1 rounded-full transition-all ${
-                      previewPage === page
-                        ? "bg-electric text-midnight font-medium"
-                        : "bg-midnight text-soft-gray hover:text-off-white border border-border/30"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex gap-1">
+                  {pageNames.map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setPreviewPage(page)}
+                      className={`text-xs px-3 py-1 rounded-full transition-all ${
+                        previewPage === page
+                          ? "bg-electric text-midnight font-medium"
+                          : "bg-midnight text-soft-gray hover:text-off-white border border-border/30"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDownloadPreview}
+                  disabled={!previewHtml}
+                  className="border-border/40 text-soft-gray hover:text-off-white text-xs h-7 px-2"
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  Download
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -727,66 +776,130 @@ function OnboardingProjectTab({
           </CardContent>
         </Card>
 
-        {/* Change request + approve */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-serif text-off-white">
-              Request Changes or Approve
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <p className="text-xs text-amber-300">
-                <strong>Revision Policy:</strong> Your package includes 3 rounds of revisions at no extra cost.
-                {project.revisionsCount >= 3
-                  ? " You've used all included revisions."
-                  : ` You have ${3 - (project.revisionsCount || 0)} revision(s) remaining.`}
-              </p>
-            </div>
+        {/* Two-column: actions + Elena */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Change request + approve */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-serif text-off-white">
+                Request Changes or Approve
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <p className="text-xs text-amber-300">
+                  <strong>Revision Policy:</strong> Your package includes 3 rounds of revisions at no extra cost.
+                  {revisionsLeft === 0
+                    ? " You've used all included revisions."
+                    : ` You have ${revisionsLeft} revision${revisionsLeft === 1 ? "" : "s"} remaining.`}
+                </p>
+              </div>
 
-            {(project.revisionsCount || 0) < (project.maxRevisions || 3) && (
-              <div className="space-y-2">
-                <label className="text-sm text-off-white font-medium">Describe what you'd like changed</label>
-                <Textarea
-                  value={changeRequest}
-                  onChange={e => setChangeRequest(e.target.value)}
-                  placeholder="e.g. Change the hero section headline to 'Premium Auto Detailing in Tampa'. Make the color scheme darker."
-                  rows={3}
-                  className="bg-midnight-dark border-border/50 text-off-white placeholder-soft-gray/50 text-sm"
-                />
+              {revisionsLeft > 0 && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-soft-gray font-sans block mb-1">Page</label>
+                      <select
+                        value={selectedPage || pageNames[0] || ""}
+                        onChange={e => setSelectedPage(e.target.value)}
+                        className="w-full px-2 py-1.5 text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white focus:outline-none focus:ring-2 focus:ring-electric/30 focus:border-electric/50"
+                      >
+                        {pageNames.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                        <option value="General">General / Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-soft-gray font-sans block mb-1">Priority</label>
+                      <select
+                        value={priority}
+                        onChange={e => setPriority(e.target.value as typeof priority)}
+                        className="w-full px-2 py-1.5 text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white focus:outline-none focus:ring-2 focus:ring-electric/30 focus:border-electric/50"
+                      >
+                        <option value="nice_to_have">Nice to have</option>
+                        <option value="important">Important</option>
+                        <option value="must_fix">Must fix</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-soft-gray font-sans block mb-1">Describe what you'd like changed</label>
+                    <Textarea
+                      value={changeRequest}
+                      onChange={e => setChangeRequest(e.target.value)}
+                      placeholder="e.g. Change the hero headline to 'Premium Auto Detailing in Tampa'. Make the color scheme darker."
+                      rows={3}
+                      className="bg-midnight-dark border-border/50 text-off-white placeholder-soft-gray/50 text-sm"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleRequestChange}
+                    disabled={!changeRequest.trim() || requestChangeMutation.isPending}
+                    variant="outline"
+                    className="border-electric text-electric hover:bg-electric/10"
+                  >
+                    {requestChangeMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                    )}
+                    Request Changes
+                  </Button>
+                </div>
+              )}
+
+              <div className="border-t border-border/30 pt-4">
+                <p className="text-sm text-soft-gray mb-3">Happy with how it looks? Approve it and we'll take it live.</p>
                 <Button
-                  onClick={handleRequestChange}
-                  disabled={!changeRequest.trim() || requestChangeMutation.isPending}
-                  variant="outline"
-                  className="border-electric text-electric hover:bg-electric/10"
+                  onClick={handleApprove}
+                  disabled={approveMutation.isPending}
+                  className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]"
                 >
-                  {requestChangeMutation.isPending ? (
+                  {approveMutation.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : (
-                    <MessageSquare className="w-4 h-4 mr-2" />
+                    <Rocket className="w-4 h-4 mr-2" />
                   )}
-                  Request Changes
+                  Approve & Launch
                 </Button>
               </div>
-            )}
+            </CardContent>
+          </Card>
 
-            <div className="border-t border-border/30 pt-4">
-              <p className="text-sm text-soft-gray mb-3">Happy with how it looks? Approve it and we'll take it live.</p>
-              <Button
-                onClick={handleApprove}
-                disabled={approveMutation.isPending}
-                className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]"
-              >
-                {approveMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <Rocket className="w-4 h-4 mr-2" />
-                )}
-                Approve & Launch
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Elena review chat */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white text-[10px] font-bold">
+                  E
+                </div>
+                Ask Elena
+              </CardTitle>
+              <p className="text-xs text-soft-gray font-sans mt-0.5">
+                Elena can help you decide what to change and how to word your requests.
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[420px] border-t border-border/30 rounded-b-xl overflow-hidden">
+                <AIChatBox
+                  messages={reviewMessages.map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content }))}
+                  onSendMessage={handleReviewMessage}
+                  isLoading={reviewChatMutation.isPending}
+                  placeholder="Ask Elena about your site preview..."
+                  emptyStateMessage={`Hi! I'm Elena, and I've reviewed your ${project.businessName} website. Ask me anything about the preview — what to change, what looks great, or how to describe your feedback.`}
+                  suggestedPrompts={[
+                    "What do you think of the homepage?",
+                    "How should I word my change request?",
+                    "What would make this site convert better?",
+                    "Is there anything I should fix before approving?",
+                  ]}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

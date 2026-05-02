@@ -165,7 +165,7 @@ BUSINESS DATA:
 Generate detailed sales intelligence:
 1. 3-5 personalized hooks (specific things to mention that show we know their business)
 2. Estimated monthly revenue they're losing without a proper website (be specific to their industry)
-3. Which of our packages would fit them best (Starter $150/mo, Growth $250/mo, Pro $400/mo)
+3. Which of our packages would fit them best (Starter $195/mo, Growth $295/mo, Pro $395/mo, Enterprise $495/mo)
 4. Pre-prepared responses to likely objections based on their industry and situation
 5. 3 specific opportunities we can help with
 
@@ -343,9 +343,10 @@ ${detectedObjection ? `DETECTED OBJECTION: "${detectedObjection.category}" — $
 ${detectedSignal ? `DETECTED BUYING SIGNAL: "${detectedSignal.action}" (strength: ${detectedSignal.strength})` : ""}
 
 OUR PACKAGES:
-- Starter ($150/mo): Professional 5-page website, mobile responsive, basic SEO
-- Growth ($250/mo): Custom design, 10+ pages, advanced SEO, blog, analytics, priority support
-- Pro ($400/mo): Full custom build, 20+ pages, booking integration, SMS alerts, review widget, priority support
+- Starter ($195/mo): Professional 5-page website, mobile responsive, basic SEO
+- Growth ($295/mo): Custom design, 10+ pages, advanced SEO, blog, analytics, priority support
+- Pro ($395/mo): Full custom build, 20+ pages, booking integration, SMS alerts, review widget, priority support
+- Enterprise ($495/mo): Large ecommerce, custom portals, membership systems, multi-location, custom integrations
 
 DECISION RULES:
 1. If they show STRONG buying intent → push_for_close (send checkout link)

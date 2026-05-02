@@ -2,9 +2,14 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
+import { fileURLToPath } from "url";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { drizzle } from "drizzle-orm/mysql2";
+import { migrate } from "drizzle-orm/mysql2/migrator";
+import mysql from "mysql2/promise";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
@@ -14,6 +19,30 @@ import { registerStripeWebhook } from "../stripe-webhook";
 import { registerTwilioWebhooks } from "../twilio-webhooks";
 import { registerResendWebhooks } from "../resend-webhooks";
 import { registerScheduledRoutes } from "../scheduled-routes";
+import { bootstrapAdminUser, seedProductCatalog } from "../db";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+async function runMigrations(): Promise<void> {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    console.warn("[Migrations] DATABASE_URL not set — skipping migrations");
+    return;
+  }
+  let connection: mysql.Connection | undefined;
+  try {
+    connection = await mysql.createConnection(dbUrl);
+    const db = drizzle(connection);
+    const migrationsFolder = path.resolve(__dirname, "../drizzle");
+    await migrate(db, { migrationsFolder });
+    console.log("[Migrations] All pending migrations applied");
+  } catch (err) {
+    console.error("[Migrations] Migration failed:", err);
+    throw err; // fatal — don't start a server with a broken schema
+  } finally {
+    await connection?.end();
+  }
+}
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -35,8 +64,15 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  // Run DB migrations before accepting any traffic
+  await runMigrations();
+
   const app = express();
   const server = createServer(app);
+
+  // Trust Railway / Render / Heroku reverse proxy so rate-limiter and
+  // cookie secure flags work correctly with X-Forwarded-For headers.
+  app.set("trust proxy", 1);
 
   // ── Security headers ──
   app.use(helmet({
@@ -84,6 +120,9 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
+      onError({ path, error }) {
+        console.error(`[tRPC] ${path} →`, error.message, error.cause ?? "");
+      },
     })
   );
   // development mode uses Vite, production mode uses static files
@@ -99,6 +138,11 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Bootstrap admin user from env vars — awaited so account exists before first request
+  await bootstrapAdminUser();
+  // Seed product catalog with default pricing (idempotent upsert)
+  await seedProductCatalog().catch(err => console.error("[Startup] Product catalog seed failed:", err));
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);

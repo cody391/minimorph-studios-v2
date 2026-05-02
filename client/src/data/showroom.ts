@@ -46,7 +46,7 @@ export const showroomSites: ShowroomSite[] = [
     industry: "Restaurant",
     location: "Whitehall, MI",
     tier: "Growth",
-    tierPrice: "$250/mo",
+    tierPrice: "$295/mo",
     heroImage: "/manus-storage/sample-lakehouse-hero_c46693d0.jpg",
     palette: {
       bg: "#1a1612",
@@ -93,7 +93,7 @@ export const showroomSites: ShowroomSite[] = [
     industry: "General Contractor",
     location: "Muskegon, MI",
     tier: "Starter",
-    tierPrice: "$150/mo",
+    tierPrice: "$195/mo",
     heroImage: "/manus-storage/sample-ironworks-hero_6b431260.jpg",
     palette: {
       bg: "#0f1114",
@@ -140,7 +140,7 @@ export const showroomSites: ShowroomSite[] = [
     industry: "Salon & Spa",
     location: "Grand Rapids, MI",
     tier: "Pro",
-    tierPrice: "$400/mo",
+    tierPrice: "$395/mo",
     heroImage: "/manus-storage/sample-salon-hero_abcbe45a.jpg",
     palette: {
       bg: "#0a0a0a",
@@ -193,7 +193,7 @@ export const showroomSites: ShowroomSite[] = [
     industry: "Fitness Studio",
     location: "Holland, MI",
     tier: "Growth",
-    tierPrice: "$250/mo",
+    tierPrice: "$295/mo",
     heroImage: "/manus-storage/sample-fitness-hero_6fc68343.jpg",
     palette: {
       bg: "#0c0c0e",
@@ -241,7 +241,7 @@ export const showroomSites: ShowroomSite[] = [
     industry: "Boutique Retail",
     location: "Saugatuck, MI",
     tier: "Pro",
-    tierPrice: "$400/mo",
+    tierPrice: "$395/mo",
     heroImage: "/manus-storage/sample-boutique-hero_0b03bcb5.jpg",
     palette: {
       bg: "#faf8f5",

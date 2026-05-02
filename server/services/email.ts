@@ -70,6 +70,7 @@ export interface SendEmailParams {
   from?: string;
   /** Set to true to skip CAN-SPAM footer (for transactional emails like password resets) */
   transactional?: boolean;
+  attachments?: Array<{ filename: string; content: string }>;
 }
 
 export interface SendEmailResult {
@@ -120,6 +121,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     if (htmlContent) options.html = htmlContent;
     if (params.text) options.text = params.text;
     if (params.replyTo) options.replyTo = params.replyTo;
+    if (params.attachments?.length) options.attachments = params.attachments;
 
     const { data, error } = await resend.emails.send(options as any);
 

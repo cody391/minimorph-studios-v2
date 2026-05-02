@@ -42,9 +42,10 @@ const tempMeta: Record<string, { icon: any; color: string; bg: string }> = {
 };
 
 const PACKAGE_PRICES: Record<string, string> = {
-  starter: "149",
-  growth: "299",
-  premium: "499",
+  starter: "195",
+  growth: "295",
+  premium: "395",
+  enterprise: "495",
 };
 
 /* ─── Types ─── */
@@ -638,9 +639,10 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                   <Select value={proposalTier} onValueChange={setProposalTier}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="starter">Starter ($150/mo)</SelectItem>
-                      <SelectItem value="growth">Growth ($250/mo)</SelectItem>
-                      <SelectItem value="premium">Pro ($400/mo)</SelectItem>
+                      <SelectItem value="starter">Starter ($195/mo)</SelectItem>
+                      <SelectItem value="growth">Growth ($295/mo)</SelectItem>
+                      <SelectItem value="premium">Pro ($395/mo)</SelectItem>
+                      <SelectItem value="enterprise">Enterprise ($495/mo)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -744,6 +746,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                     <SelectItem value="starter">Starter</SelectItem>
                     <SelectItem value="growth">Growth</SelectItem>
                     <SelectItem value="premium">Premium</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

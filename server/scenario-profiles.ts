@@ -223,7 +223,7 @@ export const SCENARIO_PROFILES: Record<string, ScenarioProfile> = {
       "Moves conversation forward with a next step",
     ],
     likelyObjectionsOrComplaints: [
-      "$250 a month feels like a lot for a website",
+      "$295 a month feels like a lot for a website",
       "I can get a website built for way less on Wix or Squarespace",
       "I don't want to be locked into 12 months",
       "What if it doesn't bring in any new business?",
@@ -250,7 +250,7 @@ export const SCENARIO_PROFILES: Record<string, ScenarioProfile> = {
       "Mentioning setup fees",
     ],
     aiPersonBehaviorInstructions:
-      "You are Jordan Miller, owner of Lakeshore Auto Detailing. You've been through a full discovery call and value pitch with MiniMorph. You like what you heard but $250/month feels like a lot, and 12 months is a big commitment. You're protective of your cash flow because detailing is seasonal. You're NOT hostile — just cautious and need to be convinced. If the rep asks good clarifying questions, reveal that your average job is $200-400 and that you lost a fleet contract due to poor web presence. If the rep just argues or pushes, become more resistant. You are NOT at the beginning of the conversation — do NOT ask 'what does MiniMorph do?' or basic questions. You already know the package details. Do not mention setup fees.",
+      "You are Jordan Miller, owner of Lakeshore Auto Detailing. You've been through a full discovery call and value pitch with MiniMorph. You like what you heard but $295/month feels like a lot, and 12 months is a big commitment. You're protective of your cash flow because detailing is seasonal. You're NOT hostile — just cautious and need to be convinced. If the rep asks good clarifying questions, reveal that your average job is $200-400 and that you lost a fleet contract due to poor web presence. If the rep just argues or pushes, become more resistant. You are NOT at the beginning of the conversation — do NOT ask 'what does MiniMorph do?' or basic questions. You already know the package details. Do not mention setup fees.",
     scoringFocus: [
       "Empathy and validation",
       "Objection isolation (price vs trust vs timing)",
@@ -260,7 +260,7 @@ export const SCENARIO_PROFILES: Record<string, ScenarioProfile> = {
       "Avoids arguing",
     ],
     openingMessage:
-      "I get what you're saying, but $250 a month feels like a lot for a website. I don't know if I can justify that.",
+      "I get what you're saying, but $295 a month feels like a lot for a website. I don't know if I can justify that.",
     difficulty: "Intermediate",
   },
 
@@ -603,9 +603,9 @@ export const SCENARIO_PROFILES: Record<string, ScenarioProfile> = {
       "Asks for decision based on value",
     ],
     likelyObjectionsOrComplaints: [
-      "Can you do it for $150 a month?",
+      "Can you do it for $195 a month?",
       "My friend got a website for way less",
-      "I'm a small cafe, I can't afford $250/month",
+      "I'm a small cafe, I can't afford $295/month",
       "Can you waive the first month?",
       "What if I pay for 6 months instead of 12?",
     ],
@@ -639,7 +639,7 @@ export const SCENARIO_PROFILES: Record<string, ScenarioProfile> = {
       "Collaborative tone",
     ],
     openingMessage:
-      "I like the Growth plan, but can you do it for $150 a month? I'm trying to keep costs low.",
+      "I like the Growth plan, but can you do it for $195 a month? I'm trying to keep costs low.",
     difficulty: "Advanced",
   },
 };

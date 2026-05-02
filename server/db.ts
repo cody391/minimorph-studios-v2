@@ -1,4 +1,5 @@
 import { eq, desc, and, or, sql, gte, lte, inArray, ne } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser,
@@ -64,6 +65,16 @@ import {
   pushSubscriptions,
   InsertPushSubscription,
   repTiers,
+  supportTickets,
+  InsertSupportTicket,
+  supportTicketReplies,
+  InsertSupportTicketReply,
+  repMessages,
+  InsertRepMessage,
+  productCatalog,
+  InsertProductCatalogItem,
+  broadcasts,
+  InsertBroadcast,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -105,7 +116,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.passwordHash !== undefined) { values.passwordHash = user.passwordHash; updateSet.passwordHash = user.passwordHash; }
     if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
     if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
-    else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
+    else if (user.openId === ENV.ownerOpenId || (ENV.adminEmail && user.email === ENV.adminEmail)) { values.role = "admin"; updateSet.role = "admin"; }
     if (!values.lastSignedIn) values.lastSignedIn = new Date();
     if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
     await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
@@ -471,7 +482,7 @@ export async function getDashboardStats() {
 export async function createOrder(data: {
   userId: number;
   stripeCheckoutSessionId?: string;
-  packageTier: "starter" | "growth" | "premium";
+  packageTier: "starter" | "growth" | "premium" | "enterprise";
   amount: number;
   customerEmail?: string;
   customerName?: string;
@@ -630,6 +641,13 @@ export async function getCustomerByEmail(email: string) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(customers).where(eq(customers.email, email)).limit(1);
+  return result[0];
+}
+
+export async function getCustomerByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(customers).where(eq(customers.userId, userId as any)).limit(1);
   return result[0];
 }
 
@@ -1277,4 +1295,211 @@ export async function getMostRecentPendingTicket() {
     .orderBy(desc(repSupportTickets.createdAt))
     .limit(1);
   return result[0] ?? null;
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN BOOTSTRAP
+// Creates the admin user from ADMIN_EMAIL / ADMIN_PASSWORD env vars on first run.
+// Safe to call on every startup — no-ops if the account already exists.
+// ═══════════════════════════════════════════════════════
+export async function bootstrapAdminUser(): Promise<void> {
+  if (!ENV.adminEmail || !ENV.adminPassword) return;
+
+  const db = await getDb();
+  if (!db) {
+    console.warn("[AdminBootstrap] Database not available — skipping admin bootstrap");
+    return;
+  }
+
+  try {
+    const existing = await getUserByEmail(ENV.adminEmail);
+
+    if (existing) {
+      // Ensure role is admin (in case it was demoted somehow)
+      if (existing.role !== "admin") {
+        await upsertUser({ openId: existing.openId, role: "admin" });
+        console.log("[AdminBootstrap] Updated existing user to admin role:", ENV.adminEmail);
+      }
+      return;
+    }
+
+    // Create the admin account
+    const { randomBytes } = await import("crypto");
+    const openId = "local_admin_" + randomBytes(8).toString("hex");
+    const passwordHash = await bcrypt.hash(ENV.adminPassword, 12);
+
+    await upsertUser({
+      openId,
+      email: ENV.adminEmail,
+      name: ENV.adminName,
+      loginMethod: "email_password",
+      passwordHash,
+      role: "admin",
+      lastSignedIn: new Date(),
+    });
+
+    console.log("[AdminBootstrap] Admin account created:", ENV.adminEmail);
+  } catch (err) {
+    console.error("[AdminBootstrap] Failed to bootstrap admin user:", err);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SUPPORT TICKETS
+   ═══════════════════════════════════════════════════════ */
+export async function createCustomerSupportTicket(data: InsertSupportTicket) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const [result] = await db.insert(supportTickets).values(data);
+  return result.insertId as number;
+}
+
+export async function listCustomerSupportTickets(customerId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  if (customerId !== undefined) {
+    return db.select().from(supportTickets).where(eq(supportTickets.customerId, customerId)).orderBy(desc(supportTickets.createdAt));
+  }
+  return db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
+}
+
+export async function getCustomerSupportTicketById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(supportTickets).where(eq(supportTickets.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function updateCustomerSupportTicket(id: number, data: Partial<typeof supportTickets.$inferInsert>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(supportTickets).set(data).where(eq(supportTickets.id, id));
+}
+
+export async function createSupportTicketReply(data: InsertSupportTicketReply) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const [result] = await db.insert(supportTicketReplies).values(data);
+  return result.insertId as number;
+}
+
+export async function listSupportTicketReplies(ticketId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(supportTicketReplies).where(eq(supportTicketReplies.ticketId, ticketId)).orderBy(supportTicketReplies.createdAt);
+}
+
+export async function countOpenSupportTickets() {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ count: sql<number>`count(*)` }).from(supportTickets).where(eq(supportTickets.status, "open"));
+  return rows[0]?.count ?? 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   REP MESSAGES
+   ═══════════════════════════════════════════════════════ */
+export async function createRepMessage(data: InsertRepMessage) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const [result] = await db.insert(repMessages).values(data);
+  return result.insertId as number;
+}
+
+export async function listRepMessages(repId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repMessages).where(eq(repMessages.repId, repId)).orderBy(repMessages.createdAt);
+}
+
+export async function listAllRepMessages() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(repMessages).orderBy(desc(repMessages.createdAt));
+}
+
+export async function markRepMessageRead(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(repMessages).set({ readAt: new Date() }).where(eq(repMessages.id, id));
+}
+
+export async function countUnreadRepMessages() {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ count: sql<number>`count(*)` }).from(repMessages).where(
+    and(eq(repMessages.senderRole, "rep"), sql`readAt IS NULL`)
+  );
+  return rows[0]?.count ?? 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PRODUCT CATALOG
+   ═══════════════════════════════════════════════════════ */
+export async function listProductCatalog(activeOnly = true) {
+  const db = await getDb();
+  if (!db) return [];
+  if (activeOnly) {
+    return db.select().from(productCatalog).where(eq(productCatalog.active, true)).orderBy(productCatalog.category, productCatalog.basePrice);
+  }
+  return db.select().from(productCatalog).orderBy(productCatalog.category, productCatalog.basePrice);
+}
+
+export async function upsertProductCatalogItem(data: InsertProductCatalogItem) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const updateSet = { ...data };
+  delete (updateSet as any).productKey;
+  await db.insert(productCatalog).values(data).onDuplicateKeyUpdate({ set: updateSet });
+}
+
+export async function updateProductCatalogItem(id: number, data: Partial<typeof productCatalog.$inferInsert>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(productCatalog).set(data).where(eq(productCatalog.id, id));
+}
+
+/* ═══════════════════════════════════════════════════════
+   BROADCASTS
+   ═══════════════════════════════════════════════════════ */
+export async function createBroadcast(data: InsertBroadcast) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const [result] = await db.insert(broadcasts).values(data);
+  return result.insertId as number;
+}
+
+export async function listBroadcasts() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(broadcasts).orderBy(desc(broadcasts.createdAt));
+}
+
+export async function updateBroadcast(id: number, data: Partial<typeof broadcasts.$inferInsert>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(broadcasts).set(data).where(eq(broadcasts.id, id));
+}
+
+/* ═══════════════════════════════════════════════════════
+   PRODUCT CATALOG SEEDING
+   ═══════════════════════════════════════════════════════ */
+export async function seedProductCatalog() {
+  const db = await getDb();
+  if (!db) return;
+
+  const seed = [
+    { productKey: "starter", name: "Starter Website", description: "5-page professional website, mobile-responsive, SEO optimized", category: "package" as const, basePrice: "195.00", discountPercent: 0, active: true },
+    { productKey: "growth", name: "Growth Website", description: "10-page website with blog, lead capture forms, analytics dashboard", category: "package" as const, basePrice: "295.00", discountPercent: 0, active: true },
+    { productKey: "premium", name: "Premium Website", description: "15-page website with e-commerce, CRM integration, priority support", category: "package" as const, basePrice: "395.00", discountPercent: 0, active: true },
+    { productKey: "enterprise", name: "Enterprise Website", description: "Unlimited pages, custom integrations, dedicated account manager", category: "package" as const, basePrice: "495.00", discountPercent: 0, active: true },
+    { productKey: "seo_addon", name: "SEO Optimization Package", description: "Monthly keyword tracking, backlink building, competitor analysis", category: "addon" as const, basePrice: "99.00", discountPercent: 0, active: true },
+    { productKey: "content_addon", name: "Content Writing (4 posts/mo)", description: "Professional blog posts written by our AI + human team", category: "addon" as const, basePrice: "79.00", discountPercent: 0, active: true },
+    { productKey: "setup_fee", name: "One-Time Setup Fee", description: "Domain setup, hosting configuration, launch checklist", category: "one_time" as const, basePrice: "149.00", discountPercent: 0, active: true },
+  ];
+
+  for (const item of seed) {
+    await upsertProductCatalogItem(item);
+  }
+  console.log("[ProductCatalog] Seeded", seed.length, "products");
 }

@@ -280,6 +280,71 @@ const repsRouter = router({
       if (!rep) return null;
       return buildEmailSignature(rep);
     }),
+
+  // Admin: manually create a rep account
+  createManually: adminProcedure
+    .input(z.object({
+      fullName: z.string().min(1),
+      email: z.string().email(),
+      phone: z.string().optional(),
+      territory: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { randomBytes } = await import("crypto");
+      const bcrypt = await import("bcryptjs");
+      const tempPassword = randomBytes(8).toString("hex");
+      const passwordHash = await bcrypt.hash(tempPassword, 12);
+      const openId = "local_rep_" + randomBytes(8).toString("hex");
+
+      await db.upsertUser({
+        openId,
+        email: input.email,
+        name: input.fullName,
+        loginMethod: "email_password",
+        passwordHash,
+        role: "user",
+        lastSignedIn: new Date(),
+        needsStripeConnect: true,
+      } as any);
+
+      const user = await db.getUserByEmail(input.email);
+      if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create user" });
+
+      await db.createRep({
+        userId: user.id,
+        fullName: input.fullName,
+        email: input.email,
+        phone: input.phone,
+        territory: input.territory,
+        status: "training",
+        commissionRate: "10.00",
+        onboardingComplete: false,
+      } as any);
+
+      // Send welcome email with temp password
+      try {
+        const { Resend } = await import("resend");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const { ENV: envVars } = await import("./_core/env");
+        await resend.emails.send({
+          from: envVars.resendFromEmail || "hello@minimorphstudios.net",
+          to: input.email,
+          subject: "Welcome to MiniMorph Studios — Your Rep Account",
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+            <h2>Welcome, ${input.fullName}!</h2>
+            <p>Your rep account has been created. Here are your login credentials:</p>
+            <p><strong>Email:</strong> ${input.email}<br/>
+            <strong>Temporary Password:</strong> ${tempPassword}</p>
+            <p>Please log in and complete your onboarding at <a href="${envVars.appUrl || "https://minimorphstudios.net"}/rep">${envVars.appUrl || "https://minimorphstudios.net"}/rep</a></p>
+            <p>Change your password after your first login.</p>
+          </div>`,
+        });
+      } catch (emailErr) {
+        console.error("[createRepManually] Welcome email failed:", emailErr);
+      }
+
+      return { success: true };
+    }),
 });
 
 // Build a branded email signature HTML block
@@ -930,6 +995,41 @@ const leadsRouter = router({
         });
       }
       return { success: true, transferredCount: count };
+    }),
+
+  // Public: website popup lead capture
+  captureFromPopup: publicProcedure
+    .input(z.object({
+      businessName: z.string().min(1),
+      contactName: z.string().min(1),
+      email: z.string().email(),
+      phone: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      await db.createLead({
+        businessName: input.businessName,
+        contactName: input.contactName,
+        email: input.email,
+        phone: input.phone,
+        source: "website_popup",
+      });
+      // Send discount welcome email
+      try {
+        const { Resend } = await import("resend");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const siteUrl = ENV.appUrl || "https://minimorphstudios.net";
+        await resend.emails.send({
+          from: ENV.resendFromEmail,
+          to: input.email,
+          subject: "Your 10% discount from MiniMorph Studios",
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#111;color:#eee">
+            <h2>Hi ${input.contactName}!</h2>
+            <p>Thanks for your interest in MiniMorph Studios. Use code <strong>WELCOME10</strong> at checkout for 10% off any package.</p>
+            <p><a href="${siteUrl}/get-started?discount=WELCOME10" style="background:#4a9eff;color:#111;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Get Started →</a></p>
+          </div>`,
+        });
+      } catch {}
+      return { success: true };
     }),
 });
 
@@ -2112,29 +2212,43 @@ const onboardingRouter = router({
       await assertProjectOwnership(ctx.user, input.projectId);
       await db.updateOnboardingProject(input.projectId, {
         stage: "final_approval",
+        approvedAt: new Date(),
       });
       const project = await db.getOnboardingProjectById(input.projectId);
-      // Notify admin that customer approved
-      try {
-        await notifyOwner({
-          title: "Customer Approved Site for Launch",
-          content: `Project #${input.projectId} — ${project?.businessName || "Unknown"} has approved their site and is ready to launch.`,
-        });
-      } catch { /* best-effort */ }
-      // Send launch confirmation email to customer
+      // Calculate expected launch date (2 business days out)
+      const launchDate = new Date();
+      launchDate.setDate(launchDate.getDate() + 2);
+      const expectedLaunchDate = launchDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      // Send approval confirmation to customer
       try {
         if (project?.contactEmail && project?.contactName) {
-          await sendOnboardingStageEmail({
+          const { sendApprovalConfirmationEmail } = await import("./services/customerEmails");
+          await sendApprovalConfirmationEmail({
             to: project.contactEmail,
             customerName: project.contactName,
-            stage: "launch",
             businessName: project.businessName,
-            projectId: project.id,
+            expectedLaunchDate,
           });
         }
       } catch (emailErr) {
-        console.error("[onboarding.approveLaunch] Failed to send launch email:", emailErr);
+        console.error("[onboarding.approveLaunch] Failed to send approval email:", emailErr);
       }
+      // Notify admin with full project details
+      try {
+        const questionnaire = project?.questionnaire as any;
+        const domainInfo = project?.domainName || project?.existingDomain || questionnaire?.existingDomain || "TBD";
+        await notifyOwner({
+          title: "ACTION REQUIRED: Site Approved — Ready to Launch",
+          content: `${project?.businessName || "Unknown"} approved their site.\n\nProject: #${input.projectId}\nContact: ${project?.contactName} <${project?.contactEmail}>\nDomain: ${domainInfo}\nPackage: ${project?.packageTier}\n\nACTION: Connect domain, configure DNS, set SSL, deploy site. Then mark live in admin panel.`,
+        });
+      } catch { /* best-effort */ }
+
+      // Fire-and-forget auto-deployment via Cloudflare Pages
+      const { deployApprovedSite } = await import("./services/siteDeployment");
+      deployApprovedSite(input.projectId).catch(err =>
+        console.error("[approveLaunch] Deployment error:", err)
+      );
+
       return { success: true };
     }),
 
@@ -2253,11 +2367,31 @@ const onboardingRouter = router({
       if ((project.revisionsCount || 0) >= (project.maxRevisions || 3)) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Maximum revisions reached. Please contact support." });
       }
+      const newRevisionsCount = (project.revisionsCount || 0) + 1;
+      const newRevisionsRemaining = Math.max(0, (project.revisionsRemaining ?? project.maxRevisions ?? 3) - 1);
       await db.updateOnboardingProject(input.projectId, {
         lastChangeRequest: input.changeRequest,
-        revisionsCount: (project.revisionsCount || 0) + 1,
+        revisionsCount: newRevisionsCount,
+        revisionsRemaining: newRevisionsRemaining,
         generationStatus: "generating",
+        stage: "revisions",
       });
+      // Send confirmation to customer
+      try {
+        const { sendChangesReceivedEmail } = await import("./services/customerEmails");
+        await sendChangesReceivedEmail({
+          to: project.contactEmail,
+          customerName: project.contactName,
+          portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+        });
+      } catch {}
+      // Notify admin
+      try {
+        await notifyOwner({
+          title: "Change Request Submitted",
+          content: `${project.businessName} (#${input.projectId}) submitted a change request: "${input.changeRequest.slice(0, 200)}"`,
+        });
+      } catch {}
       // Fire-and-forget change processing
       processSiteChangeRequest(input.projectId, input.changeRequest, ctx.user.name || ctx.user.email || "Customer")
         .catch(err => console.error("[onboarding.requestChange] Error:", err));
@@ -2383,6 +2517,79 @@ const onboardingRouter = router({
       }
       return { success: true };
     }),
+
+  // Admin: mark a project as live and enter nurturing pipeline
+  markSiteLive: adminProcedure
+    .input(z.object({
+      projectId: z.number(),
+      liveUrl: z.string().min(1),
+      domainName: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const now = new Date();
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+      // Update project
+      await db.updateOnboardingProject(input.projectId, {
+        stage: "complete",
+        liveUrl: input.liveUrl,
+        domainName: input.domainName || project.domainName,
+        launchedAt: now,
+      });
+
+      // Get customer
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      const [customer] = await database.select().from(customers)
+        .where(eq(customers.id, project.customerId ?? 0)).limit(1);
+
+      // Send celebration email — only if auto-deployment hasn't already sent it
+      if (!project.launchedAt) {
+        try {
+          const { sendSiteLiveEmail } = await import("./services/customerEmails");
+          await sendSiteLiveEmail({
+            to: project.contactEmail,
+            customerName: project.contactName,
+            businessName: project.businessName,
+            liveUrl: input.liveUrl,
+            portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+          });
+        } catch (emailErr) {
+          console.error("[onboarding.markSiteLive] Live email failed:", emailErr);
+        }
+      }
+
+      // Add to nurturing pipeline — find the active contract and update
+      if (project.contractId) {
+        try {
+          const anniversaryDay = now.getDate();
+          const contractEndDate = new Date(now);
+          contractEndDate.setFullYear(contractEndDate.getFullYear() + 1);
+
+          // Check if contractEndDate is already set before overwriting
+          const existingContract = await db.getContractById(project.contractId);
+          await db.updateContract(project.contractId, {
+            nurturingActive: true,
+            anniversaryDay,
+            ...(existingContract?.contractEndDate ? {} : { contractEndDate }),
+          });
+        } catch (contractErr) {
+          console.error("[onboarding.markSiteLive] Contract nurturing update failed:", contractErr);
+        }
+      }
+
+      // Notify admin
+      try {
+        await notifyOwner({
+          title: "Site Live — Customer Added to Nurturing Pipeline",
+          content: `${project.businessName} is now live at ${input.liveUrl}. Customer has been added to the monthly nurturing pipeline.`,
+        });
+      } catch {}
+
+      return { success: true, liveUrl: input.liveUrl };
+    }),
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -2444,6 +2651,7 @@ const aiRouter = router({
       z.object({
         projectId: z.number().optional(),
         message: z.string().min(1),
+        context: z.enum(["onboarding", "review"]).optional(),
         history: z.array(
           z.object({
             role: z.enum(["system", "user", "assistant"]),
@@ -2453,6 +2661,60 @@ const aiRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      // ── Review mode: Elena helps customer review their generated site ──
+      if (input.context === "review" && input.projectId) {
+        const reviewProject = await db.getOnboardingProjectById(input.projectId);
+        const pageNames = reviewProject?.generatedSiteHtml
+          ? Object.keys(JSON.parse(reviewProject.generatedSiteHtml)).join(", ")
+          : "index, about, contact";
+        const questionnaire = reviewProject?.questionnaire as any;
+        const competitors = questionnaire?.competitorSites?.map((c: any) => c.url).join(", ") || "none listed";
+
+        const reviewSystemPrompt = `You are Elena Brooks, creative director at MiniMorph Studios. The customer's website has been built and is now in their portal for review.
+
+Business: ${reviewProject?.businessName || "Unknown"}
+Site pages built: ${pageNames}
+Business type: ${questionnaire?.websiteType || "local business"}
+Competitors: ${competitors}
+
+YOUR REVIEW MODE BEHAVIORS:
+- Help them describe what they want changed in specific, actionable language the build team can act on
+- Proactively suggest improvements based on what you know about their business and competitors
+- Reassure them that changes are easy — they have revisions included
+- Help them prioritize: what's a must-fix vs. a nice-to-have
+- If they love everything: guide them toward approving and launching with confidence
+- Never be pushy about approving — it's their site, they should feel 100% happy
+- Remind them: "Once it's live you can still request updates through the portal anytime — you're not locked into this version forever."
+- If they're not sure how to describe a change, say: "Tell me what feels off and I'll translate it into specific instructions for the build team."
+
+CRITICAL RULE — NEVER STALL: Every message must end with either a question OR a clear next direction.
+
+Always end with a helpful question or a specific suggestion.`;
+
+        const reviewMessages = [
+          { role: "system" as const, content: reviewSystemPrompt },
+          ...(input.history || []),
+          { role: "user" as const, content: input.message },
+        ];
+
+        let reviewResult: Awaited<ReturnType<typeof invokeLLM>>;
+        try {
+          reviewResult = await invokeLLM({ messages: reviewMessages, maxTokens: 2000 });
+        } catch (llmErr) {
+          console.error("[onboardingChat:review] LLM call failed:", llmErr);
+          throw llmErr;
+        }
+        const reviewResponse = reviewResult.choices[0].message.content as string;
+
+        // Save chat log
+        try {
+          await db.createAiChatLog({ userId: ctx.user.id, projectId: input.projectId, context: "onboarding", role: "user", content: input.message });
+          await db.createAiChatLog({ userId: ctx.user.id, projectId: input.projectId, context: "onboarding", role: "assistant", content: reviewResponse });
+        } catch {}
+
+        return { response: reviewResponse, extractedData: null, addonsSelected: null };
+      }
+
       // ── Scrape any URLs from recent conversation ──────────────────────
       const recentHistory = [
         ...(input.history || []),
@@ -3259,6 +3521,245 @@ const retentionRouter = router({
 });
 
 /* ═══════════════════════════════════════════════════════
+   SUPPORT ROUTER — Customer↔Admin support tickets
+   ═══════════════════════════════════════════════════════ */
+const supportRouter = router({
+  createTicket: protectedProcedure
+    .input(z.object({
+      subject: z.string().min(1),
+      body: z.string().min(1),
+      category: z.enum(["billing", "technical", "website_change", "general", "other"]).optional(),
+      priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const customer = await db.getCustomerByUserId(ctx.user!.id);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "Customer account not found" });
+      const id = await db.createCustomerSupportTicket({
+        customerId: customer.id,
+        subject: input.subject,
+        body: input.body,
+        category: input.category ?? "general",
+        priority: input.priority ?? "medium",
+      });
+      return { id };
+    }),
+
+  listMyTickets: protectedProcedure.query(async ({ ctx }) => {
+    const customer = await db.getCustomerByUserId(ctx.user!.id);
+    if (!customer) return [];
+    return db.listCustomerSupportTickets(customer.id);
+  }),
+
+  replyToTicket: protectedProcedure
+    .input(z.object({ ticketId: z.number(), body: z.string().min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const ticket = await db.getCustomerSupportTicketById(input.ticketId);
+      if (!ticket) throw new TRPCError({ code: "NOT_FOUND" });
+      const customer = await db.getCustomerByUserId(ctx.user!.id);
+      const isAdmin = ctx.user?.role === "admin";
+      if (!isAdmin && ticket.customerId !== customer?.id) throw new TRPCError({ code: "FORBIDDEN" });
+      await db.createSupportTicketReply({
+        ticketId: input.ticketId,
+        authorId: ctx.user!.id,
+        authorRole: isAdmin ? "admin" : "customer",
+        body: input.body,
+      });
+      if (ticket.status === "resolved" || ticket.status === "closed") {
+        await db.updateCustomerSupportTicket(input.ticketId, { status: "in_progress" });
+      }
+      return { success: true };
+    }),
+
+  getReplies: protectedProcedure
+    .input(z.object({ ticketId: z.number() }))
+    .query(async ({ input }) => {
+      return db.listSupportTicketReplies(input.ticketId);
+    }),
+
+  listAllTickets: adminProcedure.query(async () => {
+    return db.listCustomerSupportTickets();
+  }),
+
+  updateTicketStatus: adminProcedure
+    .input(z.object({
+      ticketId: z.number(),
+      status: z.enum(["open", "in_progress", "resolved", "closed"]),
+    }))
+    .mutation(async ({ input }) => {
+      await db.updateCustomerSupportTicket(input.ticketId, { status: input.status });
+      return { success: true };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
+   REP MESSAGES ROUTER — Rep↔Admin direct messaging
+   ═══════════════════════════════════════════════════════ */
+const repMessagesRouter = router({
+  send: protectedProcedure
+    .input(z.object({ body: z.string().min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user!.id);
+      const isAdmin = ctx.user?.role === "admin";
+      if (!rep && !isAdmin) throw new TRPCError({ code: "FORBIDDEN", message: "Rep account not found" });
+      const repId = rep?.id ?? 0;
+      await db.createRepMessage({ repId, senderRole: "rep", body: input.body });
+      return { success: true };
+    }),
+
+  listMine: protectedProcedure.query(async ({ ctx }) => {
+    const rep = await db.getRepByUserId(ctx.user!.id);
+    if (!rep) return [];
+    return db.listRepMessages(rep.id);
+  }),
+
+  adminReply: adminProcedure
+    .input(z.object({ repId: z.number(), body: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      await db.createRepMessage({ repId: input.repId, senderRole: "admin", body: input.body });
+      return { success: true };
+    }),
+
+  listAll: adminProcedure.query(async () => {
+    return db.listAllRepMessages();
+  }),
+
+  markRead: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.markRepMessageRead(input.id);
+      return { success: true };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
+   PRODUCTS ROUTER — DB-driven product catalog
+   ═══════════════════════════════════════════════════════ */
+const productsRouter = router({
+  list: publicProcedure.query(async () => {
+    return db.listProductCatalog(true);
+  }),
+
+  listAll: adminProcedure.query(async () => {
+    return db.listProductCatalog(false);
+  }),
+
+  update: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().optional(),
+      description: z.string().optional(),
+      basePrice: z.string().optional(),
+      discountPercent: z.number().optional(),
+      stripePriceId: z.string().optional(),
+      active: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      await db.updateProductCatalogItem(id, data as any);
+      return { success: true };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
+   BROADCASTS ROUTER — Bulk email campaigns
+   ═══════════════════════════════════════════════════════ */
+const broadcastsRouter = router({
+  list: adminProcedure.query(async () => {
+    return db.listBroadcasts();
+  }),
+
+  send: adminProcedure
+    .input(z.object({
+      subject: z.string().min(1),
+      audience: z.enum(["all_customers", "active_contracts", "all_reps", "all_leads"]),
+      body: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const id = await db.createBroadcast({
+        subject: input.subject,
+        audience: input.audience,
+        body: input.body,
+        status: "sending",
+      });
+
+      // Gather recipient emails based on audience
+      let emails: { email: string; name: string }[] = [];
+      if (input.audience === "all_customers" || input.audience === "active_contracts") {
+        const allCustomers = await db.listCustomers();
+        emails = allCustomers
+          .filter((c: any) => c.email && (input.audience === "all_customers" || true))
+          .map((c: any) => ({ email: c.email, name: c.contactName ?? c.businessName }));
+      } else if (input.audience === "all_reps") {
+        const allReps = await db.listReps();
+        emails = allReps
+          .filter((r: any) => r.email)
+          .map((r: any) => ({ email: r.email, name: r.name ?? r.businessName }));
+      } else if (input.audience === "all_leads") {
+        const allLeads = await db.listLeads();
+        emails = allLeads
+          .filter((l: any) => l.email)
+          .map((l: any) => ({ email: l.email, name: l.contactName }));
+      }
+
+      const recipientCount = emails.length;
+      await db.updateBroadcast(id, { recipientCount });
+
+      // Fire-and-forget send via Resend
+      (async () => {
+        try {
+          const { Resend } = await import("resend");
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          const { ENV: envVars } = await import("./_core/env");
+          const fromEmail = envVars.resendFromEmail || "hello@minimorphstudios.net";
+
+          for (const recipient of emails) {
+            await resend.emails.send({
+              from: fromEmail,
+              to: recipient.email,
+              subject: input.subject,
+              html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">${input.body.replace(/\n/g, "<br/>")}</div>`,
+            });
+          }
+
+          await db.updateBroadcast(id, { status: "sent", sentAt: new Date() });
+        } catch (err) {
+          console.error("[Broadcasts] Send failed:", err);
+          await db.updateBroadcast(id, { status: "failed" });
+        }
+      })();
+
+      return { id, recipientCount };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
+   NOTIFICATION COUNTS ROUTER — Admin + Customer badges
+   ═══════════════════════════════════════════════════════ */
+const notificationCountsRouter = router({
+  admin: adminProcedure.query(async () => {
+    const [
+      openTickets,
+      unreadRepMessages,
+    ] = await Promise.all([
+      db.countOpenSupportTickets(),
+      db.countUnreadRepMessages(),
+    ]);
+    return {
+      openTickets: Number(openTickets),
+      unreadRepMessages: Number(unreadRepMessages),
+    };
+  }),
+
+  customer: protectedProcedure.query(async ({ ctx }) => {
+    const customer = await db.getCustomerByUserId(ctx.user!.id);
+    if (!customer) return { openTickets: 0 };
+    const tickets = await db.listCustomerSupportTickets(customer.id);
+    const openTickets = tickets.filter((t: any) => t.status === "open" || t.status === "in_progress").length;
+    return { openTickets };
+  }),
+});
+
+/* ═══════════════════════════════════════════════════════
    APP ROUTER
    ═══════════════════════════════════════════════════════ */
 export const appRouter = router({
@@ -3314,6 +3815,11 @@ export const appRouter = router({
   teamFeed: teamFeedRouter,
   retention: retentionRouter,
   devAccess: devAccessRouter,
+  support: supportRouter,
+  repMessages: repMessagesRouter,
+  products: productsRouter,
+  broadcasts: broadcastsRouter,
+  notifCounts: notificationCountsRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))

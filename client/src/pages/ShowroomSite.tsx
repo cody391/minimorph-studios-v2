@@ -9,6 +9,7 @@
 import { useParams, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { showroomSites, type ShowroomSite as SiteType } from "@/data/showroom";
+import LeadCapturePopup from "@/components/LeadCapturePopup";
 import {
   ArrowLeft,
   ArrowRight,
@@ -1477,6 +1478,8 @@ export default function ShowroomSite() {
   navItems.push("Contact");
 
   return (
+    <>
+    <LeadCapturePopup />
     <div
       className="min-h-screen"
       style={{
@@ -1944,5 +1947,6 @@ export default function ShowroomSite() {
         </div>
       </div>
     </div>
+    </>
   );
 }

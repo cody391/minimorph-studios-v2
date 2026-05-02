@@ -70,24 +70,24 @@ export async function generateProposal(leadId: number): Promise<Proposal> {
   // Determine recommended package based on business needs
   const hasWebsite = !!lead.website;
   const websiteScore = enrichment.websiteScore || 0;
-  let recommendedPackage = "Professional";
-  let packagePrice = 2499;
+  let recommendedPackage = "Pro";
+  let packagePrice = 395;
 
   if (!hasWebsite) {
     recommendedPackage = "Starter";
-    packagePrice = 999;
+    packagePrice = 195;
   } else if (websiteScore < 30) {
-    recommendedPackage = "Professional";
-    packagePrice = 2499;
+    recommendedPackage = "Pro";
+    packagePrice = 395;
   } else if (websiteScore < 60) {
     recommendedPackage = "Growth";
-    packagePrice = 1499;
+    packagePrice = 295;
   }
 
   // If they have employees or high review count, suggest higher tier
   if (enrichment.employeeCount && enrichment.employeeCount > 10) {
     recommendedPackage = "Enterprise";
-    packagePrice = 4999;
+    packagePrice = 495;
   }
 
   // Generate AI proposal content
@@ -294,8 +294,8 @@ function generateProposalHTML(params: {
     <div style="text-align:center;padding:32px;background:#151526;border-top:1px solid #2d2d45;">
       <p style="color:#7a7a90;font-size:13px;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px 0;">Recommended Package</p>
       <h2 style="color:#eaeaf0;font-size:28px;margin:0 0 4px 0;">${params.recommendedPackage}</h2>
-      <p style="color:#4a9eff;font-size:36px;font-weight:800;margin:0;">$${params.packagePrice.toLocaleString()}</p>
-      <p style="color:#7a7a90;font-size:13px;margin:8px 0 24px 0;">One-time investment + optional monthly maintenance</p>
+      <p style="color:#4a9eff;font-size:36px;font-weight:800;margin:0;">$${params.packagePrice}/mo</p>
+      <p style="color:#7a7a90;font-size:13px;margin:8px 0 24px 0;">12-month commitment &middot; no setup fees</p>
       <a href="https://minimorphstudios.net/get-started" style="display:inline-block;background:#4a9eff;color:#111122;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;font-size:17px;">Let's Get Started</a>
       <p style="color:#7a7a90;font-size:12px;margin:16px 0 0 0;">Questions? Reply to this email or call us anytime.</p>
     </div>

@@ -8,21 +8,21 @@
  * reference these constants. Never hardcode dollar amounts.
  *
  * Intended pricing (confirmed):
- *   Starter:  $150/mo (no setup fee)
- *   Growth:   $250/mo (no setup fee)
- *   Pro:      $400/mo (no setup fee)
- *   Commerce: custom quote (not in this file)
+ *   Starter:    $195/mo (no setup fee)
+ *   Growth:     $295/mo (no setup fee)
+ *   Pro:        $395/mo (no setup fee)
+ *   Enterprise: $495/mo (no setup fee)
  */
 
 export const PACKAGES = {
   starter: {
     name: "Starter",
     tier: "starter" as const,
-    monthlyPrice: 150,
-    monthlyPriceInCents: 15000,
+    monthlyPrice: 195,
+    monthlyPriceInCents: 19500,
     setupFee: 0,
     setupFeeInCents: 0,
-    annualTotal: 1800, // 150 * 12
+    annualTotal: 2340,
     contractMonths: 12,
     description: "For businesses that need a clean, professional website with ongoing support",
     features: [
@@ -39,11 +39,11 @@ export const PACKAGES = {
   growth: {
     name: "Growth",
     tier: "growth" as const,
-    monthlyPrice: 250,
-    monthlyPriceInCents: 25000,
+    monthlyPrice: 295,
+    monthlyPriceInCents: 29500,
     setupFee: 0,
     setupFeeInCents: 0,
-    annualTotal: 3000, // 250 * 12
+    annualTotal: 3540,
     contractMonths: 12,
     description: "For businesses ready to grow with more pages, features, and monthly support",
     features: [
@@ -61,11 +61,11 @@ export const PACKAGES = {
   premium: {
     name: "Pro",
     tier: "premium" as const,
-    monthlyPrice: 400,
-    monthlyPriceInCents: 40000,
+    monthlyPrice: 395,
+    monthlyPriceInCents: 39500,
     setupFee: 0,
     setupFeeInCents: 0,
-    annualTotal: 4800, // 400 * 12
+    annualTotal: 4740,
     contractMonths: 12,
     description: "For businesses that need advanced features, more pages, and hands-on support",
     features: [
@@ -79,17 +79,38 @@ export const PACKAGES = {
       "Priority support with faster response",
     ],
   },
+  enterprise: {
+    name: "Enterprise",
+    tier: "enterprise" as const,
+    monthlyPrice: 495,
+    monthlyPriceInCents: 49500,
+    setupFee: 0,
+    setupFeeInCents: 0,
+    annualTotal: 5940,
+    contractMonths: 12,
+    description: "For large, complex builds — ecommerce stores, custom portals, membership systems, and multi-location businesses",
+    features: [
+      "Everything in Pro",
+      "Large ecommerce (unlimited products)",
+      "Custom customer portals",
+      "Membership/subscription systems",
+      "Multi-location support",
+      "Advanced booking systems",
+      "Custom integrations",
+      "Priority build queue",
+    ],
+  },
 } as const;
 
 export type PackageKey = keyof typeof PACKAGES;
-export const PACKAGE_KEYS: PackageKey[] = ["starter", "growth", "premium"];
+export const PACKAGE_KEYS: PackageKey[] = ["starter", "growth", "premium", "enterprise"];
 
-/** Helper to format price as "$150/mo" */
+/** Helper to format price as "$195/mo" */
 export function formatMonthlyPrice(key: PackageKey): string {
   return `$${PACKAGES[key].monthlyPrice}/mo`;
 }
 
-/** Helper to format annual total as "$1,800" */
+/** Helper to format annual total as "$2,340" */
 export function formatAnnualTotal(key: PackageKey): string {
   return `$${PACKAGES[key].annualTotal.toLocaleString()}`;
 }
@@ -99,15 +120,17 @@ export function formatSetupFee(key: PackageKey): string {
   return `$${PACKAGES[key].setupFee.toLocaleString()}`;
 }
 
-/** All three monthly prices as a string: "$150/$250/$400" */
-export const PRICE_RANGE_SHORT = `$${PACKAGES.starter.monthlyPrice}/$${PACKAGES.growth.monthlyPrice}/$${PACKAGES.premium.monthlyPrice}`;
+/** All four monthly prices as a string: "$195/$295/$395/$495" */
+export const PRICE_RANGE_SHORT = `$${PACKAGES.starter.monthlyPrice}/$${PACKAGES.growth.monthlyPrice}/$${PACKAGES.premium.monthlyPrice}/$${PACKAGES.enterprise.monthlyPrice}`;
 
 /** Academy-friendly pricing reference */
 export const ACADEMY_PRICING = {
   starterMonthly: `$${PACKAGES.starter.monthlyPrice}/month`,
   growthMonthly: `$${PACKAGES.growth.monthlyPrice}/month`,
   premiumMonthly: `$${PACKAGES.premium.monthlyPrice}/month`,
+  enterpriseMonthly: `$${PACKAGES.enterprise.monthlyPrice}/month`,
   starterAnnual: `$${PACKAGES.starter.annualTotal.toLocaleString()}/year`,
   growthAnnual: `$${PACKAGES.growth.annualTotal.toLocaleString()}/year`,
   premiumAnnual: `$${PACKAGES.premium.annualTotal.toLocaleString()}/year`,
+  enterpriseAnnual: `$${PACKAGES.enterprise.annualTotal.toLocaleString()}/year`,
 } as const;

@@ -281,6 +281,35 @@
       "when": 1746316800000,
       "tag": "0039_competitive_report",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1746403200000,
+      "tag": "0040_monthly_reports",
+      "breakpoints": true
+    }
+    ,
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1746489600000,
+      "tag": "0041_delivery_pipeline",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1746576000000,
+      "tag": "0042_cloudflare_hosting",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1746662400000,
+      "tag": "0043_platform_wiring",
+      "breakpoints": true
     }
   ]
 }

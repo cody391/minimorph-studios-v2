@@ -20,11 +20,12 @@ import { runMultiSourceScrape, getSourceQuality } from "./services/leadGenMultiS
 import { batchEnrichContacts } from "./services/contactEnrichment";
 import { runAdaptiveScaling } from "./services/leadGenAdaptive";
 import { getDb } from "./db";
-import { contracts, customers, npsSurveys, nurtureLogs, onboardingProjects } from "../drizzle/schema";
-import { eq, and, gte, lte, inArray, desc } from "drizzle-orm";
-import { sendNpsSurveyEmail, sendRenewalReminderEmail, sendCompetitiveWorkupEmail } from "./services/customerEmails";
+import { contracts, customers, npsSurveys, nurtureLogs, onboardingProjects, monthlyReports } from "../drizzle/schema";
+import { eq, and, lte, inArray, desc } from "drizzle-orm";
+import { sendNpsSurveyEmail, sendMonthlyReportEmail } from "./services/customerEmails";
 import { scrapeWebsite } from "./services/webScraper";
 import { invokeLLM } from "./_core/llm";
+import { generateInvoiceHtml, invoiceToBase64 } from "./services/invoiceGenerator";
 import { ENV } from "./_core/env";
 
 // ─── In-memory execution lock ───
@@ -298,135 +299,10 @@ export function registerScheduledRoutes(app: Express) {
     })
   );
 
-  // 12. Renewal Check — detect expiring contracts and send reminders
+  // 12. Renewal Check — DEPRECATED: consolidated into monthly-anniversary
   app.post("/api/scheduled/renewal-check", (req, res) =>
     runJob(req, res, "renewal-check", async () => {
-      const db = await getDb();
-      if (!db) throw new Error("Database not available");
-      const now = new Date();
-
-      const windows = [
-        { days: 60, label: "60_day" },
-        { days: 30, label: "30_day" },
-        { days: 14, label: "14_day" },
-        { days: 7, label: "7_day" },
-      ] as const;
-
-      let scanned = 0;
-      let remindersSent = 0;
-      let skipped = 0;
-      let contractsUpdated = 0;
-      let errors = 0;
-
-      // Get active or expiring_soon contracts with endDate in the next 61 days
-      const sixtyOneDaysFromNow = new Date(now.getTime() + 61 * 24 * 60 * 60 * 1000);
-      const expiringContracts = await db
-        .select()
-        .from(contracts)
-        .where(
-          and(
-            inArray(contracts.status, ["active", "expiring_soon"]),
-            lte(contracts.endDate, sixtyOneDaysFromNow),
-            gte(contracts.endDate, now)
-          )
-        );
-
-      for (const contract of expiringContracts) {
-        scanned++;
-
-        const daysRemaining = Math.ceil(
-          (contract.endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
-        );
-
-        // Determine which window this contract falls into
-        let matchedWindow: (typeof windows)[number] | null = null;
-        for (const w of windows) {
-          if (daysRemaining <= w.days) {
-            matchedWindow = w;
-          }
-        }
-
-        if (!matchedWindow) {
-          skipped++;
-          continue;
-        }
-
-        // Mark contract as expiring_soon if still active
-        if (contract.status === "active") {
-          try {
-            await db
-              .update(contracts)
-              .set({ status: "expiring_soon" })
-              .where(eq(contracts.id, contract.id));
-            contractsUpdated++;
-          } catch (err: any) {
-            console.error(`[Renewal] Error updating contract ${contract.id}:`, err.message);
-            errors++;
-          }
-        }
-
-        // Check if we already sent a reminder for this contract + window
-        // Use nurtureLogs with type=renewal_outreach and subject containing the window label
-        const existingReminder = await db
-          .select({ id: nurtureLogs.id })
-          .from(nurtureLogs)
-          .where(
-            and(
-              eq(nurtureLogs.customerId, contract.customerId),
-              eq(nurtureLogs.contractId!, contract.id),
-              eq(nurtureLogs.type, "renewal_outreach"),
-              eq(nurtureLogs.subject, `renewal_${matchedWindow.label}`)
-            )
-          )
-          .limit(1);
-
-        if (existingReminder.length > 0) {
-          skipped++;
-          continue;
-        }
-
-        // Get customer info
-        const [customer] = await db
-          .select()
-          .from(customers)
-          .where(eq(customers.id, contract.customerId))
-          .limit(1);
-
-        if (!customer) {
-          skipped++;
-          continue;
-        }
-
-        try {
-          // Send renewal reminder email
-          await sendRenewalReminderEmail({
-            to: customer.email,
-            customerName: customer.contactName,
-            daysRemaining,
-            packageTier: contract.packageTier,
-            endDate: contract.endDate,
-          });
-
-          // Log the reminder to prevent duplicates
-          await db.insert(nurtureLogs).values({
-            customerId: contract.customerId,
-            contractId: contract.id,
-            type: "renewal_outreach",
-            channel: "email",
-            subject: `renewal_${matchedWindow.label}`,
-            content: `Sent ${matchedWindow.days}-day renewal reminder. ${daysRemaining} days remaining.`,
-            status: "sent",
-            sentAt: now,
-          });
-
-          remindersSent++;
-        } catch (err: any) {
-          console.error(`[Renewal] Error for contract ${contract.id}:`, err.message);
-          errors++;
-        }
-      }
-
-      return { scanned, remindersSent, skipped, contractsUpdated, errors };
+      return { deprecated: true, message: "Renewal reminders are now handled by /api/scheduled/monthly-anniversary" };
     })
   );
 
@@ -606,20 +482,30 @@ export function registerScheduledRoutes(app: Express) {
     });
   });
 
-  // ─── 15. Monthly Competitive Workup ───
+  // ─── 15. Monthly Competitive Workup — DEPRECATED: consolidated into monthly-anniversary ───
   app.post("/api/scheduled/monthly-competitive-workup", (req, res) =>
     runJob(req, res, "monthly-competitive-workup", async () => {
+      return { deprecated: true, message: "Consolidated into /api/scheduled/monthly-anniversary" };
+    })
+  );
+
+  // ─── 16. Monthly Anniversary Report — one email per customer per month ───
+  app.post("/api/scheduled/monthly-anniversary", (req, res) =>
+    runJob(req, res, "monthly-anniversary", async () => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       const now = new Date();
+      const todayDay = now.getDate();
+      const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-      // Find projects whose anniversary is in the next 24 hours (same day of month as start)
-      const allProjects = await db
+      // Find active contracts in the nurturing pipeline
+      const activeContracts = await db
         .select()
-        .from(onboardingProjects)
+        .from(contracts)
         .where(
           and(
-            inArray(onboardingProjects.stage, ["launch", "complete"]),
+            inArray(contracts.status, ["active", "expiring_soon", "renewed"]),
+            eq(contracts.nurturingActive, true)
           )
         );
 
@@ -627,66 +513,77 @@ export function registerScheduledRoutes(app: Express) {
       let skipped = 0;
       let errors = 0;
 
-      for (const project of allProjects) {
-        // Check if today is the anniversary day (same day of month as contract start)
-        const startDay = new Date(project.createdAt).getDate();
-        if (now.getDate() !== startDay) {
+      for (const contract of activeContracts) {
+        // Anniversary check: use anniversaryDay field if set, else fall back to startDate day
+        const contractAnnivDay = contract.anniversaryDay ?? new Date(contract.startDate).getDate();
+        if (contractAnnivDay !== todayDay) {
           skipped++;
           continue;
         }
 
-        // Get associated customer
-        if (!project.customerId) { skipped++; continue; }
-        const [customer] = await db
-          .select()
-          .from(customers)
-          .where(eq(customers.id, project.customerId))
-          .limit(1);
-
-        if (!customer) { skipped++; continue; }
-
-        // Check dedup — did we already send a report this month?
-        const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-        const existingLog = await db
-          .select({ id: nurtureLogs.id })
-          .from(nurtureLogs)
+        // Dedup: only one report email per customer per month
+        const existing = await db
+          .select({ id: monthlyReports.id })
+          .from(monthlyReports)
           .where(
             and(
-              eq(nurtureLogs.customerId, project.customerId),
-              eq(nurtureLogs.type, "report_delivery"),
-              eq(nurtureLogs.subject, `competitive_report_${thisMonth}`)
+              eq(monthlyReports.customerId, contract.customerId),
+              eq(monthlyReports.reportMonth, thisMonth)
             )
           )
           .limit(1);
 
-        if (existingLog.length > 0) { skipped++; continue; }
+        if (existing.length > 0) { skipped++; continue; }
+
+        // Get customer
+        const [customer] = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.id, contract.customerId))
+          .limit(1);
+
+        if (!customer) { skipped++; continue; }
+
+        // Get associated onboarding project (most recent)
+        const [project] = await db
+          .select()
+          .from(onboardingProjects)
+          .where(eq(onboardingProjects.customerId, contract.customerId))
+          .orderBy(desc(onboardingProjects.createdAt))
+          .limit(1);
+
+        // Determine if renewal month (endDate within 31 days)
+        const thirtyOneDaysFromNow = new Date(now.getTime() + 31 * 24 * 60 * 60 * 1000);
+        const isRenewalMonth = contract.endDate <= thirtyOneDaysFromNow;
+
+        // Month label for subject: "May 2026"
+        const monthLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
 
         try {
-          // Scrape competitor websites from questionnaire data
-          const questionnaire = project.questionnaire as any;
-          const competitorUrls: string[] = [];
-          if (questionnaire?.competitorSites) {
-            for (const comp of questionnaire.competitorSites) {
-              if (comp.url) competitorUrls.push(comp.url);
+          // Generate competitive analysis
+          let reportText = "";
+          if (project) {
+            const questionnaire = project.questionnaire as any;
+            const competitorUrls: string[] = [];
+            if (questionnaire?.competitorSites) {
+              for (const comp of questionnaire.competitorSites) {
+                if (comp.url) competitorUrls.push(comp.url);
+              }
             }
-          }
 
-          let competitorContent = "";
-          if (competitorUrls.length > 0) {
-            const scraped = await Promise.all(
-              competitorUrls.slice(0, 3).map(async (url) => {
-                const text = await scrapeWebsite(url);
-                return text ? `[${url}]\n${text.slice(0, 1500)}` : null;
-              })
-            );
-            const results = scraped.filter(Boolean);
-            if (results.length > 0) {
-              competitorContent = results.join("\n\n---\n\n");
+            let competitorContent = "";
+            if (competitorUrls.length > 0) {
+              const scraped = await Promise.all(
+                competitorUrls.slice(0, 3).map(async (url) => {
+                  const text = await scrapeWebsite(url);
+                  return text ? `[${url}]\n${text.slice(0, 1500)}` : null;
+                })
+              );
+              const results = scraped.filter(Boolean) as string[];
+              if (results.length > 0) competitorContent = results.join("\n\n---\n\n");
             }
-          }
 
-          // Generate competitive analysis with AI
-          const analysisPrompt = `You are a digital marketing analyst for MiniMorph Studios. Generate a monthly competitive intelligence report for ${project.businessName} (${customer.industry || "local business"}).
+            const analysisPrompt = `You are a digital marketing analyst for MiniMorph Studios. Generate a monthly competitive intelligence report for ${project.businessName} (${customer.industry || "local business"}).
 
 ${competitorContent ? `COMPETITOR WEBSITE DATA:\n${competitorContent}\n\n` : ""}
 
@@ -698,48 +595,74 @@ Generate a concise competitive report with:
 
 Keep it practical, specific, and action-oriented. Format with clear sections using ## headers. Total length: 300-400 words.`;
 
-          const llmResult = await invokeLLM({
-            messages: [{ role: "user" as const, content: analysisPrompt }],
-            maxTokens: 1000,
+            const llmResult = await invokeLLM({
+              messages: [{ role: "user" as const, content: analysisPrompt }],
+              maxTokens: 1000,
+            });
+            reportText = llmResult.choices[0].message.content as string;
+
+            // Save report to project
+            await db
+              .update(onboardingProjects)
+              .set({ lastCompetitiveReport: reportText, lastCompetitiveReportDate: now })
+              .where(eq(onboardingProjects.id, project.id));
+          } else {
+            reportText = `## Market Overview\nYour website continues to serve ${customer.businessName} in the local market.\n\n## Recommendations\n- Keep your content fresh and updated regularly.\n- Engage with customer reviews and testimonials.\n- Consider adding a seasonal promotion to your homepage.`;
+          }
+
+          // Generate invoice HTML attachment
+          const invoiceNumber = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${contract.customerId}`;
+          const invoiceDate = now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+          const monthlyPrice = parseFloat(contract.monthlyPrice).toFixed(2);
+          const packageLabel = contract.packageTier.charAt(0).toUpperCase() + contract.packageTier.slice(1);
+
+          const invoiceHtml = generateInvoiceHtml({
+            invoiceNumber,
+            invoiceDate,
+            businessName: customer.businessName,
+            contactName: customer.contactName,
+            contactEmail: customer.email,
+            packageTier: packageLabel,
+            monthlyPrice,
+            monthLabel,
           });
-          const reportText = llmResult.choices[0].message.content as string;
+          const invoiceBase64 = invoiceToBase64(invoiceHtml);
+          const safeBusinessName = customer.businessName.replace(/[^a-z0-9]/gi, "-").toLowerCase();
+          const invoiceFilename = `invoice-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${safeBusinessName}.html`;
 
-          // Save report to project
-          await db
-            .update(onboardingProjects)
-            .set({
-              lastCompetitiveReport: reportText,
-              lastCompetitiveReportDate: now,
-            })
-            .where(eq(onboardingProjects.id, project.id));
-
-          // Send email
-          await sendCompetitiveWorkupEmail({
+          // Send the unified monthly report email
+          await sendMonthlyReportEmail({
             to: customer.email,
             customerName: customer.contactName,
-            businessName: project.businessName,
-            reportText,
+            businessName: customer.businessName,
+            monthLabel,
+            competitiveReport: reportText,
+            isRenewalMonth,
+            renewalDate: isRenewalMonth ? contract.endDate : undefined,
+            monthlyPrice,
+            packageTier: packageLabel,
+            invoiceHtmlBase64: invoiceBase64,
+            invoiceFilename,
           });
 
-          // Log for dedup
-          await db.insert(nurtureLogs).values({
-            customerId: project.customerId,
-            type: "report_delivery",
-            channel: "email",
-            subject: `competitive_report_${thisMonth}`,
-            content: `Monthly competitive report delivered for ${project.businessName}.`,
-            status: "sent",
-            sentAt: now,
+          // Record in monthly_reports for dedup + history
+          await db.insert(monthlyReports).values({
+            customerId: contract.customerId,
+            contractId: contract.id,
+            reportMonth: thisMonth,
+            competitiveReport: reportText,
+            isRenewalMonth,
+            emailSentAt: now,
           });
 
           processed++;
         } catch (err: any) {
-          console.error(`[CompetitiveWorkup] Error for project ${project.id}:`, err.message);
+          console.error(`[MonthlyAnniversary] Error for contract ${contract.id}:`, err.message);
           errors++;
         }
       }
 
-      return { totalProjects: allProjects.length, processed, skipped, errors };
+      return { totalContracts: activeContracts.length, processed, skipped, errors };
     })
   );
 
@@ -753,5 +676,5 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     });
   });
 
-  console.log("[Scheduled] Registered 15 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 16 scheduled job endpoints at /api/scheduled/*");
 }

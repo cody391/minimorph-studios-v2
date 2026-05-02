@@ -26,6 +26,7 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   passwordHash: varchar("passwordHash", { length: 255 }),
   stripeCustomerId: varchar("stripeCustomerId", { length: 128 }),
+  needsStripeConnect: boolean("needsStripeConnect").default(false).notNull(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -71,7 +72,7 @@ export const leads = mysqlTable("leads", {
   phone: varchar("phone", { length: 32 }),
   industry: varchar("industry", { length: 128 }),
   website: varchar("website", { length: 512 }),
-  source: mysqlEnum("source", ["ai_sourced", "website_form", "referral", "manual"])
+  source: mysqlEnum("source", ["ai_sourced", "website_form", "referral", "manual", "website_popup"])
     .default("ai_sourced")
     .notNull(),
   temperature: mysqlEnum("temperature", ["cold", "warm", "hot"])
@@ -158,6 +159,12 @@ export const contracts = mysqlTable("contracts", {
   contractText: longtext("contractText"),
   contractSignedAt: timestamp("contractSignedAt"),
   contractSignedIp: varchar("contractSignedIp", { length: 64 }),
+  contractSignedUserAgent: varchar("contractSignedUserAgent", { length: 500 }),
+  pdfUrl: varchar("pdfUrl", { length: 512 }),
+  nurturingActive: boolean("nurturingActive").default(false).notNull(),
+  anniversaryDay: int("anniversaryDay"),
+  contractEndDate: timestamp("contractEndDate"),
+  autoRenew: boolean("autoRenew").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -235,6 +242,23 @@ export const reports = mysqlTable("reports", {
 
 export type Report = typeof reports.$inferSelect;
 export type InsertReport = typeof reports.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   MONTHLY_REPORTS — One-per-month anniversary email dedup + history
+   ═══════════════════════════════════════════════════════ */
+export const monthlyReports = mysqlTable("monthly_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  contractId: int("contractId"),
+  reportMonth: varchar("reportMonth", { length: 7 }).notNull(), // "2026-05"
+  competitiveReport: text("competitiveReport"),
+  isRenewalMonth: boolean("isRenewalMonth").default(false).notNull(),
+  emailSentAt: timestamp("emailSentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type MonthlyReport = typeof monthlyReports.$inferSelect;
+export type InsertMonthlyReport = typeof monthlyReports.$inferInsert;
 
 /* ═══════════════════════════════════════════════════════
    UPSELL_OPPORTUNITIES — Upgrade recommendations
@@ -374,12 +398,17 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   generationLog: text("generationLog"),
   generatedSiteHtml: longtext("generatedSiteHtml"), // JSON: { "index": "<html>...", "about": "<html>...", ... }
   generatedSiteUrl: varchar("generatedSiteUrl", { length: 512 }),
+  cloudflareProjectName: varchar("cloudflareProjectName", { length: 200 }),
   lastChangeRequest: text("lastChangeRequest"),
   changeHistory: json("changeHistory"), // { request: string, respondedAt: string }[]
 
   // Competitive intelligence
   lastCompetitiveReport: text("lastCompetitiveReport"),
   lastCompetitiveReportDate: timestamp("lastCompetitiveReportDate"),
+
+  previewReadyAt: timestamp("previewReadyAt"),
+  approvedAt: timestamp("approvedAt"),
+  revisionsRemaining: int("revisionsRemaining").default(3),
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -1548,3 +1577,83 @@ export const customerReferrals = mysqlTable("customer_referrals", {
 });
 export type CustomerReferral = typeof customerReferrals.$inferSelect;
 export type InsertCustomerReferral = typeof customerReferrals.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SUPPORT_TICKETS — Customer→Admin support requests
+   ═══════════════════════════════════════════════════════ */
+export const supportTickets = mysqlTable("support_tickets", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  body: text("body").notNull(),
+  status: mysqlEnum("status", ["open", "in_progress", "resolved", "closed"]).default("open").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
+  category: mysqlEnum("category", ["billing", "technical", "website_change", "general", "other"]).default("general").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = typeof supportTickets.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SUPPORT_TICKET_REPLIES — Thread replies on tickets
+   ═══════════════════════════════════════════════════════ */
+export const supportTicketReplies = mysqlTable("support_ticket_replies", {
+  id: int("id").autoincrement().primaryKey(),
+  ticketId: int("ticketId").notNull(),
+  authorId: int("authorId").notNull(),
+  authorRole: mysqlEnum("authorRole", ["customer", "admin"]).notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SupportTicketReply = typeof supportTicketReplies.$inferSelect;
+export type InsertSupportTicketReply = typeof supportTicketReplies.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_MESSAGES — Rep↔Admin direct messaging
+   ═══════════════════════════════════════════════════════ */
+export const repMessages = mysqlTable("rep_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  senderRole: mysqlEnum("senderRole", ["rep", "admin"]).notNull(),
+  body: text("body").notNull(),
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RepMessage = typeof repMessages.$inferSelect;
+export type InsertRepMessage = typeof repMessages.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   PRODUCT_CATALOG — DB-driven pricing source
+   ═══════════════════════════════════════════════════════ */
+export const productCatalog = mysqlTable("product_catalog", {
+  id: int("id").autoincrement().primaryKey(),
+  productKey: varchar("productKey", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  category: mysqlEnum("category", ["package", "addon", "one_time"]).default("package").notNull(),
+  basePrice: decimal("basePrice", { precision: 10, scale: 2 }).notNull(),
+  discountPercent: int("discountPercent").default(0).notNull(),
+  stripePriceId: varchar("stripePriceId", { length: 128 }),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProductCatalogItem = typeof productCatalog.$inferSelect;
+export type InsertProductCatalogItem = typeof productCatalog.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   BROADCASTS — Bulk email campaigns to audiences
+   ═══════════════════════════════════════════════════════ */
+export const broadcasts = mysqlTable("broadcasts", {
+  id: int("id").autoincrement().primaryKey(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  audience: mysqlEnum("audience", ["all_customers", "active_contracts", "all_reps", "all_leads"]).notNull(),
+  body: text("body").notNull(),
+  recipientCount: int("recipientCount").default(0).notNull(),
+  status: mysqlEnum("status", ["draft", "sending", "sent", "failed"]).default("draft").notNull(),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Broadcast = typeof broadcasts.$inferSelect;
+export type InsertBroadcast = typeof broadcasts.$inferInsert;

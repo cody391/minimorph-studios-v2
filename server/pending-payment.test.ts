@@ -9,9 +9,9 @@ import { PACKAGES } from "../shared/pricing";
 describe("Pending Payment Flow", () => {
   describe("Pricing consistency for payment links", () => {
     it("all package tiers have correct monthly prices", () => {
-      expect(PACKAGES.starter.monthlyPrice).toBe(150);
-      expect(PACKAGES.growth.monthlyPrice).toBe(250);
-      expect(PACKAGES.premium.monthlyPrice).toBe(400);
+      expect(PACKAGES.starter.monthlyPrice).toBe(195);
+      expect(PACKAGES.growth.monthlyPrice).toBe(295);
+      expect(PACKAGES.premium.monthlyPrice).toBe(395);
     });
 
     it("all package tiers have zero setup fees (monthly only)", () => {
@@ -20,9 +20,10 @@ describe("Pending Payment Flow", () => {
       expect(PACKAGES.premium.setupFeeInCents).toBe(0);
     });
 
-    it("commerce tier is not in PACKAGES (custom quote only)", () => {
-      // Commerce is custom-quote only and not listed in the standard packages
+    it("commerce tier is not in PACKAGES (replaced by enterprise)", () => {
+      // Commerce was replaced by the Enterprise tier
       expect((PACKAGES as any).commerce).toBeUndefined();
+      expect(PACKAGES.enterprise.monthlyPrice).toBe(495);
     });
   });
 
