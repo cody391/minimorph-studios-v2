@@ -15,17 +15,17 @@
  */
 
 import { makeRequest } from "../_core/map";
-import { callDataApi } from "../_core/dataApi";
 import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
 import { scrapedBusinesses, leads } from "../../drizzle/schema";
 import { eq, and, sql } from "drizzle-orm";
+import { ENV } from "../_core/env";
 
 /* ═══════════════════════════════════════════════════════
    TYPES & CONSTANTS
    ═══════════════════════════════════════════════════════ */
 
-export type ScrapingSource = "google_maps" | "yelp" | "facebook" | "bbb" | "homeadvisor" | "opentable" | "directory";
+export type ScrapingSource = "google_maps" | "yelp" | "directory";
 
 export interface MultiSourceBusiness {
   businessName: string;
@@ -49,22 +49,61 @@ export interface MultiSourceBusiness {
   description?: string;
 }
 
-// Low-hanging fruit categories — businesses most likely to need websites
+/* ═══════════════════════════════════════════════════════
+   BUSINESS EXCLUSION FILTER
+   ═══════════════════════════════════════════════════════ */
+
+const EXCLUDED_NAME_PATTERNS = [
+  /\bMcDonald'?s\b/i, /\bSubway\b/i, /\bStarbucks\b/i, /\bWalmart\b/i, /\bTarget\b/i,
+  /\bCVS\b/i, /\bWalgreens\b/i, /\bDollar\s*(General|Tree)\b/i, /\bHome\s*Depot\b/i,
+  /\bLowe'?s\b/i, /\bCostco\b/i, /\bWendy'?s\b/i, /\bBurger\s*King\b/i,
+  /\bDomino'?s\b/i, /\bPizza\s*Hut\b/i, /\bTaco\s*Bell\b/i, /\bKFC\b/i,
+  /\bChick-?fil-?A\b/i, /\bChipotle\b/i, /\bDunkin'?\b/i, /\bDairy\s*Queen\b/i,
+  /\bPanera\b/i, /\bOlive\s*Garden\b/i, /\bApplebee'?s\b/i, /\bDenny'?s\b/i,
+  /\bSheraton\b/i, /\bMarriott\b/i, /\bHilton\b/i, /\bHyatt\b/i, /\bHoliday\s*Inn\b/i,
+  /\bBest\s*Western\b/i, /\bMotel\s*6\b/i, /\bSupercuts\b/i, /\bGreat\s*Clips\b/i,
+  /\bSports\s*Clips\b/i, /\bJiffy\s*Lube\b/i, /\bMidas\b/i, /\bMileOne\b/i,
+  /\bFire\s*Station\b/i, /\bPolice\s*Department\b/i, /\bCity\s*Hall\b/i,
+  /\bCounty\s*(Office|Courthouse|Building)\b/i, /\bUS\s*Post\s*Office\b/i,
+  /\bDMV\b/i, /\bPublic\s*Library\b/i, /\bChurch\b/i, /\bSynagogue\b/i,
+  /\bMosque\b/i, /\bTemple\b/i, /\bCathedral\b/i, /\bHospital\b/i,
+  /\bMedical\s*Center\b/i, /\bHealth\s*System\b/i, /\bUniversity\b/i,
+  /\bCollege\b/i, /\bElementary\s*School\b/i, /\bMiddle\s*School\b/i,
+  /\bHigh\s*School\b/i, /\bPublic\s*School\b/i,
+];
+
+const EXCLUDED_TYPES = [
+  "government", "political", "hospital", "university", "school", "church",
+  "embassy", "post_office", "fire_station", "police", "airport", "transit_station",
+];
+
+export function isExcludedBusiness(name: string, types?: string[]): { excluded: boolean; reason?: string } {
+  for (const pattern of EXCLUDED_NAME_PATTERNS) {
+    if (pattern.test(name)) return { excluded: true, reason: `franchise_or_chain: ${name}` };
+  }
+  if (types) {
+    for (const t of types) {
+      if (EXCLUDED_TYPES.includes(t.toLowerCase())) return { excluded: true, reason: `excluded_type: ${t}` };
+    }
+  }
+  return { excluded: false };
+}
+
+// Low-hanging fruit categories — high-value industries first
 const SCRAPE_CATEGORIES = {
   highPriority: [
-    "plumber", "electrician", "HVAC repair", "roofing contractor",
-    "landscaping service", "cleaning service", "pest control",
-    "handyman service", "painting contractor", "moving company",
+    "auto repair shop", "hair salon", "plumber", "electrician",
+    "HVAC repair", "roofing contractor", "landscaping service",
+    "nail salon", "cleaning service", "pest control",
   ],
   mediumPriority: [
-    "hair salon", "nail salon", "barber shop", "spa",
-    "auto repair shop", "auto detailing", "tire shop",
-    "restaurant", "bakery", "catering service", "food truck",
+    "handyman service", "painting contractor", "moving company",
+    "barber shop", "spa", "auto detailing", "tire shop",
+    "bakery", "catering service", "food truck",
   ],
   lowPriority: [
-    "pet grooming", "dog walker", "veterinarian",
-    "yoga studio", "gym", "martial arts school",
-    "tattoo shop", "florist", "dry cleaner",
+    "pet grooming", "dog walker", "yoga studio", "gym",
+    "martial arts school", "tattoo shop", "florist", "dry cleaner",
     "dentist", "chiropractor", "physical therapy",
     "accountant", "insurance agent", "real estate agent",
   ],
@@ -240,6 +279,11 @@ export async function scrapeYelp(params: {
   categories?: string[];
   limit?: number;
 }): Promise<MultiSourceBusiness[]> {
+  if (!ENV.yelpApiKey) {
+    console.warn("[MultiSource] YELP_API_KEY not set — skipping Yelp scrape");
+    return [];
+  }
+
   const results: MultiSourceBusiness[] = [];
   const categories = params.categories || [
     "restaurants", "beauty", "contractors", "automotive", "health",
@@ -247,21 +291,28 @@ export async function scrapeYelp(params: {
   ];
 
   for (const category of categories) {
-    const yelpResults = await withRetry(async () => {
-      const yelpResult = await callDataApi("Yelp/search_businesses", {
-        query: {
-          term: category,
-          location: params.location,
-          limit: params.limit || 30,
-          sort_by: "review_count", // Get established businesses
-        },
-      }) as any;
+    try {
+      const url = new URL("https://api.yelp.com/v3/businesses/search");
+      url.searchParams.set("term", category);
+      url.searchParams.set("location", params.location);
+      url.searchParams.set("limit", String(Math.min(params.limit || 30, 50)));
+      url.searchParams.set("sort_by", "review_count");
 
-      const businesses: MultiSourceBusiness[] = [];
-      if (yelpResult?.businesses) {
-        for (const biz of yelpResult.businesses) {
+      const resp = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${ENV.yelpApiKey}` },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (!resp.ok) {
+        console.error(`[MultiSource] Yelp API error: ${resp.status} ${resp.statusText}`);
+        continue;
+      }
+
+      const data = await resp.json() as any;
+      if (data?.businesses) {
+        for (const biz of data.businesses) {
           const hasWebsite = !!biz.url && !biz.url.includes("yelp.com");
-          businesses.push({
+          results.push({
             businessName: biz.name,
             address: biz.location?.display_address?.join(", "),
             phone: biz.phone,
@@ -272,15 +323,14 @@ export async function scrapeYelp(params: {
             reviewCount: biz.review_count,
             category,
             hasWebsite,
-            priceLevel: biz.price?.length, // $ = 1, $$ = 2, etc.
+            priceLevel: biz.price?.length,
             description: biz.categories?.map((c: any) => c.title).join(", "),
           });
         }
       }
-      return businesses;
-    });
-
-    if (yelpResults) results.push(...yelpResults);
+    } catch (err) {
+      console.error(`[MultiSource] Yelp scrape failed for category ${category}:`, err);
+    }
     await rateLimitedDelay("yelp");
   }
 
@@ -288,191 +338,34 @@ export async function scrapeYelp(params: {
 }
 
 /* ═══════════════════════════════════════════════════════
-   FACEBOOK BUSINESS PAGES
+   FACEBOOK / BBB / HOMEADVISOR / OPENTABLE — REMOVED
+   These sources depended on the Manus/Forge platform API
+   (BUILT_IN_FORGE_API_URL) which is not available on Railway.
+   Yelp Fusion + Google Maps now cover the same surface area.
    ═══════════════════════════════════════════════════════ */
 
-export async function scrapeFacebook(params: {
+export async function scrapeFacebook(_params: {
   location: string;
   categories?: string[];
   limit?: number;
 }): Promise<MultiSourceBusiness[]> {
-  const results: MultiSourceBusiness[] = [];
-  const categories = params.categories || [
-    "local business", "restaurant", "beauty salon", "contractor",
-    "auto repair", "cleaning service",
-  ];
-
-  for (const category of categories) {
-    const fbResults = await withRetry(async () => {
-      // Use Data API to search Facebook business pages
-      const fbResult = await callDataApi("Facebook/search_pages", {
-        query: {
-          q: `${category} in ${params.location}`,
-          type: "page",
-          limit: params.limit || 20,
-        },
-      }) as any;
-
-      const businesses: MultiSourceBusiness[] = [];
-      if (fbResult?.data) {
-        for (const page of fbResult.data) {
-          const hasWebsite = !!page.website && !page.website.includes("facebook.com");
-          businesses.push({
-            businessName: page.name,
-            address: page.location ? `${page.location.street || ""}, ${page.location.city || ""}, ${page.location.state || ""}`.trim() : undefined,
-            phone: page.phone,
-            website: hasWebsite ? page.website : undefined,
-            source: "facebook",
-            sourceId: page.id,
-            rating: page.overall_star_rating,
-            reviewCount: page.rating_count,
-            category,
-            hasWebsite,
-            socialProfiles: { facebook: `https://facebook.com/${page.id}` },
-            description: page.about || page.description,
-          });
-        }
-      }
-      return businesses;
-    });
-
-    if (fbResults) results.push(...fbResults);
-    await rateLimitedDelay("facebook");
-  }
-
-  return results;
+  return [];
 }
 
-/* ═══════════════════════════════════════════════════════
-   BBB LISTINGS
-   ═══════════════════════════════════════════════════════ */
-
-export async function scrapeBBB(params: {
+export async function scrapeBBB(_params: {
   location: string;
   categories?: string[];
   limit?: number;
 }): Promise<MultiSourceBusiness[]> {
-  const results: MultiSourceBusiness[] = [];
-  const categories = params.categories || [
-    "contractors", "plumbers", "electricians", "roofers",
-    "auto repair", "restaurants", "beauty salons",
-  ];
-
-  for (const category of categories) {
-    const bbbResults = await withRetry(async () => {
-      const bbbResult = await callDataApi("BBB/search_businesses", {
-        query: {
-          q: category,
-          location: params.location,
-          limit: params.limit || 20,
-        },
-      }) as any;
-
-      const businesses: MultiSourceBusiness[] = [];
-      if (bbbResult?.results) {
-        for (const biz of bbbResult.results) {
-          const hasWebsite = !!biz.website;
-          businesses.push({
-            businessName: biz.name || biz.businessName,
-            address: biz.address,
-            phone: biz.phone,
-            website: hasWebsite ? biz.website : undefined,
-            source: "bbb",
-            sourceId: biz.id,
-            rating: biz.rating ? parseFloat(biz.rating) : undefined,
-            reviewCount: biz.reviewCount,
-            category,
-            hasWebsite,
-            yearEstablished: biz.yearEstablished,
-            description: biz.description,
-          });
-        }
-      }
-      return businesses;
-    });
-
-    if (bbbResults) results.push(...bbbResults);
-    await rateLimitedDelay("bbb");
-  }
-
-  return results;
+  return [];
 }
 
-/* ═══════════════════════════════════════════════════════
-   INDUSTRY-SPECIFIC DIRECTORIES
-   ═══════════════════════════════════════════════════════ */
-
-export async function scrapeDirectories(params: {
+export async function scrapeDirectories(_params: {
   location: string;
   directories?: string[];
   limit?: number;
 }): Promise<MultiSourceBusiness[]> {
-  const results: MultiSourceBusiness[] = [];
-
-  // HomeAdvisor — contractors and home services
-  const homeAdvisorResults = await withRetry(async () => {
-    const haResult = await callDataApi("HomeAdvisor/search_pros", {
-      query: {
-        location: params.location,
-        limit: params.limit || 20,
-      },
-    }) as any;
-
-    const businesses: MultiSourceBusiness[] = [];
-    if (haResult?.pros) {
-      for (const pro of haResult.pros) {
-        businesses.push({
-          businessName: pro.name || pro.businessName,
-          address: pro.address,
-          phone: pro.phone,
-          website: pro.website,
-          source: "homeadvisor",
-          sourceId: pro.id,
-          rating: pro.rating,
-          reviewCount: pro.reviewCount,
-          category: pro.category || "home services",
-          hasWebsite: !!pro.website,
-          description: pro.description,
-        });
-      }
-    }
-    return businesses;
-  });
-  if (homeAdvisorResults) results.push(...homeAdvisorResults);
-
-  // OpenTable — restaurants
-  const openTableResults = await withRetry(async () => {
-    const otResult = await callDataApi("OpenTable/search_restaurants", {
-      query: {
-        location: params.location,
-        limit: params.limit || 20,
-      },
-    }) as any;
-
-    const businesses: MultiSourceBusiness[] = [];
-    if (otResult?.restaurants) {
-      for (const rest of otResult.restaurants) {
-        businesses.push({
-          businessName: rest.name,
-          address: rest.address,
-          phone: rest.phone,
-          website: rest.website,
-          source: "opentable",
-          sourceId: rest.id,
-          rating: rest.rating,
-          reviewCount: rest.reviewCount,
-          category: "restaurant",
-          hasWebsite: !!rest.website,
-          priceLevel: rest.priceRange,
-          description: rest.cuisine,
-        });
-      }
-    }
-    return businesses;
-  });
-  if (openTableResults) results.push(...openTableResults);
-
-  return results;
+  return [];
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -654,47 +547,8 @@ export async function runMultiSourceScrape(params: {
     }
   }
 
-  // ─── Facebook ───
-  if (sources.includes("facebook")) {
-    try {
-      const fbResults = await scrapeFacebook({
-        location: params.location,
-        limit: params.maxPerSource || 20,
-      });
-      allBusinesses.push(...fbResults);
-      bySource.facebook = fbResults.length;
-    } catch (err) {
-      errors.push(`Facebook: ${(err as Error).message}`);
-    }
-  }
-
-  // ─── BBB ───
-  if (sources.includes("bbb")) {
-    try {
-      const bbbResults = await scrapeBBB({
-        location: params.location,
-        limit: params.maxPerSource || 20,
-      });
-      allBusinesses.push(...bbbResults);
-      bySource.bbb = bbbResults.length;
-    } catch (err) {
-      errors.push(`BBB: ${(err as Error).message}`);
-    }
-  }
-
-  // ─── Industry Directories ───
-  if (sources.includes("homeadvisor") || sources.includes("opentable")) {
-    try {
-      const dirResults = await scrapeDirectories({
-        location: params.location,
-        limit: params.maxPerSource || 20,
-      });
-      allBusinesses.push(...dirResults);
-      bySource.directories = dirResults.length;
-    } catch (err) {
-      errors.push(`Directories: ${(err as Error).message}`);
-    }
-  }
+  // Facebook, BBB, HomeAdvisor, OpenTable removed — dependent on Forge/Manus platform API.
+  // Yelp Fusion + Google Maps cover the same business surface area on Railway.
 
   // ─── De-duplicate ───
   const unique = deduplicateBusinesses(allBusinesses);

@@ -399,28 +399,35 @@ export async function enrichBusinessContact(businessId: number): Promise<Enrichm
     } catch { /* ignore */ }
   }
 
-  // Step 1: Try Apollo
-  sourcesAttempted.push("apollo");
-  const apolloResult = await enrichViaApollo(
-    business.businessName,
-    domain,
-    business.address
-  );
-  if (apolloResult) {
-    sourcesSucceeded.push("apollo");
-    results.push(apolloResult);
-    console.log(`[ContactEnrichment] Apollo found data for ${business.businessName}`);
-  }
+  // Cost gate: only run expensive Apollo/Hunter for well-qualified leads
+  // LLM inference always runs (no per-call API cost beyond our Anthropic usage)
+  const qualScore = business.websiteScore !== null && business.websiteScore !== undefined
+    ? (business.hasWebsite ? 50 + (100 - business.websiteScore) / 2 : 70)
+    : (business.hasWebsite ? 50 : 70);
+  const shouldEnrichExpensive = qualScore >= 65;
 
-  // Step 2: Try Hunter (if we have a domain and still need email)
-  if (domain && !apolloResult?.ownerEmail) {
-    sourcesAttempted.push("hunter");
-    const hunterResult = await enrichViaHunter(domain, apolloResult?.ownerName || null);
-    if (hunterResult) {
-      sourcesSucceeded.push("hunter");
-      results.push(hunterResult);
-      console.log(`[ContactEnrichment] Hunter found email for ${business.businessName}`);
+  // Steps 1-2: Apollo + Hunter — only for well-qualified leads (cost gate)
+  let apolloResult: Partial<EnrichedContact> | null = null;
+  if (shouldEnrichExpensive) {
+    sourcesAttempted.push("apollo");
+    apolloResult = await enrichViaApollo(business.businessName, domain, business.address);
+    if (apolloResult) {
+      sourcesSucceeded.push("apollo");
+      results.push(apolloResult);
+      console.log(`[ContactEnrichment] Apollo found data for ${business.businessName}`);
     }
+
+    if (domain && !apolloResult?.ownerEmail) {
+      sourcesAttempted.push("hunter");
+      const hunterResult = await enrichViaHunter(domain, apolloResult?.ownerName || null);
+      if (hunterResult) {
+        sourcesSucceeded.push("hunter");
+        results.push(hunterResult);
+        console.log(`[ContactEnrichment] Hunter found email for ${business.businessName}`);
+      }
+    }
+  } else {
+    console.log(`[ContactEnrichment] Skipping Apollo/Hunter for ${business.businessName} (score ${qualScore.toFixed(0)} < 65)`);
   }
 
   // Step 3: LLM inference (always run for pain points and pitch angle)

@@ -13,6 +13,7 @@ import { getDb } from "../db";
 import { scrapedBusinesses, leads } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { storagePut } from "../storage";
+import { scoreWebsite } from "./leadGenScraper";
 import type { EnrichmentResult } from "./leadGenEnrichment";
 
 export interface AuditReport {
@@ -324,12 +325,91 @@ export async function generateAuditFromLeadData(lead: { id: number; businessName
       { name: "Credibility & Trust", score: 15, grade: "F", icon: "\uD83D\uDEE1\uFE0F", issues: ["No professional online presence", "Customers can't verify your business", "Competitors appear more trustworthy"], description: "75% of consumers judge a business's credibility based on their website. Without one, potential customers may choose a competitor instead." },
     );
   } else {
-    // Has a website URL — use LLM to generate a realistic audit
+    // Has a website URL — use real HTTP scorer first, fall back to LLM only if fetch fails
+    let realScore: { score: number; issues: string[] } | null = null;
+    try {
+      realScore = await scoreWebsite(websiteUrl!);
+    } catch (err) {
+      console.error(`[Audit] scoreWebsite failed for ${websiteUrl}, falling back to LLM:`, err);
+    }
+
+    if (realScore) {
+      const issueSet = new Set(realScore.issues);
+      sections.push(
+        {
+          name: "Performance & Speed",
+          score: issueSet.has("slow") ? 20 : 75,
+          grade: getGrade(issueSet.has("slow") ? 20 : 75),
+          icon: "⚡",
+          issues: issueSet.has("slow") ? ["Page load time exceeds 3 seconds", "Large uncompressed assets detected"] : [],
+          description: issueSet.has("slow") ? "Your website loads slowly, causing visitors to leave before it finishes loading." : "Page load speed appears acceptable.",
+        },
+        {
+          name: "Mobile Friendliness",
+          score: issueSet.has("not_mobile_friendly") ? 15 : 80,
+          grade: getGrade(issueSet.has("not_mobile_friendly") ? 15 : 80),
+          icon: "📱",
+          issues: issueSet.has("not_mobile_friendly") ? ["Not optimized for mobile devices", "Text too small to read on phones"] : [],
+          description: issueSet.has("not_mobile_friendly") ? "Over 70% of local searches happen on mobile. Your site is not mobile-friendly." : "Site renders on mobile devices.",
+        },
+        {
+          name: "SEO & Discoverability",
+          score: issueSet.has("no_meta_description") || issueSet.has("no_title") ? 25 : 65,
+          grade: getGrade(issueSet.has("no_meta_description") || issueSet.has("no_title") ? 25 : 65),
+          icon: "🔍",
+          issues: [
+            ...(issueSet.has("no_meta_description") ? ["Missing meta description"] : []),
+            ...(issueSet.has("no_title") ? ["Missing page title tag"] : []),
+          ],
+          description: "SEO determines whether customers find you on Google.",
+        },
+        {
+          name: "Security",
+          score: issueSet.has("no_ssl") ? 10 : 90,
+          grade: getGrade(issueSet.has("no_ssl") ? 10 : 90),
+          icon: "🔒",
+          issues: issueSet.has("no_ssl") ? ["No SSL certificate — browser shows 'Not Secure' warning"] : [],
+          description: issueSet.has("no_ssl") ? "Your site lacks HTTPS. Browsers warn visitors it is Not Secure." : "SSL certificate is present.",
+        },
+        {
+          name: "Overall Quality",
+          score: realScore.score,
+          grade: getGrade(realScore.score),
+          icon: "🎨",
+          issues: realScore.issues,
+          description: `Overall website quality score: ${realScore.score}/100.`,
+        },
+      );
+
+      const overallScore = realScore.score;
+      const recommendations = [
+        ...(issueSet.has("slow") ? ["Optimize images and enable compression to improve page speed"] : []),
+        ...(issueSet.has("not_mobile_friendly") ? ["Rebuild site with mobile-first responsive design"] : []),
+        ...(issueSet.has("no_ssl") ? ["Install an SSL certificate (HTTPS)"] : []),
+        ...(issueSet.has("no_meta_description") ? ["Add unique meta descriptions to every page"] : []),
+        "Add clear calls to action on every page",
+        "Set up Google Business Profile and keep it updated",
+      ].slice(0, 5);
+      const estimatedCustomersLost = overallScore < 30 ? "20-40 customers per month" : overallScore < 60 ? "10-20 customers per month" : "5-10 customers per month";
+
+      const htmlContent = generateAuditHTML({ businessName, websiteUrl, overallScore, overallGrade: getGrade(overallScore), sections, recommendations, estimatedCustomersLost });
+      let storageUrl: string | undefined;
+      try {
+        const key = `audits/lead-${lead.id}-${Date.now()}.html`;
+        const result = await storagePut(key, Buffer.from(htmlContent), "text/html");
+        storageUrl = result.url;
+      } catch (err) {
+        console.error(`[Audit] Failed to upload report for lead ${lead.id}:`, err);
+      }
+      return { businessName, websiteUrl, overallScore, overallGrade: getGrade(overallScore), sections, recommendations, estimatedCustomersLost, htmlContent, storageUrl };
+    }
+
+    // Fallback to LLM only when real fetch fails
     try {
       const aiResponse = await invokeLLM({
         messages: [
-          { role: "system", content: "You are a website audit tool. Analyze the given website URL and generate a realistic audit. Respond with valid JSON only." },
-          { role: "user", content: `Analyze this website and generate an audit report with realistic scores and issues.\nWebsite: ${websiteUrl}\nBusiness: ${businessName}\n\nRespond in JSON:\n{\n  \"sections\": [\n    { \"name\": \"Performance & Speed\", \"score\": <0-100>, \"issues\": [\"issue1\", ...], \"description\": \"...\" },\n    { \"name\": \"Mobile Friendliness\", \"score\": <0-100>, \"issues\": [...], \"description\": \"...\" },\n    { \"name\": \"SEO & Discoverability\", \"score\": <0-100>, \"issues\": [...], \"description\": \"...\" },\n    { \"name\": \"Security\", \"score\": <0-100>, \"issues\": [...], \"description\": \"...\" },\n    { \"name\": \"Design & Accessibility\", \"score\": <0-100>, \"issues\": [...], \"description\": \"...\" }\n  ],\n  \"recommendations\": [\"rec1\", \"rec2\", \"rec3\", \"rec4\", \"rec5\"],\n  \"estimatedCustomersLost\": \"X-Y customers per month\"\n}` },
+          { role: "system", content: "You are a website audit analyst. Generate a realistic audit based on the business details provided. Respond with valid JSON only." },
+          { role: "user", content: `Generate a website audit for:\nBusiness: ${businessName}\nWebsite: ${websiteUrl}\n\nRespond in JSON:\n{"sections":[{"name":"Performance & Speed","score":0,"issues":[],"description":""},{"name":"Mobile Friendliness","score":0,"issues":[],"description":""},{"name":"SEO & Discoverability","score":0,"issues":[],"description":""},{"name":"Security","score":0,"issues":[],"description":""},{"name":"Design & Accessibility","score":0,"issues":[],"description":""}],"recommendations":["rec1"],"estimatedCustomersLost":"10-20 per month"}` },
         ],
         response_format: {
           type: "json_schema",
@@ -339,53 +419,24 @@ export async function generateAuditFromLeadData(lead: { id: number; businessName
             schema: {
               type: "object",
               properties: {
-                sections: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      name: { type: "string" },
-                      score: { type: "integer" },
-                      issues: { type: "array", items: { type: "string" } },
-                      description: { type: "string" },
-                    },
-                    required: ["name", "score", "issues", "description"],
-                    additionalProperties: false,
-                  },
-                },
+                sections: { type: "array", items: { type: "object", properties: { name: { type: "string" }, score: { type: "integer" }, issues: { type: "array", items: { type: "string" } }, description: { type: "string" } }, required: ["name","score","issues","description"], additionalProperties: false } },
                 recommendations: { type: "array", items: { type: "string" } },
                 estimatedCustomersLost: { type: "string" },
               },
-              required: ["sections", "recommendations", "estimatedCustomersLost"],
+              required: ["sections","recommendations","estimatedCustomersLost"],
               additionalProperties: false,
             },
           },
         },
       });
       const parsed = JSON.parse(aiResponse.choices?.[0]?.message?.content as string);
-      const icons = ["\u26A1", "\uD83D\uDCF1", "\uD83D\uDD0D", "\uD83D\uDD12", "\uD83C\uDFA8"];
+      const icons = ["⚡", "📱", "🔍", "🔒", "🎨"];
       for (let i = 0; i < parsed.sections.length; i++) {
         const s = parsed.sections[i];
-        sections.push({
-          name: s.name,
-          score: s.score,
-          grade: getGrade(s.score),
-          icon: icons[i] || "\u2139\uFE0F",
-          issues: s.issues,
-          description: s.description,
-        });
+        sections.push({ name: s.name, score: s.score, grade: getGrade(s.score), icon: icons[i] || "ℹ️", issues: s.issues, description: s.description });
       }
       const overallScore = Math.round(sections.reduce((sum, s) => sum + s.score, 0) / sections.length);
-      const htmlContent = generateAuditHTML({
-        businessName,
-        websiteUrl,
-        overallScore,
-        overallGrade: getGrade(overallScore),
-        sections,
-        recommendations: parsed.recommendations,
-        estimatedCustomersLost: parsed.estimatedCustomersLost,
-      });
-
+      const htmlContent = generateAuditHTML({ businessName, websiteUrl, overallScore, overallGrade: getGrade(overallScore), sections, recommendations: parsed.recommendations, estimatedCustomersLost: parsed.estimatedCustomersLost });
       let storageUrl: string | undefined;
       try {
         const key = `audits/lead-${lead.id}-${Date.now()}.html`;
@@ -394,21 +445,10 @@ export async function generateAuditFromLeadData(lead: { id: number; businessName
       } catch (err) {
         console.error(`[Audit] Failed to upload report for lead ${lead.id}:`, err);
       }
-
-      return {
-        businessName,
-        websiteUrl,
-        overallScore,
-        overallGrade: getGrade(overallScore),
-        sections,
-        recommendations: parsed.recommendations,
-        estimatedCustomersLost: parsed.estimatedCustomersLost,
-        htmlContent,
-        storageUrl,
-      };
+      return { businessName, websiteUrl, overallScore, overallGrade: getGrade(overallScore), sections, recommendations: parsed.recommendations, estimatedCustomersLost: parsed.estimatedCustomersLost, htmlContent, storageUrl };
     } catch (err) {
       console.error(`[Audit] LLM audit generation failed for lead ${lead.id}:`, err);
-      // Fall through to fallback below
+      // Fall through to generic fallback below
     }
   }
 

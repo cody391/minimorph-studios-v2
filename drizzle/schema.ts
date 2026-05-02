@@ -105,10 +105,16 @@ export const leads = mysqlTable("leads", {
   smsOptedOut: boolean("smsOptedOut").default(false).notNull(),
   smsOptOutAt: timestamp("smsOptOutAt"),
   smsFirstMessageSent: boolean("smsFirstMessageSent").default(false).notNull(),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  intelligenceCard: json("intelligenceCard"),
+  checkoutSentAt: timestamp("checkoutSentAt"),
+  checkoutUrl: varchar("checkoutUrl", { length: 512 }),
+  selfClosed: boolean("selfClosed").default(false).notNull(),
+  excludedReason: varchar("excludedReason", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-export type Lead = typeof leads.$inferSelect;;
+export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
 
 /* ═══════════════════════════════════════════════════════
@@ -183,6 +189,7 @@ export const commissions = mysqlTable("commissions", {
   type: mysqlEnum("type", ["initial_sale", "renewal", "upsell", "referral_bonus", "recurring_monthly"]).default("initial_sale").notNull(),
   status: mysqlEnum("status", ["pending", "approved", "paid", "cancelled"]).default("pending").notNull(),
   selfSourced: boolean("selfSourced").default(false).notNull(),
+  rateApplied: decimal("rateApplied", { precision: 5, scale: 2 }),
   paidAt: timestamp("paidAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -1589,6 +1596,8 @@ export const supportTickets = mysqlTable("support_tickets", {
   status: mysqlEnum("status", ["open", "in_progress", "resolved", "closed"]).default("open").notNull(),
   priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
   category: mysqlEnum("category", ["billing", "technical", "website_change", "general", "other"]).default("general").notNull(),
+  customerRating: int("customerRating"),
+  ratingToken: varchar("ratingToken", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1657,3 +1666,17 @@ export const broadcasts = mysqlTable("broadcasts", {
 });
 export type Broadcast = typeof broadcasts.$inferSelect;
 export type InsertBroadcast = typeof broadcasts.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SCORING MODEL — ML weight persistence for lead scoring
+   ═══════════════════════════════════════════════════════ */
+export const scoringModel = mysqlTable("scoring_model", {
+  id: int("id").autoincrement().primaryKey(),
+  modelVersion: varchar("modelVersion", { length: 64 }).notNull(),
+  weights: json("weights").notNull(),
+  trainingSize: int("trainingSize").default(0).notNull(),
+  accuracy: decimal("accuracy", { precision: 5, scale: 4 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ScoringModel = typeof scoringModel.$inferSelect;
+export type InsertScoringModel = typeof scoringModel.$inferInsert;

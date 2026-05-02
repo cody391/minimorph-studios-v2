@@ -25,7 +25,8 @@ import { runAdaptiveScaling, getAdaptiveScalingSummary, analyzeRepCapacity } fro
 import { handleConversation, buildBusinessIntelligence } from "./services/leadGenConversationAI";
 import { getDb } from "./db";
 import { scrapeJobs, scrapedBusinesses, outreachSequences, aiConversations, repServiceAreas, enterpriseProspects, leads } from "../drizzle/schema";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, count, isNull } from "drizzle-orm";
+import { ENV } from "./_core/env";
 
 // Admin-only middleware
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -328,7 +329,7 @@ export const leadGenRouter = router({
       lat: z.number().optional(),
       lng: z.number().optional(),
       radius: z.number().optional(),
-      sources: z.array(z.enum(["google_maps", "yelp", "facebook", "bbb", "homeadvisor", "opentable", "directory"])).optional(),
+      sources: z.array(z.enum(["google_maps", "yelp", "directory"])).optional(),
       priorityLevel: z.enum(["high", "medium", "low", "all"]).optional(),
       maxPerSource: z.number().min(5).max(50).optional(),
     }))
@@ -592,4 +593,55 @@ export const leadGenRouter = router({
       if (!lead) throw new TRPCError({ code: "NOT_FOUND", message: "Lead not found" });
       return lead;
     }),
+
+  // ─── System Health Check ───
+  systemHealth: adminProcedure.query(async () => {
+    const checks: Record<string, { status: "ok" | "missing" | "error"; detail?: string }> = {};
+
+    checks.googleMaps = ENV.googleMapsApiKey ? { status: "ok" } : { status: "missing", detail: "GOOGLE_MAPS_API_KEY not set" };
+    checks.yelp = ENV.yelpApiKey ? { status: "ok" } : { status: "missing", detail: "YELP_API_KEY not set" };
+    checks.apollo = ENV.apolloApiKey ? { status: "ok" } : { status: "missing", detail: "APOLLO_API_KEY not set" };
+    checks.hunter = ENV.hunterApiKey ? { status: "ok" } : { status: "missing", detail: "HUNTER_API_KEY not set" };
+    checks.resend = ENV.resendApiKey ? { status: "ok" } : { status: "missing", detail: "RESEND_API_KEY not set" };
+    checks.twilio = ENV.twilioAccountSid && ENV.twilioAuthToken ? { status: "ok" } : { status: "missing", detail: "TWILIO credentials not set" };
+    checks.anthropic = ENV.anthropicApiKey ? { status: "ok" } : { status: "missing", detail: "ANTHROPIC_API_KEY not set" };
+
+    const allOk = Object.values(checks).every(c => c.status === "ok");
+    return { healthy: allOk, checks };
+  }),
+
+  // ─── Pipeline Stats ───
+  pipelineStats: adminProcedure.query(async () => {
+    const db = (await getDb())!;
+    const [stats] = await db.select({
+      totalLeads: count(leads.id),
+    }).from(leads);
+
+    const byStage = await db.select({
+      stage: leads.stage,
+      cnt: count(leads.id),
+    }).from(leads).groupBy(leads.stage);
+
+    const byTemp = await db.select({
+      temperature: leads.temperature,
+      cnt: count(leads.id),
+    }).from(leads).groupBy(leads.temperature);
+
+    const [outreach] = await db.select({ cnt: count(outreachSequences.id) }).from(outreachSequences)
+      .where(eq(outreachSequences.status, "scheduled"));
+
+    const [conversations] = await db.select({ cnt: count(aiConversations.id) }).from(aiConversations);
+
+    const selfCloseLeads = await db.select({ cnt: count(leads.id) }).from(leads)
+      .where(sql`${leads.checkoutSentAt} IS NOT NULL`);
+
+    return {
+      totalLeads: stats?.totalLeads ?? 0,
+      byStage: Object.fromEntries(byStage.map(r => [r.stage, r.cnt])),
+      byTemperature: Object.fromEntries(byTemp.map(r => [r.temperature, r.cnt])),
+      pendingOutreach: outreach?.cnt ?? 0,
+      totalConversations: conversations?.cnt ?? 0,
+      selfClosesSent: selfCloseLeads[0]?.cnt ?? 0,
+    };
+  }),
 });

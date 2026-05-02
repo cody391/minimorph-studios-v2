@@ -11,6 +11,7 @@ import { leads, outreachSequences, aiConversations, reps, repServiceAreas } from
 import { eq, and, lte, isNull, desc, sql, inArray } from "drizzle-orm";
 import { sendSms } from "./sms";
 import { sendEmail } from "./email";
+import { ENV } from "../_core/env";
 import type { EnrichmentResult } from "./leadGenEnrichment";
 
 // Outreach sequence templates (day offsets from lead creation)
@@ -44,31 +45,29 @@ export async function generateOutreachMessage(params: {
   const isSms = params.channel === "sms";
   const maxLength = isSms ? 300 : 1500;
 
-  const prompt = `You are an AI sales agent for MiniMorph Studios, a premium web design agency.
-Generate a ${params.channel === "sms" ? "short SMS" : "professional email"} for this outreach step.
+  const prompt = `You are Elena Brooks, a team member at MiniMorph Studios (a web design agency).
+Generate a ${params.channel === "sms" ? "short SMS" : "professional email"} reaching out to a local business owner.
 
 BUSINESS: ${params.businessName}
 CONTACT: ${params.contactName}
 INDUSTRY: ${params.industry || "Unknown"}
-CURRENT WEBSITE: ${params.website || "NONE - they have no website"}
+CURRENT WEBSITE: ${params.website || "NONE — they have no website"}
 ${params.websiteScore !== undefined ? `WEBSITE SCORE: ${params.websiteScore}/100` : ""}
 ${params.websiteIssues?.length ? `WEBSITE ISSUES: ${params.websiteIssues.join(", ")}` : ""}
 ${params.painPoints?.length ? `PAIN POINTS: ${params.painPoints.join("; ")}` : ""}
 ${params.recommendedApproach ? `APPROACH: ${params.recommendedApproach}` : ""}
 
-OUTREACH PURPOSE: ${params.purpose}
+OUTREACH STEP: ${params.purpose}
 ${params.previousMessages?.length ? `PREVIOUS MESSAGES SENT:\n${params.previousMessages.join("\n---\n")}` : "First contact"}
 
-RULES:
-- Be genuine, not salesy. Sound like a real person, not a template.
-- Reference specific things about THEIR business (reviews, location, industry).
-- ${!params.website ? "Emphasize that they're missing out on customers who search online." : "Point out specific issues with their current website."}
-- Keep it ${isSms ? "under 160 characters if possible, max 300" : "concise, 3-5 short paragraphs max"}.
-- Include a clear, low-pressure call to action.
-- Don't use exclamation marks excessively.
-- For SMS: no subject line needed, just the message body.
-- For email: include a compelling subject line.
-- Sign off as "The MiniMorph Team" or "MiniMorph Studios".
+ELENA'S VOICE:
+- Warm, direct, genuinely helpful — not pushy or salesy
+- Sounds like a real person who actually looked at their business
+- References specific things about THEIR business (reviews, industry, location, website issues)
+- ${!params.website ? "Emphasizes the real customers they're missing by not having a website" : "Points out specific issues with their current website and what it's costing them"}
+- Never sounds like a template — this feels personal
+- Sign off as "Elena" (just first name, from MiniMorph Studios)
+- ${isSms ? "Under 300 characters. No fluff." : "3-4 short paragraphs max. One clear ask."}
 
 Respond in JSON:
 {
@@ -281,8 +280,8 @@ export async function sendDueOutreach(): Promise<number> {
           direction: "outbound",
           content: seq.body || "",
         });
-      } else if (seq.channel === "email" && lead.email) {
-        // Send email
+      } else if (seq.channel === "email" && lead.email && (lead as any).emailVerified) {
+        // Send email — only to verified addresses
         await sendEmail({
           to: lead.email,
           subject: seq.subject || "A quick note from MiniMorph Studios",
@@ -449,19 +448,27 @@ Respond in JSON:
   }
 
   if (aiDecision.decision === "push_for_close" && aiDecision.response) {
-    // Try to close — send them to the website
-    const closeMessage = aiDecision.response + "\n\nCheck out our plans: {{WEBSITE_URL}}/pricing";
+    // Self-close: send personalized checkout link
+    const siteUrl = ENV.appUrl || "https://minimorphstudios.com";
+    const checkoutUrl = `${siteUrl}/get-started?leadId=${params.leadId}&source=ai_close`;
+    const closeMessage = aiDecision.response + `\n\nGet started here: ${checkoutUrl}`;
     if (params.channel === "sms" && lead.phone) {
       await sendSms({ to: lead.phone, body: closeMessage });
-    } else if (lead.email) {
+    } else if (lead.email && (lead as any).emailVerified) {
       await sendEmail({
         to: lead.email,
-        subject: "Your custom quote from MiniMorph Studios",
+        subject: "Ready to get started? Here's your link",
         html: `<div style="font-family: sans-serif;">${closeMessage.replace(/\n/g, "<br/>")}</div>`,
       });
     }
     result.response = closeMessage;
-    await db.update(leads).set({ temperature: "hot", stage: "negotiating", lastTouchAt: new Date() }).where(eq(leads.id, params.leadId));
+    await db.update(leads).set({
+      temperature: "hot",
+      stage: "negotiating",
+      lastTouchAt: new Date(),
+      checkoutUrl,
+      checkoutSentAt: new Date(),
+    } as any).where(eq(leads.id, params.leadId));
 
   } else if (aiDecision.decision === "assign_to_rep") {
     // Find the nearest available rep
@@ -498,7 +505,6 @@ Respond in JSON:
     result.assignedToOwner = true;
 
     // SMS the owner directly
-    const { ENV } = await import("../_core/env");
     if (ENV.ownerPhoneNumber) {
       try {
         await sendSms({

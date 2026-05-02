@@ -52,7 +52,7 @@ export async function analyzeForEnterprise(businessId: number): Promise<boolean>
   if (hasHighEmployeeCount) score += 30;
   if (hasHighReviewCount) score += 20;
   if (isHighValueIndustry) score += 25;
-  if (enrichment.linkedinUrl) score += 10;
+  if (enrichment.employeeCount && enrichment.employeeCount > 5) score += 10;
   if (biz.website) score += 5; // Has existing tech = more likely to invest in more
   if ((enrichment.employeeCount || 0) >= 50) score += 15;
 
@@ -75,7 +75,7 @@ export async function analyzeForEnterprise(businessId: number): Promise<boolean>
       industry: enrichment.industry || types[0],
       estimatedEmployees: enrichment.employeeCount,
       estimatedRevenue: analysis.estimatedRevenue,
-      linkedinUrl: enrichment.linkedinUrl,
+      linkedinUrl: null,
       googlePlaceId: biz.googlePlaceId,
       automationOpportunities: analysis.automationOpportunities,
       aiAnalysisReport: analysis.fullReport,
@@ -141,8 +141,6 @@ COMPANY INFO:
 - Website: ${biz.website || "None"}
 - Employee Count: ${enrichment.employeeCount || "Unknown"}
 - Google Rating: ${biz.rating || "Unknown"} (${biz.reviewCount || 0} reviews)
-- LinkedIn: ${enrichment.linkedinUrl || "Not found"}
-${enrichment.linkedinData ? `- LinkedIn Data: ${JSON.stringify(enrichment.linkedinData).substring(0, 500)}` : ""}
 ${enrichment.dossier ? `- Business Dossier: ${enrichment.dossier.substring(0, 500)}` : ""}
 
 TASK: Determine if this company is a good candidate for a full AI automation engagement (building custom AI agents, automating workflows, creating MVPs). These are $10K-$100K+ projects.

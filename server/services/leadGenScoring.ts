@@ -14,8 +14,8 @@
  */
 
 import { getDb } from "../db";
-import { leads, scrapedBusinesses, outreachSequences } from "../../drizzle/schema";
-import { eq, and, sql, gte, lte } from "drizzle-orm";
+import { leads, scrapedBusinesses, outreachSequences, scoringModel } from "../../drizzle/schema";
+import { eq, and, sql, gte, lte, desc } from "drizzle-orm";
 
 /* ═══════════════════════════════════════════════════════
    SCORING MODEL
@@ -101,6 +101,44 @@ function recencyDecay(dateStr: Date | string | null, halfLifeDays = 60): number 
    ═══════════════════════════════════════════════════════ */
 
 /**
+ * Load the most recent scoring model weights from the database.
+ * Called on module init to restore weights across restarts.
+ */
+export async function loadModelFromDB(): Promise<void> {
+  try {
+    const db = (await getDb())!;
+    const [row] = await db.select().from(scoringModel).orderBy(desc(scoringModel.createdAt)).limit(1);
+    if (row?.weights) {
+      cachedWeights = row.weights as ScoringWeights;
+      lastTrainingSampleSize = cachedWeights.sampleSize ?? 0;
+      console.log(`[Scoring] Loaded model v${row.modelVersion} from DB (${lastTrainingSampleSize} training samples)`);
+    }
+  } catch (err) {
+    console.warn("[Scoring] Failed to load model from DB, will use defaults:", err);
+  }
+}
+
+/**
+ * Save the current scoring weights to the database for persistence across restarts.
+ */
+export async function saveModelToDB(weights: ScoringWeights): Promise<void> {
+  try {
+    const db = (await getDb())!;
+    await db.insert(scoringModel).values({
+      modelVersion: String(weights.version),
+      weights: weights as any,
+      trainingSize: weights.sampleSize ?? 0,
+    });
+    console.log(`[Scoring] Saved model v${weights.version} to DB`);
+  } catch (err) {
+    console.warn("[Scoring] Failed to save model to DB:", err);
+  }
+}
+
+// Load persisted model on module init
+loadModelFromDB().catch(() => {});
+
+/**
  * Get the current scoring weights (from cache, or compute if stale/retrain needed)
  */
 export async function getScoringWeights(): Promise<ScoringWeights> {
@@ -113,6 +151,7 @@ export async function getScoringWeights(): Promise<ScoringWeights> {
 
   cachedWeights = await computeWeightsFromHistory();
   lastTrainingSampleSize = cachedWeights.sampleSize;
+  await saveModelToDB(cachedWeights);
   return cachedWeights;
 }
 
@@ -138,6 +177,7 @@ export async function forceRetrain(): Promise<{ previousVersion: number; newVers
   const previousVersion = cachedWeights?.version || 0;
   cachedWeights = null;
   const newWeights = await getScoringWeights();
+  await saveModelToDB(newWeights);
   return {
     previousVersion,
     newVersion: newWeights.version,

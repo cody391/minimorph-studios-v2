@@ -14,7 +14,7 @@
  */
 
 import { invokeLLM } from "../_core/llm";
-import { getDb } from "../db";
+import { getDb, getProductCatalog } from "../db";
 import { leads, reps, repServiceAreas, contracts } from "../../drizzle/schema";
 import { eq, and, sql, isNull, ne, inArray } from "drizzle-orm";
 import { storagePut } from "../storage";
@@ -38,6 +38,7 @@ export interface Proposal {
   proposalSections: ProposalSection[];
   htmlContent: string;
   storageUrl?: string;
+  intelligenceCard?: Record<string, unknown>;
 }
 
 interface ProposalSection {
@@ -71,23 +72,34 @@ export async function generateProposal(leadId: number): Promise<Proposal> {
   const hasWebsite = !!lead.website;
   const websiteScore = enrichment.websiteScore || 0;
   let recommendedPackage = "Pro";
-  let packagePrice = 395;
 
   if (!hasWebsite) {
     recommendedPackage = "Starter";
-    packagePrice = 195;
   } else if (websiteScore < 30) {
     recommendedPackage = "Pro";
-    packagePrice = 395;
   } else if (websiteScore < 60) {
     recommendedPackage = "Growth";
-    packagePrice = 295;
   }
 
   // If they have employees or high review count, suggest higher tier
   if (enrichment.employeeCount && enrichment.employeeCount > 10) {
     recommendedPackage = "Enterprise";
-    packagePrice = 495;
+  }
+
+  // Fetch price from product catalog
+  const PACKAGE_KEY_MAP: Record<string, string> = { Starter: "starter", Growth: "growth", Pro: "premium", Enterprise: "enterprise" };
+  let packagePrice = recommendedPackage === "Starter" ? 195 : recommendedPackage === "Growth" ? 295 : recommendedPackage === "Enterprise" ? 495 : 395;
+  try {
+    const catalog = await getProductCatalog();
+    const key = PACKAGE_KEY_MAP[recommendedPackage];
+    const dbItem = (catalog as any[]).find((p: any) => p.productKey === key && p.category === "package");
+    if (dbItem) {
+      const base = parseFloat(dbItem.basePrice);
+      const disc = dbItem.discountPercent ?? 0;
+      packagePrice = disc > 0 ? Math.round(base * (1 - disc / 100)) : base;
+    }
+  } catch {
+    // keep fallback packagePrice
   }
 
   // Generate AI proposal content
@@ -208,6 +220,51 @@ Respond in JSON:
     console.error(`[Proposal] Failed to upload for ${lead.businessName}:`, err);
   }
 
+  // Persist intelligence card to lead record
+  const intelligenceCard = {
+    businessInfo: {
+      name: lead.businessName,
+      industry: lead.industry,
+      website: lead.website,
+      websiteScore: enrichment.websiteScore,
+      websiteIssues: enrichment.websiteIssues,
+      googleRating: enrichment.googleRating,
+      reviewCount: enrichment.googleReviewCount,
+      location: (lead.enrichmentData as any)?.location,
+      employeeCount: enrichment.employeeCount,
+    },
+    contactInfo: {
+      name: lead.contactName,
+      email: lead.email,
+      phone: lead.phone,
+      emailVerified: (lead as any).emailVerified ?? false,
+    },
+    competitiveIntel: {
+      competitors: enrichment.competitors,
+    },
+    aiAnalysis: {
+      recommendedPackage,
+      packagePrice,
+      roiEstimate,
+      painPoints: enrichment.painPoints,
+      opportunities: enrichment.opportunities,
+      proposalSections,
+    },
+    scoring: {
+      qualificationScore: lead.qualificationScore,
+      temperature: lead.temperature,
+      stage: lead.stage,
+    },
+    proposalUrl: storageUrl,
+    generatedAt: new Date().toISOString(),
+  };
+
+  try {
+    await db.update(leads).set({ intelligenceCard } as any).where(eq(leads.id, leadId));
+  } catch (err) {
+    console.error(`[Proposal] Failed to save intelligence card for ${lead.businessName}:`, err);
+  }
+
   return {
     leadId,
     businessName: lead.businessName,
@@ -217,6 +274,7 @@ Respond in JSON:
     proposalSections,
     htmlContent,
     storageUrl,
+    intelligenceCard,
   };
 }
 

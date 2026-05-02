@@ -206,8 +206,9 @@ export async function runScrapeJob(jobId: number): Promise<ScrapeResult> {
           biz.rating = d.rating ?? biz.rating;
           biz.reviewCount = d.user_ratings_total ?? biz.reviewCount;
 
-          // Qualification: no website OR has a website (we'll score it later)
-          const isQualified = !biz.hasWebsite || true; // We'll score websites later
+          // Qualification at scrape time: no website qualifies immediately.
+          // Businesses with websites will be qualified/disqualified after the scoring pass.
+          const isQualified = !biz.hasWebsite;
           if (isQualified) qualifiedCount++;
 
           detailedBusinesses.push(biz);

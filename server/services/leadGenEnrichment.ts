@@ -8,12 +8,12 @@
  */
 
 import { makeRequest, type PlaceDetailsResult } from "../_core/map";
-import { callDataApi } from "../_core/dataApi";
 import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
 import { scrapedBusinesses, leads, type InsertLead } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { dedupOrNull } from "./leadDedup";
+import { isExcludedBusiness } from "./leadGenMultiSource";
 
 export interface EnrichmentResult {
   ownerName?: string;
@@ -21,13 +21,12 @@ export interface EnrichmentResult {
   ownerPhone?: string;
   openingHours?: string[];
   reviews?: Array<{ author: string; rating: number; text: string }>;
-  linkedinUrl?: string;
-  linkedinData?: Record<string, unknown>;
   industry?: string;
   employeeCount?: number;
   dossier?: string;
   painPoints?: string[];
   recommendedApproach?: string;
+  opportunities?: string[];
 }
 
 /**
@@ -68,35 +67,7 @@ export async function enrichBusiness(businessId: number): Promise<EnrichmentResu
     console.error(`[Enrichment] Google details failed for ${biz.businessName}:`, err);
   }
 
-  // 2. Try LinkedIn company search
-  try {
-    // Clean the business name for LinkedIn search
-    const cleanName = biz.businessName.replace(/[^a-zA-Z0-9\s]/g, "").toLowerCase().replace(/\s+/g, "-");
-    const linkedinResult = await callDataApi("LinkedIn/get_company_details", {
-      query: { username: cleanName },
-    }) as any;
-
-    if (linkedinResult?.success && linkedinResult?.data) {
-      const ld = linkedinResult.data;
-      enrichment.linkedinUrl = ld.linkedinUrl;
-      enrichment.linkedinData = {
-        tagline: ld.tagline,
-        type: ld.type,
-        staffCount: ld.staffCount,
-        followerCount: ld.followerCount,
-        industries: ld.industries,
-        specialities: ld.specialities,
-        description: ld.description?.substring(0, 500),
-      };
-      enrichment.industry = ld.industries?.[0];
-      enrichment.employeeCount = ld.staffCount;
-    }
-  } catch (err) {
-    // LinkedIn search is best-effort, many small businesses won't have profiles
-    console.error(`[Enrichment] LinkedIn search failed for ${biz.businessName}:`, err);
-  }
-
-  // 3. Generate AI dossier
+  // 2. Generate AI dossier
   try {
     const dossier = await generateDossier(biz, enrichment);
     enrichment.dossier = dossier.dossier;
@@ -147,7 +118,6 @@ BUSINESS INFO:
 - Website Issues: ${websiteIssues.length > 0 ? websiteIssues.join(", ") : "None identified"}
 - Google Rating: ${biz.rating || "Unknown"} (${biz.reviewCount || 0} reviews)
 - Employee Count: ${enrichment.employeeCount || "Unknown"}
-- LinkedIn: ${enrichment.linkedinUrl || "Not found"}
 ${negativeReviews.length > 0 ? `\nNEGATIVE REVIEWS:\n${negativeReviews.map(r => `- "${r.text.substring(0, 200)}"`).join("\n")}` : ""}
 
 Respond in JSON with this exact structure:
@@ -229,6 +199,13 @@ export async function convertToLead(businessId: number): Promise<number> {
   const [biz] = await db.select().from(scrapedBusinesses).where(eq(scrapedBusinesses.id, businessId));
   if (!biz) throw new Error(`Business ${businessId} not found`);
 
+  // Skip franchises, chains, government, and other excluded business types
+  const exclusion = isExcludedBusiness(biz.businessName, (biz.businessTypes as string[] | null) ?? []);
+  if (exclusion.excluded) {
+    await db.update(scrapedBusinesses).set({ status: "disqualified" }).where(eq(scrapedBusinesses.id, businessId));
+    throw new Error(`Business excluded: ${exclusion.reason}`);
+  }
+
   const enrichment = (biz.enrichmentData || {}) as EnrichmentResult;
 
   // Determine contact info
@@ -239,15 +216,18 @@ export async function convertToLead(businessId: number): Promise<number> {
   // Determine qualification score based on available data
   let qualScore = 50; // Base score
   if (!biz.hasWebsite) qualScore += 20; // No website = high opportunity
-  if (biz.websiteScore !== null && biz.websiteScore < 40) qualScore += 15; // Bad website
+  if (biz.websiteScore !== null && biz.websiteScore !== undefined && biz.websiteScore < 30) qualScore += 15; // Very bad website
+  else if (biz.websiteScore !== null && biz.websiteScore !== undefined && biz.websiteScore < 60) qualScore += 8; // Below average website
   if (Number(biz.rating) >= 4.0) qualScore += 10; // Good business, just needs web help
   if (biz.reviewCount && biz.reviewCount > 20) qualScore += 5; // Active business
+  if (biz.reviewCount && biz.reviewCount > 100) qualScore += 5; // Very active
   qualScore = Math.min(100, qualScore);
 
   const leadData: InsertLead = {
     businessName: biz.businessName,
     contactName,
-    email: email || `info@${biz.businessName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
+    email: email || "",
+    emailVerified: !!email,
     phone,
     industry: enrichment.industry || (biz.businessTypes as string[] | null)?.[0] || "Other",
     website: biz.website,

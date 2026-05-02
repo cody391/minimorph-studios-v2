@@ -486,6 +486,58 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                 </div>
               )}
 
+              {/* Intelligence Card */}
+              {(selectedLead as any).intelligenceCard && (
+                <div className="border border-amber-500/20 rounded-lg p-3 bg-amber-500/5 space-y-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                    <span className="text-xs font-medium text-off-white">Intelligence Card</span>
+                  </div>
+                  {(() => {
+                    const ic = (selectedLead as any).intelligenceCard as any;
+                    return (
+                      <div className="space-y-2 text-xs">
+                        {ic.businessInfo?.websiteScore !== undefined && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-soft-gray">Website Score</span>
+                            <span className={`font-medium ${ic.businessInfo.websiteScore < 30 ? "text-red-400" : ic.businessInfo.websiteScore < 60 ? "text-yellow-400" : "text-green-400"}`}>
+                              {ic.businessInfo.websiteScore}/100
+                            </span>
+                          </div>
+                        )}
+                        {ic.aiAnalysis?.recommendedPackage && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-soft-gray">Recommended Package</span>
+                            <Badge className="text-[10px] bg-electric/10 text-off-white capitalize">{ic.aiAnalysis.recommendedPackage} — ${ic.aiAnalysis.packagePrice}/mo</Badge>
+                          </div>
+                        )}
+                        {ic.aiAnalysis?.roiEstimate && (
+                          <div>
+                            <span className="text-soft-gray">Est. Revenue Gain</span>
+                            <p className="text-off-white">{ic.aiAnalysis.roiEstimate.monthlyRevenueIncrease}/mo</p>
+                          </div>
+                        )}
+                        {ic.aiAnalysis?.painPoints?.length > 0 && (
+                          <div>
+                            <span className="text-soft-gray">Pain Points</span>
+                            <ul className="text-off-white/80 mt-0.5 space-y-0.5">
+                              {ic.aiAnalysis.painPoints.slice(0, 3).map((p: string, i: number) => (
+                                <li key={i} className="flex items-start gap-1"><span className="text-amber-400 shrink-0">•</span>{p}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {ic.proposalUrl && (
+                          <a href={ic.proposalUrl} target="_blank" rel="noopener noreferrer" className="text-electric underline underline-offset-2">
+                            View Proposal →
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
               <Separator />
 
               {/* SMS Opt-In Status */}

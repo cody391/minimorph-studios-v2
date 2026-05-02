@@ -40,6 +40,9 @@ export const ENV = {
   // Contact enrichment APIs
   apolloApiKey: process.env.APOLLO_API_KEY ?? "",
   hunterApiKey: process.env.HUNTER_API_KEY ?? "",
+  // Lead sourcing APIs
+  yelpApiKey: process.env.YELP_API_KEY ?? "",
+  serpApiKey: process.env.SERP_API_KEY ?? "",
   // X (Twitter) API
   xApiKey: process.env.X_API_KEY ?? "",
   xApiSecret: process.env.X_API_SECRET ?? "",
