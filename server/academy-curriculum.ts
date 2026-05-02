@@ -652,7 +652,7 @@ Most small businesses know they need a website, but they face three brutal probl
 
 You must be able to recite these in your sleep. Every conversation should naturally flow toward the right tier for the prospect.
 
-### Starter — $150/mo
+### Starter — $195/mo
 **Who it's for:** Solo operators, new businesses, side hustles
 **What they get:**
 - Custom 5-page website (Home, About, Services, Contact, Blog)
@@ -663,9 +663,9 @@ You must be able to recite these in your sleep. Every conversation should natura
 - AI-managed support
 - 12-month contract
 
-**Selling angle:** "For less than $5 a day, you get a professional website that works for you 24/7 — and we handle everything."
+**Selling angle:** "For less than $7 a day, you get a professional website that works for you 24/7 — and we handle everything."
 
-### Growth — $250/mo (Most Popular)
+### Growth — $295/mo (Most Popular)
 **Who it's for:** Established businesses ready to scale
 **What they get:**
 - Custom 10-page website
@@ -679,7 +679,7 @@ You must be able to recite these in your sleep. Every conversation should natura
 
 **Selling angle:** "This is where businesses go from 'having a website' to 'having a growth engine.' The analytics and strategy reviews alone pay for themselves."
 
-### Pro — $400/mo
+### Pro — $395/mo
 **Who it's for:** Businesses that want the full competitive advantage
 **What they get:**
 - Custom 20+ page website
@@ -689,18 +689,32 @@ You must be able to recite these in your sleep. Every conversation should natura
 - Dedicated AI account manager
 - Monthly strategy sessions
 - Unlimited update requests
-- E-commerce integration
+- Advanced integrations
 - 12-month contract
 
 **Selling angle:** "This is the 'never worry about your website again' package. We become your digital department."
 
+### Enterprise — $495/mo
+**Who it's for:** Large, complex builds — ecommerce, portals, memberships, multi-location businesses
+**What they get:**
+- Everything in Pro
+- Large ecommerce (unlimited products)
+- Custom customer portals
+- Membership/subscription systems
+- Multi-location support
+- Advanced booking systems
+- Custom integrations
+- Priority build queue
+- 12-month contract
+
+**Selling angle:** "For businesses that need serious infrastructure — ecommerce, custom portals, membership systems. We become your full digital operation."
+
 ### Key Pricing Points
 - All plans are simple monthly pricing — no setup fees, no hidden costs
 - 12-month contract for all tiers
-- Customers can upgrade tiers at any time
-- Custom enterprise solutions available for larger businesses`,
+- Customers can upgrade tiers at any time`,
         keyTakeaways: [
-          "Starter ($150/mo) for solopreneurs, Growth ($250/mo) for scaling businesses, Pro ($400/mo) for full competitive advantage",
+          "Starter ($195/mo) for solopreneurs, Growth ($295/mo) for scaling businesses, Pro ($395/mo) for full competitive advantage, Enterprise ($495/mo) for large complex builds",
           "Always lead with the value, not the price — frame cost against what they're losing without a proper site",
           "Simple monthly pricing with no setup fees — easy for prospects to say yes"
         ]
@@ -754,9 +768,9 @@ When a prospect says "I'm also looking at..." you need to respond instantly with
         id: "pm-2",
         question: "What is the monthly cost for the Growth tier?",
         type: "multiple_choice",
-        options: ["$150/mo", "$199/mo", "$250/mo", "$400/mo"],
+        options: ["$195/mo", "$249/mo", "$295/mo", "$395/mo"],
         correctAnswer: 2,
-        explanation: "Growth is $250/mo — our most popular tier for established businesses ready to scale.",
+        explanation: "Growth is $295/mo — our most popular tier for established businesses ready to scale.",
         difficulty: "easy"
       },
       {
@@ -777,9 +791,9 @@ When a prospect says "I'm also looking at..." you need to respond instantly with
         id: "pm-4",
         question: "What is the monthly cost for the Starter tier?",
         type: "multiple_choice",
-        options: ["$99/mo", "$150/mo", "$199/mo", "$249/mo"],
-        correctAnswer: 1,
-        explanation: "Starter is $150/mo — perfect for small businesses getting started online. Simple monthly pricing, no setup fees.",
+        options: ["$99/mo", "$149/mo", "$195/mo", "$249/mo"],
+        correctAnswer: 2,
+        explanation: "Starter is $195/mo — perfect for small businesses getting started online. Simple monthly pricing, no setup fees.",
         difficulty: "easy"
       },
       {
@@ -800,9 +814,9 @@ When a prospect says "I'm also looking at..." you need to respond instantly with
         id: "pm-6",
         question: "What is the monthly cost for the Premium tier?",
         type: "multiple_choice",
-        options: ["$250/mo", "$399/mo", "$400/mo", "$599/mo"],
+        options: ["$295/mo", "$349/mo", "$395/mo", "$599/mo"],
         correctAnswer: 2,
-        explanation: "Premium is $400/mo — the complete package. Position it as 'your entire digital department for less than a part-time employee.'",
+        explanation: "Pro is $395/mo — the complete package. Position it as 'your entire digital department for less than a part-time employee.'",
         difficulty: "easy"
       },
       {
@@ -1293,7 +1307,7 @@ If someone isn't interested, they don't object — they just say "no thanks" and
 **What they're really saying:** "I don't see enough value to justify the cost."
 
 **Response framework:**
-1. Break it down: "$150/month is less than $5/day. That's less than your morning coffee. But unlike coffee, this actually brings in customers."
+1. Break it down: "$195/month is less than $7/day. That's less than your morning coffee. But unlike coffee, this actually brings in customers."
 2. ROI calculation: "What's your average customer worth? $500? $1,000? If this website brings in just ONE extra customer per month, it pays for itself 5x over."
 3. Cost of inaction: "What's it costing you NOT to have a proper website? If you're losing even 2 customers a month..."
 4. Comparison: "A traditional agency would charge $15,000-$25,000 for what we deliver. We're able to offer it at this price because our AI handles the heavy lifting."
@@ -1373,7 +1387,7 @@ If someone isn't interested, they don't object — they just say "no thanks" and
       },
       {
         id: "oh-3",
-        question: "A prospect says '$250/month is too much for a website.' What's the most effective reframe?",
+        question: "A prospect says '$295/month is too much for a website.' What's the most effective reframe?",
         type: "scenario",
         options: [
           "Offer a 20% discount",
@@ -1877,7 +1891,7 @@ For larger deals, shift your language:
           "Adding hidden fees"
         ],
         correctAnswer: 1,
-        explanation: "Anchoring sets the reference point. If you start with Pro ($400/mo), Growth ($250/mo) feels like a bargain. If you start with Starter ($150/mo), Growth feels expensive. Always anchor high.",
+        explanation: "Anchoring sets the reference point. If you start with Enterprise ($495/mo), Pro ($395/mo) feels like a bargain. If you start with Starter ($195/mo), Growth feels expensive. Always anchor high.",
         difficulty: "medium"
       }
     ],
@@ -2042,7 +2056,7 @@ Your pipeline is a kanban board with forward-only progression. Here's exactly wh
 **What it means:** You've sent a formal proposal with pricing.
 **Your job:**
 - Use the "Generate Proposal" button — AI creates a personalized proposal based on the lead's needs
-- Choose the right package tier (Starter $149/mo, Growth $299/mo, Premium $499/mo)
+- Choose the right package tier (Starter $195/mo, Growth $295/mo, Pro $395/mo, Enterprise $495/mo)
 - Follow up within 48 hours if no response
 - Handle objections using LAER framework (from Module 4)
 - Move to "Negotiating" if they push back on price/terms
@@ -2080,7 +2094,7 @@ You can only move leads FORWARD through stages. You cannot move a lead backward.
           "Pipeline stages are forward-only: Assigned → Contacted → Proposal Sent → Negotiating → Closed",
           "Make first contact within 4 hours of assignment or the lead gets reassigned",
           "Use the AI Proposal Generator — it creates personalized proposals that close better than templates",
-          "Package tiers: Starter ($149/mo), Growth ($299/mo), Premium ($499/mo)",
+          "Package tiers: Starter ($195/mo), Growth ($295/mo), Pro ($395/mo), Enterprise ($495/mo)",
           "When you close a deal, commission is auto-calculated and a new lead backfills your pipeline",
           "Log every interaction — the system tracks activity and it affects your performance score"
         ]
@@ -2328,6 +2342,217 @@ Higher tiers also mean fewer daily training requirements and priority lead assig
         correctAnswer: 1,
         explanation: "Pipeline stages are forward-only. You cannot move a lead backward. If a lead goes cold after receiving a proposal, continue follow-up efforts in the current stage. This ensures data integrity and accurate pipeline reporting.",
         difficulty: "hard"
+      }
+    ],
+    passingScore: 80,
+  },
+
+  /* ═══════════════════════════════════════════════════
+     MODULE 10: CUSTOMER LIFECYCLE & RETENTION
+     How MiniMorph keeps clients happy — and why that
+     makes your residuals last forever.
+     ═══════════════════════════════════════════════════ */
+  {
+    id: "customer-lifecycle",
+    title: "Customer Lifecycle & Retention: Your Residual Machine",
+    description: "Closing a deal isn't the end — it's the beginning of your residual income. This module teaches you exactly what MiniMorph delivers to clients every month, how our retention system works, and how to use the competitive workup as a closing differentiator when prospects compare us to other agencies.",
+    icon: "TrendingUp",
+    estimatedMinutes: 25,
+    lessons: [
+      {
+        title: "What Clients Get Every Month",
+        content: `## The Ongoing Value Stack
+
+When a client signs with MiniMorph, they're not just paying for a website. They're paying for an ongoing relationship that keeps delivering value every single month. This is what makes our 12-month commitment not just reasonable — but genuinely in the client's best interest.
+
+### What Your Clients Receive Monthly
+
+**1. Performance Report**
+Every month on their anniversary date, clients get a detailed analytics report in their Customer Portal and by email. It covers:
+- Page views and unique visitors
+- Bounce rate and average session duration
+- Top performing pages
+- Conversion rate trends
+- Actionable recommendations from our team
+
+This is not a generic report — it's specific to their site and their numbers.
+
+**2. Monthly Competitive Workup**
+This is the one thing clients consistently say surprised them. Every month, our AI:
+- Scrapes their top competitor websites
+- Analyzes positioning, messaging, and features
+- Identifies gaps and weaknesses in competitor strategy
+- Delivers 3 specific, actionable recommendations
+
+The report lands in their inbox AND their Customer Portal under the Insights tab. Most agencies don't do this at all, let alone every single month.
+
+**3. Customer Portal Access**
+Clients have a 24/7 self-service portal where they can:
+- View all historical reports
+- Submit support and update requests
+- Browse add-ons and upgrades
+- Track their project status
+- Manage billing
+- Submit referrals
+
+### Why This Matters to You
+
+Every month that client stays = residual income in your pocket. A client who feels they're getting real value doesn't cancel. A client who forgets what they're paying for does. The monthly touchpoints — reports, competitive workups, portal activity — keep clients engaged and reinforce the value of their subscription.
+
+Your job after closing: know this value stack cold so you can explain it confidently. If a client calls you three months in wondering if they should cancel, you remind them: "Did you get your competitive report this month? What did you do with those three recommendations?"`,
+        keyTakeaways: [
+          "Clients get monthly performance reports, monthly competitive workups, and 24/7 portal access",
+          "The competitive workup is a unique differentiator — most agencies don't offer this",
+          "Monthly touchpoints prevent churn by keeping clients engaged with their investment",
+          "Your residuals depend on client retention — know the value stack cold"
+        ]
+      },
+      {
+        title: "The Competitive Workup as a Closing Tool",
+        content: `## Using Lifecycle Value to Close Deals
+
+When prospects are comparing MiniMorph to other agencies or DIY tools, most reps make the mistake of only competing on price or features. The smarter move: compete on lifecycle value.
+
+### The Competitive Workup Pitch
+
+Here's a script that works:
+
+> "I want to tell you about something most agencies don't do at all. Every single month — not quarterly, every month — you're going to get a competitive intelligence report in your inbox. We analyze your top competitors' websites, identify what they're doing well and where they're weak, and give you three specific things you can do to beat them that month. It lands in your email and lives in your Customer Portal. Our clients say it's the single thing that most changes how they think about their online presence."
+
+This pitch works because:
+- It's concrete and specific (not "we give you great service")
+- It's verifiable (they can ask current clients)
+- It creates future value (they're imagining getting reports every month)
+- It's unique — almost no other agency does monthly competitor analysis
+
+### The Auto-Renewal Advantage
+
+Frame auto-renewal as a benefit, not a trap:
+
+> "And here's the thing — your plan auto-renews so you never have to worry about your site going down because you forgot to pay a renewal fee. You'll get reminders at 60, 30, and 7 days — so if you ever want to make changes or upgrade, you have plenty of time. But if things are working, it just keeps running. That continuity is actually worth something."
+
+### Content Ownership Close
+
+If a prospect is worried about being "locked in":
+
+> "You own everything — your domain, your content, your site. If you ever leave, we hand everything over to you, no questions asked. We're not building a cage — we're building your business. The only reason people stay is because they get results."`,
+        keyTakeaways: [
+          "Use the competitive workup as a concrete, unique differentiator in pitches",
+          "Frame auto-renewal as continuity protection, not a trap",
+          "Content ownership objection: everything transfers if they leave — no cage",
+          "Monthly lifecycle value (reports + competitive workups) creates stickiness"
+        ],
+        script: `COMPETITIVE WORKUP PITCH:
+"Every month you'll get a competitive intelligence report — we analyze your top competitors and give you three specific recommendations. Most agencies don't do this at all. Our clients say it changes how they think about their entire online strategy."
+
+AUTO-RENEWAL PITCH:
+"Your plan auto-renews so you never have to worry about a lapse. You get reminders at 60, 30, and 7 days before renewal — plenty of time to make changes. But if things are working, it just keeps running."
+
+OWNERSHIP CLOSE:
+"You own everything — domain, content, site. If you ever leave, we hand it all over. No questions asked. We're not building a cage."`
+      },
+      {
+        title: "Renewal Conversations",
+        content: `## Handling Renewal Objections
+
+At 60, 30, and 7 days before contract end, clients get automated reminder emails. Sometimes they'll call you. Here's how to handle the most common conversations.
+
+### "I'm thinking about cancelling"
+
+First rule: never panic. Second rule: ask before you defend.
+
+> "I appreciate you telling me directly — what's driving the thought?"
+
+Listen. Let them talk. Most of the time it's one of three things:
+- They don't feel like they're getting value (fixable with a report review call)
+- They're budget-constrained (offer a tier downgrade, not cancellation)
+- They had a bad support experience (escalate, fix, keep them)
+
+### "I can get a cheaper website somewhere else"
+
+> "You absolutely can. The question is — what do you get after the build? A static website that no one maintains, no analytics, no competitor intelligence, no updates. You'll be paying someone else to fix it in 6 months. With us, you're getting the ongoing strategy work that actually grows your business."
+
+### "I need to think about it"
+
+> "Of course — take your time. One thing worth knowing: everything you've built with us — your content, your domain, your optimization — that's yours to keep regardless. You're not losing that if you renew or don't. The question is just whether you want the ongoing competitive intelligence and support for another year."`,
+        keyTakeaways: [
+          "Ask before defending — find out WHY they're thinking of cancelling",
+          "Budget concern → tier downgrade conversation, not cancellation",
+          "Cheap alternative objection → focus on ongoing value, not upfront price",
+          "Frame renewal as continued momentum, not a new commitment"
+        ]
+      },
+    ],
+    quiz: [
+      {
+        id: "cl-1",
+        question: "A client calls saying they're thinking about cancelling at renewal. What should you do FIRST?",
+        type: "multiple_choice",
+        options: [
+          "Immediately offer them a discount to stay",
+          "Ask what's driving the thought before saying anything else",
+          "Tell them about all the value they're getting",
+          "Escalate to your manager"
+        ],
+        correctAnswer: 1,
+        explanation: "Always ask before defending. Most cancellation conversations are driven by a fixable issue — but you won't know what it is until you ask. Jumping straight into a pitch feels defensive and often makes things worse.",
+        difficulty: "medium"
+      },
+      {
+        id: "cl-2",
+        question: "A prospect says 'I can get a website built cheaper somewhere else.' What's the best response?",
+        type: "multiple_choice",
+        options: [
+          "Agree and offer a price match",
+          "Explain that MiniMorph is actually cheaper when you factor in hosting",
+          "Acknowledge they can, then focus on what they get ongoing vs. a one-time build",
+          "Ask for the competitor's quote"
+        ],
+        correctAnswer: 2,
+        explanation: "The monthly competitive workup, performance reports, and ongoing support are the differentiators. A cheaper website is a one-time asset. MiniMorph is an ongoing competitive advantage. Shift the conversation from price to value-per-month.",
+        difficulty: "medium"
+      },
+      {
+        id: "cl-3",
+        question: "How often do clients receive a competitive intelligence report?",
+        type: "multiple_choice",
+        options: [
+          "Quarterly",
+          "Weekly",
+          "Annually",
+          "Monthly on their anniversary date"
+        ],
+        correctAnswer: 3,
+        explanation: "Clients receive a monthly competitive workup every month on their contract anniversary date. The report analyzes competitor websites and delivers 3 specific actionable recommendations. This is a key differentiator from other agencies.",
+        difficulty: "easy"
+      },
+      {
+        id: "cl-4",
+        question: "A client says they're worried about being 'locked in' to the 12-month contract. What do you say?",
+        type: "multiple_choice",
+        options: [
+          "All contracts are binding — that's just how it works",
+          "We can make it month-to-month for an extra fee",
+          "Your domain, content, and site are yours to keep regardless — you own everything",
+          "You can cancel anytime with 30 days notice"
+        ],
+        correctAnswer: 2,
+        explanation: "The correct response emphasizes ownership: everything they build with MiniMorph belongs to them. The 12-month commitment isn't a cage — it's what enables the ongoing strategy work. If they leave, everything transfers. That's a genuine differentiator.",
+        difficulty: "medium"
+      },
+      {
+        id: "cl-5",
+        question: "At how many days before contract renewal do clients receive reminder emails?",
+        type: "multiple_choice",
+        options: [
+          "30 and 7 days",
+          "60, 30, and 7 days",
+          "90, 60, 30, and 7 days",
+          "14 and 7 days"
+        ],
+        correctAnswer: 1,
+        explanation: "Clients receive renewal reminders at 60, 30, and 7 days before contract end. The 7-day email specifically says 'no action needed' — the plan auto-renews. This gives clients plenty of time to make changes if they want to, while removing anxiety about the renewal itself.",
+        difficulty: "easy"
       }
     ],
     passingScore: 80,

@@ -14,9 +14,10 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { AIChatBox } from "@/components/AIChatBox";
-import { Bot } from "lucide-react";
+import { Bot, Loader2, Sparkles, Globe, ExternalLink, RefreshCw } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
@@ -76,6 +77,11 @@ export default function CustomerPortal() {
   const { data: upsells } = trpc.upsells.byCustomer.useQuery(
     { customerId: customer?.id ?? 0 },
     { enabled: !!customer }
+  );
+
+  const { data: onboardingProject, refetch: refetchProject } = trpc.onboarding.myCurrentProject.useQuery(
+    undefined,
+    { enabled: isAuthenticated, refetchInterval: false }
   );
 
   const activeContract = contracts?.find((c: any) => c.status === "active" || c.status === "expiring_soon");
@@ -177,6 +183,7 @@ export default function CustomerPortal() {
             <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Onboarding</TabsTrigger>
             <TabsTrigger value="billing" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Billing</TabsTrigger>
             <TabsTrigger value="referrals" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Referrals</TabsTrigger>
+            <TabsTrigger value="insights" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Insights</TabsTrigger>
             <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">
               <Bot className="h-3 w-3 mr-1" /> AI Assistant
             </TabsTrigger>
@@ -431,30 +438,16 @@ export default function CustomerPortal() {
 
           {/* ONBOARDING TAB */}
           <TabsContent value="onboarding" className="space-y-6">
-            <Card className="border-border/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
-                  <Rocket className="h-4 w-4 text-electric" />
-                  Your Onboarding
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Rocket className="h-12 w-12 text-soft-gray/20 mx-auto mb-4" />
-                  <h3 className="text-lg font-serif text-off-white mb-2">Website Onboarding Portal</h3>
-                  <p className="text-sm text-soft-gray font-sans mb-6 max-w-md mx-auto">
-                    Complete your brand questionnaire, upload your assets (logo, photos, brand guidelines), set up your domain, and track your project from design to launch.
-                  </p>
-                  <Button
-                    onClick={() => setLocation("/onboarding")}
-                    className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
-                  >
-                    <Rocket className="h-4 w-4 mr-2" />
-                    Go to Onboarding Portal
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <OnboardingProjectTab
+              project={onboardingProject}
+              onRefetch={refetchProject}
+              onNavigateToOnboarding={() => setLocation("/onboarding")}
+            />
+          </TabsContent>
+
+          {/* INSIGHTS TAB */}
+          <TabsContent value="insights" className="space-y-6">
+            <InsightsTab project={onboardingProject} />
           </TabsContent>
 
           {/* BILLING TAB */}
@@ -500,6 +493,417 @@ export default function CustomerPortal() {
           </TabsContent>
         </Tabs>
       </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   ONBOARDING PROJECT TAB — Generation status + site review
+   ═══════════════════════════════════════════════════════ */
+function OnboardingProjectTab({
+  project,
+  onRefetch,
+  onNavigateToOnboarding,
+}: {
+  project: any;
+  onRefetch: () => void;
+  onNavigateToOnboarding: () => void;
+}) {
+  const [changeRequest, setChangeRequest] = useState("");
+  const [previewPage, setPreviewPage] = useState("index");
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const requestChangeMutation = trpc.onboarding.requestChange.useMutation();
+  const approveMutation = trpc.onboarding.approveLaunch.useMutation();
+
+  // Parse generated pages (stable across re-renders)
+  const pages = useMemo<Record<string, string>>(() => {
+    if (!project?.generatedSiteHtml) return {};
+    try { return JSON.parse(project.generatedSiteHtml); } catch { return {}; }
+  }, [project?.generatedSiteHtml]);
+
+  const pageNames = Object.keys(pages);
+  const previewHtml = pages[previewPage] || pages[pageNames[0]] || "";
+
+  // Create/revoke blob URL only when preview HTML changes
+  useEffect(() => {
+    if (!previewHtml) { setBlobUrl(null); return; }
+    const url = URL.createObjectURL(new Blob([previewHtml], { type: "text/html" }));
+    setBlobUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [previewHtml]);
+
+  // Auto-refresh every 15s when generating
+  useEffect(() => {
+    if (project?.generationStatus !== "generating") return;
+    const id = setInterval(onRefetch, 15000);
+    return () => clearInterval(id);
+  }, [project?.generationStatus, onRefetch]);
+
+  const handleRequestChange = async () => {
+    if (!project?.id || !changeRequest.trim()) return;
+    try {
+      await requestChangeMutation.mutateAsync({
+        projectId: project.id,
+        changeRequest: changeRequest.trim(),
+      });
+      toast.success("Change request submitted — your site is being updated.");
+      setChangeRequest("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit change request.");
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!project?.id) return;
+    try {
+      await approveMutation.mutateAsync({ projectId: project.id });
+      toast.success("Approved for launch! Our team will take it live soon.");
+      onRefetch();
+    } catch {
+      toast.error("Failed to approve. Please try again.");
+    }
+  };
+
+  // No project yet
+  if (!project) {
+    return (
+      <Card className="border-border/50">
+        <CardContent className="py-12 text-center">
+          <Rocket className="h-12 w-12 text-soft-gray/20 mx-auto mb-4" />
+          <h3 className="text-lg font-serif text-off-white mb-2">Website Onboarding Portal</h3>
+          <p className="text-sm text-soft-gray font-sans mb-6 max-w-md mx-auto">
+            Meet Elena, our AI creative director, who will guide you through building your perfect website.
+          </p>
+          <Button
+            onClick={onNavigateToOnboarding}
+            className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Start with Elena
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Site is live
+  if (project.stage === "launch" || project.stage === "complete") {
+    return (
+      <Card className="border-green-500/30 bg-green-500/5">
+        <CardContent className="py-10 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
+            <Globe className="h-8 w-8 text-green-400" />
+          </div>
+          <h3 className="text-xl font-serif text-off-white">Your Website is Live!</h3>
+          {project.liveUrl && (
+            <a
+              href={project.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-electric hover:underline text-lg font-medium"
+            >
+              {project.liveUrl}
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+          <p className="text-sm text-soft-gray">
+            Congratulations — {project.businessName} is live on the web!
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Final approval pending
+  if (project.stage === "final_approval") {
+    return (
+      <Card className="border-border/50">
+        <CardContent className="py-10 text-center space-y-4">
+          <CheckCircle className="h-12 w-12 text-electric mx-auto" />
+          <h3 className="text-lg font-serif text-off-white">Approved — Going Live Soon</h3>
+          <p className="text-sm text-soft-gray max-w-md mx-auto">
+            Your site has been approved. Our team is handling DNS setup and final checks. You'll receive an email when it's live.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // AI is generating
+  if (project.generationStatus === "generating") {
+    return (
+      <Card className="border-border/50">
+        <CardContent className="py-12 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-electric/10 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-base">
+              E
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-serif text-off-white mb-1">Elena is building your website</h3>
+            <p className="text-sm text-soft-gray">
+              {project.generationLog || "Our AI is crafting your custom website..."}
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-1">
+            <span className="w-2 h-2 bg-electric rounded-full animate-bounce [animation-delay:0ms]" />
+            <span className="w-2 h-2 bg-electric rounded-full animate-bounce [animation-delay:150ms]" />
+            <span className="w-2 h-2 bg-electric rounded-full animate-bounce [animation-delay:300ms]" />
+          </div>
+          <p className="text-xs text-soft-gray/50">Auto-refreshing every 15 seconds</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefetch}
+            className="text-soft-gray hover:text-electric"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Check now
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Generation failed
+  if (project.generationStatus === "failed") {
+    return (
+      <Card className="border-red-500/20 bg-red-500/5">
+        <CardContent className="py-10 text-center space-y-3">
+          <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
+          <h3 className="text-base font-serif text-off-white">Generation Encountered an Issue</h3>
+          <p className="text-sm text-soft-gray max-w-md mx-auto">
+            {project.generationLog || "Something went wrong during site generation."}
+          </p>
+          <p className="text-xs text-soft-gray/50">Our team has been notified and will resolve this shortly.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Site ready for review
+  if (project.generationStatus === "complete" && project.generatedSiteHtml) {
+    return (
+      <div className="space-y-6">
+        {/* Preview */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+                <Eye className="h-4 w-4 text-electric" />
+                Site Preview
+              </CardTitle>
+              <div className="flex gap-1">
+                {pageNames.map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setPreviewPage(page)}
+                    className={`text-xs px-3 py-1 rounded-full transition-all ${
+                      previewPage === page
+                        ? "bg-electric text-midnight font-medium"
+                        : "bg-midnight text-soft-gray hover:text-off-white border border-border/30"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {blobUrl ? (
+              <iframe
+                key={blobUrl}
+                src={blobUrl}
+                className="w-full h-[500px] border-t border-border/30 rounded-b-xl"
+                title="Site Preview"
+                sandbox="allow-same-origin"
+              />
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-soft-gray">
+                {previewHtml ? <Loader2 className="w-5 h-5 animate-spin" /> : "No preview available"}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Change request + approve */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-serif text-off-white">
+              Request Changes or Approve
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <p className="text-xs text-amber-300">
+                <strong>Revision Policy:</strong> Your package includes 3 rounds of revisions at no extra cost.
+                {project.revisionsCount >= 3
+                  ? " You've used all included revisions."
+                  : ` You have ${3 - (project.revisionsCount || 0)} revision(s) remaining.`}
+              </p>
+            </div>
+
+            {(project.revisionsCount || 0) < (project.maxRevisions || 3) && (
+              <div className="space-y-2">
+                <label className="text-sm text-off-white font-medium">Describe what you'd like changed</label>
+                <Textarea
+                  value={changeRequest}
+                  onChange={e => setChangeRequest(e.target.value)}
+                  placeholder="e.g. Change the hero section headline to 'Premium Auto Detailing in Tampa'. Make the color scheme darker."
+                  rows={3}
+                  className="bg-midnight-dark border-border/50 text-off-white placeholder-soft-gray/50 text-sm"
+                />
+                <Button
+                  onClick={handleRequestChange}
+                  disabled={!changeRequest.trim() || requestChangeMutation.isPending}
+                  variant="outline"
+                  className="border-electric text-electric hover:bg-electric/10"
+                >
+                  {requestChangeMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                  )}
+                  Request Changes
+                </Button>
+              </div>
+            )}
+
+            <div className="border-t border-border/30 pt-4">
+              <p className="text-sm text-soft-gray mb-3">Happy with how it looks? Approve it and we'll take it live.</p>
+              <Button
+                onClick={handleApprove}
+                disabled={approveMutation.isPending}
+                className="bg-electric hover:bg-electric-light text-midnight min-h-[44px]"
+              >
+                {approveMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Rocket className="w-4 h-4 mr-2" />
+                )}
+                Approve & Launch
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Still in questionnaire/discovery stage
+  return (
+    <Card className="border-border/50">
+      <CardContent className="py-12 text-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-electric/10 flex items-center justify-center mx-auto">
+          <Sparkles className="h-8 w-8 text-electric" />
+        </div>
+        <h3 className="text-lg font-serif text-off-white">Continue with Elena</h3>
+        <p className="text-sm text-soft-gray max-w-md mx-auto">
+          Your website project is in progress. Continue your conversation with Elena to complete the discovery process.
+        </p>
+        <Button
+          onClick={onNavigateToOnboarding}
+          className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          Continue with Elena
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   INSIGHTS TAB — Monthly competitive intelligence report
+   ═══════════════════════════════════════════════════════ */
+function InsightsTab({ project }: { project: any }) {
+  const [requested, setRequested] = useState(false);
+  const requestAnalysis = trpc.onboarding.requestCompetitiveAnalysis.useMutation({
+    onSuccess: () => {
+      toast.success("Request sent! Our team will run your competitive analysis shortly.");
+      setRequested(true);
+    },
+    onError: (err) => toast.error(err.message || "Unable to submit request. Please try again."),
+  });
+
+  const hasReport = !!project?.lastCompetitiveReport;
+  const reportDate = project?.lastCompetitiveReportDate
+    ? new Date(project.lastCompetitiveReportDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : null;
+
+  const formattedReport = hasReport
+    ? project.lastCompetitiveReport.split("\n").map((line: string, i: number) => {
+        if (line.startsWith("## ")) return <h3 key={i} className="text-base font-serif text-off-white mt-5 mb-2">{line.replace(/^##\s*/, "")}</h3>;
+        if (line.startsWith("# ")) return <h2 key={i} className="text-lg font-serif text-off-white mt-6 mb-2">{line.replace(/^#\s*/, "")}</h2>;
+        if (line.startsWith("- ") || line.startsWith("• ")) return <li key={i} className="text-sm text-soft-gray font-sans ml-4 mb-1">{line.replace(/^[-•]\s*/, "")}</li>;
+        if (line.trim() === "") return <div key={i} className="h-2" />;
+        return <p key={i} className="text-sm text-soft-gray font-sans mb-2">{line}</p>;
+      })
+    : null;
+
+  return (
+    <div className="space-y-6">
+      {/* Info banner */}
+      <Card className="border-electric/20 bg-electric/5">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <TrendingUp className="h-5 w-5 text-electric mt-0.5 shrink-0" />
+            <div>
+              <h4 className="text-sm font-serif text-off-white font-medium mb-1">Monthly Competitive Intelligence</h4>
+              <p className="text-xs text-soft-gray font-sans leading-relaxed">
+                Every month on your anniversary date, we analyze your competitors and deliver a report with three specific recommendations to help you stay ahead. Reports are delivered by email and archived here.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Latest report */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-electric" />
+              Latest Report
+              {reportDate && <span className="text-xs text-soft-gray font-sans font-normal ml-1">— {reportDate}</span>}
+            </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={requestAnalysis.isPending || requested || !project || (project.stage !== "launch" && project.stage !== "complete")}
+              onClick={() => requestAnalysis.mutate()}
+              className="border-electric/40 text-electric hover:bg-electric/10 text-xs font-sans rounded-full"
+            >
+              {requestAnalysis.isPending ? (
+                <span className="flex items-center gap-1"><span className="animate-spin w-3 h-3 border-2 border-electric border-t-transparent rounded-full" />Requesting...</span>
+              ) : requested ? (
+                <span className="flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Requested</span>
+              ) : (
+                "Request Early Analysis"
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!project || (project.stage !== "launch" && project.stage !== "complete") ? (
+            <div className="text-center py-12">
+              <TrendingUp className="h-10 w-10 text-soft-gray/20 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">Competitive reports are available once your site is live.</p>
+            </div>
+          ) : !hasReport ? (
+            <div className="text-center py-12">
+              <TrendingUp className="h-10 w-10 text-soft-gray/20 mx-auto mb-3" />
+              <p className="text-sm text-soft-gray font-sans">Your first competitive report will appear here on your next monthly anniversary date.</p>
+              <p className="text-xs text-soft-gray/50 font-sans mt-2">You can request an early analysis using the button above.</p>
+            </div>
+          ) : (
+            <div className="bg-midnight-dark/20 rounded-xl border border-border/20 p-5">
+              <div className="prose-content">{formattedReport}</div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

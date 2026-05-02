@@ -13,7 +13,7 @@ export interface AnswerBankEntry {
   id: string;
   patterns: string[]; // keywords / phrases that trigger this entry
   classification: "answer" | "escalate" | "redirect";
-  category: "pricing" | "process" | "technical" | "legal" | "support" | "ecommerce" | "integrations";
+  category: "pricing" | "process" | "technical" | "legal" | "support" | "ecommerce" | "integrations" | "lifecycle";
   question: string; // canonical form of the question
   answer: string; // approved response
   escalationReason?: string; // why this needs a human
@@ -29,7 +29,7 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "pricing",
     question: "How much does the Starter plan cost?",
     answer:
-      "The Starter plan is $150/month with no setup fee. It includes up to 5 pages, mobile-responsive design, a contact/quote form, basic SEO, customer portal access, a monthly performance report, 1 content update per month, and email support. All plans require a 12-month commitment billed monthly.",
+      "The Starter plan is $195/month with no setup fee. It includes up to 5 pages, mobile-responsive design, a contact/quote form, basic SEO, customer portal access, a monthly performance report, 1 content update per month, and email support. All plans require a 12-month commitment billed monthly.",
   },
   {
     id: "pricing_growth",
@@ -38,7 +38,7 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "pricing",
     question: "How much does the Growth plan cost?",
     answer:
-      "The Growth plan is $250/month with no setup fee. It includes everything in Starter plus up to 10 pages, a blog or news section, Google Analytics setup, 2 content updates per month, AI-assisted recommendations, priority email support, and access to add-on integrations.",
+      "The Growth plan is $295/month with no setup fee. It includes everything in Starter plus up to 10 pages, a blog or news section, Google Analytics setup, 2 content updates per month, AI-assisted recommendations, priority email support, and access to add-on integrations.",
   },
   {
     id: "pricing_pro",
@@ -47,7 +47,15 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "pricing",
     question: "How much does the Pro plan cost?",
     answer:
-      "The Pro plan is $400/month with no setup fee. It includes everything in Growth plus up to 20 pages, advanced SEO pages, 4 content updates per month, review widget setup, booking integration, SMS lead alerts, and priority support with faster response times.",
+      "The Pro plan is $395/month with no setup fee. It includes everything in Growth plus up to 20 pages, advanced SEO pages, 4 content updates per month, review widget setup, booking integration, SMS lead alerts, and priority support with faster response times.",
+  },
+  {
+    id: "pricing_enterprise",
+    patterns: ["enterprise price", "enterprise plan", "large site", "ecommerce plan", "complex site", "membership site", "portal plan"],
+    classification: "answer",
+    category: "pricing",
+    question: "How much does the Enterprise plan cost?",
+    answer: "The Enterprise plan is $495/month with no setup fee. It includes everything in Pro plus large ecommerce stores with unlimited products, custom customer portals, membership and subscription systems, multi-location support, advanced booking systems, custom integrations, and priority build queue. All on a 12-month commitment billed monthly.",
   },
   {
     id: "pricing_commerce",
@@ -66,7 +74,7 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "pricing",
     question: "Is there a setup fee?",
     answer:
-      "No, there is no setup fee. All of our plans are billed monthly with no upfront costs. Your monthly fee covers everything — design, development, launch, ongoing maintenance, updates, hosting, and support.",
+      "No setup fee on any plan. Your monthly fee covers everything — design, development, launch, domain registration (free first year on Growth+), hosting, SSL, CDN, DNS management, security monitoring, daily backups, maintenance, updates, SEO setup, and support. It's a true all-in-one monthly subscription with no hidden costs.",
   },
   {
     id: "pricing_contract",
@@ -133,7 +141,7 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "technical",
     question: "Do I need my own domain name?",
     answer:
-      "If you already have a domain, we will connect it to your new website. If you need a new domain, we can help you register one. Domain registration is free for the first year on Growth and Pro plans, and $15/year on the Starter plan. During onboarding, you will tell us whether you have an existing domain, need a new one, or are not sure yet.",
+      "If you already have a domain, we connect it to your new site and handle all DNS setup and SSL — you don't need to touch anything technical. If you need a new domain, we register it for you via Namecheap. Domain registration is free for the first year on Growth, Pro, and Enterprise plans, and $15/year on Starter. All renewals are $15/yr and we manage everything in-house. Hosting, SSL, CDN, security monitoring, and daily backups are all included in every plan.",
   },
   {
     id: "tech_seo",
@@ -402,6 +410,61 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     question: "Can I get more revisions?",
     answer:
       "Every project includes 3 rounds of revisions at no additional cost. If you need more, additional revision blocks are available at $149 per round. You can purchase extra revision blocks at any time during your project or after launch. We recommend being thorough with your feedback in each round to make the most of your included revisions.",
+  },
+
+  // ── LIFECYCLE Q21: Monthly reports ──────────────────────────────────
+  {
+    id: "lifecycle_monthly_reports",
+    patterns: ["monthly report", "performance report", "analytics report", "website stats", "how is my site doing", "site performance", "traffic report"],
+    classification: "answer",
+    category: "lifecycle",
+    question: "What do the monthly reports include?",
+    answer:
+      "Every month on your anniversary date, you'll receive a detailed performance report in your Customer Portal and by email. It covers total page views, unique visitors, bounce rate, average session duration, top pages, and conversion rate. You'll also get actionable recommendations from our team based on the data. No fluff — just the numbers that matter for your business.",
+  },
+
+  // ── LIFECYCLE Q22: Competitive workup ───────────────────────────────
+  {
+    id: "lifecycle_competitive_workup",
+    patterns: ["competitive report", "competitive analysis", "competitor report", "monthly competitive", "competitor intelligence", "what are competitors doing"],
+    classification: "answer",
+    category: "lifecycle",
+    question: "What is the monthly competitive workup?",
+    answer:
+      "Every month, our AI analyzes your top competitors — their websites, positioning, and recent changes — and delivers a competitive intelligence report to your inbox and Customer Portal. The report highlights what competitors are doing well, where they're falling short, and gives you three specific recommendations to gain advantage that month. This is something most agencies don't offer, and our clients say it's one of the most valuable parts of their subscription.",
+  },
+
+  // ── LIFECYCLE Q23: Auto-renewal ─────────────────────────────────────
+  {
+    id: "lifecycle_auto_renewal",
+    patterns: ["auto renew", "auto-renew", "automatic renewal", "renews automatically", "contract renewal", "what happens at renewal", "renewal process"],
+    classification: "answer",
+    category: "lifecycle",
+    question: "How does auto-renewal work?",
+    answer:
+      "Your 12-month agreement auto-renews at the same monthly rate unless you request changes or cancellation before the renewal date. You'll receive reminder emails at 60 days, 30 days, and 7 days before renewal — plenty of notice to make any adjustments. The 7-day email will confirm auto-renewal is happening so you know no action is needed. If you want to upgrade, downgrade, or cancel, just reply to any reminder email or use the Support tab in your portal.",
+  },
+
+  // ── LIFECYCLE Q24: Content ownership ────────────────────────────────
+  {
+    id: "lifecycle_ownership",
+    patterns: ["own my site", "own my content", "who owns", "ownership", "take my site", "if i leave", "can i take my website", "my content"],
+    classification: "answer",
+    category: "lifecycle",
+    question: "Who owns my website and content?",
+    answer:
+      "You own everything — your content, your domain, and your website. If you ever leave MiniMorph Studios, all assets transfer to you with no questions asked. We'll export your site files, transfer domain ownership, and hand over any content we created together. Your business is yours. We just build and maintain the best version of it.",
+  },
+
+  // ── LIFECYCLE Q25: Customer portal ──────────────────────────────────
+  {
+    id: "lifecycle_portal",
+    patterns: ["customer portal", "portal access", "portal login", "where do i log in", "how do i access", "portal tab", "my account"],
+    classification: "answer",
+    category: "lifecycle",
+    question: "What can I do in the Customer Portal?",
+    answer:
+      "Your Customer Portal is your command center. From there you can view your monthly performance reports, submit support requests and website update requests, browse available add-ons and upgrades, track your onboarding progress, view your contract and billing history, refer other businesses, and chat with our AI concierge for instant help. You also have an Insights tab where your monthly competitive reports are archived. Log in anytime at minimorphstudios.net/portal.",
   },
 ];
 

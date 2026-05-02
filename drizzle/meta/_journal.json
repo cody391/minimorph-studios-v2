@@ -253,6 +253,34 @@
       "when": 1777331434347,
       "tag": "0035_flat_pete_wisdom",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1746057600000,
+      "tag": "0036_elena_site_generator",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1746144000000,
+      "tag": "0037_enterprise_tier",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1746230400000,
+      "tag": "0038_domain_hosting",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1746316800000,
+      "tag": "0039_competitive_report",
+      "breakpoints": true
     }
   ]
 }

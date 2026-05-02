@@ -3,6 +3,7 @@ import {
   mysqlEnum,
   mysqlTable,
   text,
+  longtext,
   timestamp,
   varchar,
   boolean,
@@ -140,7 +141,7 @@ export const contracts = mysqlTable("contracts", {
   id: int("id").autoincrement().primaryKey(),
   customerId: int("customerId").notNull(),
   repId: int("repId").notNull(),
-  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium"]).notNull(),
+  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium", "enterprise"]).notNull(),
   monthlyPrice: decimal("monthlyPrice", { precision: 8, scale: 2 }).notNull(),
   startDate: timestamp("startDate").notNull(),
   endDate: timestamp("endDate").notNull(),
@@ -154,6 +155,9 @@ export const contracts = mysqlTable("contracts", {
   features: json("features"),
   stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 255 }),
   notes: text("notes"),
+  contractText: longtext("contractText"),
+  contractSignedAt: timestamp("contractSignedAt"),
+  contractSignedIp: varchar("contractSignedIp", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -283,7 +287,7 @@ export const orders = mysqlTable("orders", {
   userId: int("userId").notNull(),
   stripeCheckoutSessionId: varchar("stripeCheckoutSessionId", { length: 255 }),
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
-  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium"]).notNull(),
+  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium", "enterprise"]).notNull(),
   status: mysqlEnum("status", ["pending", "paid", "failed", "refunded"]).default("pending").notNull(),
   amount: int("amount").notNull(), // in cents
   currency: varchar("currency", { length: 3 }).default("usd").notNull(),
@@ -327,13 +331,17 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   contactName: varchar("contactName", { length: 255 }).notNull(),
   contactEmail: varchar("contactEmail", { length: 320 }).notNull(),
   contactPhone: varchar("contactPhone", { length: 32 }),
-  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium"]).notNull(),
+  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium", "enterprise"]).notNull(),
 
   // Domain handling
   domainOption: mysqlEnum("domainOption", ["existing", "new", "undecided"]).default("undecided"),
   existingDomain: varchar("existingDomain", { length: 512 }),
   domainRegistrar: varchar("domainRegistrar", { length: 255 }),
   domainNotes: text("domainNotes"),
+  domainName: varchar("domainName", { length: 255 }),
+  domainRegistered: boolean("domainRegistered").default(false),
+  hostingSetup: boolean("hostingSetup").default(false),
+  sslSetup: boolean("sslSetup").default(false),
 
   // Questionnaire responses (stored as JSON) — see shared/questionnaire.ts for ExpandedQuestionnaire type
   questionnaire: json("questionnaire"),
@@ -360,6 +368,19 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   liveUrl: varchar("liveUrl", { length: 512 }),
 
   assignedRepId: int("assignedRepId"),
+
+  // AI Site Generation
+  generationStatus: mysqlEnum("generationStatus", ["idle", "generating", "complete", "failed"]).default("idle"),
+  generationLog: text("generationLog"),
+  generatedSiteHtml: longtext("generatedSiteHtml"), // JSON: { "index": "<html>...", "about": "<html>...", ... }
+  generatedSiteUrl: varchar("generatedSiteUrl", { length: 512 }),
+  lastChangeRequest: text("lastChangeRequest"),
+  changeHistory: json("changeHistory"), // { request: string, respondedAt: string }[]
+
+  // Competitive intelligence
+  lastCompetitiveReport: text("lastCompetitiveReport"),
+  lastCompetitiveReportDate: timestamp("lastCompetitiveReportDate"),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

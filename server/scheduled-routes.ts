@@ -22,8 +22,10 @@ import { runAdaptiveScaling } from "./services/leadGenAdaptive";
 import { getDb } from "./db";
 import { contracts, customers, npsSurveys, nurtureLogs, onboardingProjects } from "../drizzle/schema";
 import { eq, and, gte, lte, inArray, desc } from "drizzle-orm";
-import { sendNpsSurveyEmail } from "./services/customerEmails";
-import { sendRenewalReminderEmail } from "./services/customerEmails";
+import { sendNpsSurveyEmail, sendRenewalReminderEmail, sendCompetitiveWorkupEmail } from "./services/customerEmails";
+import { scrapeWebsite } from "./services/webScraper";
+import { invokeLLM } from "./_core/llm";
+import { ENV } from "./_core/env";
 
 // ─── In-memory execution lock ───
 const runningJobs = new Set<string>();
@@ -277,7 +279,7 @@ export function registerScheduledRoutes(app: Express) {
             created++;
 
             // Send email
-            const surveyUrl = `${process.env.VITE_APP_URL || ""}/portal?tab=support`;
+            const surveyUrl = `${ENV.appUrl}/portal?tab=support`;
             await sendNpsSurveyEmail({
               to: customer.email,
               customerName: customer.contactName,
@@ -304,6 +306,7 @@ export function registerScheduledRoutes(app: Express) {
       const now = new Date();
 
       const windows = [
+        { days: 60, label: "60_day" },
         { days: 30, label: "30_day" },
         { days: 14, label: "14_day" },
         { days: 7, label: "7_day" },
@@ -315,15 +318,15 @@ export function registerScheduledRoutes(app: Express) {
       let contractsUpdated = 0;
       let errors = 0;
 
-      // Get active or expiring_soon contracts with endDate in the next 31 days
-      const thirtyOneDaysFromNow = new Date(now.getTime() + 31 * 24 * 60 * 60 * 1000);
+      // Get active or expiring_soon contracts with endDate in the next 61 days
+      const sixtyOneDaysFromNow = new Date(now.getTime() + 61 * 24 * 60 * 60 * 1000);
       const expiringContracts = await db
         .select()
         .from(contracts)
         .where(
           and(
             inArray(contracts.status, ["active", "expiring_soon"]),
-            lte(contracts.endDate, thirtyOneDaysFromNow),
+            lte(contracts.endDate, sixtyOneDaysFromNow),
             gte(contracts.endDate, now)
           )
         );
@@ -603,6 +606,143 @@ export function registerScheduledRoutes(app: Express) {
     });
   });
 
+  // ─── 15. Monthly Competitive Workup ───
+  app.post("/api/scheduled/monthly-competitive-workup", (req, res) =>
+    runJob(req, res, "monthly-competitive-workup", async () => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const now = new Date();
+
+      // Find projects whose anniversary is in the next 24 hours (same day of month as start)
+      const allProjects = await db
+        .select()
+        .from(onboardingProjects)
+        .where(
+          and(
+            inArray(onboardingProjects.stage, ["launch", "complete"]),
+          )
+        );
+
+      let processed = 0;
+      let skipped = 0;
+      let errors = 0;
+
+      for (const project of allProjects) {
+        // Check if today is the anniversary day (same day of month as contract start)
+        const startDay = new Date(project.createdAt).getDate();
+        if (now.getDate() !== startDay) {
+          skipped++;
+          continue;
+        }
+
+        // Get associated customer
+        if (!project.customerId) { skipped++; continue; }
+        const [customer] = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.id, project.customerId))
+          .limit(1);
+
+        if (!customer) { skipped++; continue; }
+
+        // Check dedup — did we already send a report this month?
+        const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        const existingLog = await db
+          .select({ id: nurtureLogs.id })
+          .from(nurtureLogs)
+          .where(
+            and(
+              eq(nurtureLogs.customerId, project.customerId),
+              eq(nurtureLogs.type, "report_delivery"),
+              eq(nurtureLogs.subject, `competitive_report_${thisMonth}`)
+            )
+          )
+          .limit(1);
+
+        if (existingLog.length > 0) { skipped++; continue; }
+
+        try {
+          // Scrape competitor websites from questionnaire data
+          const questionnaire = project.questionnaire as any;
+          const competitorUrls: string[] = [];
+          if (questionnaire?.competitorSites) {
+            for (const comp of questionnaire.competitorSites) {
+              if (comp.url) competitorUrls.push(comp.url);
+            }
+          }
+
+          let competitorContent = "";
+          if (competitorUrls.length > 0) {
+            const scraped = await Promise.all(
+              competitorUrls.slice(0, 3).map(async (url) => {
+                const text = await scrapeWebsite(url);
+                return text ? `[${url}]\n${text.slice(0, 1500)}` : null;
+              })
+            );
+            const results = scraped.filter(Boolean);
+            if (results.length > 0) {
+              competitorContent = results.join("\n\n---\n\n");
+            }
+          }
+
+          // Generate competitive analysis with AI
+          const analysisPrompt = `You are a digital marketing analyst for MiniMorph Studios. Generate a monthly competitive intelligence report for ${project.businessName} (${customer.industry || "local business"}).
+
+${competitorContent ? `COMPETITOR WEBSITE DATA:\n${competitorContent}\n\n` : ""}
+
+Generate a concise competitive report with:
+1. A brief market overview (2-3 sentences)
+2. What competitors are doing well (2-3 points)
+3. Gaps/weaknesses in competitor positioning (2-3 points)
+4. Three specific actionable recommendations for ${project.businessName} to gain advantage this month
+
+Keep it practical, specific, and action-oriented. Format with clear sections using ## headers. Total length: 300-400 words.`;
+
+          const llmResult = await invokeLLM({
+            messages: [{ role: "user" as const, content: analysisPrompt }],
+            maxTokens: 1000,
+          });
+          const reportText = llmResult.choices[0].message.content as string;
+
+          // Save report to project
+          await db
+            .update(onboardingProjects)
+            .set({
+              lastCompetitiveReport: reportText,
+              lastCompetitiveReportDate: now,
+            })
+            .where(eq(onboardingProjects.id, project.id));
+
+          // Send email
+          await sendCompetitiveWorkupEmail({
+            to: customer.email,
+            customerName: customer.contactName,
+            businessName: project.businessName,
+            reportText,
+          });
+
+          // Log for dedup
+          await db.insert(nurtureLogs).values({
+            customerId: project.customerId,
+            type: "report_delivery",
+            channel: "email",
+            subject: `competitive_report_${thisMonth}`,
+            content: `Monthly competitive report delivered for ${project.businessName}.`,
+            status: "sent",
+            sentAt: now,
+          });
+
+          processed++;
+        } catch (err: any) {
+          console.error(`[CompetitiveWorkup] Error for project ${project.id}:`, err.message);
+          errors++;
+        }
+      }
+
+      return { totalProjects: allProjects.length, processed, skipped, errors };
+    })
+  );
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -613,5 +753,5 @@ export function registerScheduledRoutes(app: Express) {
     });
   });
 
-  console.log("[Scheduled] Registered 14 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 15 scheduled job endpoints at /api/scheduled/*");
 }

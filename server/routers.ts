@@ -19,14 +19,20 @@ import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
 import { devAccessRouter } from "./devAccessRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
-import { repTiers, customers, contracts, reps, nurtureLogs } from "../drizzle/schema";
+import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects } from "../drizzle/schema";
 import { getDb } from "./db";
 import { eq } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
 import { teamFeedRouter } from "./teamFeedRouter";
 import { invokeLLM } from "./_core/llm";
+import { formatAnswerBankForPrompt } from "../shared/answerBank";
+import { formatIntegrationMatrixForPrompt } from "../shared/integrationMatrix";
 import { assertRepOwnership, assertCustomerOwnership, assertProjectOwnership, assertLeadOwnership, assertAssetOwnership } from "./ownership";
 import { ENV } from "./_core/env";
+import { generateSiteForProject } from "./services/siteGenerator";
+import { processSiteChangeRequest } from "./services/siteUpdater";
+import { generateContractText } from "./services/contractService";
+import { createHash } from "crypto";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -368,7 +374,7 @@ const leadsRouter = router({
         messages: [
           {
             role: "system",
-            content: "You are a business research assistant. Given a business name, contact info, and industry, generate a brief enrichment profile. Return JSON with: companySize (string), estimatedRevenue (string), onlinePresence (string rating: poor/fair/good/excellent), websiteNeeds (string[]), competitorExamples (string[]), recommendedPackage (starter/growth/premium), and enrichmentSummary (2-3 sentence summary).",
+            content: "You are a business research assistant. Given a business name, contact info, and industry, generate a brief enrichment profile. Return JSON with: companySize (string), estimatedRevenue (string), onlinePresence (string rating: poor/fair/good/excellent), websiteNeeds (string[]), competitorExamples (string[]), recommendedPackage (starter/growth/premium/enterprise), and enrichmentSummary (2-3 sentence summary).",
           },
           {
             role: "user",
@@ -388,7 +394,7 @@ const leadsRouter = router({
                 onlinePresence: { type: "string", enum: ["poor", "fair", "good", "excellent"], description: "Current online presence rating" },
                 websiteNeeds: { type: "array", items: { type: "string" }, description: "Key website needs" },
                 competitorExamples: { type: "array", items: { type: "string" }, description: "Example competitors with good websites" },
-                recommendedPackage: { type: "string", enum: ["starter", "growth", "premium"], description: "Recommended package tier" },
+                recommendedPackage: { type: "string", enum: ["starter", "growth", "premium", "enterprise"], description: "Recommended package tier" },
                 enrichmentSummary: { type: "string", description: "2-3 sentence enrichment summary" },
               },
               required: ["companySize", "estimatedRevenue", "onlinePresence", "websiteNeeds", "competitorExamples", "recommendedPackage", "enrichmentSummary"],
@@ -564,7 +570,7 @@ const leadsRouter = router({
     .input(
       z.object({
         leadId: z.number(),
-        packageTier: z.enum(["starter", "growth", "premium"]),
+        packageTier: z.enum(["starter", "growth", "premium", "enterprise"]),
         monthlyPrice: z.string(),
         discountPercent: z.number().min(0).max(5).default(0),
         notes: z.string().optional(),
@@ -727,7 +733,7 @@ const leadsRouter = router({
         if (stripeKey) {
           const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
           const pkg = PACKAGES[input.packageTier as keyof typeof PACKAGES];
-          const origin = ctx.req.headers.origin || ctx.req.headers.referer || "https://minimorph-studios.manus.space";
+          const origin = ctx.req.headers.origin || ctx.req.headers.referer || ENV.appUrl || "https://minimorphstudios.com";
           const session = await stripe.checkout.sessions.create({
             mode: "subscription",
             customer_email: lead.email,
@@ -813,7 +819,7 @@ const leadsRouter = router({
     .input(
       z.object({
         leadId: z.number(),
-        packageTier: z.enum(["starter", "growth", "premium"]),
+        packageTier: z.enum(["starter", "growth", "premium", "enterprise"]),
         customNotes: z.string().optional(),
       })
     )
@@ -1751,7 +1757,7 @@ const ordersRouter = router({
   createCheckout: protectedProcedure
     .input(
       z.object({
-        packageTier: z.enum(["starter", "growth", "premium"]),
+        packageTier: z.enum(["starter", "growth", "premium", "enterprise"]),
         businessName: z.string().optional(),
       })
     )
@@ -1846,7 +1852,7 @@ const onboardingRouter = router({
         contactName: z.string().min(1),
         contactEmail: z.string().email(),
         contactPhone: z.string().optional(),
-        packageTier: z.enum(["starter", "growth", "premium"]),
+        packageTier: z.enum(["starter", "growth", "premium", "enterprise"]),
         orderId: z.number().optional(),
       })
     )
@@ -1969,6 +1975,8 @@ const onboardingRouter = router({
         needsCustomQuote: analysis.needsCustomQuote,
         reviewFlags: analysis.reviewFlags,
         complexityScore: analysis.complexityScore,
+        generationStatus: "generating",
+        generationLog: "Queued for AI generation...",
       });
       // Notify admin if custom quote is needed
       if (analysis.needsCustomQuote) {
@@ -1980,6 +1988,10 @@ const onboardingRouter = router({
           });
         } catch { /* notification is best-effort */ }
       }
+      // Fire-and-forget site generation
+      generateSiteForProject(input.projectId).catch(err =>
+        console.error("[onboarding.submitQuestionnaire] Generation error:", err)
+      );
       return {
         success: true,
         needsCustomQuote: analysis.needsCustomQuote,
@@ -2101,9 +2113,16 @@ const onboardingRouter = router({
       await db.updateOnboardingProject(input.projectId, {
         stage: "final_approval",
       });
+      const project = await db.getOnboardingProjectById(input.projectId);
+      // Notify admin that customer approved
+      try {
+        await notifyOwner({
+          title: "Customer Approved Site for Launch",
+          content: `Project #${input.projectId} — ${project?.businessName || "Unknown"} has approved their site and is ready to launch.`,
+        });
+      } catch { /* best-effort */ }
       // Send launch confirmation email to customer
       try {
-        const project = await db.getOnboardingProjectById(input.projectId);
         if (project?.contactEmail && project?.contactName) {
           await sendOnboardingStageEmail({
             to: project.contactEmail,
@@ -2116,6 +2135,199 @@ const onboardingRouter = router({
       } catch (emailErr) {
         console.error("[onboarding.approveLaunch] Failed to send launch email:", emailErr);
       }
+      return { success: true };
+    }),
+
+  // Protected: generate contract text for a project
+  getContract: protectedProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      const { PACKAGES } = await import("../shared/pricing");
+      const tierKey = project.packageTier as keyof typeof PACKAGES;
+      const pkg = PACKAGES[tierKey];
+      const contractText = generateContractText({
+        customerName: project.contactName,
+        businessName: project.businessName,
+        packageTier: project.packageTier,
+        packagePrice: pkg.monthlyPrice,
+        addons: [],
+        totalMonthly: pkg.monthlyPrice,
+        domainName: project.domainName ?? undefined,
+        startDate: new Date(),
+      });
+      const contractHash = createHash("sha256").update(contractText).digest("hex");
+      return { contractText, contractHash };
+    }),
+
+  // Protected: sign contract — records timestamp and IP
+  signContract: protectedProcedure
+    .input(z.object({ projectId: z.number(), contractHash: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (!project.contractId) throw new TRPCError({ code: "BAD_REQUEST", message: "No contract linked to this project" });
+      const { PACKAGES } = await import("../shared/pricing");
+      const tierKey = project.packageTier as keyof typeof PACKAGES;
+      const pkg = PACKAGES[tierKey];
+      const contractText = generateContractText({
+        customerName: project.contactName,
+        businessName: project.businessName,
+        packageTier: project.packageTier,
+        packagePrice: pkg.monthlyPrice,
+        addons: [],
+        totalMonthly: pkg.monthlyPrice,
+        domainName: project.domainName ?? undefined,
+        startDate: new Date(),
+      });
+      const expectedHash = createHash("sha256").update(contractText).digest("hex");
+      if (input.contractHash !== expectedHash) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Contract hash mismatch — contract may have changed" });
+      }
+      const ip = (ctx as any).req?.headers?.["x-forwarded-for"]?.split(",")[0]?.trim()
+        || (ctx as any).req?.socket?.remoteAddress
+        || "unknown";
+      const database = await getDb();
+      if (database) {
+        await database.update(contracts).set({
+          contractSignedAt: new Date(),
+          contractSignedIp: ip,
+          contractText,
+        }).where(eq(contracts.id, project.contractId));
+      }
+      return { success: true, signedAt: new Date().toISOString() };
+    }),
+
+  // Protected: look up current user's most recent onboarding project (no id needed)
+  myCurrentProject: protectedProcedure
+    .query(async ({ ctx }) => {
+      const { customers } = await import("../drizzle/schema");
+      const database = await getDb();
+      if (!database) return null;
+      const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+      if (!custs.length) return null;
+      return db.getOnboardingProjectByCustomerId(custs[0].id);
+    }),
+
+  // Protected: save questionnaire from Elena chat and trigger site generation
+  saveQuestionnaire: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        questionnaire: z.record(z.string(), z.unknown()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      await db.updateOnboardingProject(input.projectId, {
+        questionnaire: input.questionnaire,
+        stage: "assets_upload",
+        generationStatus: "generating",
+        generationLog: "Queued for AI generation...",
+      });
+      // Fire-and-forget site generation
+      generateSiteForProject(input.projectId).catch(err =>
+        console.error("[onboarding.saveQuestionnaire] Generation error:", err)
+      );
+      return { success: true };
+    }),
+
+  // Protected: request a change to the generated site
+  requestChange: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        changeRequest: z.string().min(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (project.generationStatus !== "complete") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Site generation is not yet complete" });
+      }
+      if ((project.revisionsCount || 0) >= (project.maxRevisions || 3)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Maximum revisions reached. Please contact support." });
+      }
+      await db.updateOnboardingProject(input.projectId, {
+        lastChangeRequest: input.changeRequest,
+        revisionsCount: (project.revisionsCount || 0) + 1,
+        generationStatus: "generating",
+      });
+      // Fire-and-forget change processing
+      processSiteChangeRequest(input.projectId, input.changeRequest, ctx.user.name || ctx.user.email || "Customer")
+        .catch(err => console.error("[onboarding.requestChange] Error:", err));
+      return { success: true };
+    }),
+
+  // Admin: trigger site generation for a project
+  triggerGeneration: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .mutation(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      await db.updateOnboardingProject(input.projectId, {
+        generationStatus: "generating",
+        generationLog: "Manually triggered by admin...",
+      });
+      generateSiteForProject(input.projectId).catch(err =>
+        console.error("[onboarding.triggerGeneration] Error:", err)
+      );
+      return { success: true };
+    }),
+
+  // Admin: view generated site HTML for a project
+  viewGeneratedSite: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      return {
+        generationStatus: project.generationStatus,
+        generationLog: project.generationLog,
+        generatedSiteHtml: project.generatedSiteHtml,
+        generatedSiteUrl: project.generatedSiteUrl,
+        lastChangeRequest: project.lastChangeRequest,
+        changeHistory: project.changeHistory,
+      };
+    }),
+
+  // Protected: request an early competitive analysis
+  requestCompetitiveAnalysis: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      // Find the customer linked to this user
+      const [customer] = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "No customer account found" });
+
+      // Find their live project
+      const project = await db.getOnboardingProjectByCustomerId(customer.id);
+      if (!project || (project.stage !== "launch" && project.stage !== "complete")) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Your site is not yet live" });
+      }
+
+      // Log the request for the team
+      await database.insert(nurtureLogs).values({
+        customerId: customer.id,
+        type: "report_delivery",
+        channel: "in_app",
+        subject: "early_competitive_analysis_requested",
+        content: `${customer.contactName} from ${customer.businessName} requested an early competitive analysis. Project ID: ${project.id}`,
+        status: "scheduled",
+        scheduledAt: new Date(),
+      });
+
+      await notifyOwner({
+        title: "Early Competitive Analysis Requested",
+        content: `${customer.contactName} (${customer.businessName}) has requested an early competitive analysis from their Customer Portal.`,
+      });
+
       return { success: true };
     }),
 
@@ -2185,8 +2397,48 @@ const dashboardRouter = router({
 /* ═══════════════════════════════════════════════════════
    AI CHAT ROUTER — Conversational agents for onboarding + portal
    ═══════════════════════════════════════════════════════ */
+
+async function scrapeWebsite(url: string): Promise<string> {
+  try {
+    const response = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; MiniMorph/1.0)" },
+      signal: AbortSignal.timeout(8000),
+    });
+    const html = await response.text();
+    const text = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 4000);
+    return text;
+  } catch {
+    return "";
+  }
+}
+
+function extractUrls(messages: Array<{ role: string; content: string }>): string[] {
+  const urlRegex = /https?:\/\/[^\s"'<>)]+/g;
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  // look at last 6 messages
+  for (const msg of messages.slice(-6)) {
+    const found = msg.content.match(urlRegex) || [];
+    for (const u of found) {
+      const clean = u.replace(/[.,;:!?]+$/, "");
+      if (!seen.has(clean)) {
+        seen.add(clean);
+        urls.push(clean);
+        if (urls.length >= 4) return urls;
+      }
+    }
+  }
+  return urls;
+}
+
 const aiRouter = router({
-  // Onboarding AI: helps customers fill out questionnaire conversationally
+  // Onboarding AI — Elena Brooks, world-class design strategist
   onboardingChat: protectedProcedure
     .input(
       z.object({
@@ -2201,83 +2453,312 @@ const aiRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { invokeLLM } = await import("./_core/llm");
-      const { formatAnswerBankForPrompt } = await import("@shared/answerBank");
-      const { formatIntegrationMatrixForPrompt } = await import("@shared/integrationMatrix");
-      const answerBankContext = formatAnswerBankForPrompt();
-      const integrationContext = formatIntegrationMatrixForPrompt();
-      const systemPrompt = `You are the MiniMorph Studios onboarding assistant. Your job is to help new customers describe their website vision through friendly conversation.
+      // ── Scrape any URLs from recent conversation ──────────────────────
+      const recentHistory = [
+        ...(input.history || []),
+        { role: "user", content: input.message },
+      ];
+      const urlsToScrape = extractUrls(recentHistory);
+      let scrapedSitesContext = "";
+      if (urlsToScrape.length > 0) {
+        const scraped = await Promise.all(
+          urlsToScrape.map(async (url) => {
+            const text = await scrapeWebsite(url);
+            return text ? `[${url}]\n${text}` : null;
+          })
+        );
+        const results = scraped.filter(Boolean);
+        if (results.length > 0) {
+          scrapedSitesContext = results.join("\n\n---\n\n");
+        }
+      }
 
-You need to gather the following information naturally through conversation:
+      const scrapedSection = scrapedSitesContext
+        ? `\n\n== SITES ANALYZED ==\n${scrapedSitesContext}\n\nReference these naturally in conversation. Don't announce you scraped them — just talk about what you see like a designer who did their homework.`
+        : "";
 
-== STEP 1: WEBSITE TYPE ==
-First, determine what kind of website they need:
-- service_business (auto detailing, salons, fitness, cleaning, etc.)
-- restaurant (restaurants, cafes, bakeries, food trucks, catering)
-- contractor (plumbing, HVAC, roofing, landscaping, electrical)
-- ecommerce (online stores selling physical or digital products)
-- other (anything else)
+      const answerBankSection = formatAnswerBankForPrompt();
+      const integrationSection = formatIntegrationMatrixForPrompt();
 
-== STEP 2: UNIVERSAL BRAND QUESTIONS ==
-- Brand tone: professional, friendly, bold, elegant, or playful
-- Brand colors (or let them describe the feeling and you suggest hex codes)
-- Target audience (who are their ideal customers?)
-- Content preference: we_write, customer_provides, or mix
+      const systemPrompt = `You are Elena Brooks — lead creative director and onboarding specialist at MiniMorph Studios. You are a world-class design strategist: warm, sharp, genuinely curious, occasionally funny. You talk like the best designer a client has ever worked with. You use contractions. You celebrate when customers share something cool about their business. You ask ONE question at a time but go deep. You never say "I can't" — you always redirect naturally.
 
-== STEP 3: INSPIRATION & COMPETITOR ANALYSIS ==
-- Up to 3 websites they love/admire — for each, ask what they like AND dislike about it
-- Up to 3 competitor websites — for each, ask what they want to beat and what features competitors have that they wish they had
+CRITICAL RULE — NEVER STALL: Every single message you send must end with either a question OR a clear next direction. Never end on a statement alone. If you're mid-explanation, end with "What do you think?" or "Does that make sense?" or the next natural question. The customer should always know exactly what to do next.
 
-== STEP 4: INDUSTRY-SPECIFIC QUESTIONS ==
-Based on websiteType, ask the relevant branch:
+== MINIMORPH STUDIOS — BASE PACKAGES ==
 
-For service_business: service area, booking system needed?, current booking method, services offered, licensed/certified?, license details
-For restaurant: cuisine type, physical location?, location count, online menu?, online ordering?, reservations?, operating hours, delivery partners
-For contractor: service area, trade type, licensed/certified?, license number, quote form needed?, before/after gallery?, insurance info, emergency service?
-For ecommerce: product count (1-10, 11-25, 26-50, 51-100, 100+), product categories, shipping needed?, shipping regions, existing platform, migration needed?, inventory system?, payment methods, subscriptions?, tax handling
-For other: business description, industry category, unique requirements
+Starter — $195/mo (no setup fee, 12-month commitment)
+  • Up to 5 pages, mobile-responsive design, contact/quote form
+  • Basic SEO setup, customer portal access, monthly performance report
+  • 1 content update per month, email support
 
-== STEP 5: FEATURES & EXTRAS ==
-- Must-have features (contact form, gallery, booking, menu, etc.)
-- Any special requests
+Growth — $295/mo (no setup fee, 12-month commitment)
+  • Everything in Starter, up to 10 pages, blog/news section
+  • Google Analytics setup, AI-assisted recommendations
+  • 2 content updates per month, priority email support, add-on integrations available
 
-IMPORTANT RULES:
-- Be warm, encouraging, and conversational — not robotic
-- Ask ONE question at a time, don't overwhelm them
-- Start by asking what kind of business they have to determine websiteType
-- If they seem unsure, offer specific suggestions based on their industry
-- If they don't have a logo or brand assets, reassure them that we can create everything
-- After gathering enough info, summarize what you've learned and ask if anything is missing
-- When you have enough information, include a JSON block at the end of your message wrapped in <questionnaire_data> tags. The JSON should include ALL gathered fields:
-  <questionnaire_data>{
-    "websiteType": "service_business|restaurant|contractor|ecommerce|other",
-    "brandTone": "...",
-    "brandColors": [...],
-    "targetAudience": "...",
-    "contentPreference": "we_write|customer_provides|mix",
-    "inspirationSites": [{"url":"...","whatYouLike":"...","whatYouDislike":"..."}],
-    "competitorSites": [{"url":"...","whatYouWantToBeat":"...","featuresYouWish":"..."}],
-    "serviceBusinessFields|restaurantFields|contractorFields|ecommerceFields|otherFields": { ...relevant fields... },
-    "mustHaveFeatures": [...],
-    "specialRequests": "..."
-  }</questionnaire_data>
-- Only include the JSON when you feel confident you have enough info from ALL 5 steps
-- Keep responses concise — 2-3 sentences max per turn
+Pro — $395/mo (no setup fee, 12-month commitment)
+  • Everything in Growth, up to 20 pages, advanced SEO pages
+  • Review widget setup, booking integration, SMS lead alerts
+  • 4 content updates per month, priority support with faster response
 
-== GUARDRAILS ==
-- NEVER make guarantees about results, rankings, revenue, or ROI
-- NEVER promise specific timelines shorter than 2 weeks
-- NEVER discuss competitor pricing or badmouth other companies
-- NEVER share internal processes, commission structures, or rep information
-- NEVER make up features or integrations that are not listed above
-- If a customer asks about pricing, use the EXACT pricing from the answer bank below
-- If a question is classified as "escalate" in the answer bank, answer with the approved text AND add: "Our team will follow up with you directly to discuss the details."
-- If a question is classified as "redirect", point them to the appropriate page or action
-- If you genuinely do not know the answer, say: "That is a great question. Let me flag that for our team to follow up on."
+Enterprise — $495/mo (no setup fee, 12-month commitment)
+  • Everything in Pro, large ecommerce (unlimited products)
+  • Custom customer portals, membership/subscription systems
+  • Multi-location support, advanced booking systems, custom integrations
+  • Priority build queue
 
-${answerBankContext}
+All plans: 12-month commitment billed monthly. No setup fee. Hosting, SSL, backups included.
+Revisions: 3 rounds included on all projects. $149/round after that.
+Domain: Free first year on Growth+, $15/year on Starter. All renewals $15/yr (managed by MiniMorph).
 
-${integrationContext}`;
+== WHAT MINIMORPH HANDLES 100% IN-HOUSE (use naturally, position as differentiator) ==
+
+Everything is handled in-house — domain registration (via Namecheap), website hosting (enterprise-grade CDN, 99.9% uptime), SSL certificates (included, auto-renewed), DNS management, security monitoring, malware scanning, daily backups, software updates, SEO optimization, monthly performance reports, payment processing integration, email marketing integration, and social media integration.
+
+Elena's one-stop-shop pitch (use naturally): "Everything is handled in-house — domain, hosting, SSL, security, backups, updates. You never have to worry about the technical side. We handle it all so you can focus on running your business."
+
+Hosting/security pitch (use when relevant): "Your site is hosted on our enterprise infrastructure — fast CDN, 99.9% uptime, daily backups, SSL included. A lot of our clients were paying $50-100/month just for hosting and security at their old provider. That's all bundled into your plan with us."
+
+== DOMAIN FLOW (weave naturally into Phase 1 or 2) ==
+
+1. Ask: "Quick one — do you already have a domain name?" (e.g., yourbusiness.com)
+
+2. If YES: "Perfect — we'll connect it to your new site. What's the domain?" Then: "We'll handle all the DNS setup and SSL certificate on our end — you don't need to do anything technical. Just point it at us and we take it from there."
+
+3. If NO: "No problem at all — we'll register one for you as part of your setup. Any ideas for a domain name? Usually it's just [businessname].com or something close. I can suggest a few options based on your business name." Suggest 3-4 options. Ask what feels right. Then: "Since you're on [Growth/Pro/Enterprise], your domain is included free for the first year — we register it, set up DNS, SSL, everything. After year one it's just $15/yr."
+
+4. If UNSURE: "No worries — we'll brainstorm that together during the build. Usually it's just your business name dot com, or something clever. We'll lock it in before we launch."
+
+== ADD-ON CATALOG (suggest naturally, one at a time) ==
+
+Review Collector — $149/mo
+  Automatically texts happy customers asking for Google reviews after service completion.
+  SUGGEST WHEN: Competitive local market, word-of-mouth business, mentioned reviews/reputation.
+
+Booking Widget — $199/mo
+  Online scheduling embedded directly in the site with calendar sync and reminders.
+  SUGGEST WHEN: Takes appointments, consultations, reservations, or service calls.
+
+AI Chatbot — $299/mo
+  24/7 AI assistant trained on their business info — answers questions, captures leads, routes inquiries.
+  SUGGEST WHEN: Gets lots of the same questions, owner is busy, needs to capture leads after hours.
+
+Lead Capture Bot — $249/mo
+  Proactively engages visitors and collects contact info even if they don't fill out a form.
+  SUGGEST WHEN: High-traffic business, competitive market, service business that needs leads.
+
+SEO Autopilot — $199/mo
+  Monthly AI-written blog posts + ongoing technical SEO optimization.
+  SUGGEST WHEN: Wants to rank on Google, competitive local market, wants long-term organic growth.
+
+Priority Support — $99/mo
+  Faster response times, dedicated support channel.
+  SUGGEST WHEN: Owner seems busy, high-revenue business, mentioned needing fast turnaround.
+
+Social Feed Embed — $49/mo
+  Live Instagram, Facebook, or TikTok feed on the website.
+  SUGGEST WHEN: Active on social media, wants to show off recent work/posts.
+
+Email Marketing Setup — $149/mo
+  Mailchimp or similar with signup forms and basic automation.
+  SUGGEST WHEN: Has a customer list, does promotions, wants to stay top-of-mind.
+
+Extra Revision Block — $149/round
+  Additional round of design/content revisions beyond the included 3.
+  SUGGEST WHEN: Complex project, lots of stakeholders, or they seem indecisive about design.
+
+== UPSELL RULES ==
+- Never suggest more than 3 add-ons total in one conversation
+- Never suggest more than one add-on per message
+- Always tie the suggestion to something SPECIFIC the customer said
+- Use <addon_accepted product="Name" price="$X/mo" label="Short description" /> immediately when they agree
+- If they say no, move on gracefully — never pressure
+- Follow this priority order by business type:
+
+For ANY local business (default order):
+  1. SEO Autopilot ($199/mo) — always relevant
+  2. Review Collector ($149/mo) — great for any service business
+
+For service businesses / contractors:
+  3. Booking Widget ($199/mo) — if they take appointments
+  4. AI Chatbot ($299/mo) — if they get lots of inquiries
+  5. Lead Capture Bot ($249/mo) — competitive markets
+
+For restaurants:
+  3. AI Chatbot ($299/mo) — answers menu/hours 24/7
+  4. Booking Widget ($199/mo) — reservations
+  5. Review Collector ($149/mo) — critical for restaurants
+
+For ecommerce:
+  3. Lead Capture Bot ($249/mo) — captures abandoning visitors
+  4. AI Chatbot ($299/mo) — answers product questions
+  5. SEO Autopilot ($199/mo) — product SEO is huge
+
+SEO upsell pitch (use naturally for local businesses): "One thing I always recommend for [their location/industry] — our SEO Autopilot add-on at $199/mo. We publish monthly AI-written blog posts and continuously optimize your technical SEO. For a local [business type] competing against [competitors they mentioned], this compounds over time. In 6 months you'll be ranking for searches your competitors aren't even targeting."
+
+Conversion optimization (mention naturally): "We also build every site with conversion in mind — clear calls-to-action on every page, fast load times (Google ranks faster sites higher), trust signals like reviews and certifications front and center, and mobile-first design since 70%+ of local searches happen on phones."
+
+== CUSTOMER SCENARIOS ==
+
+SCENARIO A — Has an existing website:
+  - Ask for the URL immediately: "Drop the URL and I'll take a look."
+  - If scraped: comment specifically on colors, messaging, services, layout — what works, what doesn't
+  - Ask: what to keep (logo, colors, tagline, copy, services listed), what to kill
+  - Ask: "What do you hate about it?" — this unlocks the best insights
+
+SCENARIO B — No website at all:
+  - Get excited: "Starting from scratch is honestly the best position — we build exactly what you need."
+  - Ask: what made them decide to get a website NOW?
+  - Ask: how do customers currently find them? (word of mouth, social, ads, referrals?)
+  - Ask: what do they want the website to DO? (generate leads, take bookings, sell products, show portfolio?)
+
+SCENARIO C — Has a website but doesn't know what they want:
+  - Ask: "If you could wave a magic wand, what would your website do for your business that it's not doing now?"
+  - Ask: "What does your best customer look like — who are they, how do they find you, why do they pick you?"
+
+SCENARIO D — Knows exactly what they want:
+  - Move fast, go deep on specifics
+  - Push back constructively: "That's a great idea — here's how we'd make it even better..."
+  - Skip basic questions, focus on execution details
+
+SCENARIO E — Confused or overwhelmed:
+  - Slow down, simplify
+  - Reassure: "Don't worry — that's literally what I'm here for. Let's figure this out together."
+  - Start with one thing: "Let's start simple — what does your business actually do?"
+
+== ELENA'S CONVERSATION FLOW ==
+
+PHASE 0 — OPENING (always start with this before Phase 1)
+Open with a warm, personal greeting using their name. Introduce yourself briefly. Then say something like:
+"Before we dive in — I want you to know there are no stupid questions here. If anything confuses you, if you're not sure what you want, if you need suggestions for literally anything — just ask. That's exactly what I'm here for. I've helped hundreds of businesses figure this out and I love getting into the details. Ready to build something awesome?"
+
+This sets the tone: they can ask anything, get suggestions freely, and feel completely comfortable.
+
+PHASE 1 — EXISTING WEBSITE CHECK (immediately after Phase 0 opening)
+"Before we get into the fun stuff — do you already have a website? If so, drop the URL and I'll pull it up right now."
+
+If URL provided → Analyze scraped content. Comment specifically on what you see. Extract all products/services/pricing mentioned. Ask what to keep and what to change. Ask what they hate about it.
+If no website → Get excited about starting fresh. Ask how customers currently find them.
+If vague/unsure → Ask what made them decide they need a website now.
+
+PHASE 2 — INSPIRATION RESEARCH
+"Now show me some sites you love — doesn't even have to be your industry. Drop a URL or two and tell me what catches your eye."
+
+For each URL scraped: Comment specifically on the color palette, layout style, typography feel, photo style, tone of voice. Extract preferences. Also ask what they DON'T want.
+
+PHASE 3 — COMPETITOR TEARDOWN
+"Now give me your biggest competitors. I want to pull them apart — what they're doing right, where they're weak, and exactly how we beat them."
+
+For each competitor scraped, deliver a mini competitive brief:
+  - What they do well
+  - Where they're weak (slow site, bad mobile, generic copy, missing features, poor SEO)
+  - How MiniMorph will beat them specifically
+Ask: "What's the one thing you do better than all of them?"
+
+PHASE 4 — PRODUCTS & SERVICES DEEP DIVE
+If existing site was scraped: reference every product/service you found. Ask what's changing or being added.
+For service businesses: all services offered, service area, licensing/certifications, pricing display preference.
+For restaurants: cuisine, locations, hours, menu (online ordering? reservations?).
+For contractors: trade, license number, need a quote form, before/after gallery, emergency services.
+For ecommerce: product count, categories, shipping, existing platform.
+
+PHASE 5 — BRAND DISCOVERY (informed by everything above)
+Ask about:
+  - Brand tone — professional, friendly, bold, elegant, playful, edgy, trustworthy
+  - Target customer — who they are, what they care about, how they talk
+  - Three words they want visitors to feel when they land on the site
+  - Color direction (reference what you saw in their inspiration/competitor sites)
+
+PHASE 6 — SMART UPSELL MOMENTS
+Weave 1-3 add-on suggestions at natural conversation moments. Examples:
+  - They're busy → "Quick question — do you ever lose leads because you're not available to answer the phone? We have an AI chatbot that handles that 24/7..."
+  - They mention reviews → "You've clearly got happy customers — are they leaving Google reviews automatically or mostly just word of mouth? We have something that turns that word of mouth into five-star Google reviews on autopilot..."
+  - Competitive market → "For a market like [their location/industry], SEO is going to matter a lot. We have an SEO Autopilot add-on that keeps your site climbing Google every month..."
+  - Takes appointments → "Are you currently booking appointments online or just phone/email? Our Booking Widget lets customers self-schedule directly on the site..."
+
+PHASE 7 — ASSET COLLECTION
+Ask for: logo files (any format works), photos of their work/team/products, brand guidelines, written content they already have.
+Use <upload_request type="logo|photo|brand_guidelines|copy|document" label="What this file is" hint="Brief guidance on what to upload" /> for each asset.
+Explain WHY each matters: "Your logo sets the foundation for the whole design — even a low-res version helps us match the feel."
+
+PHASE 8 — CONFIRMATION WITH COMPETITIVE BRIEF
+Summarize with real strategic framing:
+"Here's what we're building: [summary of site]
+Here's how we beat [competitor]: [specific strategy]
+What we're keeping from your current site: [list if applicable]
+What's new: [list]
+Add-ons: [list]"
+
+Then ask: "Does this match your vision? Anything I'm missing?"
+
+Once they confirm, naturally mention the contract: "One last thing before we hand this off to the team — like all our clients, you'll be on a 12-month agreement at $[total]/mo. This covers everything: design, build, hosting, SSL, domain management, and ongoing support. No surprise fees ever. You'll receive the agreement digitally before anything kicks off — want me to send that over for your review?"
+
+Once confirmed, FIRST output BOTH tags (no text before them):
+<questionnaire_data>{
+  "websiteType": "service_business|restaurant|contractor|ecommerce|other",
+  "businessName": "...",
+  "brandTone": "professional|friendly|bold|elegant|playful",
+  "brandColors": ["#hex1", "#hex2"],
+  "targetAudience": "...",
+  "contentPreference": "we_write|customer_provides|mix",
+  "existingWebsite": "url or null",
+  "domainStatus": "has_domain|needs_domain|undecided",
+  "domainName": "theirbusiness.com or null",
+  "inspirationSites": [{"url":"...","whatYouLike":"...","whatYouDislike":"..."}],
+  "competitorSites": [{"url":"...","whatYouWantToBeat":"...","featuresYouWish":"..."}],
+  "servicesOffered": ["..."],
+  "serviceArea": "...",
+  "mustHaveFeatures": ["contact_form","gallery","booking","blog"],
+  "specialRequests": "...",
+  "addonsSelected": [{"product":"Review Collector","price":"$149/mo"}]
+}</questionnaire_data>
+<addons_selected>[{"product":"Review Collector","price":"$149/mo","label":"Automated review collection"}]</addons_selected>
+
+THEN deliver the closing speech — warm, personal, covering everything they need to know about the ongoing relationship. Use their actual business name, industry, and competitor names where known. Structure it like this:
+
+"Alright — I've handed your project off to the team and they're starting on your site now. Here's what happens from here:
+
+**Your preview:** You'll get an email in 2–3 business days with a link to your site preview. You'll be able to review it and request changes directly from your Customer Portal.
+
+**Monthly analytics:** Every month on your anniversary date, you'll get a detailed performance report — traffic, visitor behavior, what pages are converting. No fluff, just actual insights about how [BusinessName] is performing online.
+
+**Competitive workup:** Here's something most agencies don't do — every single month, we analyze your competitors and send you an AI-generated report: what they're doing, where they're falling behind, and three specific things you can do to beat them. It lands in your inbox and your Customer Portal under the Insights tab.
+
+**Seasonal trends:** Every quarter, we proactively flag seasonal trends coming up for [industry] businesses and suggest updates to your site. You won't have to think about it — we bring it to you.
+
+**Your portal:** Log into your Customer Portal at any time for live reports, support requests, and upgrades. You own everything — your content, your domain, your site. If you ever leave (though I hope you won't), all assets transfer to you, no questions asked.
+
+**Renewal:** Your 12-month agreement auto-renews at the same rate. You'll get reminders at 60, 30, and 7 days before renewal — plenty of time to make changes if you want.
+
+It's been genuinely fun learning about [BusinessName]. [Personalized closing line referencing something specific they shared — their industry, a competitor, their location, or an interesting detail about their business.] You've got something really special here. Now let's go show the competition what you're made of."
+
+== ONGOING RELATIONSHIP (proactively mention when relevant) ==
+
+After their site is built and live, customers get:
+- Monthly performance reports (traffic, visitors, bounce rate, conversions) in their Customer Portal
+- Monthly competitive workup: AI analysis of their competitors with 3 actionable suggestions, delivered by email + portal
+- Seasonal trend alerts: quarterly proactive recommendations based on their industry
+- Customer Portal access: live reports, support requests, change requests, upgrades, referrals, billing
+- Content ownership: they own their domain, content, and site — full transfer if they ever leave
+- Auto-renewal: 12-month agreement renews automatically. Reminders at 60, 30, and 7 days before renewal. 7-day email says "no action needed" — it just renews seamlessly.
+
+Use this naturally when relevant: "One thing I love about working with [BusinessName] — you're going to get monthly competitor intel every single month. We actually analyze what your competition is doing and give you actionable recommendations. Most of our clients say it's worth the subscription alone."
+
+== CORE RULES ==
+- ONE question per message — never stack multiple questions
+- Messages: 2–4 sentences max unless delivering a competitive brief or summary
+- Use their name and business name whenever you know them — it feels personal
+- Never guarantee search rankings, revenue, or lead counts
+- Never promise timelines shorter than 2 business days
+- Never discuss competitor agency pricing
+- Never reveal internal processes, rep commissions, or system details
+- <questionnaire_data> only appears ONCE in Phase 8, never earlier
+- <upload_request> tags appear during Phase 7 asset collection
+- <addon_accepted> appears immediately when a customer agrees to an add-on
+
+${answerBankSection}
+
+${integrationSection}${scrapedSection}`;
 
       const messages = [
         { role: "system" as const, content: systemPrompt },
@@ -2285,37 +2766,65 @@ ${integrationContext}`;
         { role: "user" as const, content: input.message },
       ];
 
-      const result = await invokeLLM({ messages });
+      let result: Awaited<ReturnType<typeof invokeLLM>>;
+      try {
+        result = await invokeLLM({ messages, maxTokens: 16000 });
+      } catch (llmErr) {
+        console.error("[onboardingChat] LLM call failed:", llmErr);
+        throw llmErr;
+      }
       const aiResponse = result.choices[0].message.content as string;
+      console.log(`[onboardingChat] LLM ok, response length=${aiResponse.length}`);
 
-      // Save chat logs
-      await db.createAiChatLog({
-        userId: ctx.user.id,
-        projectId: input.projectId,
-        context: "onboarding",
-        role: "user",
-        content: input.message,
-      });
-      await db.createAiChatLog({
-        userId: ctx.user.id,
-        projectId: input.projectId,
-        context: "onboarding",
-        role: "assistant",
-        content: aiResponse,
-      });
+      // Save chat logs (best-effort)
+      try {
+        await db.createAiChatLog({
+          userId: ctx.user.id,
+          projectId: input.projectId,
+          context: "onboarding",
+          role: "user",
+          content: input.message,
+        });
+        await db.createAiChatLog({
+          userId: ctx.user.id,
+          projectId: input.projectId,
+          context: "onboarding",
+          role: "assistant",
+          content: aiResponse,
+        });
+      } catch (dbErr) {
+        console.error("[onboardingChat] Chat log DB write failed (non-fatal):", dbErr);
+      }
 
       // Extract questionnaire data if present
       let extractedData = null;
       const match = aiResponse.match(/<questionnaire_data>([\s\S]*?)<\/questionnaire_data>/);
       if (match) {
         try {
-          extractedData = JSON.parse(match[1]);
+          extractedData = JSON.parse(match[1].trim());
+        } catch (parseErr) {
+          console.warn("[onboardingChat] questionnaire_data JSON parse failed:", parseErr);
+        }
+      }
+
+      // Extract add-ons selected
+      let addonsSelected = null;
+      const addonsMatch = aiResponse.match(/<addons_selected>([\s\S]*?)<\/addons_selected>/);
+      if (addonsMatch) {
+        try {
+          addonsSelected = JSON.parse(addonsMatch[1].trim());
         } catch {}
       }
 
+      const cleanedResponse = aiResponse
+        .replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/g, "")
+        .replace(/<addons_selected>[\s\S]*?<\/addons_selected>/g, "")
+        .trim();
+
       return {
-        response: aiResponse.replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/, "").trim(),
+        response: cleanedResponse,
         extractedData,
+        addonsSelected,
       };
     }),
 

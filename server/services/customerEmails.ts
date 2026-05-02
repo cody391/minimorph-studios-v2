@@ -228,8 +228,12 @@ export async function sendRenewalReminderEmail(params: {
   endDate: Date;
 }) {
   const pkg = PACKAGES[params.packageTier];
-  const urgency = params.daysRemaining <= 7 ? "urgent" : params.daysRemaining <= 30 ? "soon" : "upcoming";
+  const urgency = params.daysRemaining <= 7 ? "urgent" : params.daysRemaining <= 14 ? "soon" : params.daysRemaining <= 30 ? "approaching" : "upcoming";
   const urgencyColor = urgency === "urgent" ? "#ef4444" : "#eaeaf0";
+
+  const isSevenDay = params.daysRemaining <= 7;
+  const isThirtyDay = params.daysRemaining > 14 && params.daysRemaining <= 30;
+  const isSixtyDay = params.daysRemaining > 30;
 
   const html = brandWrap(`
     <h2 style="color:${urgencyColor};margin:0 0 16px;font-size:24px;">
@@ -239,18 +243,32 @@ export async function sendRenewalReminderEmail(params: {
     </h2>
     <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
     <p style="margin:0 0 16px;color:#c8c8d8;">
-      Your ${pkg.name} plan ($${pkg.monthlyPrice}/mo) ${urgency === "urgent" ? "expires" : "is set to renew"} on 
+      Your ${pkg.name} plan ($${pkg.monthlyPrice}/mo) ${urgency === "urgent" ? "expires" : "is set to renew"} on
       <strong style="color:#eaeaf0;">${params.endDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</strong>.
     </p>
-    ${urgency === "urgent" ? `
-    <div style="margin:24px 0;padding:16px;background:#2a1a1a;border-radius:8px;border-left:4px solid #ef4444;">
+    ${isSevenDay ? `
+    <div style="margin:24px 0;padding:16px;background:#1a2a1a;border-radius:8px;border-left:4px solid #22c55e;">
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
-        <strong style="color:#eaeaf0;">Action needed:</strong> To avoid any interruption to your website service, 
-        please ensure your payment method is up to date in your Customer Portal.
+        <strong style="color:#eaeaf0;">No action needed.</strong> Your plan will auto-renew for another 12 months at the same rate.
+        If you'd like to upgrade, downgrade, or cancel before renewal, visit the Upgrades tab in your Customer Portal.
+      </p>
+    </div>` : ""}
+    ${isThirtyDay ? `
+    <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
+      <p style="margin:0;font-size:14px;color:#c8c8d8;">
+        <strong style="color:#eaeaf0;">Auto-renewal:</strong> Your plan will automatically renew for another 12 months unless you cancel before the renewal date.
+        If you'd like to make any changes, visit the Upgrades tab in your Customer Portal.
+      </p>
+    </div>` : ""}
+    ${isSixtyDay ? `
+    <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
+      <p style="margin:0;font-size:14px;color:#c8c8d8;">
+        <strong style="color:#eaeaf0;">Heads up:</strong> Your contract renews in about 2 months.
+        This is a great time to review your plan and consider any upgrades before renewal.
       </p>
     </div>` : ""}
     <p style="margin:0 0 16px;color:#c8c8d8;">
-      Want to upgrade your plan or have questions about renewal? Reply to this email or visit the 
+      Want to upgrade your plan or have questions? Reply to this email or visit the
       Upgrades tab in your Customer Portal.
     </p>
     <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
@@ -259,8 +277,64 @@ export async function sendRenewalReminderEmail(params: {
   return sendEmail({
     to: params.to,
     subject: urgency === "urgent"
-      ? `Action needed: Your MiniMorph plan expires in ${params.daysRemaining} days`
+      ? `Your MiniMorph plan renews in ${params.daysRemaining} days — no action needed`
       : `Your MiniMorph plan renews in ${params.daysRemaining} days`,
+    html,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   10. MONTHLY COMPETITIVE WORKUP EMAIL
+   Sent with AI-generated competitive analysis report
+   ═══════════════════════════════════════════════════════ */
+export async function sendCompetitiveWorkupEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  reportText: string;
+}) {
+  const formattedReport = params.reportText
+    .split("\n")
+    .map(line => {
+      if (line.startsWith("##")) {
+        return `<h3 style="color:#4a9eff;margin:20px 0 8px;font-size:16px;">${line.replace(/^#+\s*/, "")}</h3>`;
+      }
+      if (line.startsWith("#")) {
+        return `<h2 style="color:#eaeaf0;margin:20px 0 10px;font-size:18px;">${line.replace(/^#+\s*/, "")}</h2>`;
+      }
+      if (line.startsWith("- ") || line.startsWith("• ")) {
+        return `<li style="color:#c8c8d8;margin-bottom:4px;">${line.replace(/^[-•]\s*/, "")}</li>`;
+      }
+      if (line.trim() === "") return "";
+      return `<p style="margin:0 0 12px;color:#c8c8d8;">${line}</p>`;
+    })
+    .join("\n");
+
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Your Monthly Competitive Report</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 24px;color:#c8c8d8;">
+      Here's your monthly competitive intelligence report for <strong style="color:#eaeaf0;">${params.businessName}</strong>.
+      We've analyzed your competitors and identified opportunities to stay ahead.
+    </p>
+    <div style="background:#1c1c30;border:1px solid #2d2d45;border-radius:8px;padding:24px;margin-bottom:24px;">
+      ${formattedReport}
+    </div>
+    <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
+      <p style="margin:0;font-size:14px;color:#c8c8d8;">
+        <strong style="color:#eaeaf0;">View full report:</strong> Log in to your Customer Portal and check the Insights tab
+        for the complete analysis and historical reports.
+      </p>
+    </div>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      Have questions or want us to act on any of these insights? Reply to this email or use the Support tab in your portal.
+    </p>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+
+  return sendEmail({
+    to: params.to,
+    subject: `Your monthly competitive report — ${params.businessName}`,
     html,
   });
 }
