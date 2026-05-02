@@ -2,6 +2,120 @@ import * as db from "../db";
 import { invokeLLM } from "../_core/llm";
 import { ENV } from "../_core/env";
 import { getProjectName } from "./cloudflareDeployment";
+import { injectImages } from "./imageInjector";
+
+const PREMIUM_REQUIREMENTS = `== PREMIUM SHOWCASE REQUIREMENTS ==
+This is a MiniMorph Studios showcase demo site.
+It must look world-class — better than 90% of all small business websites on the internet.
+
+REQUIRED CSS STANDARDS:
+- CSS custom properties for all colors at :root
+- Smooth transitions on ALL interactive elements (transition: all 0.3s ease)
+- Cards: box-shadow 0 4px 24px rgba(0,0,0,0.12)
+- Border radius: 12-16px on all cards
+- Section padding: 80px-120px top and bottom
+- Max content width: 1200px centered with auto margins
+- Full-viewport hero: min-height 100vh
+- Sticky navigation with backdrop-filter: blur(10px)
+- ALL buttons have hover states with color transitions
+- Mobile responsive with @media (max-width: 768px)
+
+REQUIRED TYPOGRAPHY:
+- Display headlines: Georgia or Playfair Display serif, 64-72px, bold
+- Section headlines: serif, 48px
+- Sub-headlines: sans-serif, 24px
+- Body text: sans-serif, 16px, line-height 1.7
+- Mix serif headlines with clean sans-serif body
+
+REQUIRED CONTENT STANDARDS:
+- Every page has minimum 6 full sections
+- Zero placeholder text — all copy is specific, compelling, and written for that exact business
+- Real pricing, real service names, real details
+- Testimonials include specific results and numbers
+- CTAs are large, prominent, colored with hover effects
+- Navigation has business logo/name + CTA button
+
+ADD-ON SHOWCASE REQUIREMENTS:
+Each add-on must be VISUALLY PRESENT on the page.
+
+Review Collector widget:
+<div style='background:#f8f9fa;border-radius:12px;padding:24px;max-width:480px'>
+<div style='color:#fbbc04;font-size:20px'>★★★★★</div>
+<p style='font-style:italic;margin:8px 0'>[specific review text for this business]</p>
+<p style='font-weight:600'>[Reviewer Name]</p>
+<p style='font-size:13px;color:#666'>via Google Reviews</p>
+</div>
+
+Booking Widget:
+<div style='background:#fff;border:2px solid [primary];border-radius:12px;padding:32px;max-width:420px'>
+<h3>Book Your Appointment</h3>
+<select style='width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #ddd'>
+<option>Select Service</option>[real services for this business]</select>
+<input type='date' style='width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #ddd'>
+<button style='width:100%;padding:14px;background:[primary color];color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer'>Confirm Booking</button>
+</div>
+
+AI Chat Widget (bottom right fixed):
+<div style='position:fixed;bottom:24px;right:24px;z-index:1000'>
+<div style='background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:320px;overflow:hidden'>
+<div style='background:[primary];padding:16px;color:#fff;font-weight:600'>💬 Chat with us</div>
+<div style='padding:16px'>
+<div style='background:#f0f0f0;border-radius:8px;padding:12px;margin-bottom:8px;font-size:14px'>Hi! How can I help you today?</div>
+</div>
+</div>
+</div>
+
+Lead Capture Form:
+<form style='background:[secondary];border-radius:16px;padding:40px;max-width:500px'>
+<h3 style='margin-bottom:24px'>[CTA headline]</h3>
+[name, email, phone, relevant dropdown, submit button]
+<p style='font-size:13px;margin-top:12px;opacity:0.7'>⚡ We respond within 5 minutes during business hours</p>
+</form>
+
+Instagram Feed:
+<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-width:600px'>
+[9 divs with background colors from brand palette, aspect-ratio:1, with hover overlay]
+</div>
+<p style='text-align:center;margin-top:12px'>Follow us @[handle]</p>
+
+Email Newsletter:
+<div style='background:[gradient];padding:60px 40px;text-align:center;border-radius:16px'>
+<h3>[Newsletter headline for this business]</h3>
+<p>[Value proposition]</p>
+<div style='display:flex;gap:12px;max-width:400px;margin:24px auto 0'>
+<input placeholder='Your email address' style='flex:1;padding:14px;border-radius:8px;border:none;font-size:16px'>
+<button style='padding:14px 24px;background:[primary];color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer'>Subscribe</button>
+</div>
+</div>
+
+Google Reviews Section:
+<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px'>
+[4-5 review cards with stars, review text specific to this business, reviewer name, date]
+</div>
+
+SEO Blog Section:
+<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:32px'>
+[3 article cards with title, excerpt, Read More link]
+</div>
+
+Ecommerce Product Grid:
+<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:32px'>
+[product cards with name, description, price, Add to Cart button in primary color]
+</div>
+
+FOOTER REQUIREMENTS:
+Every site must have a proper footer with:
+- Business name and tagline
+- Navigation links
+- Contact info (phone, email, address)
+- Social media links
+- Copyright line
+- 'Powered by MiniMorph Studios' in small text
+
+MINIMORPH BANNER (top of every page):
+<div style='background:#0a0a12;color:#fff;padding:10px 20px;text-align:center;font-size:14px;position:sticky;top:0;z-index:9999'>
+MiniMorph Studios Demo — [Business Name] | Built on the [Package] plan | <a href='https://minimorphstudios.net/get-started' style='color:#3b82f6;font-weight:600'>Start Your Build</a>
+</div>`;
 
 function getPagesForBusinessType(websiteType: string): string[] {
   switch ((websiteType || "").toLowerCase()) {
@@ -92,7 +206,9 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
 
     const fullQuestionnaireText = JSON.stringify(q, null, 2);
 
-    const systemPrompt = `You are an expert web designer and developer. You build stunning, conversion-optimized websites for small businesses. You write clean, modern HTML5, CSS3, and vanilla JavaScript. Your sites are:
+    const systemPrompt = `${PREMIUM_REQUIREMENTS}
+
+You are an expert web designer and developer. You build stunning, conversion-optimized websites for small businesses. You write clean, modern HTML5, CSS3, and vanilla JavaScript. Your sites are:
 - Fully mobile responsive (mobile-first)
 - Fast loading (no external dependencies except Google Fonts)
 - SEO optimized (proper meta tags, semantic HTML, schema markup)
@@ -107,28 +223,23 @@ You never reference external CSS files or JS files.
 You never use frameworks like Bootstrap, React, or Vue.
 You create genuine custom designs that reflect the brand perfectly.
 
-For images: use CSS gradients, shapes, and SVG illustrations where photos would go. Add a comment: <!-- REPLACE WITH: description of ideal photo --> so the team knows what to swap in.
+For images: use CSS gradients, shapes, and SVG illustrations where photos would go. Add a comment <!-- REPLACE WITH: description of ideal photo for this slot --> immediately after each image element so the image pipeline can swap in real photos.
 
 Pages must include intelligent internal linking between each other.
-The navigation must work across all pages using relative hrefs (about.html, services.html, contact.html, etc.).
+Navigation must use relative hrefs matching the page list (about.html, services.html, contact.html, etc.).
 
-Output ONLY a valid JSON object where each key is a page name (index, about, services, contact, etc.) and each value is the complete HTML for that page. All pages share consistent navigation, colors, fonts, and brand identity.
+Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>.
+No JSON, no markdown fences, no explanation.`;
 
-Example output shape:
-{
-  "index": "<!DOCTYPE html><html>...</html>",
-  "about": "<!DOCTYPE html><html>...</html>",
-  "contact": "<!DOCTYPE html><html>...</html>"
-}
+    const navLinks = pageList
+      .map((p) => (p === "index" ? "/" : `/${p}`))
+      .join(", ");
 
-Output ONLY valid JSON, no markdown fences, no explanation, no wrapper key.`;
-
-    const userPrompt = `Generate a complete, production-ready ${websiteType} website for this business.
-
-BUSINESS: ${project.businessName}
+    const sharedContext = `BUSINESS: ${project.businessName}
 CONTACT: ${project.contactName} (${project.contactEmail})
 PACKAGE: ${project.packageTier}
 WEBSITE TYPE: ${websiteType}
+ALL SITE PAGES (for navigation): ${navLinks}
 
 BRAND COLORS: ${brandColors}
 BRAND TONE: ${brandTone}
@@ -147,49 +258,75 @@ FULL QUESTIONNAIRE DATA:
 ${fullQuestionnaireText}
 
 UPLOADED ASSETS:
-${assetSummary}
+${assetSummary}`;
 
-PAGES TO GENERATE: ${pageList.join(", ")}
+    const pages: Record<string, string> = {};
 
-Build each page completely. The homepage (index) should be the most impactful — hero section, services/value prop, social proof, CTA. Every page needs the same nav and footer. Make it genuinely specific to this business. Use their actual business name, services, location, and tone throughout. This should look like a $5,000 custom website, not a template.`;
+    for (let pi = 0; pi < pageList.length; pi++) {
+      const pageName = pageList[pi];
+      const pageLabel =
+        pageName === "index" ? "Home (index.html)" : `${pageName}.html`;
 
-    await db.updateOnboardingProject(projectId, {
-      generationLog: "Calling AI model for full site generation...",
-    });
+      await db.updateOnboardingProject(projectId, {
+        generationLog: `Generating page ${pi + 1}/${pageList.length}: ${pageLabel}...`,
+      });
 
-    const result = await invokeLLM({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      maxTokens: 16000,
-    });
+      const isHome = pageName === "index";
+      const pageInstruction = isHome
+        ? `Generate the Home page (index.html). This is the most important page — include hero, services, social proof, and ALL add-ons from mustHaveFeatures as fully-styled widgets. Make it visually stunning.`
+        : `Generate the ${pageLabel} page. Include relevant add-ons where they make sense for this page type.`;
 
-    const rawContent = typeof result.choices[0]?.message?.content === "string"
-      ? result.choices[0].message.content
-      : "";
+      // Retry up to 3 times per page
+      let html = "";
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const result = await invokeLLM({
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `${pageInstruction}
 
-    // Strip markdown fences if present
-    const cleaned = rawContent
-      .replace(/^```(?:json)?\s*/m, "")
-      .replace(/\s*```\s*$/m, "")
-      .trim();
+THIS PAGE: ${pageLabel}
 
-    let pages: Record<string, string>;
-    try {
-      const parsed = JSON.parse(cleaned);
-      // Handle both flat format { index: "<html>..." } and wrapped { pages: { index: "..." } }
-      if (parsed.pages && typeof parsed.pages === "object") {
-        pages = parsed.pages;
-      } else {
-        pages = parsed as Record<string, string>;
+${sharedContext}
+
+Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
+              },
+            ],
+            maxTokens: 8000,
+          });
+
+          const raw =
+            typeof result.choices[0]?.message?.content === "string"
+              ? result.choices[0].message.content
+              : "";
+
+          if (!raw.includes("<!DOCTYPE") && !raw.includes("<html")) {
+            throw new Error("Response missing HTML tags");
+          }
+
+          html = raw
+            .replace(/^```html?\s*/im, "")
+            .replace(/\s*```\s*$/im, "")
+            .trim();
+          break;
+        } catch (pageErr: any) {
+          if (attempt < 3) {
+            await new Promise((r) => setTimeout(r, 60_000));
+          } else {
+            throw new Error(
+              `Failed to generate page "${pageName}" after 3 attempts: ${pageErr.message}`
+            );
+          }
+        }
       }
-    } catch {
-      throw new Error(`AI returned non-JSON output. Raw: ${rawContent.slice(0, 500)}`);
+
+      pages[pageName] = html;
     }
 
-    if (!pages || typeof pages !== "object" || Object.keys(pages).length === 0) {
-      throw new Error("AI response missing page content");
+    if (Object.keys(pages).length === 0) {
+      throw new Error("No pages were generated");
     }
 
     // Inject logo as base64 if available
@@ -208,6 +345,18 @@ Build each page completely. The homepage (index) should be the most impactful �
         }
       } catch {
         // Best-effort — continue without logo injection
+      }
+    }
+
+    // Inject real images (Replicate hero + Unsplash fills) into every page
+    await db.updateOnboardingProject(projectId, {
+      generationLog: "Injecting images...",
+    });
+    for (const pageName of Object.keys(pages)) {
+      try {
+        pages[pageName] = await injectImages(pages[pageName], projectId, pageName);
+      } catch {
+        // Image injection is best-effort — never block delivery
       }
     }
 
@@ -283,4 +432,75 @@ Build each page completely. The homepage (index) should be the most impactful �
       generationLog: `Generation failed: ${err instanceof Error ? err.message : String(err)}`,
     }).catch(() => {});
   }
+}
+
+export async function generateSiteHtmlDirect(params: {
+  businessName: string;
+  packageTier: string;
+  industry: string;
+  pages: string[];
+  questionnaire: Record<string, unknown>;
+}): Promise<string> {
+  const systemPrompt = `${PREMIUM_REQUIREMENTS}
+
+You are an expert web designer and developer. You build stunning, conversion-optimized websites.
+
+You embed ALL CSS in a <style> tag in the <head>.
+You embed ALL JavaScript in a <script> tag before </body>.
+You use Google Fonts via a single @import in the CSS.
+You never reference external CSS files or JS files.
+You never use frameworks like Bootstrap, React, or Vue.
+You create genuine custom designs that reflect the brand perfectly.
+
+For images: use CSS gradients, shapes, and SVG illustrations. Add a comment <!-- REPLACE WITH: description --> where photos would go.
+
+Pages must include intelligent internal linking. Navigation must work across all pages using relative hrefs (about.html, services.html, etc.).
+
+Output ONLY a valid JSON object where each key is a page name and each value is the complete HTML for that page.
+Output ONLY valid JSON, no markdown fences, no explanation, no wrapper key.`;
+
+  const userPrompt = `Generate a complete, world-class ${params.industry} website for this business.
+
+BUSINESS: ${params.businessName}
+INDUSTRY: ${params.industry}
+PACKAGE: ${params.packageTier}
+PAGES TO GENERATE: ${params.pages.join(", ")}
+
+This is a SHOWROOM DEMO site — the best-looking small business website the visitor has ever seen.
+Include ALL add-ons listed in addOnsIncluded as fully-styled working widgets using the exact HTML templates from the system prompt.
+Every widget must be visually present, branded to match the site, and look completely real.
+
+FULL QUESTIONNAIRE DATA:
+${JSON.stringify(params.questionnaire, null, 2)}`;
+
+  const result = await invokeLLM({
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    maxTokens: 32000,
+  });
+
+  const rawContent = typeof result.choices[0]?.message?.content === "string"
+    ? result.choices[0].message.content
+    : "";
+
+  const cleaned = rawContent
+    .replace(/^```(?:json)?\s*/m, "")
+    .replace(/\s*```\s*$/m, "")
+    .trim();
+
+  let pages: Record<string, string>;
+  try {
+    const parsed = JSON.parse(cleaned);
+    pages = parsed.pages && typeof parsed.pages === "object" ? parsed.pages : (parsed as Record<string, string>);
+  } catch {
+    throw new Error(`AI returned non-JSON output. Raw: ${rawContent.slice(0, 300)}`);
+  }
+
+  if (!pages || Object.keys(pages).length === 0) {
+    throw new Error("AI returned empty pages");
+  }
+
+  return JSON.stringify(pages);
 }

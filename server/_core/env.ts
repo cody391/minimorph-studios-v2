@@ -17,6 +17,18 @@ export const ENV = {
   adminName: process.env.ADMIN_NAME || "Admin",
   // AI — Anthropic
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  // AI — Replicate (image generation)
+  replicateApiKey: process.env.REPLICATE_API_KEY ?? "",
+  // AI — Google Gemini
+  geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+  // Images — Unsplash photography fallback
+  unsplashAccessKey: process.env.UNSPLASH_ACCESS_KEY ?? "",
+  // Images — CDN base URL for serving R2 assets
+  imageAssetCdnBaseUrl: process.env.IMAGE_ASSET_CDN_BASE_URL ?? "",
+  // Storage — Cloudflare R2 (S3-compatible)
+  cloudflareR2Bucket: process.env.CLOUDFLARE_R2_BUCKET ?? "",
+  cloudflareR2AccessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? "",
+  cloudflareR2SecretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ?? "",
   // Storage — AWS S3
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID ?? "",
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? "",
@@ -31,6 +43,8 @@ export const ENV = {
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? "",
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER ?? "",
   twilioTwimlAppSid: process.env.TWILIO_TWIML_APP_SID ?? "",
+  twilioApiKeySid: process.env.TWILIO_API_KEY_SID ?? "",
+  twilioApiKeySecret: process.env.TWILIO_API_KEY_SECRET ?? "",
   resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET ?? "",
   ownerName: process.env.OWNER_NAME ?? "",
   ownerPhoneNumber: process.env.OWNER_PHONE_NUMBER ?? "",
@@ -60,6 +74,11 @@ export const ENV = {
   stripeSecretKey: process.env.CUSTOM_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || "",
   stripePublishableKey: process.env.CUSTOM_STRIPE_PUBLISHABLE_KEY || process.env.VITE_STRIPE_PUBLISHABLE_KEY || "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
+  // Stripe pre-created price IDs (used in checkout sessions for proper Stripe reporting)
+  stripePriceStarter: process.env.STRIPE_PRICE_STARTER ?? "",
+  stripePriceGrowth: process.env.STRIPE_PRICE_GROWTH ?? "",
+  stripePricePremium: process.env.STRIPE_PRICE_PREMIUM ?? "",
+  stripePriceEnterprise: process.env.STRIPE_PRICE_ENTERPRISE ?? "",
   // Cloudflare — Pages deployment for customer sites
   cloudflareApiToken: process.env.CLOUDFLARE_API_TOKEN ?? "",
   cloudflareAccountId: process.env.CLOUDFLARE_ACCOUNT_ID ?? "",
