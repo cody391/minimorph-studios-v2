@@ -2,20 +2,26 @@
  * Showroom sample site data — our "showroom floor models."
  * Each site has a unique visual personality, mapped to a specific package tier,
  * with add-ons showcased. These are the sites visitors can browse to see
- * what MiniMorph actually builds.
+ * what MiniMorph Studios actually builds.
  *
  * ALL business names are fictional. They do not represent real businesses.
  */
 
 export interface ShowroomSite {
   slug: string;
+  subdomain: string;
   name: string;
   tagline: string;
   industry: string;
   location: string;
-  tier: "Starter" | "Growth" | "Pro" | "Commerce";
+  tier: "Starter" | "Growth" | "Pro" | "Enterprise";
   tierPrice: string;
+  price: number;
+  liveUrl?: string;
+  resultStat: string;
+  showcasedAddOns: string[];
   heroImage: string;
+  heroGradient: string;
   palette: {
     bg: string;
     accent: string;
@@ -40,71 +46,30 @@ export interface ShowroomSite {
 
 export const showroomSites: ShowroomSite[] = [
   {
-    slug: "driftwood-kitchen",
-    name: "Driftwood Kitchen",
-    tagline: "Waterfront dining, done right.",
-    industry: "Restaurant",
-    location: "Whitehall, MI",
-    tier: "Growth",
-    tierPrice: "$295/mo",
-    heroImage: "/manus-storage/sample-lakehouse-hero_c46693d0.jpg",
-    palette: {
-      bg: "#1a1612",
-      accent: "#d4a574",
-      text: "#f5f0eb",
-      muted: "#a89888",
-      card: "#231e19",
-      border: "#3a3228",
-    },
-    font: { heading: "'DM Serif Display', serif", body: "'Inter', sans-serif" },
-    addOns: ["Online Menu with Photos", "Google Reviews Widget", "Reservation Form"],
-    features: [
-      "8-page responsive site",
-      "Full menu with food photography",
-      "Google Maps & hours integration",
-      "Monthly blog posts about seasonal specials",
-      "Analytics dashboard showing top menu pages",
-    ],
-    personality:
-      "Warm and inviting — like the smell of cedar and grilled walleye drifting off the lake. This site uses warm amber tones, textured backgrounds, and large food photography to make visitors hungry before they even check the menu.",
-    ownerQuote:
-      "We needed a site that felt like our restaurant — warm, unpretentious, and focused on the food. MiniMorph nailed it.",
-    ownerName: "Tom & Linda K.",
-    sections: {
-      hero: {
-        headline: "Where the lake meets the table.",
-        sub: "Fresh-caught fish, Michigan craft beer, and sunsets you'll remember. Open year-round on White Lake.",
-      },
-      about:
-        "Driftwood Kitchen has been a Whitehall staple since 2008. What started as a small fish fry shack on the channel has grown into a full-service waterfront restaurant serving locally sourced Michigan ingredients. We still fry our perch the same way — one batch at a time.",
-      services: [
-        { name: "Dine-In", desc: "Waterfront seating with views of White Lake. Reservations recommended on weekends." },
-        { name: "Takeout", desc: "Call ahead or order online. Ready in 20 minutes." },
-        { name: "Private Events", desc: "Host your rehearsal dinner, birthday, or company outing lakeside." },
-        { name: "Catering", desc: "We bring the kitchen to you. Full-service catering for 20 to 200 guests." },
-      ],
-      cta: "Make a Reservation",
-    },
-  },
-  {
     slug: "hammerstone-builds",
+    subdomain: "hammerstone",
+    liveUrl: "https://hammerstone.minimorphstudios.net",
     name: "Hammerstone Builds",
-    tagline: "Built to last. Not to impress your neighbor.",
+    tagline: "Built right. Built to last.",
     industry: "General Contractor",
-    location: "Muskegon, MI",
+    location: "Columbus, OH",
     tier: "Starter",
     tierPrice: "$195/mo",
-    heroImage: "/manus-storage/sample-ironworks-hero_6b431260.jpg",
+    price: 195,
+    resultStat: "Generated 19 qualified leads last month",
+    showcasedAddOns: ["Lead Capture", "SMS Alerts", "Reviews"],
+    heroImage: "",
+    heroGradient: "linear-gradient(135deg, #1a1a1a 0%, #2a1a0a 100%)",
     palette: {
-      bg: "#0f1114",
-      accent: "#e8734a",
-      text: "#eaeaea",
-      muted: "#8a8a8a",
-      card: "#1a1c20",
-      border: "#2a2c30",
+      bg: "#1a1a1a",
+      accent: "#e07b39",
+      text: "#f0f0f0",
+      muted: "#888888",
+      card: "#242424",
+      border: "#333333",
     },
     font: { heading: "'Inter', sans-serif", body: "'Inter', sans-serif" },
-    addOns: ["Contact Form with File Upload", "Google Reviews Widget"],
+    addOns: ["Quote Form", "Photo Gallery", "Google Reviews"],
     features: [
       "5-page professional site",
       "Project gallery with before/after photos",
@@ -115,47 +80,105 @@ export const showroomSites: ShowroomSite[] = [
     personality:
       "No-nonsense and direct — like the guy who shows up on time, does the work right, and doesn't charge you for a consultation that's really a sales pitch. Industrial palette with bold orange accents. The copy is short because the work speaks for itself.",
     ownerQuote:
-      "I don't need a fancy website. I need one that works when someone Googles 'contractor Muskegon' at 11pm.",
+      "I don't need a fancy website. I need one that works when someone Googles 'contractor near me' at 11pm.",
     ownerName: "Dave R.",
     sections: {
       hero: {
-        headline: "We fix what the last guy broke.",
-        sub: "Licensed general contractor serving Muskegon County. Kitchens, bathrooms, decks, and the stuff nobody else wants to touch.",
+        headline: "Built Right. Built to Last.",
+        sub: "Licensed general contractor serving the greater metro area. Kitchens, bathrooms, decks, and the stuff nobody else wants to touch.",
       },
       about:
-        "Hammerstone Builds has been serving Muskegon and the lakeshore since 2015. We're a small crew — three guys who actually show up when we say we will. We don't do free estimates that turn into two-hour sales pitches. We look at the job, tell you what it costs, and get to work.",
+        "Hammerstone Builds has been delivering quality construction since 2015. We're a small crew — three guys who actually show up when we say we will. We don't do free estimates that turn into two-hour sales pitches. We look at the job, tell you what it costs, and get to work.",
       services: [
         { name: "Kitchen Remodels", desc: "Full gut jobs to cabinet refacing. We do it all." },
         { name: "Bathroom Renovations", desc: "Tile, plumbing, vanities, walk-in showers." },
-        { name: "Decks & Outdoor", desc: "Composite and cedar. Built for Michigan winters." },
+        { name: "Decks & Outdoor", desc: "Composite and cedar. Built to last through any season." },
         { name: "General Repairs", desc: "The stuff that's been on your list for two years. We'll knock it out." },
       ],
       cta: "Get a Quote",
     },
   },
   {
+    slug: "driftwood-kitchen",
+    subdomain: "driftwood",
+    liveUrl: "https://driftwood.minimorphstudios.net",
+    name: "Driftwood Kitchen",
+    tagline: "Where every meal tells a story.",
+    industry: "Restaurant",
+    location: "Door County, WI",
+    tier: "Growth",
+    tierPrice: "$295/mo",
+    price: 295,
+    resultStat: "+340% online reservations",
+    showcasedAddOns: ["Booking", "Reviews", "Instagram", "Email"],
+    heroImage: "",
+    heroGradient: "linear-gradient(135deg, #2c1810 0%, #1a0c06 100%)",
+    palette: {
+      bg: "#2c1810",
+      accent: "#c8a96e",
+      text: "#f5f0e8",
+      muted: "#a89070",
+      card: "#3a2218",
+      border: "#4a3225",
+    },
+    font: { heading: "'DM Serif Display', serif", body: "'Inter', sans-serif" },
+    addOns: ["Online Menu", "Reservation Form", "Google Reviews"],
+    features: [
+      "8-page responsive site",
+      "Full menu with descriptions",
+      "Google Maps & hours integration",
+      "Monthly blog posts about seasonal specials",
+      "Analytics dashboard showing top menu pages",
+    ],
+    personality:
+      "Warm and inviting — like the smell of cedar and perfectly grilled fish drifting off the water. This site uses warm amber tones, textured backgrounds, and rich copy to make visitors hungry before they even check the menu.",
+    ownerQuote:
+      "We needed a site that felt like our restaurant — warm, unpretentious, and focused on the food. MiniMorph Studios nailed it.",
+    ownerName: "Tom & Linda K.",
+    sections: {
+      hero: {
+        headline: "Where Every Meal Tells a Story.",
+        sub: "Fresh-caught fish, local craft beer, and sunsets you'll remember. Open year-round on the waterfront.",
+      },
+      about:
+        "Driftwood Kitchen has been a local staple since 2008. What started as a small fish fry shack on the channel has grown into a full-service waterfront restaurant serving locally sourced ingredients. We still cook our perch the same way — one batch at a time.",
+      services: [
+        { name: "Dine-In", desc: "Waterfront seating with views you won't forget. Reservations recommended on weekends." },
+        { name: "Takeout", desc: "Call ahead or order online. Ready in 20 minutes." },
+        { name: "Private Events", desc: "Host your rehearsal dinner, birthday, or company outing lakeside." },
+        { name: "Catering", desc: "We bring the kitchen to you. Full-service catering for 20 to 200 guests." },
+      ],
+      cta: "Make a Reservation",
+    },
+  },
+  {
     slug: "velvet-vine-studio",
+    subdomain: "velvetandvine",
+    liveUrl: "https://velvetandvine.minimorphstudios.net",
     name: "Velvet & Vine Studio",
     tagline: "Where artistry meets intention.",
     industry: "Salon & Spa",
-    location: "Grand Rapids, MI",
+    location: "Nashville, TN",
     tier: "Pro",
     tierPrice: "$395/mo",
-    heroImage: "/manus-storage/sample-salon-hero_abcbe45a.jpg",
+    price: 395,
+    resultStat: "Booking calendar 3 weeks out",
+    showcasedAddOns: ["Booking", "Instagram", "Reviews", "Email"],
+    heroImage: "",
+    heroGradient: "linear-gradient(135deg, #1a0a1e 0%, #0a0610 100%)",
     palette: {
-      bg: "#0a0a0a",
-      accent: "#c9a87c",
-      text: "#f8f6f3",
-      muted: "#9a9088",
-      card: "#141414",
-      border: "#262220",
+      bg: "#1a0a1e",
+      accent: "#c9a84c",
+      text: "#f8f4f0",
+      muted: "#9a8878",
+      card: "#231028",
+      border: "#342040",
     },
     font: { heading: "'DM Serif Display', serif", body: "'Inter', sans-serif" },
     addOns: [
       "Online Booking Integration",
-      "Google Reviews Widget",
       "Instagram Feed",
-      "SMS Appointment Reminders",
+      "Google Reviews",
     ],
     features: [
       "15-page site with stylist profiles",
@@ -166,14 +189,14 @@ export const showroomSites: ShowroomSite[] = [
       "Monthly SEO and traffic reports",
     ],
     personality:
-      "Elevated and editorial — this isn't a strip-mall salon site. Dark backgrounds, gold accents, and intentional whitespace give it a luxury-magazine feel. The photography does the heavy lifting. Every page feels like a spread in Vogue Hair.",
+      "Elevated and editorial — this isn't a strip-mall salon site. Deep plum backgrounds, gold accents, and intentional whitespace give it a luxury-magazine feel. Every page feels like a spread in Vogue Hair.",
     ownerQuote:
       "Our old site looked like every other salon in town. This one actually reflects the experience we give our clients.",
     ownerName: "Aisha T.",
     sections: {
       hero: {
-        headline: "Your hair deserves better than a template.",
-        sub: "Precision cuts, custom color, and intentional styling in the heart of Grand Rapids. Book your consultation.",
+        headline: "Where Artistry Meets Intention.",
+        sub: "Precision cuts, custom color, and intentional styling in the heart of Nashville. Book your consultation.",
       },
       about:
         "Velvet & Vine Studio was founded in 2019 by Aisha Torres, a stylist with 12 years of experience and a belief that great hair starts with listening. We're a team of five stylists, each with their own specialty — from lived-in balayage to protective styling to editorial updos. We don't rush. We don't upsell. We just do really good hair.",
@@ -188,23 +211,29 @@ export const showroomSites: ShowroomSite[] = [
   },
   {
     slug: "gritmill-fitness",
+    subdomain: "gritmill",
+    liveUrl: "https://gritmill.minimorphstudios.net",
     name: "Gritmill Fitness",
-    tagline: "Earn it.",
+    tagline: "No excuses. Just results.",
     industry: "Fitness Studio",
-    location: "Holland, MI",
+    location: "Austin, TX",
     tier: "Growth",
     tierPrice: "$295/mo",
-    heroImage: "/manus-storage/sample-fitness-hero_6fc68343.jpg",
+    price: 295,
+    resultStat: "Class signups up 280% in 60 days",
+    showcasedAddOns: ["AI Chat", "Lead Capture", "SMS", "Reviews"],
+    heroImage: "",
+    heroGradient: "linear-gradient(135deg, #0d0d0d 0%, #0a0a1a 100%)",
     palette: {
-      bg: "#0c0c0e",
-      accent: "#22d3ee",
+      bg: "#0d0d0d",
+      accent: "#00d4ff",
       text: "#f0f0f0",
       muted: "#7a7a8a",
-      card: "#151518",
-      border: "#252530",
+      card: "#151520",
+      border: "#252535",
     },
     font: { heading: "'Inter', sans-serif", body: "'Inter', sans-serif" },
-    addOns: ["Class Schedule Widget", "Google Reviews Widget", "Lead Capture Form"],
+    addOns: ["Class Schedule", "Lead Capture Form", "Google Reviews"],
     features: [
       "8-page site with class schedule",
       "Trainer bios with certifications",
@@ -214,17 +243,17 @@ export const showroomSites: ShowroomSite[] = [
       "Monthly analytics report",
     ],
     personality:
-      "High-energy and clean — cyan accents on near-black, bold type, and action photography. This site doesn't waste your time with paragraphs about 'our philosophy.' It tells you what classes are available, when they start, and how to sign up. Like the gym itself — no mirrors on the ceiling, no smoothie bar, just work.",
+      "High-energy and clean — cyan accents on near-black, bold type, and action-ready copy. This site doesn't waste your time with paragraphs about 'our philosophy.' It tells you what classes are available, when they start, and how to sign up.",
     ownerQuote:
       "We're not a big-box gym. Our website needed to feel like walking through our doors — focused, intense, and real.",
     ownerName: "Coach Mike D.",
     sections: {
       hero: {
-        headline: "No mirrors. No smoothie bar. Just work.",
-        sub: "Strength training, HIIT, and Olympic lifting in Holland, MI. First class is free.",
+        headline: "No Excuses. Just Results.",
+        sub: "Strength training, HIIT, and Olympic lifting in Austin. First class is free — no commitment required.",
       },
       about:
-        "Gritmill Fitness opened in 2021 in a converted warehouse on 8th Street. We run small group classes — never more than 12 people — because coaching matters more than headcount. Our trainers are certified, our programming is structured, and our community is the kind that texts you when you miss a session.",
+        "Gritmill Fitness opened in 2021 in a converted warehouse. We run small group classes — never more than 12 people — because coaching matters more than headcount. Our trainers are certified, our programming is structured, and our community is the kind that texts you when you miss a session.",
       services: [
         { name: "Strength & Conditioning", desc: "Barbell-based programming. Squat, press, pull. Three days a week." },
         { name: "HIIT Classes", desc: "30-minute high-intensity sessions. No equipment experience needed." },
@@ -236,27 +265,32 @@ export const showroomSites: ShowroomSite[] = [
   },
   {
     slug: "clover-and-thistle",
+    subdomain: "cloverandthistle",
+    liveUrl: "https://cloverandthistle.minimorphstudios.net",
     name: "Clover & Thistle",
-    tagline: "Curated. Not mass-produced.",
+    tagline: "Curated for the way you actually live.",
     industry: "Boutique Retail",
-    location: "Saugatuck, MI",
+    location: "Asheville, NC",
     tier: "Pro",
     tierPrice: "$395/mo",
-    heroImage: "/manus-storage/sample-boutique-hero_0b03bcb5.jpg",
+    price: 395,
+    resultStat: "Email list grew 400+ in month 1",
+    showcasedAddOns: ["Email", "Instagram", "SEO Blog", "Reviews"],
+    heroImage: "",
+    heroGradient: "linear-gradient(135deg, #f9f5f0 0%, #e8e4df 100%)",
     palette: {
-      bg: "#faf8f5",
-      accent: "#2d5a3d",
+      bg: "#ffffff",
+      accent: "#2d4a2d",
       text: "#1a1a1a",
       muted: "#6b7c6f",
-      card: "#ffffff",
+      card: "#f9f5f0",
       border: "#e0ddd8",
     },
     font: { heading: "'DM Serif Display', serif", body: "'Inter', sans-serif" },
     addOns: [
       "Instagram Feed Integration",
-      "Google Reviews Widget",
       "Newsletter Signup",
-      "Gift Card System",
+      "Google Reviews",
     ],
     features: [
       "12-page site with lookbook galleries",
@@ -267,17 +301,17 @@ export const showroomSites: ShowroomSite[] = [
       "Monthly traffic and engagement reports",
     ],
     personality:
-      "Light, airy, and intentional — the only light-themed sample in our showroom. Sage green accents, generous whitespace, and serif headings give it a curated, editorial feel. This is the site for the business that arranges their shelves by color and has a candle burning at the register.",
+      "Light, airy, and intentional — the only light-themed sample in our showroom. Forest green accents, generous whitespace, and serif headings give it a curated, editorial feel. This is the site for the business that arranges their shelves by color.",
     ownerQuote:
       "We wanted our website to feel like walking into our shop — calm, beautiful, and full of things you didn't know you needed.",
     ownerName: "Emma & Claire W.",
     sections: {
       hero: {
-        headline: "Things worth keeping.",
-        sub: "Handpicked home goods, jewelry, and gifts in downtown Saugatuck. Open Thursday through Sunday.",
+        headline: "Curated for the Way You Actually Live.",
+        sub: "Handpicked home goods, jewelry, and gifts in downtown Asheville. Open Thursday through Sunday.",
       },
       about:
-        "Clover & Thistle started as a pop-up at the Saugatuck farmers market in 2018. Two sisters, a folding table, and a collection of handmade candles. Five years later, we have a storefront on Butler Street, relationships with over 40 independent makers, and a website that finally does our shop justice. Everything we carry is chosen with intention — we know the maker, the material, and the story behind it.",
+        "Clover & Thistle started as a pop-up at the farmers market in 2018. Two sisters, a folding table, and a collection of handmade candles. Five years later, we have a storefront on Main Street, relationships with over 40 independent makers, and a website that finally does our shop justice. Everything we carry is chosen with intention.",
       services: [
         { name: "Home Goods", desc: "Ceramics, textiles, candles, and objects that make a house feel like yours." },
         { name: "Jewelry", desc: "Handcrafted pieces from independent designers. Gold-fill, sterling, and stones." },
@@ -289,28 +323,32 @@ export const showroomSites: ShowroomSite[] = [
   },
   {
     slug: "ember-oak-coffee",
+    subdomain: "emberandoak",
+    liveUrl: "https://emberandoak.minimorphstudios.net",
     name: "Ember & Oak Coffee Co.",
     tagline: "Small batch. Big flavor. No shortcuts.",
-    industry: "Coffee Roaster / Ecommerce",
-    location: "Traverse City, MI",
-    tier: "Commerce",
-    tierPrice: "Custom",
-    heroImage: "/manus-storage/sample-coffee-hero_99af36b8.jpg",
+    industry: "Coffee Roaster",
+    location: "Portland, OR",
+    tier: "Enterprise",
+    tierPrice: "$495/mo",
+    price: 495,
+    resultStat: "$12,400 online orders, month one",
+    showcasedAddOns: ["Ecommerce", "Subscriptions", "AI Chat", "Email"],
+    heroImage: "",
+    heroGradient: "linear-gradient(135deg, #1a0f08 0%, #100806 100%)",
     palette: {
-      bg: "#1c1816",
-      accent: "#b8860b",
-      text: "#f0ebe4",
-      muted: "#8a7e72",
-      card: "#262018",
-      border: "#3a3228",
+      bg: "#1a0f08",
+      accent: "#c4782a",
+      text: "#f0e6d3",
+      muted: "#8a7a68",
+      card: "#261810",
+      border: "#3a2818",
     },
     font: { heading: "'DM Serif Display', serif", body: "'Inter', sans-serif" },
     addOns: [
-      "Ecommerce Store",
-      "Product Catalog",
+      "Product Store",
       "Subscription Management",
-      "Shipping Calculator",
-      "Inventory Tracking",
+      "Email Marketing",
     ],
     features: [
       "Full ecommerce site with product pages",
@@ -321,22 +359,22 @@ export const showroomSites: ShowroomSite[] = [
       "Monthly sales and traffic reports",
     ],
     personality:
-      "Rich and tactile — dark roast tones, golden accents, and photography that makes you smell the beans through the screen. This is our Commerce tier showpiece. It demonstrates what a full ecommerce build looks like: product pages, cart, subscriptions, and a brand story that makes you want to buy before you even see the price.",
+      "Rich and tactile — dark espresso tones, golden amber accents, and copy that makes you smell the beans. This is our Enterprise tier showpiece: product pages, cart, subscriptions, and a brand story that makes you want to buy before you even see the price.",
     ownerQuote:
-      "We roast 200 pounds a week and ship nationwide. Our old Shopify site worked, but it didn't tell our story. This one does.",
+      "We roast 200 pounds a week and ship nationwide. Our old site worked, but it didn't tell our story. This one does.",
     ownerName: "Ben & Sara N.",
     sections: {
       hero: {
-        headline: "Roasted this morning. Shipped today.",
-        sub: "Single-origin and custom blends from Traverse City, MI. Subscribe and never run out.",
+        headline: "Small Batch. Big Flavor. No Shortcuts.",
+        sub: "Single-origin and custom blends roasted to order. Subscribe and never run out of great coffee.",
       },
       about:
         "Ember & Oak Coffee Co. started in a garage in 2017 with a secondhand drum roaster and a notebook full of flavor profiles. We're still small — just four people — but we ship to 38 states and roast every batch to order. We don't do dark-for-the-sake-of-dark. We roast to bring out what the bean already has. Every bag lists the origin, altitude, process, and roast date. No secrets.",
       services: [
         { name: "Single Origins", desc: "Rotating selections from Ethiopia, Colombia, Guatemala, and Kenya." },
-        { name: "House Blends", desc: "Three signature blends — Morning Light, Lakeshore Dark, and Sleeping Bear." },
+        { name: "House Blends", desc: "Three signature blends — Morning Light, Midnight Dark, and Hearthstone." },
         { name: "Coffee Club", desc: "12oz or 2lb bags delivered every 2 or 4 weeks. Skip or cancel anytime." },
-        { name: "Wholesale", desc: "We supply cafes, restaurants, and offices across Michigan. Minimum 10lb orders." },
+        { name: "Wholesale", desc: "We supply cafes, restaurants, and offices nationwide. Minimum 10lb orders." },
       ],
       cta: "Shop Coffee",
     },
