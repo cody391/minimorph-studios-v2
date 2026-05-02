@@ -65,6 +65,7 @@ type Lead = {
   lastTouchAt?: Date | string | null;
   smsOptIn?: boolean;
   smsOptedOut?: boolean;
+  totalCostCents?: number;
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -324,6 +325,12 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                               Last touch: {new Date(lead.lastTouchAt).toLocaleDateString()}
                             </p>
                           )}
+                          {(lead.totalCostCents ?? 0) > 0 && (
+                            <p className="text-[10px] text-amber-400/70 font-sans mt-1">
+                              <DollarSign className="h-2.5 w-2.5 inline mr-0.5" />
+                              {((lead.totalCostCents ?? 0) / 100).toFixed(2)} spent
+                            </p>
+                          )}
                           {/* Quick Actions */}
                           <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/20">
                             {lead.email && (
@@ -539,6 +546,16 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
               )}
 
               <Separator />
+
+              {/* Economics strip */}
+              {(selectedLead.totalCostCents ?? 0) > 0 && (
+                <div className="rounded-lg p-3 bg-amber-500/5 border border-amber-500/20 flex items-center justify-between text-xs font-sans">
+                  <span className="text-amber-400/80 flex items-center gap-1">
+                    <DollarSign className="h-3.5 w-3.5" /> Company spend on this lead
+                  </span>
+                  <span className="text-amber-400 font-medium">${((selectedLead.totalCostCents ?? 0) / 100).toFixed(2)}</span>
+                </div>
+              )}
 
               {/* SMS Opt-In Status */}
               {selectedLead.phone && (

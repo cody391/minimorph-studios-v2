@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Heart, AlertTriangle, XCircle } from "lucide-react";
+import { Building2, Heart, AlertTriangle, XCircle, DollarSign, TrendingUp } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -14,6 +14,83 @@ const statusConfig: Record<string, { color: string; icon: any }> = {
   at_risk: { color: "badge-pending", icon: AlertTriangle },
   churned: { color: "badge-danger", icon: XCircle },
 };
+
+function fmtCents(cents: number) {
+  if (cents === 0) return "$0";
+  if (cents < 100) return `¢${cents}`;
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+const COST_TYPE_LABELS: Record<string, string> = {
+  scraping: "Scraping",
+  enrichment: "Enrichment",
+  outreach_email: "Email",
+  outreach_sms: "SMS",
+  outreach_call: "Call",
+  ai_generation: "AI Gen",
+  ai_conversation: "AI Chat",
+  ai_coaching: "AI Coach",
+  ai_monthly: "AI Monthly",
+  domain: "Domain",
+  hosting: "Hosting",
+  commission: "Commission",
+  commission_recurring: "Commission (rec.)",
+  phone_number: "Phone #",
+};
+
+function CustomerEconomicsPanel({ customerId }: { customerId: number }) {
+  const { data: econ, isLoading } = trpc.customers.getLifetimeEconomics.useQuery({ customerId });
+
+  if (isLoading) return <Skeleton className="h-36 w-full" />;
+
+  const costs = econ?.costs ?? [];
+  const byType: Record<string, number> = {};
+  for (const c of costs) {
+    byType[c.costType] = (byType[c.costType] ?? 0) + c.amountCents;
+  }
+  const totalCost = econ?.totalLifetimeCostCents ?? 0;
+  const totalRev = econ?.totalLifetimeRevenueCents ?? 0;
+  const netMargin = totalRev - totalCost;
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-electric/20 rounded-xl p-4 bg-electric/5">
+        <div className="flex items-center gap-2 mb-3">
+          <DollarSign className="h-4 w-4 text-electric" />
+          <span className="text-sm font-medium text-off-white">Lifetime Economics</span>
+        </div>
+        <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+          <div>
+            <span className="text-soft-gray text-xs">Total Revenue</span>
+            <p className="text-green-400 font-medium">{fmtCents(totalRev)}</p>
+          </div>
+          <div>
+            <span className="text-soft-gray text-xs">Total Cost</span>
+            <p className="text-amber-400 font-medium">{fmtCents(totalCost)}</p>
+          </div>
+          <div>
+            <span className="text-soft-gray text-xs">Net Margin</span>
+            <p className={netMargin >= 0 ? "text-green-400 font-medium" : "text-red-400 font-medium"}>{fmtCents(netMargin)}</p>
+          </div>
+        </div>
+        {Object.keys(byType).length > 0 && (
+          <div className="space-y-1 pt-2 border-t border-border/30">
+            <span className="text-xs text-soft-gray">Cost breakdown</span>
+            {Object.entries(byType).map(([type, amt]) => (
+              <div key={type} className="flex justify-between text-xs">
+                <span className="text-soft-gray">{COST_TYPE_LABELS[type] ?? type}</span>
+                <span className="text-off-white">{fmtCents(amt)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {Object.keys(byType).length === 0 && (
+          <p className="text-xs text-soft-gray/60">No costs recorded yet</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function Customers() {
   const [selected, setSelected] = useState<any>(null);
@@ -68,13 +145,15 @@ export default function Customers() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px] text-sm font-sans">
+              <table className="w-full min-w-[700px] text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Business</th>
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Contact</th>
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Industry</th>
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Health</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Revenue</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Cost</th>
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Status</th>
                     <th className="text-right py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Actions</th>
                   </tr>
@@ -93,6 +172,20 @@ export default function Customers() {
                             <span className="text-soft-gray">{c.healthScore}/100</span>
                           </div>
                         </td>
+                        <td className="py-3 px-2">
+                          {c.totalLifetimeRevenueCents > 0 ? (
+                            <span className="text-xs text-green-400 font-medium">{fmtCents(c.totalLifetimeRevenueCents)}</span>
+                          ) : (
+                            <span className="text-xs text-soft-gray/40">—</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-2">
+                          {c.totalLifetimeCostCents > 0 ? (
+                            <span className="text-xs text-amber-400 font-medium">{fmtCents(c.totalLifetimeCostCents)}</span>
+                          ) : (
+                            <span className="text-xs text-soft-gray/40">—</span>
+                          )}
+                        </td>
                         <td className="py-3 px-2"><Badge className={`text-xs font-sans ${cfg.color}`}>{c.status.replace(/_/g, " ")}</Badge></td>
                         <td className="py-3 px-2 text-right">
                           <Button variant="ghost" size="sm" className="text-xs text-soft-gray hover:text-off-white"
@@ -109,7 +202,7 @@ export default function Customers() {
       </Card>
 
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-serif text-off-white">{selected?.businessName}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-4 font-sans">
@@ -128,6 +221,9 @@ export default function Customers() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Lifetime Economics */}
+              <CustomerEconomicsPanel customerId={selected.id} />
             </div>
           )}
           <DialogFooter><Button variant="outline" onClick={() => setSelected(null)} className="font-sans text-sm">Close</Button></DialogFooter>

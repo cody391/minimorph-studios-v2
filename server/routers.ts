@@ -33,6 +33,7 @@ import { generateSiteForProject } from "./services/siteGenerator";
 import { processSiteChangeRequest } from "./services/siteUpdater";
 import { generateContractText } from "./services/contractService";
 import { createHash } from "crypto";
+import { recordCost, calculateAiCost } from "./services/costTracker";
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -470,6 +471,16 @@ const leadsRouter = router({
       });
 
       const enrichmentData = JSON.parse(enrichResult.choices[0].message.content as string);
+
+      if (enrichResult.usage) {
+        recordCost({
+          costType: "ai_generation",
+          amountCents: calculateAiCost(enrichResult.usage.prompt_tokens, enrichResult.usage.completion_tokens),
+          leadId: input.id,
+          tokensUsed: enrichResult.usage.total_tokens,
+          description: "Admin AI lead enrichment",
+        });
+      }
 
       // Update lead with enrichment data and advance stage
       await db.updateLead(input.id, {
@@ -1031,6 +1042,50 @@ const leadsRouter = router({
       } catch {}
       return { success: true };
     }),
+
+  // Economics: cost breakdown for a lead
+  getEconomics: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ input }) => {
+      const lead = await db.getLeadById(input.leadId);
+      const costs = await db.getLeadCostBreakdown(input.leadId);
+      return {
+        totalCostCents: lead?.totalCostCents ?? 0,
+        totalRevenueCents: lead?.totalRevenueCents ?? 0,
+        lastCostUpdate: lead?.lastCostUpdate ?? null,
+        costs: costs ?? [],
+      };
+    }),
+
+  // Economics: projection for a lead (estimated revenue, commission, ROI)
+  getProjection: adminProcedure
+    .input(z.object({ leadId: z.number(), packageTier: z.string().optional() }))
+    .query(async ({ input }) => {
+      const { PACKAGES } = await import("./stripe-products");
+      const lead = await db.getLeadById(input.leadId);
+      if (!lead) return null;
+
+      const tier = input.packageTier || (lead.enrichmentData as any)?.recommendedPackage || "starter";
+      const pkg = PACKAGES[tier];
+      const monthlyRevCents = pkg?.monthlyPriceInCents ?? 19500;
+      const annualRevCents = monthlyRevCents * 12;
+      const commissionRatePct = 10; // default 10%
+      const commissionCents = Math.round(annualRevCents * commissionRatePct / 100);
+      const totalCostCents = lead.totalCostCents ?? 0;
+      const roiCents = annualRevCents - totalCostCents;
+
+      return {
+        packageTier: tier,
+        packageName: pkg?.name ?? tier,
+        monthlyRevCents,
+        annualRevCents,
+        commissionRatePct,
+        commissionCents,
+        totalCostCents,
+        roiCents,
+        roiMultiple: totalCostCents > 0 ? (annualRevCents / totalCostCents) : null,
+      };
+    }),
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -1092,6 +1147,20 @@ const customersRouter = router({
       const { id, ...data } = input;
       await db.updateCustomer(id, data);
       return { success: true };
+    }),
+
+  // Economics: full lifetime economics for a customer
+  getLifetimeEconomics: adminProcedure
+    .input(z.object({ customerId: z.number() }))
+    .query(async ({ input }) => {
+      const customer = await db.getCustomerById(input.customerId);
+      const costs = await db.getCustomerCostBreakdown(input.customerId);
+      return {
+        totalLifetimeCostCents: customer?.totalLifetimeCostCents ?? 0,
+        totalLifetimeRevenueCents: customer?.totalLifetimeRevenueCents ?? 0,
+        lastEconomicsUpdate: customer?.lastEconomicsUpdate ?? null,
+        costs: costs ?? [],
+      };
     }),
 });
 
@@ -2742,32 +2811,28 @@ Always end with a helpful question or a specific suggestion.`;
       const answerBankSection = formatAnswerBankForPrompt();
       const integrationSection = formatIntegrationMatrixForPrompt();
 
+      // Fetch live pricing from DB
+      const catalogItems = await db.getProductCatalog();
+      const pkgs = catalogItems.filter((p: any) => p.category === "package");
+      const addons = catalogItems.filter((p: any) => p.category === "addon" || p.category === "one_time");
+      const pkgSection = pkgs.map((p: any) => {
+        const basePrice = parseFloat(p.basePrice);
+        const effectivePrice = p.discountPercent > 0 ? Math.round(basePrice * (1 - p.discountPercent / 100)) : basePrice;
+        const line = `${p.name} — $${effectivePrice}/mo (no setup fee, 12-month commitment)`;
+        return line + (p.description ? `\n  ${p.description}` : "");
+      }).join("\n\n");
+      const addonSection = addons.length > 0 ? addons.map((p: any) => {
+        const basePrice = parseFloat(p.basePrice);
+        return `${p.name} — $${basePrice}/mo${p.description ? `\n  ${p.description}` : ""}`;
+      }).join("\n\n") : "";
+
       const systemPrompt = `You are Elena Brooks — lead creative director and onboarding specialist at MiniMorph Studios. You are a world-class design strategist: warm, sharp, genuinely curious, occasionally funny. You talk like the best designer a client has ever worked with. You use contractions. You celebrate when customers share something cool about their business. You ask ONE question at a time but go deep. You never say "I can't" — you always redirect naturally.
 
 CRITICAL RULE — NEVER STALL: Every single message you send must end with either a question OR a clear next direction. Never end on a statement alone. If you're mid-explanation, end with "What do you think?" or "Does that make sense?" or the next natural question. The customer should always know exactly what to do next.
 
 == MINIMORPH STUDIOS — BASE PACKAGES ==
 
-Starter — $195/mo (no setup fee, 12-month commitment)
-  • Up to 5 pages, mobile-responsive design, contact/quote form
-  • Basic SEO setup, customer portal access, monthly performance report
-  • 1 content update per month, email support
-
-Growth — $295/mo (no setup fee, 12-month commitment)
-  • Everything in Starter, up to 10 pages, blog/news section
-  • Google Analytics setup, AI-assisted recommendations
-  • 2 content updates per month, priority email support, add-on integrations available
-
-Pro — $395/mo (no setup fee, 12-month commitment)
-  • Everything in Growth, up to 20 pages, advanced SEO pages
-  • Review widget setup, booking integration, SMS lead alerts
-  • 4 content updates per month, priority support with faster response
-
-Enterprise — $495/mo (no setup fee, 12-month commitment)
-  • Everything in Pro, large ecommerce (unlimited products)
-  • Custom customer portals, membership/subscription systems
-  • Multi-location support, advanced booking systems, custom integrations
-  • Priority build queue
+${pkgSection}
 
 All plans: 12-month commitment billed monthly. No setup fee. Hosting, SSL, backups included.
 Revisions: 3 rounds included on all projects. $149/round after that.
@@ -2792,8 +2857,7 @@ Hosting/security pitch (use when relevant): "Your site is hosted on our enterpri
 4. If UNSURE: "No worries — we'll brainstorm that together during the build. Usually it's just your business name dot com, or something clever. We'll lock it in before we launch."
 
 == ADD-ON CATALOG (suggest naturally, one at a time) ==
-
-Review Collector — $149/mo
+${addonSection ? addonSection + "\n\n" : ""}Review Collector — $149/mo
   Automatically texts happy customers asking for Google reviews after service completion.
   SUGGEST WHEN: Competitive local market, word-of-mouth business, mentioned reviews/reputation.
 
@@ -3038,6 +3102,15 @@ ${integrationSection}${scrapedSection}`;
       const aiResponse = result.choices[0].message.content as string;
       console.log(`[onboardingChat] LLM ok, response length=${aiResponse.length}`);
 
+      if (result.usage) {
+        recordCost({
+          costType: "ai_conversation",
+          amountCents: calculateAiCost(result.usage.prompt_tokens, result.usage.completion_tokens),
+          tokensUsed: result.usage.total_tokens,
+          description: "Elena onboarding chat",
+        });
+      }
+
       // Save chat logs (best-effort)
       try {
         await db.createAiChatLog({
@@ -3167,6 +3240,16 @@ ${integrationContext}`;
 
       const result = await invokeLLM({ messages });
       const aiResponse = result.choices[0].message.content as string;
+
+      if (result.usage) {
+        recordCost({
+          costType: "ai_conversation",
+          amountCents: calculateAiCost(result.usage.prompt_tokens, result.usage.completion_tokens),
+          customerId: input.customerId,
+          tokensUsed: result.usage.total_tokens,
+          description: "Portal AI concierge chat",
+        });
+      }
 
       // Save chat logs
       await db.createAiChatLog({
@@ -3587,6 +3670,39 @@ const supportRouter = router({
     }))
     .mutation(async ({ input }) => {
       await db.updateCustomerSupportTicket(input.ticketId, { status: input.status });
+      if (input.status === "resolved") {
+        const ticket = await db.getCustomerSupportTicketById(input.ticketId);
+        if (ticket) {
+          const { randomBytes } = await import("crypto");
+          const token = randomBytes(24).toString("hex");
+          await db.updateCustomerSupportTicket(input.ticketId, { ratingToken: token });
+          const customer = await db.getCustomerById(ticket.customerId);
+          if (customer?.email) {
+            const siteUrl = ENV.appUrl || "https://minimorphstudios.net";
+            const rateUrl = `${siteUrl}/api/rate-support?ticketId=${ticket.id}&token=${token}`;
+            try {
+              const { Resend } = await import("resend");
+              const resend = new Resend(process.env.RESEND_API_KEY);
+              await resend.emails.send({
+                from: "MiniMorph Studios <support@minimorphstudios.net>",
+                to: customer.email,
+                subject: "Your support ticket has been resolved — how'd we do?",
+                html: `<p>Hi ${customer.contactName || "there"},</p><p>Your support request "<strong>${ticket.subject}</strong>" has been resolved.</p><p>How would you rate our support? Click a star below:</p>
+<p>
+  <a href="${rateUrl}&rating=5" style="margin:4px;display:inline-block;padding:8px 16px;background:#4a9eff;color:#111;border-radius:6px;text-decoration:none;">⭐⭐⭐⭐⭐ Excellent</a><br/>
+  <a href="${rateUrl}&rating=4" style="margin:4px;display:inline-block;padding:8px 16px;background:#7fb3ff;color:#111;border-radius:6px;text-decoration:none;">⭐⭐⭐⭐ Good</a><br/>
+  <a href="${rateUrl}&rating=3" style="margin:4px;display:inline-block;padding:8px 16px;background:#a0c4ff;color:#111;border-radius:6px;text-decoration:none;">⭐⭐⭐ OK</a><br/>
+  <a href="${rateUrl}&rating=2" style="margin:4px;display:inline-block;padding:8px 16px;background:#c8d8ff;color:#111;border-radius:6px;text-decoration:none;">⭐⭐ Poor</a><br/>
+  <a href="${rateUrl}&rating=1" style="margin:4px;display:inline-block;padding:8px 16px;background:#e8edff;color:#111;border-radius:6px;text-decoration:none;">⭐ Very Poor</a>
+</p>
+<p style="font-size:12px;color:#888;">Thank you for your feedback — it helps us improve!</p>`,
+              });
+            } catch (err) {
+              console.error("[Support] Failed to send rating email:", err);
+            }
+          }
+        }
+      }
       return { success: true };
     }),
 });
@@ -3629,6 +3745,21 @@ const repMessagesRouter = router({
       await db.markRepMessageRead(input.id);
       return { success: true };
     }),
+
+  markReadByRep: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user!.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "Rep account not found" });
+      await db.markAllAdminMessagesReadForRep(rep.id);
+      return { success: true };
+    }),
+
+  countUnreadForRep: protectedProcedure.query(async ({ ctx }) => {
+    const rep = await db.getRepByUserId(ctx.user!.id);
+    if (!rep) return { count: 0 };
+    const count = await db.countUnreadAdminMessagesForRep(rep.id);
+    return { count };
+  }),
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -3760,6 +3891,253 @@ const notificationCountsRouter = router({
 });
 
 /* ═══════════════════════════════════════════════════════
+   REP AVAILABILITY ROUTER — Weekly schedule for lead routing
+   ═══════════════════════════════════════════════════════ */
+const repAvailabilityRouter = router({
+  // Get current rep's availability schedule
+  getMySchedule: protectedProcedure.query(async ({ ctx }) => {
+    const rep = await db.getRepByUserId(ctx.user.id);
+    if (!rep) return [];
+    const { getDb: getDbFn } = await import("./db");
+    const { repAvailability: availTable } = await import("../drizzle/schema");
+    const { eq: eqFn } = await import("drizzle-orm");
+    const database = await getDbFn();
+    if (!database) return [];
+    return database.select().from(availTable).where(eqFn(availTable.repId, rep.id)).orderBy(availTable.dayOfWeek);
+  }),
+
+  // Upsert rep's availability for a specific day
+  setMySchedule: protectedProcedure
+    .input(z.object({
+      schedule: z.array(z.object({
+        dayOfWeek: z.number().min(0).max(6),
+        startTime: z.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/),
+        isAvailable: z.boolean(),
+        timezone: z.string().default("America/Chicago"),
+      })),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "Not a rep" });
+      const { getDb: getDbFn } = await import("./db");
+      const { repAvailability: availTable } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const database = await getDbFn();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      // Delete existing and re-insert
+      await database.delete(availTable).where(eqFn(availTable.repId, rep.id));
+      if (input.schedule.length > 0) {
+        await database.insert(availTable).values(
+          input.schedule.map((s) => ({ repId: rep.id, ...s }))
+        );
+      }
+      return { success: true };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
+   ADMIN ROUTER — Centralized admin-only operations
+   ═══════════════════════════════════════════════════════ */
+const adminRouter = router({
+  // Part 1: Provision a Twilio phone number for a rep
+  provisionRepPhone: adminProcedure
+    .input(z.object({ repId: z.number(), phoneNumber: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      const rep = await db.getRepById(input.repId);
+      if (!rep) throw new TRPCError({ code: "NOT_FOUND", message: "Rep not found" });
+      const { provisionPhoneNumber } = await import("./services/twilioPhoneProvisioning");
+      const provisioned = await provisionPhoneNumber(rep.id, rep.fullName, input.phoneNumber);
+      await db.updateRep(rep.id, { assignedPhoneNumber: provisioned });
+      return { success: true, phoneNumber: provisioned };
+    }),
+
+  // Part 1: Search available Twilio phone numbers
+  searchAvailableNumbers: adminProcedure
+    .input(z.object({ areaCode: z.string().optional() }))
+    .query(async ({ input }) => {
+      const { searchAvailableNumbers } = await import("./services/twilioPhoneProvisioning");
+      return searchAvailableNumbers(input.areaCode);
+    }),
+
+  // Part 4: List coaching feedback flagged as promotable to academy
+  getPendingAcademyPromotions: adminProcedure
+    .query(async () => {
+      const { getDb: getDbFn } = await import("./db");
+      const { aiCoachingFeedback: fbTable, reps: repsTable } = await import("../drizzle/schema");
+      const { eq: eqFn, and: andFn } = await import("drizzle-orm");
+      const database = await getDbFn();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      const items = await database.select({
+        id: fbTable.id,
+        repId: fbTable.repId,
+        communicationType: fbTable.communicationType,
+        overallScore: fbTable.overallScore,
+        detailedFeedback: fbTable.detailedFeedback,
+        strengths: fbTable.strengths,
+        improvements: fbTable.improvements,
+        keyTakeaways: fbTable.keyTakeaways,
+        promotionReason: fbTable.promotionReason,
+        createdAt: fbTable.createdAt,
+        repName: repsTable.fullName,
+      }).from(fbTable)
+        .leftJoin(repsTable, eqFn(fbTable.repId, repsTable.id))
+        .where(andFn(eqFn(fbTable.promotableToAcademy, true as any), eqFn(fbTable.promotedToAcademy, false as any)))
+        .orderBy(fbTable.createdAt);
+      return items;
+    }),
+
+  // Part 4: Promote coaching feedback to a coaching insight (academy lesson)
+  promoteToAcademy: adminProcedure
+    .input(z.object({
+      feedbackId: z.number(),
+      title: z.string().min(1),
+      lessonContent: z.string().min(1),
+      category: z.enum([
+        "objection_handling", "closing", "rapport", "discovery",
+        "product_knowledge", "tone", "follow_up", "listening", "urgency", "personalization"
+      ]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb: getDbFn } = await import("./db");
+      const { aiCoachingFeedback: fbTable, coachingInsights: insightsTable } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const database = await getDbFn();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [feedback] = await database.select().from(fbTable).where(eqFn(fbTable.id, input.feedbackId)).limit(1);
+      if (!feedback) throw new TRPCError({ code: "NOT_FOUND", message: "Feedback not found" });
+
+      // Create the coaching insight
+      const adminUserId = ctx.user?.id ?? 0;
+      await database.insert(insightsTable).values({
+        feedbackId: input.feedbackId,
+        repId: feedback.repId,
+        title: input.title,
+        lessonContent: input.lessonContent,
+        category: input.category,
+        status: "published",
+        publishedAt: new Date(),
+        publishedBy: adminUserId,
+      });
+
+      // Mark as promoted
+      await database.update(fbTable)
+        .set({ promotedToAcademy: true, promotedAt: new Date(), promotedBy: adminUserId })
+        .where(eqFn(fbTable.id, input.feedbackId));
+
+      return { success: true };
+    }),
+
+  // Part 7: Get all system settings
+  getSystemSettings: adminProcedure
+    .query(async () => {
+      const { getDb: getDbFn } = await import("./db");
+      const { systemSettings: settingsTable } = await import("../drizzle/schema");
+      const database = await getDbFn();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      return database.select().from(settingsTable).orderBy(settingsTable.settingKey);
+    }),
+
+  // Part 7: Update a system setting
+  updateSystemSetting: adminProcedure
+    .input(z.object({ key: z.string(), value: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb: getDbFn } = await import("./db");
+      const { systemSettings: settingsTable } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const database = await getDbFn();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+      await database.update(settingsTable)
+        .set({ settingValue: input.value, updatedBy: ctx.user?.id ?? null })
+        .where(eqFn(settingsTable.settingKey, input.key));
+      return { success: true };
+    }),
+
+  // Part 8: Smoke test all integrations
+  smokeTest: adminProcedure
+    .mutation(async () => {
+      const results: Record<string, { ok: boolean; latencyMs?: number; error?: string }> = {};
+
+      const test = async (name: string, fn: () => Promise<void>) => {
+        const start = Date.now();
+        try {
+          await fn();
+          results[name] = { ok: true, latencyMs: Date.now() - start };
+        } catch (err: any) {
+          results[name] = { ok: false, latencyMs: Date.now() - start, error: err.message };
+        }
+      };
+
+      await Promise.allSettled([
+        test("database", async () => {
+          const { getDb: getDbFn } = await import("./db");
+          const database = await getDbFn();
+          if (!database) throw new Error("Database unavailable");
+          await database.execute("SELECT 1" as any);
+        }),
+        test("anthropic", async () => {
+          const { ENV: envObj } = await import("./_core/env");
+          if (!envObj.anthropicApiKey) throw new Error("ANTHROPIC_API_KEY not set");
+          const { invokeLLM } = await import("./_core/llm");
+          await invokeLLM({ messages: [{ role: "user", content: "Say OK" }], maxTokens: 1 });
+        }),
+        test("twilio_sms", async () => {
+          const { ENV: envObj } = await import("./_core/env");
+          if (!envObj.twilioAccountSid || !envObj.twilioAuthToken) throw new Error("Twilio credentials not set");
+          const twilio = (await import("twilio")).default;
+          const client = twilio(envObj.twilioAccountSid, envObj.twilioAuthToken);
+          await client.api.accounts(envObj.twilioAccountSid).fetch();
+        }),
+        test("twilio_voice_token", async () => {
+          const { generateVoiceToken } = await import("./services/voice");
+          generateVoiceToken("smoke-test");
+        }),
+        test("resend", async () => {
+          const { ENV: envObj } = await import("./_core/env");
+          if (!envObj.resendApiKey) throw new Error("RESEND_API_KEY not set");
+          const { Resend } = await import("resend");
+          const resend = new Resend(envObj.resendApiKey);
+          await resend.domains.list();
+        }),
+        test("stripe", async () => {
+          const { ENV: envObj } = await import("./_core/env");
+          if (!envObj.stripeSecretKey) throw new Error("STRIPE_SECRET_KEY not set");
+          const { default: Stripe } = await import("stripe");
+          const stripe = new Stripe(envObj.stripeSecretKey);
+          await stripe.balance.retrieve();
+        }),
+        test("google_maps", async () => {
+          const { ENV: envObj } = await import("./_core/env");
+          if (!envObj.googleMapsApiKey) throw new Error("GOOGLE_MAPS_API_KEY not set");
+          const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=Chicago&key=${envObj.googleMapsApiKey}`);
+          const json = await res.json() as any;
+          if (json.status !== "OK" && json.status !== "ZERO_RESULTS") throw new Error(`Maps API: ${json.status}`);
+        }),
+        test("s3", async () => {
+          const { storagePut } = await import("./storage");
+          await storagePut("smoke-test/.keep", Buffer.from("ok"), "text/plain");
+        }),
+      ]);
+
+      const allOk = Object.values(results).every((r) => r.ok);
+      return { allOk, results };
+    }),
+
+  // Economics: monthly cost/revenue summary
+  getEconomicsSummary: adminProcedure
+    .input(z.object({ month: z.string().optional() }))
+    .query(async ({ input }) => {
+      const month = input.month ?? new Date().toISOString().slice(0, 7);
+      const summary = await db.getMonthlyEconomicsSummary(month);
+      const expensiveLeads = await db.getTopExpensiveLeads(5);
+      const roiCustomers = await db.getTopRoiCustomers(5);
+      return { month, summary, expensiveLeads, roiCustomers };
+    }),
+});
+
+/* ═══════════════════════════════════════════════════════
    APP ROUTER
    ═══════════════════════════════════════════════════════ */
 export const appRouter = router({
@@ -3817,6 +4195,8 @@ export const appRouter = router({
   devAccess: devAccessRouter,
   support: supportRouter,
   repMessages: repMessagesRouter,
+  admin: adminRouter,
+  repAvailability: repAvailabilityRouter,
   products: productsRouter,
   broadcasts: broadcastsRouter,
   notifCounts: notificationCountsRouter,

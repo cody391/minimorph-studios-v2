@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
@@ -11,7 +12,18 @@ import {
   TrendingUp,
   ArrowRight,
   RefreshCw,
+  GraduationCap,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Activity,
 } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { useLocation } from "wouter";
 
 export default function Overview() {
@@ -142,6 +154,284 @@ export default function Overview() {
           </button>
         ))}
       </div>
+
+      {/* Economics Dashboard */}
+      <EconomicsDashboardPanel />
+
+      {/* Part 4: Academy Promotions */}
+      <AcademyPromotionsPanel />
+
+      {/* Part 8: System Health */}
+      <SystemHealthPanel />
     </div>
+  );
+}
+
+/* Economics Dashboard */
+function EconomicsDashboardPanel() {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const { data, isLoading } = trpc.admin.getEconomicsSummary.useQuery({ month: currentMonth });
+
+  function fmtCents(cents: number) {
+    if (cents === 0) return "$0";
+    if (cents < 100) return `¢${cents}`;
+    return `$${(cents / 100).toFixed(2)}`;
+  }
+
+  const COST_TYPE_LABELS: Record<string, string> = {
+    scraping: "Scraping",
+    enrichment: "Enrichment",
+    outreach_email: "Email",
+    outreach_sms: "SMS",
+    outreach_call: "Call",
+    ai_generation: "AI Gen",
+    ai_conversation: "AI Chat",
+    ai_coaching: "AI Coach",
+    ai_monthly: "AI Monthly",
+    domain: "Domain",
+    hosting: "Hosting",
+    commission: "Commission",
+    commission_recurring: "Commission (rec.)",
+    phone_number: "Phone #",
+  };
+
+  const summary = data?.summary;
+  const totalCost = summary?.totalCostCents ?? 0;
+  const totalRev = summary?.totalRevenueCents ?? 0;
+  const margin = totalRev - totalCost;
+  const byType = summary?.byType ?? {};
+
+  return (
+    <Card className="border-border/50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-off-white font-serif flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-electric" />
+          Economics — {currentMonth}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+        ) : (
+          <div className="space-y-5">
+            {/* Top-line KPIs */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20 text-center">
+                <p className="text-xs text-soft-gray font-sans">Revenue</p>
+                <p className="text-lg font-serif text-green-400">{fmtCents(totalRev)}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-center">
+                <p className="text-xs text-soft-gray font-sans">Total Spend</p>
+                <p className="text-lg font-serif text-amber-400">{fmtCents(totalCost)}</p>
+              </div>
+              <div className={`p-3 rounded-lg border text-center ${margin >= 0 ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20"}`}>
+                <p className="text-xs text-soft-gray font-sans">Net Margin</p>
+                <p className={`text-lg font-serif ${margin >= 0 ? "text-green-400" : "text-red-400"}`}>{fmtCents(margin)}</p>
+              </div>
+            </div>
+
+            {/* Cost breakdown by type */}
+            {Object.keys(byType).length > 0 && (
+              <div>
+                <p className="text-xs text-soft-gray font-sans mb-2">Cost Breakdown</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {Object.entries(byType).map(([type, amt]) => (
+                    <div key={type} className="flex justify-between items-center p-2 rounded bg-midnight-dark/40 border border-border/20 text-xs">
+                      <span className="text-soft-gray font-sans">{COST_TYPE_LABELS[type] ?? type}</span>
+                      <span className="text-off-white font-medium">{fmtCents(amt as number)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Most expensive unconverted leads */}
+            {(data?.expensiveLeads?.length ?? 0) > 0 && (
+              <div>
+                <p className="text-xs text-soft-gray font-sans mb-2">Most Expensive Open Leads</p>
+                <div className="space-y-1">
+                  {data!.expensiveLeads.map((l: any) => (
+                    <div key={l.id} className="flex justify-between items-center text-xs p-2 rounded bg-midnight-dark/30 border border-border/20">
+                      <span className="text-off-white font-sans">{l.businessName}</span>
+                      <div className="flex items-center gap-3">
+                        <Badge className="text-[10px] badge-neutral font-sans">{l.stage?.replace(/_/g, " ")}</Badge>
+                        <span className="text-amber-400">{fmtCents(l.totalCostCents)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Best ROI customers */}
+            {(data?.roiCustomers?.length ?? 0) > 0 && (
+              <div>
+                <p className="text-xs text-soft-gray font-sans mb-2">Best ROI Customers</p>
+                <div className="space-y-1">
+                  {data!.roiCustomers.map((c: any) => {
+                    const roi = c.totalLifetimeRevenueCents - c.totalLifetimeCostCents;
+                    return (
+                      <div key={c.id} className="flex justify-between items-center text-xs p-2 rounded bg-midnight-dark/30 border border-border/20">
+                        <span className="text-off-white font-sans">{c.businessName}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-soft-gray">{fmtCents(c.totalLifetimeRevenueCents)} rev</span>
+                          <span className="text-green-400 font-medium">+{fmtCents(roi)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {totalCost === 0 && (data?.expensiveLeads?.length ?? 0) === 0 && (
+              <p className="text-xs text-soft-gray/60 font-sans text-center py-2">No economics data for this month yet</p>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* Part 4: Admin panel for promoting coaching feedback to academy lessons */
+function AcademyPromotionsPanel() {
+  const { data: pending, refetch } = trpc.admin.getPendingAcademyPromotions.useQuery();
+  const [selected, setSelected] = useState<any>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [category, setCategory] = useState("closing");
+
+  const promote = trpc.admin.promoteToAcademy.useMutation({
+    onSuccess: () => { toast.success("Published to Academy"); refetch(); setSelected(null); },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const openPromotion = (item: any) => {
+    setSelected(item);
+    setTitle(`Lesson: ${item.promotionReason || item.communicationType + " example"}`);
+    setContent(item.detailedFeedback || "");
+    setCategory("closing");
+  };
+
+  if (!pending?.length) return null;
+
+  return (
+    <>
+      <Card className="border-electric/20">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-off-white font-serif flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-electric" />
+            Pending Academy Promotions
+            <Badge className="bg-electric/10 text-electric border-electric/20 text-xs">{pending.length}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {pending.slice(0, 5).map((item: any) => (
+              <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-electric/5 border border-electric/10">
+                <div className="min-w-0">
+                  <p className="text-sm font-sans text-off-white font-medium truncate">{item.promotionReason || `${item.communicationType} coaching`}</p>
+                  <p className="text-xs text-soft-gray font-sans">{item.repName} · Score: {item.overallScore}/100 · {item.communicationType}</p>
+                </div>
+                <Button size="sm" onClick={() => openPromotion(item)} className="shrink-0 ml-3 bg-electric hover:bg-electric-light text-midnight text-xs h-7">
+                  Review & Publish
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {selected && (
+        <Dialog open={true} onOpenChange={() => setSelected(null)}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader><DialogTitle className="font-serif text-off-white">Publish to Academy</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs text-soft-gray mb-1">Lesson Title</p>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} className="text-sm" />
+              </div>
+              <div>
+                <p className="text-xs text-soft-gray mb-1">Category</p>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["objection_handling", "closing", "rapport", "discovery", "product_knowledge", "tone", "follow_up", "listening", "urgency", "personalization"].map((c) => (
+                      <SelectItem key={c} value={c}>{c.replace(/_/g, " ")}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-xs text-soft-gray mb-1">Lesson Content (markdown)</p>
+                <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={8} className="text-xs font-mono" />
+              </div>
+              <div className="p-3 bg-electric/5 rounded-lg">
+                <p className="text-xs text-soft-gray/60 font-sans">Original AI Feedback:</p>
+                <p className="text-xs text-soft-gray font-sans mt-1">{selected.promotionReason}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
+              <Button
+                onClick={() => promote.mutate({ feedbackId: selected.id, title, lessonContent: content, category: category as any })}
+                disabled={promote.isPending || !title || !content}
+                className="bg-electric hover:bg-electric-light text-midnight"
+              >
+                {promote.isPending ? "Publishing…" : "Publish to Academy"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}
+
+/* Part 8: System health smoke-test panel */
+function SystemHealthPanel() {
+  const [results, setResults] = useState<Record<string, { ok: boolean; latencyMs?: number; error?: string }> | null>(null);
+  const smokeTest = trpc.admin.smokeTest.useMutation({
+    onSuccess: (data) => setResults(data.results),
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  return (
+    <Card className="border-border/50">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-off-white font-serif flex items-center gap-2">
+            <Activity className="w-5 h-5 text-electric" />
+            System Health
+          </CardTitle>
+          <Button size="sm" variant="outline" onClick={() => smokeTest.mutate()} disabled={smokeTest.isPending} className="border-electric/20 text-xs">
+            {smokeTest.isPending ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+            Run Tests
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!results ? (
+          <p className="text-xs text-soft-gray/60 font-sans text-center py-4">Click "Run Tests" to check all integrations</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {Object.entries(results).map(([name, result]) => (
+              <div key={name} className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${result.ok ? "bg-green-500/5 border-green-500/20" : "bg-red-500/5 border-red-500/20"}`}>
+                {result.ok ? <CheckCircle className="w-3 h-3 text-green-400 shrink-0" /> : <XCircle className="w-3 h-3 text-red-400 shrink-0" />}
+                <div className="min-w-0">
+                  <p className="font-sans text-off-white font-medium truncate">{name.replace(/_/g, " ")}</p>
+                  {result.ok ? (
+                    <p className="text-soft-gray/60">{result.latencyMs}ms</p>
+                  ) : (
+                    <p className="text-red-400 truncate">{result.error}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

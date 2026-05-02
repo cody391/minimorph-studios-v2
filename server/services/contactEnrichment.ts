@@ -16,6 +16,7 @@ import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
 import { scrapedBusinesses } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { recordCost, calculateAiCost, COSTS } from "./costTracker";
 
 // ─── Types ───
 
@@ -414,6 +415,7 @@ export async function enrichBusinessContact(businessId: number): Promise<Enrichm
     if (apolloResult) {
       sourcesSucceeded.push("apollo");
       results.push(apolloResult);
+      recordCost({ costType: "enrichment", amountCents: COSTS.APOLLO_ENRICH, scrapedBusinessId: businessId, description: "Apollo.io organization enrichment" });
       console.log(`[ContactEnrichment] Apollo found data for ${business.businessName}`);
     }
 
@@ -423,6 +425,7 @@ export async function enrichBusinessContact(businessId: number): Promise<Enrichm
       if (hunterResult) {
         sourcesSucceeded.push("hunter");
         results.push(hunterResult);
+        recordCost({ costType: "enrichment", amountCents: COSTS.HUNTER_EMAIL, scrapedBusinessId: businessId, description: "Hunter.io email discovery" });
         console.log(`[ContactEnrichment] Hunter found email for ${business.businessName}`);
       }
     }
@@ -444,6 +447,8 @@ export async function enrichBusinessContact(businessId: number): Promise<Enrichm
   if (llmResult) {
     sourcesSucceeded.push("llm");
     results.push(llmResult);
+    // Record AI cost — use rough estimate since enrichViaLLM doesn't return token counts
+    recordCost({ costType: "ai_generation", amountCents: 2, scrapedBusinessId: businessId, description: "AI enrichment dossier" });
   }
 
   // Merge all results

@@ -55,6 +55,10 @@ export const reps = mysqlTable("reps", {
   stripeConnectAccountId: varchar("stripeConnectAccountId", { length: 128 }),
   stripeConnectOnboarded: boolean("stripeConnectOnboarded").default(false),
   paperworkCompletedAt: timestamp("paperworkCompletedAt"),
+  assignedPhoneNumber: varchar("assignedPhoneNumber", { length: 32 }),
+  voicemailMessage: text("voicemailMessage"),
+  lastTrainingCompletedAt: timestamp("lastTrainingCompletedAt"),
+  trainingRequiredToday: boolean("trainingRequiredToday").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -111,6 +115,9 @@ export const leads = mysqlTable("leads", {
   checkoutUrl: varchar("checkoutUrl", { length: 512 }),
   selfClosed: boolean("selfClosed").default(false).notNull(),
   excludedReason: varchar("excludedReason", { length: 100 }),
+  totalCostCents: int("totalCostCents").default(0).notNull(),
+  totalRevenueCents: int("totalRevenueCents").default(0).notNull(),
+  lastCostUpdate: timestamp("lastCostUpdate"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -134,6 +141,9 @@ export const customers = mysqlTable("customers", {
   status: mysqlEnum("status", ["active", "at_risk", "churned"])
     .default("active")
     .notNull(),
+  totalLifetimeCostCents: int("totalLifetimeCostCents").default(0).notNull(),
+  totalLifetimeRevenueCents: int("totalLifetimeRevenueCents").default(0).notNull(),
+  lastEconomicsUpdate: timestamp("lastEconomicsUpdate"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -737,6 +747,11 @@ export const aiCoachingFeedback = mysqlTable("ai_coaching_feedback", {
   sentimentScore: int("sentimentScore"), // -100 to 100
   keyTakeaways: json("keyTakeaways"), // string[]
   suggestedFollowUp: text("suggestedFollowUp"),
+  promotableToAcademy: boolean("promotableToAcademy").default(false).notNull(),
+  promotionReason: text("promotionReason"),
+  promotedToAcademy: boolean("promotedToAcademy").default(false).notNull(),
+  promotedAt: timestamp("promotedAt"),
+  promotedBy: int("promotedBy"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type AiCoachingFeedback = typeof aiCoachingFeedback.$inferSelect;
@@ -1679,4 +1694,91 @@ export const scoringModel = mysqlTable("scoring_model", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type ScoringModel = typeof scoringModel.$inferSelect;
+
+/* ═══════════════════════════════════════════════════════
+   COACHING INSIGHTS — Admin-curated lessons from real coaching feedback
+   ═══════════════════════════════════════════════════════ */
+export const coachingInsights = mysqlTable("coaching_insights", {
+  id: int("id").autoincrement().primaryKey(),
+  feedbackId: int("feedbackId").notNull(), // references ai_coaching_feedback.id
+  repId: int("repId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  lessonContent: text("lessonContent").notNull(), // markdown
+  category: mysqlEnum("ci_category", [
+    "objection_handling", "closing", "rapport", "discovery",
+    "product_knowledge", "tone", "follow_up", "listening", "urgency", "personalization"
+  ]).notNull(),
+  status: mysqlEnum("ci_status", ["pending_review", "published", "rejected"]).default("pending_review").notNull(),
+  publishedAt: timestamp("publishedAt"),
+  publishedBy: int("publishedBy"),
+  createdAt: timestamp("ci_createdAt").defaultNow().notNull(),
+});
+export type CoachingInsight = typeof coachingInsights.$inferSelect;
+export type InsertCoachingInsight = typeof coachingInsights.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP AVAILABILITY — Weekly schedule for lead routing
+   ═══════════════════════════════════════════════════════ */
+export const repAvailability = mysqlTable("rep_availability", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  dayOfWeek: int("dayOfWeek").notNull(), // 0=Sunday, 6=Saturday
+  startTime: varchar("startTime", { length: 5 }).notNull(), // HH:MM (24h)
+  endTime: varchar("endTime", { length: 5 }).notNull(),   // HH:MM (24h)
+  isAvailable: boolean("isAvailable").default(true).notNull(),
+  timezone: varchar("timezone", { length: 64 }).default("America/Chicago").notNull(),
+  createdAt: timestamp("ra_createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("ra_updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type RepAvailability = typeof repAvailability.$inferSelect;
+export type InsertRepAvailability = typeof repAvailability.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SYSTEM SETTINGS — Global admin-controlled feature flags
+   ═══════════════════════════════════════════════════════ */
+export const systemSettings = mysqlTable("system_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  settingKey: varchar("settingKey", { length: 128 }).notNull().unique(),
+  settingValue: text("settingValue").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("ss_updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: int("updatedBy"),
+});
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = typeof systemSettings.$inferInsert;
 export type InsertScoringModel = typeof scoringModel.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   LEAD_COSTS — Per-lead cost tracking for every API call and action
+   ═══════════════════════════════════════════════════════ */
+export const leadCosts = mysqlTable("lead_costs", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId"),
+  scrapedBusinessId: int("scrapedBusinessId"),
+  customerId: int("customerId"),
+  costType: mysqlEnum("costType", [
+    "scraping",
+    "enrichment",
+    "outreach_email",
+    "outreach_sms",
+    "outreach_call",
+    "ai_generation",
+    "ai_conversation",
+    "ai_coaching",
+    "ai_monthly",
+    "domain",
+    "hosting",
+    "commission",
+    "commission_recurring",
+    "phone_number",
+  ]).notNull(),
+  amountCents: int("amountCents").notNull(),
+  description: varchar("description", { length: 255 }),
+  tokensUsed: int("tokensUsed"),
+  durationSeconds: int("durationSeconds"),
+  repId: int("repId"),
+  month: varchar("month", { length: 7 }),
+  createdAt: timestamp("lc_createdAt").defaultNow().notNull(),
+});
+export type LeadCost = typeof leadCosts.$inferSelect;
+export type InsertLeadCost = typeof leadCosts.$inferInsert;

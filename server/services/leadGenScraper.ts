@@ -9,6 +9,7 @@ import { makeRequest, type PlacesSearchResult, type PlaceDetailsResult } from ".
 import { getDb } from "../db";
 import { scrapeJobs, scrapedBusinesses } from "../../drizzle/schema";
 import { eq, and, isNull } from "drizzle-orm";
+import { recordCost, COSTS } from "./costTracker";
 
 // Business types that are most likely to need websites
 const LOW_HANGING_FRUIT_TYPES = [
@@ -120,6 +121,7 @@ export async function runScrapeJob(jobId: number): Promise<ScrapeResult> {
         );
 
         if (result.status === "OK" && result.results) {
+          recordCost({ costType: "scraping", amountCents: COSTS.GOOGLE_MAPS_SEARCH, description: `Text search: ${query}` });
           for (const place of result.results) {
             if (seenPlaceIds.has(place.place_id) || existingPlaceIds.has(place.place_id)) continue;
             seenPlaceIds.add(place.place_id);
@@ -159,6 +161,7 @@ export async function runScrapeJob(jobId: number): Promise<ScrapeResult> {
           );
 
           if (result.status === "OK" && result.results) {
+            recordCost({ costType: "scraping", amountCents: COSTS.GOOGLE_MAPS_SEARCH, description: `Nearby search: ${type}` });
             for (const place of result.results) {
               if (seenPlaceIds.has(place.place_id) || existingPlaceIds.has(place.place_id)) continue;
               seenPlaceIds.add(place.place_id);
@@ -205,6 +208,8 @@ export async function runScrapeJob(jobId: number): Promise<ScrapeResult> {
           biz.hasWebsite = !!d.website;
           biz.rating = d.rating ?? biz.rating;
           biz.reviewCount = d.user_ratings_total ?? biz.reviewCount;
+
+          recordCost({ costType: "scraping", amountCents: COSTS.GOOGLE_MAPS_PLACE, description: `Place details: ${biz.businessName}` });
 
           // Qualification at scrape time: no website qualifies immediately.
           // Businesses with websites will be qualified/disqualified after the scoring pass.

@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2, ArrowRightLeft } from "lucide-react";
+import { Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2, ArrowRightLeft, DollarSign, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -41,6 +41,114 @@ const stageColors: Record<string, string> = {
   closed_won: "badge-success",
   closed_lost: "badge-danger",
 };
+
+function fmtCents(cents: number) {
+  if (cents === 0) return "$0";
+  if (cents < 100) return `¢${cents}`;
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+const COST_TYPE_LABELS: Record<string, string> = {
+  scraping: "Scraping",
+  enrichment: "Enrichment",
+  outreach_email: "Email",
+  outreach_sms: "SMS",
+  outreach_call: "Call",
+  ai_generation: "AI Gen",
+  ai_conversation: "AI Chat",
+  ai_coaching: "AI Coach",
+  ai_monthly: "AI Monthly",
+  domain: "Domain",
+  hosting: "Hosting",
+  commission: "Commission",
+  commission_recurring: "Commission (rec.)",
+  phone_number: "Phone #",
+};
+
+function LeadEconomicsPanel({ leadId }: { leadId: number }) {
+  const { data: econ, isLoading: econLoading } = trpc.leads.getEconomics.useQuery({ leadId });
+  const { data: proj, isLoading: projLoading } = trpc.leads.getProjection.useQuery({ leadId });
+
+  if (econLoading || projLoading) return <Skeleton className="h-32 w-full" />;
+
+  const costs = econ?.costs ?? [];
+  const byType: Record<string, number> = {};
+  for (const c of costs) {
+    byType[c.costType] = (byType[c.costType] ?? 0) + c.amountCents;
+  }
+  const totalCost = econ?.totalCostCents ?? 0;
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-electric/20 rounded-xl p-4 bg-electric/5">
+        <div className="flex items-center gap-2 mb-3">
+          <DollarSign className="h-4 w-4 text-electric" />
+          <span className="text-sm font-medium text-off-white">Lead Economics</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+          <div>
+            <span className="text-soft-gray text-xs">Total Spent</span>
+            <p className="text-off-white font-medium">{fmtCents(totalCost)}</p>
+          </div>
+          <div>
+            <span className="text-soft-gray text-xs">Total Items</span>
+            <p className="text-off-white font-medium">{costs.length}</p>
+          </div>
+        </div>
+        {Object.keys(byType).length > 0 && (
+          <div className="space-y-1">
+            {Object.entries(byType).map(([type, amt]) => (
+              <div key={type} className="flex justify-between text-xs">
+                <span className="text-soft-gray">{COST_TYPE_LABELS[type] ?? type}</span>
+                <span className="text-off-white">{fmtCents(amt)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {Object.keys(byType).length === 0 && (
+          <p className="text-xs text-soft-gray/60">No costs recorded yet</p>
+        )}
+      </div>
+
+      {proj && (
+        <div className="border border-green-500/20 rounded-xl p-4 bg-green-500/5">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="h-4 w-4 text-green-400" />
+            <span className="text-sm font-medium text-off-white">If We Close This</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-soft-gray text-xs">Package</span>
+              <p className="text-off-white capitalize">{proj.packageName}</p>
+            </div>
+            <div>
+              <span className="text-soft-gray text-xs">Monthly Rev</span>
+              <p className="text-green-400 font-medium">{fmtCents(proj.monthlyRevCents)}/mo</p>
+            </div>
+            <div>
+              <span className="text-soft-gray text-xs">Annual Contract</span>
+              <p className="text-green-400 font-medium">{fmtCents(proj.annualRevCents)}</p>
+            </div>
+            <div>
+              <span className="text-soft-gray text-xs">Rep Commission (10%)</span>
+              <p className="text-off-white font-medium">{fmtCents(proj.commissionCents)}</p>
+            </div>
+            <div>
+              <span className="text-soft-gray text-xs">Net ROI</span>
+              <p className={proj.roiCents >= 0 ? "text-green-400 font-medium" : "text-red-400 font-medium"}>{fmtCents(proj.roiCents)}</p>
+            </div>
+            {proj.roiMultiple !== null && (
+              <div>
+                <span className="text-soft-gray text-xs">ROI Multiple</span>
+                <p className="text-off-white font-medium">{proj.roiMultiple.toFixed(1)}x</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Leads() {
   const [showCreate, setShowCreate] = useState(false);
@@ -137,7 +245,7 @@ export default function Leads() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px] text-sm font-sans">
+              <table className="w-full min-w-[700px] text-sm font-sans">
                 <thead>
                   <tr className="border-b border-border/50">
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Business</th>
@@ -145,6 +253,7 @@ export default function Leads() {
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Temp</th>
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Stage</th>
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Score</th>
+                    <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Cost</th>
                     <th className="text-left py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Source</th>
                     <th className="text-right py-3 px-2 text-xs text-soft-gray uppercase tracking-wider font-medium">Actions</th>
                   </tr>
@@ -176,6 +285,13 @@ export default function Leads() {
                           </Badge>
                         </td>
                         <td className="py-3 px-2 text-soft-gray">{lead.qualificationScore}/100</td>
+                        <td className="py-3 px-2">
+                          {lead.totalCostCents > 0 ? (
+                            <span className="text-xs text-amber-400 font-medium">{fmtCents(lead.totalCostCents)}</span>
+                          ) : (
+                            <span className="text-xs text-soft-gray/40">—</span>
+                          )}
+                        </td>
                         <td className="py-3 px-2 text-soft-gray text-xs">{lead.source.replace(/_/g, " ")}</td>
                         <td className="py-3 px-2 text-right space-x-1">
                           {!hasEnrichment && (
@@ -409,6 +525,9 @@ export default function Leads() {
                   </Button>
                 </div>
               )}
+
+              {/* Economics Panel */}
+              <LeadEconomicsPanel leadId={selectedLead.id} />
 
               {selectedLead.notes && (
                 <div><span className="text-xs text-soft-gray">Notes</span><p className="text-sm text-off-white/80 mt-1">{selectedLead.notes}</p></div>

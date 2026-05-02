@@ -1,4 +1,4 @@
-import { eq, desc, and, or, sql, gte, lte, inArray, ne } from "drizzle-orm";
+import { eq, desc, and, or, sql, gte, lte, inArray, ne, isNull, avg } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
@@ -10,6 +10,8 @@ import {
   InsertLead,
   customers,
   InsertCustomer,
+  leadCosts,
+  InsertLeadCost,
   contracts,
   InsertContract,
   commissions,
@@ -1433,6 +1435,53 @@ export async function countUnreadRepMessages() {
   return rows[0]?.count ?? 0;
 }
 
+export async function markAllAdminMessagesReadForRep(repId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(repMessages).set({ readAt: new Date() }).where(
+    and(eq(repMessages.repId, repId), eq(repMessages.senderRole, "admin"), isNull(repMessages.readAt))
+  );
+}
+
+export async function countUnreadAdminMessagesForRep(repId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ count: sql<number>`count(*)` }).from(repMessages).where(
+    and(eq(repMessages.repId, repId), eq(repMessages.senderRole, "admin"), isNull(repMessages.readAt))
+  );
+  return Number(rows[0]?.count ?? 0);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER SUPPORT TICKET RATINGS
+   ═══════════════════════════════════════════════════════ */
+export async function updateSupportTicketRating(id: number, rating: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(supportTickets).set({ customerRating: rating, ratingToken: null }).where(eq(supportTickets.id, id));
+}
+
+export async function getSupportTicketByRatingToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(supportTickets).where(eq(supportTickets.ratingToken, token)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getAvgRatingForRep(repId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select({ avgRating: avg(supportTickets.customerRating), total: sql<number>`count(*)` })
+    .from(supportTickets)
+    .innerJoin(contracts, eq(contracts.customerId, supportTickets.customerId))
+    .where(and(eq(contracts.repId, repId), sql`${supportTickets.customerRating} IS NOT NULL`));
+  const row = rows[0];
+  const total = Number(row?.total ?? 0);
+  if (total === 0) return null;
+  return { avg: Number(row.avgRating ?? 0), total };
+}
+
 /* ═══════════════════════════════════════════════════════
    PRODUCT CATALOG
    ═══════════════════════════════════════════════════════ */
@@ -1444,6 +1493,8 @@ export async function listProductCatalog(activeOnly = true) {
   }
   return db.select().from(productCatalog).orderBy(productCatalog.category, productCatalog.basePrice);
 }
+
+export const getProductCatalog = () => listProductCatalog(true);
 
 export async function upsertProductCatalogItem(data: InsertProductCatalogItem) {
   const db = await getDb();
@@ -1479,6 +1530,80 @@ export async function updateBroadcast(id: number, data: Partial<typeof broadcast
   const db = await getDb();
   if (!db) return;
   await db.update(broadcasts).set(data).where(eq(broadcasts.id, id));
+}
+
+/* ═══════════════════════════════════════════════════════
+   LEAD COSTS — Lifetime economics tracking
+   ═══════════════════════════════════════════════════════ */
+export async function insertLeadCost(data: InsertLeadCost) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(leadCosts).values(data);
+}
+
+export async function getLeadCostBreakdown(leadId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(leadCosts).where(eq(leadCosts.leadId, leadId)).orderBy(desc(leadCosts.createdAt));
+}
+
+export async function getCustomerCostBreakdown(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(leadCosts).where(eq(leadCosts.customerId, customerId)).orderBy(desc(leadCosts.createdAt));
+}
+
+export async function getMonthlyEconomicsSummary(month: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const costRows = await db.select({
+    costType: leadCosts.costType,
+    total: sql<number>`COALESCE(SUM(amountCents), 0)`,
+  })
+    .from(leadCosts)
+    .where(eq(leadCosts.month, month))
+    .groupBy(leadCosts.costType);
+
+  const [revRow] = await db.select({ total: sql<number>`COALESCE(SUM(totalLifetimeRevenueCents), 0)` })
+    .from(customers);
+
+  const totalCosts = costRows.reduce((s, r) => s + Number(r.total), 0);
+  const byType: Record<string, number> = {};
+  for (const r of costRows) byType[r.costType] = Number(r.total);
+
+  return { totalCostCents: totalCosts, byType, totalRevenueCents: Number(revRow?.total ?? 0) };
+}
+
+export async function getTopExpensiveLeads(limit = 5) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: leads.id,
+    businessName: leads.businessName,
+    stage: leads.stage,
+    totalCostCents: leads.totalCostCents,
+    totalRevenueCents: leads.totalRevenueCents,
+  })
+    .from(leads)
+    .where(sql`totalCostCents > 0 AND stage NOT IN ('closed_won', 'closed_lost')`)
+    .orderBy(desc(leads.totalCostCents))
+    .limit(limit);
+}
+
+export async function getTopRoiCustomers(limit = 5) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: customers.id,
+    businessName: customers.businessName,
+    totalLifetimeCostCents: customers.totalLifetimeCostCents,
+    totalLifetimeRevenueCents: customers.totalLifetimeRevenueCents,
+  })
+    .from(customers)
+    .where(sql`totalLifetimeRevenueCents > 0`)
+    .orderBy(sql`(totalLifetimeRevenueCents - totalLifetimeCostCents) DESC`)
+    .limit(limit);
 }
 
 /* ═══════════════════════════════════════════════════════

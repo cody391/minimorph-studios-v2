@@ -13,6 +13,7 @@ import { sendSms } from "./sms";
 import { sendEmail } from "./email";
 import { ENV } from "../_core/env";
 import type { EnrichmentResult } from "./leadGenEnrichment";
+import { recordCost, calculateAiCost, COSTS } from "./costTracker";
 
 // Outreach sequence templates (day offsets from lead creation)
 // Email-first strategy: cold SMS is blocked by US carriers without opt-in.
@@ -100,6 +101,15 @@ Respond in JSON:
 
   const content = response.choices?.[0]?.message?.content as string | undefined;
   if (!content) throw new Error("Empty LLM response for outreach");
+
+  if (response.usage) {
+    recordCost({
+      costType: "ai_generation",
+      amountCents: calculateAiCost(response.usage.prompt_tokens, response.usage.completion_tokens),
+      tokensUsed: response.usage.total_tokens,
+      description: `AI outreach message generation - ${params.purpose}`,
+    });
+  }
 
   const parsed = JSON.parse(content);
   // Truncate if too long
@@ -190,6 +200,24 @@ export async function sendDueOutreach(): Promise<number> {
   const db = (await getDb())!;
   const now = new Date();
 
+  // Part 10: TCPA time-of-day gate (8am–9pm local; use system settings for configurable hours)
+  const currentHour = now.getHours();
+  try {
+    const { systemSettings } = await import("../../drizzle/schema");
+    const { eq: eqFn } = await import("drizzle-orm");
+    const [startRow] = await db.select({ v: systemSettings.settingValue }).from(systemSettings).where(eqFn(systemSettings.settingKey, "outreach_start_hour")).limit(1);
+    const [endRow] = await db.select({ v: systemSettings.settingValue }).from(systemSettings).where(eqFn(systemSettings.settingKey, "outreach_end_hour")).limit(1);
+    const startHour = parseInt(startRow?.v ?? "8", 10);
+    const endHour = parseInt(endRow?.v ?? "21", 10);
+    if (currentHour < startHour || currentHour >= endHour) {
+      console.log(`[Outreach] TCPA gate: current hour ${currentHour} outside window ${startHour}–${endHour}. Skipping.`);
+      return 0;
+    }
+  } catch {
+    // If settings unavailable, use hardcoded safe hours
+    if (currentHour < 8 || currentHour >= 21) return 0;
+  }
+
   const due = await db.select()
     .from(outreachSequences)
     .where(
@@ -262,6 +290,7 @@ export async function sendDueOutreach(): Promise<number> {
           : body;
 
         await sendSms({ to: lead.phone, body: smsBody });
+        recordCost({ costType: "outreach_sms", amountCents: COSTS.TWILIO_SMS, leadId: seq.leadId, description: `Outreach SMS - step ${seq.stepNumber}` });
 
         if (!lead.smsFirstMessageSent) {
           await db.update(leads)
@@ -289,6 +318,7 @@ export async function sendDueOutreach(): Promise<number> {
             <p>${(seq.body || "").replace(/\n/g, "<br/>")}</p>
           </div>`,
         });
+        recordCost({ costType: "outreach_email", amountCents: COSTS.RESEND_EMAIL, leadId: seq.leadId, description: `Outreach email - step ${seq.stepNumber}` });
 
         // Mark as sent + log
         await db.update(outreachSequences)
