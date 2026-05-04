@@ -74,6 +74,15 @@ async function startServer() {
   // cookie secure flags work correctly with X-Forwarded-For headers.
   app.set("trust proxy", 1);
 
+  // Redirect bare root domain to www canonical
+  app.use((req, res, next) => {
+    const host = req.headers.host || "";
+    if (host === "minimorphstudios.net" || host === "minimorphstudios.net:443") {
+      return res.redirect(301, `https://www.minimorphstudios.net${req.url}`);
+    }
+    next();
+  });
+
   // ── Security headers ──
   app.use(helmet({
     contentSecurityPolicy: false, // Vite dev server needs inline scripts
