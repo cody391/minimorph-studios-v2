@@ -106,7 +106,7 @@ export default function CustomerPortal() {
             <h2 className="text-xl font-serif text-off-white mb-2">Customer Portal</h2>
             <p className="text-sm text-soft-gray font-sans mb-6">Sign in to view your website contract, performance reports, and manage your account.</p>
             <Button
-              onClick={() => { setLocation("/login"); }}
+              onClick={() => { setLocation("/login?next=/portal"); }}
               className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
             >
               Sign In

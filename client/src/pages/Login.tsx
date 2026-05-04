@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { toast } from "sonner";
 import { Eye, EyeOff, Lock, Mail, ArrowLeft, Sparkles } from "lucide-react";
 
 export default function Login() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const nextPath = params.get("next");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +25,12 @@ export default function Login() {
       toast.success("Welcome back!");
       // Invalidate auth cache so downstream pages recognize the session
       await utils.auth.me.invalidate();
-      // Route based on role
+      // If ?next= is set, honor it (staff logins from footer)
+      if (nextPath) {
+        setLocation(nextPath);
+        return;
+      }
+      // Otherwise route based on role
       if (data.user.role === "admin") {
         setLocation("/admin");
       } else if (data.isRep) {
@@ -38,7 +47,7 @@ export default function Login() {
           setLocation("/rep");
         }
       } else {
-        setLocation("/customer/portal");
+        setLocation("/portal");
       }
     },
     onError: (err: any) => {
@@ -80,7 +89,11 @@ export default function Login() {
             </div>
             <CardTitle className="font-serif text-off-white text-2xl">Welcome Back</CardTitle>
             <CardDescription className="text-soft-gray font-sans">
-              Sign in to your MiniMorph Studios account
+              {nextPath === "/admin"
+                ? "Admin login"
+                : nextPath === "/rep"
+                ? "Rep login"
+                : "Sign in to your MiniMorph Studios account"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">

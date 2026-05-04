@@ -82,6 +82,12 @@ export default function Navbar() {
 
         {/* Desktop CTA */}
         <div className="hidden lg:flex items-center gap-3">
+          <a
+            href="/portal"
+            className="text-sm font-medium font-sans text-off-white/70 hover:text-off-white border border-off-white/20 hover:border-off-white/40 px-5 py-2 rounded-full transition-all duration-300"
+          >
+            Client Portal
+          </a>
           <Button
             className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-sm px-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300"
             onClick={() => setLocation("/get-started")}
@@ -125,6 +131,13 @@ export default function Navbar() {
                 </button>
               ))}
               <div className="pt-4 border-t border-glass-border flex flex-col gap-3">
+                <a
+                  href="/portal"
+                  className="w-full text-center text-base font-medium font-sans text-off-white/70 hover:text-off-white border border-off-white/20 hover:border-off-white/40 py-2.5 rounded-full transition-all duration-300"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Client Portal
+                </a>
                 <Button
                   className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold rounded-full"
                   onClick={() => {

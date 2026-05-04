@@ -28,8 +28,7 @@ const footerLinks = [
     links: [
       { label: "FAQ", href: "#faq" },
       { label: "Get Started", href: "/get-started", isRoute: true },
-      { label: "Customer Portal", href: "/portal", isRoute: true },
-      { label: "Rep Login", href: "/login", isRoute: true },
+      { label: "Client Portal", href: "/portal", isRoute: true },
       { label: "Become a Rep", href: "/become-rep", isRoute: true },
     ],
   },
@@ -97,10 +96,25 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-glass-border">
-        <div className="container py-6 flex items-center justify-center">
+        <div className="container py-6 flex flex-col items-center gap-4">
           <p className="text-xs font-sans text-off-white/25">
             &copy; 2026 MiniMorph Studios LLC. All rights reserved.
           </p>
+          <div className="flex items-center gap-4">
+            <a
+              href="/login?next=/rep"
+              className="text-xs font-sans text-off-white/20 hover:text-off-white/50 transition-colors"
+            >
+              Rep Login
+            </a>
+            <span className="text-xs text-off-white/15">·</span>
+            <a
+              href="/login?next=/admin"
+              className="text-xs font-sans text-off-white/20 hover:text-off-white/50 transition-colors"
+            >
+              Admin Login
+            </a>
+          </div>
         </div>
       </div>
     </footer>
