@@ -8,7 +8,7 @@ import { ChevronDown } from "lucide-react";
 const faqs = [
   {
     q: "Do I own my website?",
-    a: "You own your content, branding, and domain — always. The site itself is built and hosted as part of your MiniMorph subscription. If you ever cancel, we'll work with you on transferring your files. No hostage situations.",
+    a: "You own your content, branding, and domain — always. The site itself is built and hosted as part of your MiniMorph Studios subscription. If you ever cancel, we'll work with you on transferring your files. No hostage situations.",
   },
   {
     q: "What does \"AI-assisted\" actually mean?",
@@ -31,8 +31,8 @@ const faqs = [
     a: "It's your home base — project status, support tickets, monthly reports, file uploads, AI recommendations, and direct communication with our team. Every plan includes it. You'll use it more than you think.",
   },
   {
-    q: "Do you work outside Michigan?",
-    a: "We're based in Muskegon, but we work with businesses across the entire US. Everything runs through your portal — no in-person meetings required (though we're always up for coffee if you're local).",
+    q: "Do you work with businesses anywhere in the US?",
+    a: "Yes — MiniMorph Studios works with businesses across the United States. Our process is fully remote and digital from day one. You'll have a dedicated portal, direct communication with your team, and regular check-ins no matter where you're located.",
   },
   {
     q: "Do you guarantee results?",

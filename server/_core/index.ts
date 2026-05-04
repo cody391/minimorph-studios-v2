@@ -19,7 +19,7 @@ import { registerStripeWebhook } from "../stripe-webhook";
 import { registerTwilioWebhooks } from "../twilio-webhooks";
 import { registerResendWebhooks } from "../resend-webhooks";
 import { registerScheduledRoutes } from "../scheduled-routes";
-import { bootstrapAdminUser, seedProductCatalog } from "../db";
+import { bootstrapAdminUser, seedProductCatalog, getSupportTicketByRatingToken, updateSupportTicketRating, repairSchema } from "../db";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -114,6 +114,23 @@ async function startServer() {
   registerTwilioWebhooks(app);
   registerResendWebhooks(app);
   registerScheduledRoutes(app);
+
+  // Public support rating endpoint — linked from resolution emails
+  app.get("/api/rate-support", async (req, res) => {
+    const ticketId = parseInt(String(req.query.ticketId));
+    const rating = parseInt(String(req.query.rating));
+    const token = String(req.query.token ?? "");
+    if (!ticketId || !token || rating < 1 || rating > 5) {
+      return res.status(400).send("<p>Invalid rating link.</p>");
+    }
+    const ticket = await getSupportTicketByRatingToken(token);
+    if (!ticket || ticket.id !== ticketId) {
+      return res.status(404).send("<p>This rating link has expired or is invalid.</p>");
+    }
+    await updateSupportTicketRating(ticketId, rating);
+    return res.send(`<!DOCTYPE html><html><head><title>Thanks!</title></head><body style="font-family:sans-serif;text-align:center;padding:60px;"><h2>Thanks for your feedback!</h2><p>You rated your support experience ${"⭐".repeat(rating)}.</p><p><a href="/">Back to MiniMorph Studios</a></p></body></html>`);
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
@@ -139,10 +156,19 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
+  // Repair any schema gaps caused by __drizzle_migrations state drift (idempotent)
+  await repairSchema();
   // Bootstrap admin user from env vars — awaited so account exists before first request
   await bootstrapAdminUser();
   // Seed product catalog with default pricing (idempotent upsert)
   await seedProductCatalog().catch(err => console.error("[Startup] Product catalog seed failed:", err));
+  // Sync product catalog to Stripe (non-fatal — server continues if Stripe is unavailable)
+  import("../services/stripePriceSync").then(({ syncAllProductsToStripe }) =>
+    syncAllProductsToStripe().then(result => {
+      console.log(`[Startup] Stripe sync: ${result.synced} synced, ${result.failed} failed`);
+      if (result.errors.length > 0) result.errors.forEach(e => console.warn("[Startup] Stripe sync error:", e));
+    })
+  ).catch(err => console.error("[Startup] Stripe sync failed:", err));
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);

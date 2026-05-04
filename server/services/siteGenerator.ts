@@ -2,7 +2,7 @@ import * as db from "../db";
 import { invokeLLM } from "../_core/llm";
 import { ENV } from "../_core/env";
 import { getProjectName } from "./cloudflareDeployment";
-import { injectImages } from "./imageInjector";
+import { injectImages as injectImageComments } from "./imageInjector";
 
 const PREMIUM_REQUIREMENTS = `== PREMIUM SHOWCASE REQUIREMENTS ==
 This is a MiniMorph Studios showcase demo site.
@@ -146,6 +146,33 @@ async function fetchAssetAsBase64(url: string): Promise<string | null> {
   }
 }
 
+const IMAGE_SLOTS: Record<string, string> = {
+  HERO_IMAGE: "hero",
+  GALLERY_IMAGE_1: "gallery",
+  GALLERY_IMAGE_2: "gallery",
+  GALLERY_IMAGE_3: "gallery",
+  ABOUT_IMAGE: "about",
+  TEAM_IMAGE_1: "about",
+  TEAM_IMAGE_2: "about",
+  BACKGROUND_IMAGE: "hero",
+};
+
+async function injectImages(
+  html: string,
+  businessType: string,
+  primaryColor: string,
+): Promise<string> {
+  const { getBestImage } = await import("./imageService");
+  let result = html;
+  for (const [slot, slotType] of Object.entries(IMAGE_SLOTS)) {
+    if (!result.includes(slot)) continue;
+    console.log(`[SiteGen] Fetching image for slot: ${slot}`);
+    const url = await getBestImage(businessType, slotType, primaryColor);
+    result = result.split(slot).join(url);
+  }
+  return result;
+}
+
 export async function generateSiteForProject(projectId: number): Promise<void> {
   const project = await db.getOnboardingProjectById(projectId);
   if (!project) {
@@ -198,6 +225,11 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     const q = questionnaire || {};
     const brandColors = (q.brandColors as string) || "Not specified — choose modern, professional colors";
     const brandTone = (q.brandTone as string) || "professional";
+    const rawColorsStr = Array.isArray(q.brandColors)
+      ? (q.brandColors as string[]).join(" ")
+      : (q.brandColors as string) || "";
+    const primaryColorMatch = rawColorsStr.match(/#[0-9a-fA-F]{3,6}/);
+    const primaryColor = primaryColorMatch ? primaryColorMatch[0] : "#1a1a1a";
     const targetAudience = (q.targetAudience as string) || "local customers";
     const competitorSites = Array.isArray(q.competitorSites) ? (q.competitorSites as string[]).join(", ") : (q.competitorSites as string) || "None specified";
     const inspirationSites = Array.isArray(q.inspirationSites) ? (q.inspirationSites as string[]).join(", ") : (q.inspirationSites as string) || "None specified";
@@ -223,7 +255,18 @@ You never reference external CSS files or JS files.
 You never use frameworks like Bootstrap, React, or Vue.
 You create genuine custom designs that reflect the brand perfectly.
 
-For images: use CSS gradients, shapes, and SVG illustrations where photos would go. Add a comment <!-- REPLACE WITH: description of ideal photo for this slot --> immediately after each image element so the image pipeline can swap in real photos.
+IMAGES: For every image in the generated HTML use these exact token strings — never use placeholder.com, picsum.photos, or any other placeholder URL:
+
+For hero/section backgrounds:
+<div style='background-image:url(HERO_IMAGE);background-size:cover;background-position:center;min-height:100vh'>
+
+For inline images:
+<img src='GALLERY_IMAGE_1' alt='[description]' style='width:100%;height:100%;object-fit:cover'/>
+
+Available tokens (use each where it fits the content):
+HERO_IMAGE, GALLERY_IMAGE_1, GALLERY_IMAGE_2, GALLERY_IMAGE_3, ABOUT_IMAGE, TEAM_IMAGE_1, TEAM_IMAGE_2, BACKGROUND_IMAGE
+
+These tokens will be automatically replaced with real AI-generated photos after generation. You MUST use at least HERO_IMAGE on every page.
 
 Pages must include intelligent internal linking between each other.
 Navigation must use relative hrefs matching the page list (about.html, services.html, contact.html, etc.).
@@ -348,15 +391,22 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
       }
     }
 
-    // Inject real images (Replicate hero + Unsplash fills) into every page
+    // Inject real images into every page — token pass first, comment pass second
     await db.updateOnboardingProject(projectId, {
       generationLog: "Injecting images...",
     });
     for (const pageName of Object.keys(pages)) {
       try {
-        pages[pageName] = await injectImages(pages[pageName], projectId, pageName);
+        // Primary: replace HERO_IMAGE / GALLERY_IMAGE_1 / etc. tokens
+        pages[pageName] = await injectImages(pages[pageName], websiteType, primaryColor);
       } catch {
-        // Image injection is best-effort — never block delivery
+        // Best-effort — never block delivery
+      }
+      try {
+        // Fallback: replace any remaining <!-- REPLACE WITH: --> comments
+        pages[pageName] = await injectImageComments(pages[pageName], projectId, pageName);
+      } catch {
+        // Best-effort — never block delivery
       }
     }
 

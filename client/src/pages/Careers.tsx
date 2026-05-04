@@ -85,7 +85,7 @@ export default function Careers() {
               Work free.
             </h1>
             <p className="text-lg text-white/70 font-sans max-w-xl mb-8">
-              Join MiniMorph Studios as a sales rep. We provide the leads, the tools, and the training.
+              Join MiniMorph Studios as a sales representative. We provide the leads, the tools, and the training.
               You bring the hustle. Earn 10-15% commission on every deal you close.
             </p>
             <div className="flex flex-wrap gap-4">
@@ -130,7 +130,7 @@ export default function Careers() {
       <section className="py-20">
         <div className="container max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">Why reps love MiniMorph</h2>
+            <h2 className="text-3xl md:text-4xl font-serif text-off-white mb-3">Why reps love MiniMorph Studios</h2>
             <p className="text-soft-gray font-sans max-w-xl mx-auto">Everything you need to succeed — tools, training, leads, and a clear path to higher earnings.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

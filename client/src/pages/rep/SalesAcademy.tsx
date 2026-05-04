@@ -1126,18 +1126,23 @@ export default function SalesAcademy() {
               const prevMod = index > 0 ? academyData?.modules[index - 1] : null;
               const prevCompleted = !prevMod || prevMod.progress?.quizPassed;
 
+              const isLocked = !prevCompleted && !isStarted;
               return (
                 <Card
                   key={mod.id}
-                  className={`border transition-all hover:shadow-lg cursor-pointer group ${
-                    isModuleCertified ? `${colors.border} ${colors.bg}` : "border-border/50 hover:border-electric/30"
+                  className={`border transition-all group ${
+                    isLocked ? "border-border/20 opacity-60 cursor-not-allowed" :
+                    isModuleCertified ? `${colors.border} ${colors.bg} cursor-pointer hover:shadow-lg` :
+                    "border-border/50 hover:border-electric/30 cursor-pointer hover:shadow-lg"
                   }`}
-                  onClick={() => openModule(mod.id)}
+                  onClick={() => { if (!isLocked) openModule(mod.id); }}
                 >
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
                       <div className={`w-12 h-12 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center shrink-0`}>
-                        {isModuleCertified ? (
+                        {isLocked ? (
+                          <Lock className="w-6 h-6 text-soft-gray/40" />
+                        ) : isModuleCertified ? (
                           <CheckCircle className="w-6 h-6 text-emerald-400" />
                         ) : (
                           <Icon className={`w-6 h-6 ${colors.text}`} />
@@ -1157,8 +1162,8 @@ export default function SalesAcademy() {
                             </Badge>
                           )}
                           {!prevCompleted && !isStarted && (
-                            <Badge variant="outline" className="text-[10px] text-soft-gray/60">
-                              <Lock className="w-3 h-3 mr-0.5" /> Recommended after Module {index}
+                            <Badge variant="outline" className="text-[10px] text-red-400/70 border-red-500/20">
+                              <Lock className="w-3 h-3 mr-0.5" /> Locked — complete Module {index} first
                             </Badge>
                           )}
                           {hasRequiredRP && !isPassed && (

@@ -21,7 +21,7 @@ import PhotoCropper from "@/components/PhotoCropper";
 const STEPS = [
   { id: 1, title: "Personal Info", icon: User },
   { id: 2, title: "Experience", icon: Briefcase },
-  { id: 3, title: "Why MiniMorph?", icon: Heart },
+  { id: 3, title: "Why MiniMorph Studios?", icon: Heart },
   { id: 4, title: "Agreement", icon: FileCheck },
 ];
 
@@ -110,7 +110,7 @@ export default function BecomeRep() {
   const submitExtended = trpc.repApplication.submit.useMutation({
     onSuccess: () => {
       setSubmitted(true);
-      toast.success("Application submitted! Welcome to MiniMorph.");
+      toast.success("Application submitted! Welcome to MiniMorph Studios.");
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -281,7 +281,7 @@ export default function BecomeRep() {
             <div className="w-20 h-20 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-6">
               <Sparkles className="w-10 h-10 text-off-white" />
             </div>
-            <h2 className="text-2xl font-serif text-off-white mb-3">You're In! Welcome to MiniMorph!</h2>
+            <h2 className="text-2xl font-serif text-off-white mb-3">You're In! Welcome to MiniMorph Studios!</h2>
             <p className="text-soft-gray font-sans mb-4 leading-relaxed max-w-md mx-auto">
               Your application has been approved. Just a few more steps to get you fully set up — we need your HR and tax paperwork, then you'll head straight to the Sales Academy.
             </p>
@@ -690,7 +690,7 @@ export default function BecomeRep() {
             <>
               <CardHeader>
                 <CardTitle className="font-serif text-off-white text-xl flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-electric" /> Why MiniMorph?
+                  <Heart className="w-5 h-5 text-electric" /> Why MiniMorph Studios?
                 </CardTitle>
                 <CardDescription className="text-soft-gray">Quality reps who care about small businesses thrive here.</CardDescription>
               </CardHeader>

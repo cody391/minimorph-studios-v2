@@ -3,11 +3,12 @@
  * Growth highlighted. Commerce labeled custom quote.
  * Comparison table below. Legal disclaimers included.
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, X, ArrowRight, Star, Info } from "lucide-react";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 interface Tier {
   name: string;
@@ -126,9 +127,34 @@ function CellValue({ value }: { value: boolean | string }) {
   );
 }
 
+const TIER_KEY_MAP: Record<string, string> = {
+  Starter: "starter",
+  Growth: "growth",
+  Pro: "premium",
+  Enterprise: "enterprise",
+};
+
 export default function Pricing() {
   const [, setLocation] = useLocation();
   const [showComparison, setShowComparison] = useState(false);
+  const { data: catalogItems = [] } = trpc.products.list.useQuery();
+
+  const activeTiers = useMemo(() => {
+    const catalog = catalogItems as any[];
+    return tiers.map(tier => {
+      const key = TIER_KEY_MAP[tier.name];
+      const dbItem = catalog.find((p: any) => p.productKey === key && p.category === "package");
+      if (!dbItem) return tier;
+      const basePrice = parseFloat(dbItem.basePrice);
+      const discount = dbItem.discountPercent ?? 0;
+      const effectivePrice = discount > 0 ? Math.round(basePrice * (1 - discount / 100)) : basePrice;
+      return {
+        ...tier,
+        price: `$${effectivePrice}/mo`,
+        annual: `$${effectivePrice * 12} total over 12 months`,
+      };
+    });
+  }, [catalogItems]);
 
   return (
     <section id="pricing" className="py-20 lg:py-28 bg-midnight relative overflow-hidden">
@@ -166,7 +192,7 @@ export default function Pricing() {
 
         {/* Tier Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
-          {tiers.map((tier, idx) => (
+          {activeTiers.map((tier, idx) => (
             <motion.div
               key={tier.name}
               initial={{ opacity: 0, y: 30 }}

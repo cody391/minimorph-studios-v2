@@ -6,9 +6,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import {
   Camera, Upload, Bell, BellOff, Smartphone, Monitor,
-  Settings, User, Shield, CheckCircle,
+  Settings, User, Shield, CheckCircle, Calendar, Clock,
 } from "lucide-react";
 
 const NOTIFICATION_CATEGORIES = [
@@ -315,7 +316,107 @@ export default function RepSettingsPanel({ repProfile }: { repProfile: RepProfil
           )}
         </CardContent>
       </Card>
+
+      {/* Part 6: Availability Calendar */}
+      <AvailabilitySection />
     </div>
+  );
+}
+
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function AvailabilitySection() {
+  const { data: schedule, isLoading } = trpc.repAvailability.getMySchedule.useQuery();
+  const setSchedule = trpc.repAvailability.setMySchedule.useMutation({
+    onSuccess: () => toast.success("Availability saved"),
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const defaultSlot = (dayOfWeek: number) => ({
+    dayOfWeek, startTime: "09:00", endTime: "17:00", isAvailable: dayOfWeek >= 1 && dayOfWeek <= 5, timezone: "America/Chicago",
+  });
+
+  const [slots, setSlots] = useState<any[]>(() =>
+    DAYS.map((_, i) => defaultSlot(i))
+  );
+
+  // Populate from server data once loaded
+  const populated = useState(false);
+  if (schedule && !populated[0]) {
+    if (schedule.length > 0) {
+      setSlots(DAYS.map((_, i) => {
+        const srv = schedule.find((s: any) => s.dayOfWeek === i);
+        return srv ? { dayOfWeek: i, startTime: srv.startTime, endTime: srv.endTime, isAvailable: srv.isAvailable, timezone: srv.timezone } : defaultSlot(i);
+      }));
+    }
+    populated[1](true);
+  }
+
+  const update = (dayOfWeek: number, field: string, value: any) => {
+    setSlots((prev) => prev.map((s) => s.dayOfWeek === dayOfWeek ? { ...s, [field]: value } : s));
+  };
+
+  return (
+    <Card className="border-border/50">
+      <CardHeader>
+        <CardTitle className="text-off-white font-serif flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-electric" />
+          Availability Calendar
+        </CardTitle>
+        <CardDescription className="text-soft-gray/60 font-sans text-xs">
+          Set your weekly availability so leads are routed to you at the right times.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-xs text-soft-gray/60 font-sans text-center py-4">Loading…</p>
+        ) : (
+          <div className="space-y-2">
+            {slots.map((slot) => (
+              <div key={slot.dayOfWeek} className="grid grid-cols-[90px,1fr] gap-3 items-center py-2 border-b border-border/20 last:border-0">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={slot.isAvailable}
+                    onCheckedChange={(v) => update(slot.dayOfWeek, "isAvailable", v)}
+                  />
+                  <span className="text-xs font-sans text-off-white">{DAYS[slot.dayOfWeek].slice(0, 3)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {slot.isAvailable ? (
+                    <>
+                      <Clock className="w-3 h-3 text-soft-gray/40 shrink-0" />
+                      <Input
+                        type="time"
+                        value={slot.startTime}
+                        onChange={(e) => update(slot.dayOfWeek, "startTime", e.target.value)}
+                        className="h-7 text-xs w-28"
+                      />
+                      <span className="text-xs text-soft-gray/60">–</span>
+                      <Input
+                        type="time"
+                        value={slot.endTime}
+                        onChange={(e) => update(slot.dayOfWeek, "endTime", e.target.value)}
+                        className="h-7 text-xs w-28"
+                      />
+                    </>
+                  ) : (
+                    <span className="text-xs text-soft-gray/40 font-sans">Not available</span>
+                  )}
+                </div>
+              </div>
+            ))}
+            <Button
+              onClick={() => setSchedule.mutate({ schedule: slots })}
+              disabled={setSchedule.isPending}
+              className="w-full bg-electric hover:bg-electric-light text-midnight font-sans rounded-full mt-2"
+              size="sm"
+            >
+              {setSchedule.isPending ? "Saving…" : "Save Availability"}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

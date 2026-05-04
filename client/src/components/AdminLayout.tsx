@@ -195,6 +195,7 @@ function AdminLayoutContent({
         { icon: ShoppingCart, label: "Orders", path: "/admin/orders" },
         { icon: RefreshCw, label: "Renewals", path: "/admin/renewals" },
         { icon: Headphones, label: "Support", path: "/admin/support", badge: counts?.openTickets },
+        { icon: MessageSquare, label: "Rep Messages", path: "/admin/messages", badge: counts?.unreadRepMessages },
       ],
     },
     {

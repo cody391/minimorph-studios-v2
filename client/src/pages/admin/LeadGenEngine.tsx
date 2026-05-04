@@ -9,8 +9,12 @@ import { toast } from "sonner";
 import {
   Zap, Globe, Search, Users, Target, Brain, Rocket,
   Play, RefreshCw, MapPin, Building2, Mail, MessageSquare,
-  ChevronDown, ChevronUp, ExternalLink, Star,
+  ChevronDown, ChevronUp, ExternalLink, Star, Pause, AlertTriangle,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function LeadGenEngine() {
   const [scrapeArea, setScrapeArea] = useState("");
@@ -19,6 +23,7 @@ export default function LeadGenEngine() {
   const [showBusinesses, setShowBusinesses] = useState(false);
   const [showEnterprise, setShowEnterprise] = useState(false);
   const [selectedTab, setSelectedTab] = useState<"overview" | "scrape" | "outreach" | "enterprise" | "capacity" | "scoring" | "performance">("overview");
+  const [showPauseConfirm, setShowPauseConfirm] = useState(false);
 
   // Queries
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = trpc.leadGen.getStats.useQuery();
@@ -26,8 +31,16 @@ export default function LeadGenEngine() {
   const { data: scrapeJobs } = trpc.leadGen.listScrapeJobs.useQuery();
   const { data: businesses } = trpc.leadGen.listScrapedBusinesses.useQuery({ limit: 20 });
   const { data: enterpriseProspects } = trpc.leadGen.listEnterpriseProspects.useQuery();
+  const { data: systemSettings, refetch: refetchSettings } = trpc.admin.getSystemSettings.useQuery();
 
   const utils = trpc.useUtils();
+
+  const engineActive = systemSettings?.find((s: any) => s.settingKey === "lead_engine_active")?.settingValue === "true";
+
+  const updateSetting = trpc.admin.updateSystemSetting.useMutation({
+    onSuccess: () => { refetchSettings(); refetchStats(); },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   // Mutations
   const createScrapeJob = trpc.leadGen.createScrapeJob.useMutation({
@@ -129,6 +142,31 @@ export default function LeadGenEngine() {
           </p>
         </div>
         <div className="flex gap-2">
+          {/* Part 7: Engine pause toggle */}
+          {engineActive ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPauseConfirm(true)}
+              className="border-red-500/40 text-red-400 hover:bg-red-500/10"
+            >
+              <Pause className="w-4 h-4 mr-1" /> Pause Engine
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={() => updateSetting.mutate({ key: "lead_engine_active", value: "true" })}
+              disabled={updateSetting.isPending}
+              className="bg-green-600 hover:bg-green-700 text-white border-0"
+            >
+              <Play className="w-4 h-4 mr-1" /> Resume Engine
+            </Button>
+          )}
+          {!engineActive && (
+            <Badge className="bg-red-500/10 text-red-400 border border-red-500/30 text-xs">
+              <AlertTriangle className="w-3 h-3 mr-1" /> Engine Paused
+            </Badge>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -141,7 +179,7 @@ export default function LeadGenEngine() {
           <Button
             size="sm"
             onClick={() => runEnhancedPipeline.mutate()}
-            disabled={isAnyMutationLoading}
+            disabled={isAnyMutationLoading || !engineActive}
             className="bg-electric hover:bg-electric/90 text-white"
           >
             {runEnhancedPipeline.isPending ? (
@@ -153,6 +191,30 @@ export default function LeadGenEngine() {
           </Button>
         </div>
       </div>
+
+      {/* Part 7: Pause confirmation dialog */}
+      <AlertDialog open={showPauseConfirm} onOpenChange={setShowPauseConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pause the Lead Engine?</AlertDialogTitle>
+            <AlertDialogDescription>
+              All scheduled jobs (scraping, scoring, enrichment, outreach, auto-feed, re-engagement) will stop running until you resume. Active leads and existing data are unaffected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                updateSetting.mutate({ key: "lead_engine_active", value: "false" });
+                setShowPauseConfirm(false);
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Yes, Pause Engine
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Stats Grid */}
       {statsLoading ? (

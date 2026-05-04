@@ -4,7 +4,7 @@
  * Shows: Performance Score gauge, Tier progress, Lead Queue, Missed Opportunities,
  * Earnings summary, Activity tracker, Strikes, Residual health indicator
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,8 @@ interface PerformanceHubProps {
 export default function PerformanceHub({ repProfile }: PerformanceHubProps) {
   const [isRecalculating, setIsRecalculating] = useState(false);
 
+  const { data: connectStatus } = trpc.reps.connectStatus.useQuery();
+
   // Accountability queries
   const { data: scoreData, isLoading: scoreLoading, refetch: refetchScore } = trpc.accountability.getMyScore.useQuery(undefined, { retry: false });
   const { data: tierData, isLoading: tierLoading, refetch: refetchTier } = trpc.accountability.getMyTier.useQuery(undefined, { retry: false });
@@ -66,6 +68,10 @@ export default function PerformanceHub({ repProfile }: PerformanceHubProps) {
   const { data: earnings, isLoading: earningsLoading } = trpc.accountability.getEarningsSummary.useQuery(undefined, { retry: false });
   const { data: activitySummary, isLoading: activityLoading } = trpc.accountability.getActivitySummary.useQuery(undefined, { retry: false });
   const { data: strikes, isLoading: strikesLoading } = trpc.accountability.getMyStrikes.useQuery(undefined, { retry: false });
+  const { data: myCommissions = [] } = trpc.commissions.byRep.useQuery(
+    { repId: repProfile?.id ?? 0 },
+    { enabled: !!repProfile }
+  );
 
   const calculateScore = trpc.accountability.calculateAndStoreScore.useMutation({
     onSuccess: () => { refetchScore(); refetchTier(); toast.success("Performance score updated"); setIsRecalculating(false); },
@@ -113,6 +119,17 @@ export default function PerformanceHub({ repProfile }: PerformanceHubProps) {
 
   return (
     <div className="space-y-6">
+      {/* Stripe Connect Banner */}
+      {connectStatus && !connectStatus.onboarded && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+          <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-amber-300 font-sans">Payout account not connected</p>
+            <p className="text-xs text-amber-400/70 font-sans">Commission transfers are on hold until you set up Stripe Connect in the Earnings tab.</p>
+          </div>
+        </div>
+      )}
+
       {/* Top Row: Score + Tier + Residual Health */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Performance Score Gauge */}
@@ -274,6 +291,35 @@ export default function PerformanceHub({ repProfile }: PerformanceHubProps) {
         ))}
       </div>
 
+      {/* Recent Commission Breakdown */}
+      {(myCommissions as any[]).filter((c: any) => c.rateApplied).length > 0 && (
+        <Card className="border-border/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-serif text-off-white flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-emerald-400" /> Recent Deal Rates
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-border/20">
+              {(myCommissions as any[]).filter((c: any) => c.rateApplied).slice(0, 5).map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
+                  <div>
+                    <span className="text-soft-gray font-sans capitalize">{c.type.replace("_", " ")}</span>
+                    <span className="text-soft-gray/50 text-xs ml-2 font-sans">#{c.contractId}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge className="bg-electric/10 text-electric text-[10px] font-sans">
+                      Closed at {parseFloat(c.rateApplied).toFixed(1)}% rate
+                    </Badge>
+                    <span className="text-emerald-400 font-medium font-sans">${parseFloat(c.amount).toFixed(2)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Lead Queue + Missed Opportunities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Lead Queue (Uber-style) */}
@@ -306,47 +352,17 @@ export default function PerformanceHub({ repProfile }: PerformanceHubProps) {
                   <div className="space-y-2">
                     {leadQueue.allocations.map((alloc: any) => {
                       const lead = leadQueue.leads.find((l: any) => l.id === alloc.leadId);
-                      const timeLeft = alloc.timeoutAt ? Math.max(0, Math.round((new Date(alloc.timeoutAt).getTime() - Date.now()) / (1000 * 60 * 60))) : null;
                       return (
-                        <div key={alloc.id} className="p-3 rounded-lg border border-border/30 hover:border-electric/20 transition-colors">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-sans text-off-white font-medium truncate">
-                                {lead?.businessName || `Lead #${alloc.leadId}`}
-                              </p>
-                              <p className="text-xs text-soft-gray font-sans">
-                                {lead?.contactName} &bull; {lead?.industry || "Unknown industry"}
-                              </p>
-                            </div>
-                            {timeLeft !== null && (
-                              <Badge className={`text-[10px] font-sans shrink-0 ${
-                                timeLeft <= 1 ? "badge-danger" : "badge-info"
-                              }`}>
-                                <Clock className="w-2.5 h-2.5 mr-0.5" />
-                                {timeLeft}h left
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              className="bg-electric hover:bg-electric-light text-white text-xs font-sans rounded-full h-7 px-3"
-                              onClick={() => acceptLead.mutate({ allocationId: alloc.id })}
-                              disabled={acceptLead.isPending}
-                            >
-                              <CheckCircle className="w-3 h-3 mr-1" /> Accept
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs font-sans rounded-full h-7 px-3 border-border/40"
-                              onClick={() => rejectLead.mutate({ allocationId: alloc.id })}
-                              disabled={rejectLead.isPending}
-                            >
-                              <XCircle className="w-3 h-3 mr-1" /> Pass
-                            </Button>
-                          </div>
-                        </div>
+                        <LeadQueueItem
+                          key={alloc.id}
+                          alloc={alloc}
+                          lead={lead}
+                          onAccept={() => acceptLead.mutate({ allocationId: alloc.id })}
+                          onReject={() => rejectLead.mutate({ allocationId: alloc.id })}
+                          acceptPending={acceptLead.isPending}
+                          rejectPending={rejectLead.isPending}
+                          onExpired={() => rejectLead.mutate({ allocationId: alloc.id })}
+                        />
                       );
                     })}
                   </div>
@@ -581,6 +597,96 @@ export default function PerformanceHub({ repProfile }: PerformanceHubProps) {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   LEAD QUEUE ITEM — Real-time countdown timer
+   ═══════════════════════════════════════════════════════ */
+function LeadQueueItem({ alloc, lead, onAccept, onReject, acceptPending, rejectPending, onExpired }: {
+  alloc: any;
+  lead: any;
+  onAccept: () => void;
+  onReject: () => void;
+  acceptPending: boolean;
+  rejectPending: boolean;
+  onExpired: () => void;
+}) {
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(() => {
+    if (!alloc.timeoutAt) return null;
+    return Math.max(0, Math.round((new Date(alloc.timeoutAt).getTime() - Date.now()) / 1000));
+  });
+  const expiredRef = useRef(false);
+
+  useEffect(() => {
+    if (secondsLeft === null) return;
+    if (secondsLeft <= 0) {
+      if (!expiredRef.current) {
+        expiredRef.current = true;
+        onExpired();
+      }
+      return;
+    }
+    const t = setInterval(() => {
+      setSecondsLeft(prev => {
+        if (prev === null) return null;
+        const next = Math.max(0, prev - 1);
+        if (next === 0 && !expiredRef.current) {
+          expiredRef.current = true;
+          setTimeout(onExpired, 0);
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const formatTime = (s: number) => {
+    if (s >= 3600) return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
+    if (s >= 60) return `${Math.floor(s / 60)}m ${s % 60}s`;
+    return `${s}s`;
+  };
+
+  const isUrgent = secondsLeft !== null && secondsLeft <= 300;
+
+  return (
+    <div className="p-3 rounded-lg border border-border/30 hover:border-electric/20 transition-colors">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-sans text-off-white font-medium truncate">
+            {lead?.businessName || `Lead #${alloc.leadId}`}
+          </p>
+          <p className="text-xs text-soft-gray font-sans">
+            {lead?.contactName} &bull; {lead?.industry || "Unknown industry"}
+          </p>
+        </div>
+        {secondsLeft !== null && (
+          <Badge className={`text-[10px] font-sans shrink-0 ${isUrgent ? "badge-danger animate-pulse" : "badge-info"}`}>
+            <Clock className="w-2.5 h-2.5 mr-0.5" />
+            {formatTime(secondsLeft)} left
+          </Badge>
+        )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          className="bg-electric hover:bg-electric-light text-white text-xs font-sans rounded-full h-7 px-3"
+          onClick={onAccept}
+          disabled={acceptPending}
+        >
+          <CheckCircle className="w-3 h-3 mr-1" /> Accept
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-xs font-sans rounded-full h-7 px-3 border-border/40"
+          onClick={onReject}
+          disabled={rejectPending}
+        >
+          <XCircle className="w-3 h-3 mr-1" /> Pass
+        </Button>
+      </div>
     </div>
   );
 }

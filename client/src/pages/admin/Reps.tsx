@@ -20,10 +20,11 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Users, CheckCircle, Clock, XCircle, Shield, Trophy, DollarSign,
   FileText, GraduationCap, AlertTriangle, CreditCard, ArrowUpRight,
-  ClipboardCheck, Eye, Zap,
+  ClipboardCheck, Eye, Zap, Phone,
 } from "lucide-react";
 import { useState, useMemo, lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -207,10 +208,16 @@ export default function Reps() {
                             )}
                           </td>
                           <td className="py-3 px-2 text-right">
-                            <Button variant="ghost" size="sm" className="text-xs text-soft-gray hover:text-off-white"
-                              onClick={() => { setSelectedRep(rep); setShowDialog(true); }}>
-                              Manage
-                            </Button>
+                            <div className="flex items-center gap-1 justify-end">
+                              <Button variant="ghost" size="sm" className="text-xs text-electric hover:text-electric-light"
+                                onClick={() => { window.location.href = `/admin/messages#rep-${rep.id}`; }}>
+                                Message
+                              </Button>
+                              <Button variant="ghost" size="sm" className="text-xs text-soft-gray hover:text-off-white"
+                                onClick={() => { setSelectedRep(rep); setShowDialog(true); }}>
+                                Manage
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -535,6 +542,9 @@ export default function Reps() {
                   <span className="text-soft-gray text-xs">Phone</span>
                   <p className="text-off-white text-sm">{selectedRep.phone || "—"}</p>
                 </div>
+                <div className="col-span-2">
+                  <ProvisionPhoneSection rep={selectedRep} />
+                </div>
                 <div>
                   <span className="text-soft-gray text-xs">Total Deals</span>
                   <p className="text-off-white text-sm font-medium">{selectedRep.totalDeals}</p>
@@ -571,6 +581,8 @@ export default function Reps() {
                 </div>
               )}
 
+              <RepOnboardingProgress repId={selectedRep.id} />
+
               <div>
                 <label className="text-xs text-soft-gray block mb-1">Change Status</label>
                 <Select value={selectedRep.status} onValueChange={(val) => handleStatusChange(selectedRep.id, val)}>
@@ -595,6 +607,45 @@ export default function Reps() {
   );
 }
 
+/* ═══════════════════════════════════════════════════════
+   REP ONBOARDING PROGRESS — Part 7
+   ═══════════════════════════════════════════════════════ */
+function RepOnboardingProgress({ repId }: { repId: number }) {
+  const { data, isLoading } = trpc.repOnboarding.getRepOnboardingDetails.useQuery({ repId });
+
+  if (isLoading) return <div className="h-24 bg-midnight-dark/20 rounded-lg animate-pulse" />;
+  if (!data) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-soft-gray font-medium">Onboarding Progress</span>
+        <span className="text-xs text-soft-gray">{data.completedCount}/{data.totalSteps} steps</span>
+      </div>
+      {data.isStuck && (
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+          <AlertTriangle className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
+          <p className="text-xs text-yellow-400">Stuck for {data.hoursStuck}h — may need assistance</p>
+        </div>
+      )}
+      <div className="space-y-1">
+        {data.steps.map((step: any) => (
+          <div key={step.key} className="flex items-center gap-2">
+            {step.completed ? (
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+            ) : (
+              <div className="h-3.5 w-3.5 rounded-full border border-soft-gray/40 shrink-0" />
+            )}
+            <span className={`text-xs font-sans ${step.completed ? "text-soft-gray" : "text-off-white"}`}>
+              {step.label}
+            </span>
+            {step.detail && <span className="text-[10px] text-soft-gray/50 ml-auto">{step.detail}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════
    ASSESSMENTS TAB — Candidate assessment scores & review
@@ -1195,3 +1246,66 @@ function OnboardingPipelineTab() {
     </div>
   );
 }
+
+/* Part 1: Provision Phone section shown in rep detail panel */
+function ProvisionPhoneSection({ rep }: { rep: any }) {
+  const [areaCode, setAreaCode] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const { data: available, refetch: searchNumbers, isFetching } = trpc.admin.searchAvailableNumbers.useQuery(
+    { areaCode: areaCode || undefined },
+    { enabled: false }
+  );
+  const provision = trpc.admin.provisionRepPhone.useMutation({
+    onSuccess: (data) => toast.success(`Provisioned ${data.phoneNumber}`),
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  return (
+    <div className="border border-border/30 rounded-lg p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-sans text-soft-gray">Assigned Twilio Number</p>
+          <p className="text-sm text-off-white font-mono">{(rep as any).assignedPhoneNumber || "Not provisioned"}</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => setShowSearch(!showSearch)} className="text-xs border-electric/20">
+          <Phone className="w-3 h-3 mr-1" /> {(rep as any).assignedPhoneNumber ? "Change" : "Provision"}
+        </Button>
+      </div>
+      {showSearch && (
+        <div className="space-y-2 pt-1">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Area code (optional)"
+              value={areaCode}
+              onChange={(e) => setAreaCode(e.target.value)}
+              className="h-7 text-xs w-32"
+              maxLength={3}
+            />
+            <Button size="sm" variant="outline" onClick={() => searchNumbers()} disabled={isFetching} className="text-xs h-7">
+              {isFetching ? "Searching…" : "Search"}
+            </Button>
+          </div>
+          {available && (
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {available.map((num: any) => (
+                <div key={num.phoneNumber} className="flex items-center justify-between p-2 rounded bg-electric/5 border border-electric/10">
+                  <span className="text-xs font-mono text-off-white">{num.phoneNumber}</span>
+                  <Button
+                    size="sm"
+                    onClick={() => provision.mutate({ repId: rep.id, phoneNumber: num.phoneNumber })}
+                    disabled={provision.isPending}
+                    className="h-6 text-[10px] bg-electric hover:bg-electric-light text-midnight"
+                  >
+                    Assign
+                  </Button>
+                </div>
+              ))}
+              {available.length === 0 && <p className="text-xs text-soft-gray/60 text-center py-2">No numbers found for that area code</p>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+

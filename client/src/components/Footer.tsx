@@ -1,7 +1,7 @@
 /*
- * Footer — Premium dark, Muskegon MI, personality, no phone number.
+ * Footer — Premium dark, nationwide, no phone number.
  */
-import { MapPin, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { useLocation } from "wouter";
 
 const footerLinks = [
@@ -57,18 +57,12 @@ export default function Footer() {
               <div className="w-8 h-8 rounded-lg bg-electric/15 flex items-center justify-center border border-electric/20">
                 <span className="text-electric text-sm font-bold font-sans">M</span>
               </div>
-              <span className="font-serif text-xl text-off-white tracking-tight">MiniMorph</span>
+              <span className="font-serif text-xl text-off-white tracking-tight">MiniMorph Studios</span>
             </div>
             <p className="text-sm font-sans text-off-white/40 leading-relaxed mb-6 max-w-sm">
-              We build websites for small businesses and then stick around to make sure
-              they keep working. Based on the shores of Lake Michigan, serving businesses
-              across the US.
+              We build custom websites for small businesses across the United States — and then stick around to make sure they keep working.
             </p>
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm font-sans text-off-white/40">
-                <MapPin size={14} className="text-electric/50" />
-                <span>Muskegon, Michigan</span>
-              </div>
               <div className="flex items-center gap-2 text-sm font-sans text-off-white/40">
                 <Mail size={14} className="text-electric/50" />
                 <a href="mailto:hello@minimorphstudios.com" className="hover:text-electric transition-colors">
@@ -103,12 +97,9 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t border-glass-border">
-        <div className="container py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="container py-6 flex items-center justify-center">
           <p className="text-xs font-sans text-off-white/25">
-            &copy; {new Date().getFullYear()} MiniMorph Studios LLC. All rights reserved.
-          </p>
-          <p className="text-xs font-sans text-off-white/25">
-            Built with care in Muskegon, MI. Powered by lake-effect determination.
+            &copy; 2026 MiniMorph Studios LLC. All rights reserved.
           </p>
         </div>
       </div>

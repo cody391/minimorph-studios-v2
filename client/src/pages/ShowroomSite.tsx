@@ -143,7 +143,7 @@ function BlogPreview({ site, posts }: { site: SiteType; posts: { title: string; 
               style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}
             >
               <div className="h-36 overflow-hidden">
-                <img src={site.heroImage} alt={p.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ objectPosition: idx === 0 ? "center" : idx === 1 ? "left" : "right" }} />
+  <div className="w-full h-full" style={{ background: `linear-gradient(${idx * 60}deg, ${site.palette.accent}20, ${site.palette.card})` }} />
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-2">
@@ -342,13 +342,7 @@ function InstagramFeed({ site }: { site: SiteType }) {
               transition={{ delay: i * 0.05 }}
               className="aspect-square rounded-lg overflow-hidden group cursor-pointer relative"
             >
-              <img
-                src={site.heroImage}
-                alt={`Instagram post ${i + 1}`}
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                style={{ objectPosition: ["center", "left", "right", "top", "bottom", "center"][i] }}
-              />
+<div className="w-full h-full" style={{ background: `linear-gradient(${i * 60}deg, ${site.palette.accent}${i % 2 === 0 ? "28" : "15"}, ${site.palette.bg})` }} />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
                 <Heart size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
@@ -496,7 +490,7 @@ function RestaurantMenu({ site }: { site: SiteType }) {
     { name: "Smoked Whitefish Dip", desc: "House-smoked, grilled sourdough, pickled onion", price: "$14" },
     { name: "Driftwood Burger", desc: "Double smash, aged cheddar, house pickles, brioche", price: "$18" },
     { name: "Grilled Walleye Tacos", desc: "Cilantro slaw, chipotle crema, flour tortillas", price: "$19" },
-    { name: "Michigan Cherry Salad", desc: "Mixed greens, dried cherries, goat cheese, candied pecans", price: "$13" },
+    { name: "Door County Cherry Salad", desc: "Mixed greens, dried cherries, goat cheese, candied pecans", price: "$13" },
     { name: "Cedar Plank Salmon", desc: "Maple glaze, wild rice, seasonal vegetables", price: "$28" },
     { name: "Lobster Mac & Cheese", desc: "Maine lobster, four-cheese sauce, herb breadcrumbs", price: "$22" },
     { name: "Seasonal Soup", desc: "Changes weekly. Ask your server.", price: "$9" },
@@ -546,10 +540,10 @@ function RestaurantMenu({ site }: { site: SiteType }) {
 
 function ContractorProjects({ site }: { site: SiteType }) {
   const projects = [
-    { title: "Norton Shores Kitchen", scope: "Full gut renovation — custom cabinetry, quartz counters, new layout", timeline: "6 weeks", year: "2024", status: "Complete" },
-    { title: "Muskegon Lake Deck", scope: "800 sq ft composite deck with built-in bench seating and cable rail", timeline: "3 weeks", year: "2024", status: "Complete" },
-    { title: "Heritage Hill Bathroom", scope: "Walk-in shower conversion, heated floors, custom tile work", timeline: "4 weeks", year: "2023", status: "Complete" },
-    { title: "Whitehall Basement Finish", scope: "Full basement buildout — bedroom, bathroom, living area, egress window", timeline: "8 weeks", year: "2023", status: "Complete" },
+    { title: "Oakdale Kitchen", scope: "Full gut renovation — custom cabinetry, quartz counters, new layout", timeline: "6 weeks", year: "2024", status: "Complete" },
+    { title: "Lakewood Deck", scope: "800 sq ft composite deck with built-in bench seating and cable rail", timeline: "3 weeks", year: "2024", status: "Complete" },
+    { title: "Heritage Heights Bathroom", scope: "Walk-in shower conversion, heated floors, custom tile work", timeline: "4 weeks", year: "2023", status: "Complete" },
+    { title: "Greenfield Basement Finish", scope: "Full basement buildout — bedroom, bathroom, living area, egress window", timeline: "8 weeks", year: "2023", status: "Complete" },
   ];
 
   return (
@@ -581,7 +575,7 @@ function ContractorProjects({ site }: { site: SiteType }) {
               style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}
             >
               <div className="h-40 overflow-hidden">
-                <img src={site.heroImage} alt={p.title} loading="lazy" className="w-full h-full object-cover" style={{ objectPosition: idx % 2 === 0 ? "center" : "left" }} />
+  <div className="w-full h-full" style={{ background: `linear-gradient(${idx % 2 === 0 ? 135 : 225}deg, ${site.palette.accent}22, ${site.palette.card})` }} />
               </div>
               <div className="p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -879,7 +873,7 @@ function BoutiqueArrivals({ site }: { site: SiteType }) {
               style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}
             >
               <div className="aspect-square rounded-lg overflow-hidden mb-4">
-                <img src={site.heroImage} alt={item.name} loading="lazy" className="w-full h-full object-cover" style={{ objectPosition: ["center", "left", "right", "top", "bottom", "center"][idx] }} />
+  <div className="w-full h-full" style={{ background: `linear-gradient(${idx * 45}deg, ${site.palette.accent}18, ${site.palette.card})` }} />
               </div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: site.palette.accent + "15", color: site.palette.accent }}>{item.tag}</span>
@@ -931,8 +925,8 @@ function GiftCardSection({ site }: { site: SiteType }) {
 function CoffeeProducts({ site }: { site: SiteType }) {
   const products = [
     { name: "Morning Light Blend", origin: "Colombia & Ethiopia", notes: "Citrus, honey, brown sugar", size: "12oz", price: "$18", badge: "Bestseller" },
-    { name: "Lakeshore Dark", origin: "Sumatra & Brazil", notes: "Dark chocolate, cedar, molasses", size: "12oz", price: "$18", badge: "" },
-    { name: "Sleeping Bear", origin: "Guatemala", notes: "Caramel, walnut, dried cherry", size: "12oz", price: "$20", badge: "Staff Pick" },
+    { name: "Midnight Dark", origin: "Sumatra & Brazil", notes: "Dark chocolate, cedar, molasses", size: "12oz", price: "$18", badge: "" },
+    { name: "Hearthstone", origin: "Guatemala", notes: "Caramel, walnut, dried cherry", size: "12oz", price: "$20", badge: "Staff Pick" },
     { name: "Single Origin — Yirgacheffe", origin: "Ethiopia", notes: "Blueberry, jasmine, bergamot", size: "12oz", price: "$22", badge: "Limited" },
     { name: "Single Origin — Huila", origin: "Colombia", notes: "Red apple, toffee, milk chocolate", size: "12oz", price: "$21", badge: "" },
     { name: "Cold Brew Concentrate", origin: "House Blend", notes: "Makes 8 cups. Dilute 1:1.", size: "32oz", price: "$16", badge: "" },
@@ -967,7 +961,7 @@ function CoffeeProducts({ site }: { site: SiteType }) {
               style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}
             >
               <div className="h-40 overflow-hidden relative">
-                <img src={site.heroImage} alt={p.name} loading="lazy" className="w-full h-full object-cover" style={{ objectPosition: ["center", "left", "right", "top", "bottom", "center"][idx] }} />
+<div className="w-full h-full" style={{ background: `linear-gradient(${idx * 45}deg, ${site.palette.accent}25, ${site.palette.bg})` }} />
                 {p.badge && (
                   <span className="absolute top-3 right-3 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full" style={{ backgroundColor: site.palette.accent, color: site.palette.bg }}>{p.badge}</span>
                 )}
@@ -1120,7 +1114,7 @@ function TierSections({ site }: { site: SiteType }) {
             { day: "Saturday", time: "8:00 AM – 12:00 PM" },
             { day: "Sunday", time: "Closed" },
           ]}
-          mapNote="We serve Muskegon County, Ottawa County, and the lakeshore. If you're within 45 minutes, we'll come to you."
+          mapNote="We serve the greater metro area and surrounding counties. If you're within 45 minutes, we'll come to you."
         />
       </>
     );
@@ -1159,8 +1153,8 @@ function TierSections({ site }: { site: SiteType }) {
           site={site}
           posts={[
             { title: "Spring Menu Preview: What's New This Season", excerpt: "Morel mushrooms are back, and so is our grilled asparagus plate. Here's what's changing on the menu this April.", date: "Apr 2025", category: "Menu" },
-            { title: "Behind the Catch: Our Local Fish Suppliers", excerpt: "We source 80% of our fish from Lake Michigan. Meet the fishermen who make our menu possible.", date: "Mar 2025", category: "Story" },
-            { title: "5 Michigan Wines That Pair With Everything", excerpt: "You don't need to go to Napa. These five Michigan wines pair perfectly with our most popular dishes.", date: "Feb 2025", category: "Drinks" },
+            { title: "Behind the Catch: Our Local Fish Suppliers", excerpt: "We source 80% of our fish from local waters. Meet the fishermen who make our menu possible.", date: "Mar 2025", category: "Story" },
+            { title: "5 Wisconsin Wines That Pair With Everything", excerpt: "You don't need to go to Napa. These five Door County wines pair perfectly with our most popular dishes.", date: "Feb 2025", category: "Drinks" },
           ]}
         />
         <LocationSection
@@ -1187,7 +1181,7 @@ function TierSections({ site }: { site: SiteType }) {
         <ReviewsSection
           site={site}
           reviews={[
-            { name: "Jake S.", rating: 5, text: "I've been to every gym in Holland. This is the only one where the coaches actually know your name and fix your form. No ego, just work.", date: "Mar 2025" },
+            { name: "Jake S.", rating: 5, text: "I've been to every gym in Austin. This is the only one where the coaches actually know your name and fix your form. No ego, just work.", date: "Mar 2025" },
             { name: "Rachel M.", rating: 5, text: "I was intimidated to try Olympic lifting. Marcus made it approachable. Six months in and I'm snatching my bodyweight.", date: "Feb 2025" },
             { name: "Tom D.", rating: 5, text: "The 6am crew is the best part of my day. Small classes, great coaching, and nobody judges you for being slow. They just push you to be less slow.", date: "Jan 2025" },
             { name: "Bri K.", rating: 4, text: "Wish they had more evening class times, but the quality of coaching makes up for it. Jess's HIIT classes are no joke.", date: "Dec 2024" },
@@ -1283,7 +1277,7 @@ function TierSections({ site }: { site: SiteType }) {
           reviews={[
             { name: "Mia K.", rating: 5, text: "Aisha did my balayage and I've never gotten more compliments in my life. She actually listened to what I wanted instead of doing her own thing.", date: "Mar 2025" },
             { name: "Lauren T.", rating: 5, text: "I've been going to Priya for my locs for two years. She's careful, she's patient, and she never rushes. Worth every penny.", date: "Feb 2025" },
-            { name: "James R.", rating: 5, text: "Jordan gives the best fade in Grand Rapids. Period. I've tried everywhere else. This is the spot.", date: "Jan 2025" },
+            { name: "James R.", rating: 5, text: "Jordan gives the best fade in town. Period. I've tried everywhere else. This is the spot.", date: "Jan 2025" },
             { name: "Nadia S.", rating: 5, text: "Camille did my wedding hair and my bridesmaids'. Everyone looked incredible. She even came early to make sure we weren't stressed.", date: "Dec 2024" },
             { name: "Tara M.", rating: 4, text: "Beautiful space, amazing stylists. Only wish they had more weekend availability — but I get it, they're always booked.", date: "Nov 2024" },
             { name: "Devon C.", rating: 5, text: "Dani fixed a color disaster from another salon. Took 4 hours but my hair has never looked better. Honest, skilled, and kind.", date: "Oct 2024" },
@@ -1389,7 +1383,7 @@ function TierSections({ site }: { site: SiteType }) {
         <ReviewsSection
           site={site}
           reviews={[
-            { name: "Jason K.", rating: 5, text: "Morning Light is the best blend I've ever had. I've tried Blue Bottle, Counter Culture, Onyx — this is better. And it's from Michigan.", date: "Mar 2025" },
+            { name: "Jason K.", rating: 5, text: "Morning Light is the best blend I've ever had. I've tried Blue Bottle, Counter Culture, Onyx — this is better. And it ships straight from the roaster.", date: "Mar 2025" },
             { name: "Stephanie R.", rating: 5, text: "The coffee club is the best subscription I have. Every bag arrives fresh, and the rotating single origins keep it interesting.", date: "Feb 2025" },
             { name: "Mark D.", rating: 5, text: "Ordered the Yirgacheffe on a whim. Blueberry and jasmine in a coffee? I was skeptical. Now I'm a convert.", date: "Jan 2025" },
             { name: "Lisa & Tom W.", rating: 5, text: "We switched our office coffee to Ember & Oak. Productivity went up. Morale went up. The old Keurig went in the trash.", date: "Dec 2024" },
@@ -1413,7 +1407,7 @@ function TierSections({ site }: { site: SiteType }) {
         <ContactFormSection
           site={site}
           title="Wholesale inquiries."
-          subtitle="We supply cafes, restaurants, and offices across Michigan. Minimum 10lb orders. Tell us about your business and we'll send you samples."
+          subtitle="We supply cafes, restaurants, and offices nationwide. Minimum 10lb orders. Tell us about your business and we'll send you samples."
           buttonText="Submit Inquiry"
           fields={[
             { label: "Business Name", type: "text", placeholder: "Your business name" },
@@ -1428,9 +1422,9 @@ function TierSections({ site }: { site: SiteType }) {
           hours={[
             { day: "Roastery (not open to public)", time: "Mon–Fri 6am–2pm" },
             { day: "Online Store", time: "24/7" },
-            { day: "Local Pickup (Traverse City)", time: "Fri 10am–2pm" },
+            { day: "Local Pickup (Portland)", time: "Fri 10am–2pm" },
           ]}
-          mapNote="We're a roastery, not a cafe. Online orders ship within 24 hours. Local pickup available Fridays at our Traverse City location."
+          mapNote="We're a roastery, not a cafe. Online orders ship within 24 hours. Local pickup available Fridays at our Portland location."
         />
       </>
     );
@@ -1472,9 +1466,9 @@ export default function ShowroomSite() {
 
   /* Build nav items based on tier */
   const navItems = ["About", "Services"];
-  if (site.tier === "Growth" || site.tier === "Pro" || site.tier === "Commerce") navItems.push("Blog");
-  if (site.tier === "Pro" || site.tier === "Commerce") navItems.push("Reviews");
-  if (site.tier === "Commerce") navItems.push("Shop");
+  if (site.tier === "Growth" || site.tier === "Pro" || site.tier === "Enterprise") navItems.push("Blog");
+  if (site.tier === "Pro" || site.tier === "Enterprise") navItems.push("Reviews");
+  if (site.tier === "Enterprise") navItems.push("Shop");
   navItems.push("Contact");
 
   return (
@@ -1497,7 +1491,7 @@ export default function ShowroomSite() {
               className="flex items-center gap-2 text-sm font-sans text-off-white/60 hover:text-off-white transition-colors"
             >
               <ArrowLeft size={14} />
-              <span className="hidden sm:inline">Back to MiniMorph</span>
+              <span className="hidden sm:inline">Back to MiniMorph Studios</span>
             </button>
             <span className="text-off-white/20">|</span>
             <div className="flex items-center gap-1.5">
@@ -1568,15 +1562,9 @@ export default function ShowroomSite() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${site.heroImage})` }}
-        />
-        <div
           className="absolute inset-0"
           style={{
-            background: isLight
-              ? `linear-gradient(to bottom, ${site.palette.bg}cc, ${site.palette.bg}ee)`
-              : `linear-gradient(to bottom, ${site.palette.bg}cc, ${site.palette.bg}f0)`,
+            background: `radial-gradient(ellipse at 70% 40%, ${site.palette.accent}28 0%, transparent 65%), linear-gradient(135deg, ${site.palette.card} 0%, ${site.palette.bg} 100%)`,
           }}
         />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 lg:py-40">
@@ -1656,11 +1644,9 @@ export default function ShowroomSite() {
               viewport={{ once: true }}
               className="rounded-2xl overflow-hidden aspect-[4/3]"
             >
-              <img
-                src={site.heroImage}
-                alt={site.name}
-                loading="lazy"
-                className="w-full h-full object-cover"
+              <div
+                className="w-full h-full"
+                style={{ background: `radial-gradient(ellipse at 50% 50%, ${site.palette.accent}22 0%, ${site.palette.card} 100%)` }}
               />
             </motion.div>
           </div>
@@ -1684,7 +1670,7 @@ export default function ShowroomSite() {
               className="text-3xl sm:text-4xl leading-tight"
               style={{ fontFamily: site.font.heading }}
             >
-              {site.industry === "Coffee Roaster / Ecommerce"
+              {site.industry === "Coffee Roaster"
                 ? "Our Coffee"
                 : site.industry === "Restaurant"
                   ? "How to Enjoy Us"
@@ -1768,14 +1754,9 @@ export default function ShowroomSite() {
                 transition={{ delay: i * 0.08 }}
                 className="rounded-xl overflow-hidden aspect-[4/3]"
               >
-                <img
-                  src={site.heroImage}
-                  alt={`${site.name} gallery ${i + 1}`}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                  style={{
-                    objectPosition: ["center", "left", "right", "top", "bottom", "center"][i],
-                  }}
+                <div
+                  className="w-full h-full"
+                  style={{ background: `linear-gradient(${i * 45}deg, ${site.palette.accent}${i % 2 === 0 ? "25" : "15"}, ${site.palette.card})` }}
                 />
               </motion.div>
             ))}
@@ -1862,7 +1843,7 @@ export default function ShowroomSite() {
                 </p>
               </div>
               <p className="text-[10px] font-sans text-off-white/25">
-                This is a fictional sample site created to demonstrate MiniMorph
+                This is a fictional sample site created to demonstrate MiniMorph Studios
                 capabilities. Business names, quotes, and details are
                 illustrative only.
               </p>

@@ -59,7 +59,7 @@ export default function Navbar() {
             <span className="text-electric text-sm font-bold font-sans">M</span>
           </div>
           <span className="font-serif text-xl text-off-white tracking-tight">
-            MiniMorph
+            MiniMorph Studios
           </span>
         </a>
 
@@ -86,7 +86,7 @@ export default function Navbar() {
             className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-sm px-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300"
             onClick={() => setLocation("/get-started")}
           >
-            Let's Build Something
+            Start a Project
           </Button>
         </div>
 
@@ -132,7 +132,7 @@ export default function Navbar() {
                     setLocation("/get-started");
                   }}
                 >
-                  Let's Build Something
+                  Start a Project
                 </Button>
               </div>
             </div>

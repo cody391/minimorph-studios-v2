@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { ENV } from "./_core/env";
 import * as db from "./db";
 import { getDb } from "./db";
-import { orders, users, contracts, leads, commissions, customers, onboardingProjects, nurtureLogs } from "../drizzle/schema";
+import { orders, users, contracts, leads, commissions, customers, onboardingProjects, nurtureLogs, reps } from "../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { sendWelcomeEmail, sendPaymentFailedEmail } from "./services/customerEmails";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
@@ -657,6 +657,7 @@ async function createInitialCommission(session: Stripe.Checkout.Session) {
       // Check if the lead was self-sourced by checking the contract metadata
       const isSelfSourced = false; // Initial checkout doesn't carry self-sourced flag
 
+      const ratePercent = TIER_CONFIG[tierKey].commissionRate;
       const commissionAmount = (monthlyPrice * rate).toFixed(2);
 
       await db.createCommission({
@@ -666,7 +667,28 @@ async function createInitialCommission(session: Stripe.Checkout.Session) {
         type: "initial_sale",
         status: "approved",
         selfSourced: isSelfSourced,
+        rateApplied: ratePercent.toFixed(2),
       });
+
+      // Auto-transfer to rep's Stripe Connect account if set up
+      try {
+        const [repRow] = await database.select({ stripeConnectAccountId: reps.stripeConnectAccountId, stripeConnectOnboarded: reps.stripeConnectOnboarded })
+          .from(reps).where(eq(reps.id, contract.repId)).limit(1);
+        if (repRow?.stripeConnectAccountId && repRow.stripeConnectOnboarded) {
+          const stripe = new Stripe(ENV.stripeSecretKey || "");
+          const amountCents = Math.round(parseFloat(commissionAmount) * 100);
+          if (amountCents > 0) {
+            await stripe.transfers.create({
+              amount: amountCents,
+              currency: "usd",
+              destination: repRow.stripeConnectAccountId,
+              metadata: { repId: String(contract.repId), contractId: String(contract.id), type: "initial_sale" },
+            });
+          }
+        }
+      } catch (transferErr) {
+        console.error(`[Stripe] Transfer failed for rep=${contract.repId}:`, transferErr);
+      }
 
       await db.createRepNotification({
         repId: contract.repId,
@@ -716,6 +738,7 @@ async function createRecurringCommissionForContract(contract: typeof contracts.$
     const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, contract.repId)).limit(1);
     const tierKey = (tierRows[0]?.tier || "bronze") as TierKey;
     let rate = TIER_CONFIG[tierKey].commissionRate / 100;
+    const ratePercent = TIER_CONFIG[tierKey].commissionRate;
     if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
 
     const commissionAmount = (monthlyPrice * rate).toFixed(2);
@@ -727,7 +750,28 @@ async function createRecurringCommissionForContract(contract: typeof contracts.$
       type: "recurring_monthly",
       status: "approved",
       selfSourced: isSelfSourced,
+      rateApplied: (isSelfSourced ? Math.min(ratePercent * 2, 40) : ratePercent).toFixed(2),
     });
+
+    // Auto-transfer to rep's Stripe Connect account if set up
+    try {
+      const [repRow] = await database.select({ stripeConnectAccountId: reps.stripeConnectAccountId, stripeConnectOnboarded: reps.stripeConnectOnboarded })
+        .from(reps).where(eq(reps.id, contract.repId)).limit(1);
+      if (repRow?.stripeConnectAccountId && repRow.stripeConnectOnboarded) {
+        const stripe = new Stripe(ENV.stripeSecretKey || "");
+        const amountCents = Math.round(parseFloat(commissionAmount) * 100);
+        if (amountCents > 0) {
+          await stripe.transfers.create({
+            amount: amountCents,
+            currency: "usd",
+            destination: repRow.stripeConnectAccountId,
+            metadata: { repId: String(contract.repId), contractId: String(contract.id), type: "recurring_monthly" },
+          });
+        }
+      }
+    } catch (transferErr) {
+      console.error(`[Stripe] Transfer failed for rep=${contract.repId}:`, transferErr);
+    }
 
     await db.createRepNotification({
       repId: contract.repId,

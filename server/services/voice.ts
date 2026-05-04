@@ -22,8 +22,11 @@ function getTwilioClient() {
  * The rep's identity is embedded in the token so Twilio can route calls to them.
  */
 export function generateVoiceToken(identity: string): string {
-  if (!ENV.twilioAccountSid || !ENV.twilioAuthToken) {
-    throw new Error("Twilio credentials are not configured");
+  if (!ENV.twilioAccountSid) {
+    throw new Error("TWILIO_ACCOUNT_SID is not configured");
+  }
+  if (!ENV.twilioApiKeySid || !ENV.twilioApiKeySecret) {
+    throw new Error("TWILIO_API_KEY_SID / TWILIO_API_KEY_SECRET are not configured. Create an API Key in the Twilio Console.");
   }
   if (!ENV.twilioTwimlAppSid) {
     throw new Error("TWILIO_TWIML_APP_SID is not configured. Create a TwiML App first.");
@@ -31,8 +34,8 @@ export function generateVoiceToken(identity: string): string {
 
   const token = new AccessToken(
     ENV.twilioAccountSid,
-    ENV.twilioAuthToken, // API Key SID — using auth token for simplicity
-    ENV.twilioAuthToken, // API Key Secret
+    ENV.twilioApiKeySid,
+    ENV.twilioApiKeySecret,
     { identity, ttl: 3600 }
   );
 
@@ -51,10 +54,14 @@ export function generateVoiceToken(identity: string): string {
  */
 export function generateOutboundTwiml(toNumber: string, callerId?: string): string {
   const response = new VoiceResponse();
+  response.say(
+    { voice: "Polly.Joanna" },
+    "This call may be recorded for quality and training purposes."
+  );
   const dial = response.dial({
     callerId: callerId || ENV.twilioPhoneNumber,
     record: "record-from-answer-dual",
-    recordingStatusCallback: "/api/twilio/recording-status",
+    recordingStatusCallback: `${ENV.appUrl}/api/twilio/recording-status`,
     recordingStatusCallbackMethod: "POST",
   });
   dial.number(toNumber);
@@ -68,7 +75,7 @@ export function generateInboundTwiml(repIdentity: string): string {
   const response = new VoiceResponse();
   const dial = response.dial({
     record: "record-from-answer-dual",
-    recordingStatusCallback: "/api/twilio/recording-status",
+    recordingStatusCallback: `${ENV.appUrl}/api/twilio/recording-status`,
     recordingStatusCallbackMethod: "POST",
   });
   dial.client(repIdentity);

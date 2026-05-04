@@ -386,6 +386,20 @@ export const academyRouter = router({
               .set({ status: "active", certifiedAt: new Date(), trainingProgress: 100 })
               .where(eq(reps.id, repId));
 
+            // Auto-provision Twilio phone number for the newly activated rep (Part 1)
+            try {
+              const [repRow] = await db.select({ id: reps.id, fullName: reps.fullName, assignedPhoneNumber: reps.assignedPhoneNumber })
+                .from(reps).where(eq(reps.id, repId)).limit(1);
+              if (repRow && !repRow.assignedPhoneNumber) {
+                const { provisionPhoneNumber } = await import("./services/twilioPhoneProvisioning");
+                const phoneNumber = await provisionPhoneNumber(repRow.id, repRow.fullName);
+                await db.update(reps).set({ assignedPhoneNumber: phoneNumber }).where(eq(reps.id, repId));
+                console.log(`[Academy] Auto-provisioned ${phoneNumber} for rep #${repId}`);
+              }
+            } catch (phoneErr) {
+              console.error("[Academy] Phone auto-provision failed (non-blocking):", phoneErr);
+            }
+
             // Send automated welcome message
             await createRepNotification({
               repId,

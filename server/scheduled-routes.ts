@@ -28,6 +28,30 @@ import { invokeLLM } from "./_core/llm";
 import { generateInvoiceHtml, invoiceToBase64 } from "./services/invoiceGenerator";
 import { ENV } from "./_core/env";
 
+// ─── System setting helpers (Part 7: engine pause) ───
+async function getSystemSetting(key: string, defaultVal = "true"): Promise<string> {
+  try {
+    const database = await getDb();
+    if (!database) return defaultVal;
+    const { systemSettings } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    const rows = await database.select({ settingValue: systemSettings.settingValue })
+      .from(systemSettings).where(eq(systemSettings.settingKey, key)).limit(1);
+    return rows[0]?.settingValue ?? defaultVal;
+  } catch {
+    return defaultVal;
+  }
+}
+
+async function isEngineActive(): Promise<boolean> {
+  return (await getSystemSetting("lead_engine_active")) === "true";
+}
+
+async function isJobActive(jobKey: string): Promise<boolean> {
+  if (!(await isEngineActive())) return false;
+  return (await getSystemSetting(jobKey)) === "true";
+}
+
 // ─── In-memory execution lock ───
 const runningJobs = new Set<string>();
 
@@ -103,6 +127,7 @@ export function registerScheduledRoutes(app: Express) {
   // 1. Outreach — send due outreach messages
   app.post("/api/scheduled/outreach", (req, res) =>
     runJob(req, res, "outreach", async () => {
+      if (!(await isJobActive("job_outreach_active"))) return { skipped: true, reason: "paused" };
       const sent = await sendDueOutreach();
       return { sent };
     })
@@ -111,6 +136,7 @@ export function registerScheduledRoutes(app: Express) {
   // 2. Scoring — score unscored websites
   app.post("/api/scheduled/scoring", (req, res) =>
     runJob(req, res, "scoring", async () => {
+      if (!(await isJobActive("job_scorer_active"))) return { skipped: true, reason: "paused" };
       const scored = await scoreUnscrapedWebsites(20);
       return { scored };
     })
@@ -119,6 +145,7 @@ export function registerScheduledRoutes(app: Express) {
   // 3. Enrichment — enrich qualified businesses + ML rescore
   app.post("/api/scheduled/enrichment", (req, res) =>
     runJob(req, res, "enrichment", async () => {
+      if (!(await isJobActive("job_enrichment_active"))) return { skipped: true, reason: "paused" };
       const enriched = await enrichQualifiedBusinesses(10);
       const rescored = await rescoreAllLeads();
       return { enriched, rescored };
@@ -128,6 +155,7 @@ export function registerScheduledRoutes(app: Express) {
   // 4. Lead conversion — convert enriched businesses to leads
   app.post("/api/scheduled/lead-conversion", (req, res) =>
     runJob(req, res, "lead-conversion", async () => {
+      if (!(await isJobActive("job_scraper_active"))) return { skipped: true, reason: "paused" };
       const converted = await batchConvertToLeads(20);
       return { converted };
     })
@@ -136,6 +164,7 @@ export function registerScheduledRoutes(app: Express) {
   // 5. Re-engagement — run re-engagement campaigns for cold leads
   app.post("/api/scheduled/reengagement", (req, res) =>
     runJob(req, res, "reengagement", async () => {
+      if (!(await isJobActive("job_reengagement_active"))) return { skipped: true, reason: "paused" };
       const reengaged = await runReengagementCampaign();
       return { reengaged };
     })
@@ -144,6 +173,7 @@ export function registerScheduledRoutes(app: Express) {
   // 6. Auto-feed — feed reps who need more leads (performance-based)
   app.post("/api/scheduled/auto-feed", (req, res) =>
     runJob(req, res, "auto-feed", async () => {
+      if (!(await isJobActive("job_auto_feed_active"))) return { skipped: true, reason: "paused" };
       const result = await autoFeedReps();
       return result; // { repsChecked, repsFed, leadsGenerated, scrapeJobsCreated }
     })
@@ -152,6 +182,7 @@ export function registerScheduledRoutes(app: Express) {
   // 7. Enterprise scan — scan for enterprise prospects
   app.post("/api/scheduled/enterprise-scan", (req, res) =>
     runJob(req, res, "enterprise-scan", async () => {
+      if (!(await isJobActive("job_scraper_active"))) return { skipped: true, reason: "paused" };
       const found = await scanForEnterpriseLeads(10);
       return { found };
     })
@@ -160,6 +191,7 @@ export function registerScheduledRoutes(app: Express) {
   // 8. Multi-source scrape — scrape from best-performing sources
   app.post("/api/scheduled/multi-source", (req, res) =>
     runJob(req, res, "multi-source", async () => {
+      if (!(await isJobActive("job_scraper_active"))) return { skipped: true, reason: "paused" };
       const quality = getSourceQuality();
       const bestSources = quality
         .filter((s) => s.conversionRate > 0)
@@ -184,6 +216,7 @@ export function registerScheduledRoutes(app: Express) {
   // 9. Contact enrichment — enrich contacts via Apollo/Hunter
   app.post("/api/scheduled/contact-enrichment", (req, res) =>
     runJob(req, res, "contact-enrichment", async () => {
+      if (!(await isJobActive("job_enrichment_active"))) return { skipped: true, reason: "paused" };
       const result = await batchEnrichContacts(15);
       return result; // { total, enriched, partial, failed }
     })

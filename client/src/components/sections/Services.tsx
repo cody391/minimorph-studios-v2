@@ -129,7 +129,7 @@ export default function Services() {
               viewport={{ once: true }}
               className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
             >
-              The MiniMorph Way
+              The MiniMorph Studios Way
             </motion.span>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}

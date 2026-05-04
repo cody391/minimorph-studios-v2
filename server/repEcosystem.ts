@@ -585,6 +585,28 @@ Return JSON: { "subject": "...", "body": "..." }`,
         }
       }
 
+      // Part 10: Daily SMS cap check
+      try {
+        const { getDb: getDbFn } = await import("./db");
+        const { systemSettings: settingsTable, smsMessages: smsTable } = await import("../drizzle/schema");
+        const { eq: eqFn, gte: gteFn, and: andFn, sql: sqlFn } = await import("drizzle-orm");
+        const database = await getDbFn();
+        if (database) {
+          const [capRow] = await database.select({ settingValue: settingsTable.settingValue })
+            .from(settingsTable).where(eqFn(settingsTable.settingKey, "daily_sms_cap")).limit(1);
+          const cap = parseInt(capRow?.settingValue || "50", 10);
+          const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+          const [{ count }] = await database.select({ count: sqlFn<number>`count(*)` })
+            .from(smsTable)
+            .where(andFn(eqFn(smsTable.repId, rep.id), eqFn(smsTable.direction, "outbound"), gteFn(smsTable.createdAt, todayStart)));
+          if (Number(count) >= cap) {
+            throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `Daily SMS cap of ${cap} messages reached. Try again tomorrow.` });
+          }
+        }
+      } catch (capErr: any) {
+        if (capErr.code === "TOO_MANY_REQUESTS") throw capErr;
+      }
+
       // Append opt-out footer on first SMS to this number
       let messageBody = input.body;
       const existingMessages = await db.listSmsThread(rep.id, input.toNumber);
@@ -597,14 +619,15 @@ Return JSON: { "subject": "...", "body": "..." }`,
         }
       }
 
+      const fromNumber = rep.assignedPhoneNumber || process.env.TWILIO_PHONE_NUMBER || "";
       const { sendSms } = await import("./services/sms");
-      const result = await sendSms({ to: input.toNumber, body: messageBody });
+      const result = await sendSms({ to: input.toNumber, body: messageBody, from: fromNumber });
       const smsRecord = await db.createSmsMessage({
         repId: rep.id,
         leadId: input.leadId,
         customerId: input.customerId,
         direction: "outbound",
-        fromNumber: process.env.TWILIO_PHONE_NUMBER || "",
+        fromNumber,
         toNumber: input.toNumber,
         body: input.body,
         twilioSid: result.twilioSid,
@@ -679,22 +702,25 @@ Return JSON: { "subject": "...", "body": "..." }`,
       const rep = await db.getRepByUserId(ctx.user.id);
       if (!rep) throw new Error("Not a rep");
       // Create call log record
+      const repFromNumber = rep.assignedPhoneNumber || process.env.TWILIO_PHONE_NUMBER || "";
       const callLog = await db.createCallLog({
         repId: rep.id,
         leadId: input.leadId,
         customerId: input.customerId,
         direction: "outbound",
-        fromNumber: process.env.TWILIO_PHONE_NUMBER || "",
+        fromNumber: repFromNumber,
         toNumber: input.toNumber,
         status: "initiated",
         startedAt: new Date(),
       });
       // Initiate the call via Twilio
       const { initiateCall } = await import("./services/voice");
-      const origin = ctx.req.headers.origin || "";
+      const { ENV } = await import("./_core/env");
+      const callbackBase = ENV.appUrl || ctx.req.headers.origin || "";
       const result = await initiateCall({
         to: input.toNumber,
-        statusCallback: `${origin}/api/twilio/call-status`,
+        from: repFromNumber,
+        statusCallback: `${callbackBase}/api/twilio/call-status`,
       });
       if (result.success && result.callSid) {
         await db.updateCallLog(callLog.id, { twilioCallSid: result.callSid });

@@ -169,20 +169,35 @@ export function registerTwilioWebhooks(app: Express) {
       let repId: number | null = null;
       let leadId: number | null = null;
 
-      // Search through recent SMS to find the rep who was texting this number
+      // Part 9: First try to route by the receiving Twilio number (assignedPhoneNumber)
       try {
         const { getDb } = await import("./db");
         const dbConn = await getDb();
         if (dbConn) {
-          const { smsMessages } = await import("../drizzle/schema");
+          const { reps: repsTable, smsMessages } = await import("../drizzle/schema");
           const { eq, desc } = await import("drizzle-orm");
-          const recent = await dbConn.select().from(smsMessages)
-            .where(eq(smsMessages.toNumber, From))
-            .orderBy(desc(smsMessages.createdAt))
-            .limit(1);
-          if (recent[0]) {
-            repId = recent[0].repId;
-            leadId = recent[0].leadId;
+
+          // Primary: match the `To` number against rep's assigned phone number
+          if (To) {
+            const [repByPhone] = await dbConn.select({ id: repsTable.id })
+              .from(repsTable)
+              .where(eq(repsTable.assignedPhoneNumber, To))
+              .limit(1);
+            if (repByPhone) {
+              repId = repByPhone.id;
+            }
+          }
+
+          // Fallback: find the rep who most recently texted this sender
+          if (!repId) {
+            const recent = await dbConn.select().from(smsMessages)
+              .where(eq(smsMessages.toNumber, From))
+              .orderBy(desc(smsMessages.createdAt))
+              .limit(1);
+            if (recent[0]) {
+              repId = recent[0].repId;
+              leadId = recent[0].leadId;
+            }
           }
         }
       } catch (e) {

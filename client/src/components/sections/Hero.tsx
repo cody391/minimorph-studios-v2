@@ -1,7 +1,7 @@
 /*
  * Design: Premium Dark — MiniMorph Studios
  * Hero: Bold serif headline on near-black, electric accent, product mockup card,
- * dual CTAs, Muskegon MI mention, no phone number.
+ * dual CTAs, no phone number.
  */
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -37,7 +37,7 @@ export default function Hero() {
             >
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-electric/10 border border-electric/20 text-electric text-sm font-sans font-medium mb-8">
                 <Zap size={14} />
-                AI-Assisted Website Care &middot; Muskegon, MI
+                AI-Assisted Website Design & Management
               </span>
             </motion.div>
 
@@ -71,7 +71,7 @@ export default function Hero() {
                 className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-base px-8 py-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300 group"
                 onClick={() => setLocation("/get-started")}
               >
-                Start My Website Build
+                Start a Project
                 <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
@@ -80,7 +80,7 @@ export default function Hero() {
                 className="border-off-white/20 text-off-white hover:bg-off-white/5 font-sans text-base px-8 py-6 rounded-full transition-all duration-300"
                 onClick={() => scrollTo("#showroom")}
               >
-                Browse the Showroom
+                Browse Our Work
               </Button>
             </motion.div>
 
@@ -92,15 +92,19 @@ export default function Hero() {
             >
               <div className="flex items-center gap-2">
                 <Shield size={14} className="text-electric/60" />
-                <span>Real humans, not ticket queues</span>
+                <span>No templates — every site is custom</span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap size={14} className="text-electric/60" />
-                <span>AI that spots what you'd miss</span>
+                <span>First draft in 2–4 weeks</span>
               </div>
               <div className="flex items-center gap-2">
                 <BarChart3 size={14} className="text-electric/60" />
-                <span>Reports you'll actually read</span>
+                <span>Monthly reports included</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users size={14} className="text-electric/60" />
+                <span>You own everything</span>
               </div>
             </motion.div>
           </div>

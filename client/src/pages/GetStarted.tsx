@@ -22,11 +22,11 @@ const STEPS = [
   { id: 4, title: "Review & Pay", description: "Confirm and checkout" },
 ];
 
-const PACKAGES = [
+const PACKAGE_DEFAULTS = [
   {
     tier: "starter" as const,
     name: "Starter",
-    price: 195,
+    defaultPrice: 195,
     pages: 5,
     features: ["Up to 5 pages", "Mobile-responsive design", "Contact/quote form", "Basic SEO setup", "Customer portal access", "Monthly performance report", "1 content update per month", "Email support"],
     popular: false,
@@ -34,7 +34,7 @@ const PACKAGES = [
   {
     tier: "growth" as const,
     name: "Growth",
-    price: 295,
+    defaultPrice: 295,
     pages: 10,
     features: ["Up to 10 pages", "Everything in Starter", "Blog or news section", "Google Analytics setup", "2 content updates per month", "AI-assisted recommendations", "Priority email support", "Add-on integrations available"],
     popular: true,
@@ -42,7 +42,7 @@ const PACKAGES = [
   {
     tier: "premium" as const,
     name: "Pro",
-    price: 395,
+    defaultPrice: 395,
     pages: 20,
     features: ["Up to 20 pages", "Everything in Growth", "Advanced SEO pages", "4 content updates per month", "Review widget setup", "Booking integration", "SMS lead alerts", "Priority support with faster response"],
     popular: false,
@@ -50,7 +50,7 @@ const PACKAGES = [
   {
     tier: "enterprise" as const,
     name: "Enterprise",
-    price: 495,
+    defaultPrice: 495,
     pages: 999,
     features: ["Everything in Pro", "Large ecommerce (unlimited products)", "Custom portals", "Membership/subscription systems", "Multi-location support", "Custom integrations", "Priority build queue"],
     popular: false,
@@ -98,6 +98,18 @@ export default function GetStarted() {
   const loginMutation = trpc.localAuth.login.useMutation();
   const checkoutMutation = trpc.orders.createCheckout.useMutation();
   const submitContactMutation = trpc.contact.submit.useMutation();
+
+  const { data: catalogItems = [] } = trpc.products.list.useQuery();
+  const PACKAGES = useMemo(() => {
+    const catalog = catalogItems as any[];
+    return PACKAGE_DEFAULTS.map(pkg => {
+      const dbItem = catalog.find((p: any) => p.productKey === pkg.tier && p.category === "package");
+      const basePrice = dbItem ? parseFloat(dbItem.basePrice) : pkg.defaultPrice;
+      const discount = dbItem?.discountPercent ?? 0;
+      const price = discount > 0 ? Math.round(basePrice * (1 - discount / 100)) : basePrice;
+      return { ...pkg, price, basePrice, discount };
+    });
+  }, [catalogItems]);
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -271,7 +283,7 @@ export default function GetStarted() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <button onClick={() => setLocation("/")} className="flex items-center gap-2 text-sm text-soft-gray hover:text-off-white font-sans transition-colors">
             <ChevronLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">MiniMorph</span>
+            <span className="hidden sm:inline">MiniMorph Studios</span>
           </button>
           {/* Mobile: compact step indicator */}
           <span className="sm:hidden text-xs font-sans text-off-white/70">{step}/{STEPS.length}</span>

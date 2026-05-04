@@ -23,6 +23,10 @@ interface CoachingResult {
   sentimentScore: number;
   keyTakeaways: string[];
   suggestedFollowUp: string;
+  laerScore: number;
+  laerBreakdown: { listen: number; acknowledge: number; explore: number; respond: number };
+  promotableToAcademy: boolean;
+  promotionReason: string;
 }
 
 /**
@@ -39,8 +43,8 @@ export async function analyzeAndCoach(input: CoachingInput): Promise<void> {
       messages: [
         {
           role: "system",
-          content: `You are an expert sales communication coach for MiniMorph Studios, a web design agency. 
-You analyze ${channelLabel}s between sales reps and leads/customers.
+          content: `You are an expert sales communication coach for MiniMorph Studios, a web design agency.
+You analyze ${channelLabel}s between sales reps and leads/customers using the LAER framework (Listen, Acknowledge, Explore, Respond).
 
 Your job is to:
 1. Score the communication 1-100 based on professionalism, persuasiveness, clarity, and rapport-building
@@ -51,6 +55,12 @@ Your job is to:
 6. Score sentiment (-100 to 100, where positive = warm/engaging, negative = cold/pushy)
 7. Extract 2-3 key takeaways that could help other reps
 8. Suggest a specific follow-up action
+9. LAER framework scoring (each 0-100):
+   - Listen: Did the rep listen / read carefully and respond to what was actually said?
+   - Acknowledge: Did the rep validate the prospect's concerns or situation?
+   - Explore: Did the rep ask good questions to understand the root need?
+   - Respond: Did the rep provide a relevant, tailored response vs. a generic pitch?
+10. promotableToAcademy: true ONLY if this communication is an exceptional (score >= 85) or a notably bad (score <= 30) example that would provide clear educational value to ALL reps. Include a one-sentence promotionReason explaining why.
 
 Be constructive, specific, and actionable. Reference exact phrases when possible.
 For ${channelLabel}s, consider: response time expectations, appropriate length, personalization, clear CTA, professional sign-off.`,
@@ -76,8 +86,22 @@ For ${channelLabel}s, consider: response time expectations, appropriate length, 
               sentimentScore: { type: "integer", description: "Sentiment -100 to 100" },
               keyTakeaways: { type: "array", items: { type: "string" }, description: "2-3 key takeaways" },
               suggestedFollowUp: { type: "string", description: "Specific follow-up action" },
+              laerScore: { type: "integer", description: "Overall LAER composite score 0-100" },
+              laerBreakdown: {
+                type: "object",
+                properties: {
+                  listen: { type: "integer" },
+                  acknowledge: { type: "integer" },
+                  explore: { type: "integer" },
+                  respond: { type: "integer" },
+                },
+                required: ["listen", "acknowledge", "explore", "respond"],
+                additionalProperties: false,
+              },
+              promotableToAcademy: { type: "boolean", description: "True if this is an exceptional positive or negative teaching example" },
+              promotionReason: { type: "string", description: "One sentence explaining why this is promotable (or empty string if not)" },
             },
-            required: ["overallScore", "strengths", "improvements", "detailedFeedback", "toneAnalysis", "sentimentScore", "keyTakeaways", "suggestedFollowUp"],
+            required: ["overallScore", "strengths", "improvements", "detailedFeedback", "toneAnalysis", "sentimentScore", "keyTakeaways", "suggestedFollowUp", "laerScore", "laerBreakdown", "promotableToAcademy", "promotionReason"],
             additionalProperties: false,
           },
         },
@@ -97,8 +121,20 @@ For ${channelLabel}s, consider: response time expectations, appropriate length, 
       detailedFeedback: feedback.detailedFeedback,
       toneAnalysis: feedback.toneAnalysis as any,
       sentimentScore: feedback.sentimentScore,
-      keyTakeaways: feedback.keyTakeaways,
+      keyTakeaways: [...feedback.keyTakeaways, `LAER: ${feedback.laerScore}/100`] as any,
       suggestedFollowUp: feedback.suggestedFollowUp,
+      promotableToAcademy: feedback.promotableToAcademy,
+      promotionReason: feedback.promotionReason || null,
+    });
+
+    // Notify rep that coaching feedback is ready
+    const channelName = input.communicationType === "call" ? "call" : input.communicationType;
+    await db.createRepNotification({
+      repId: input.repId,
+      type: "training_reminder",
+      title: "Your coaching feedback is ready",
+      message: `We reviewed your ${channelName}. Score: ${feedback.overallScore}/100. LAER: ${feedback.laerScore}/100. Check the AI Coach tab for details.`,
+      metadata: { score: feedback.overallScore, laerScore: feedback.laerScore, communicationType: input.communicationType },
     });
 
     // Feed insights into the training system

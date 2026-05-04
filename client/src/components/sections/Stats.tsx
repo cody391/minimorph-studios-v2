@@ -1,17 +1,20 @@
 /*
- * Trust Strip — credibility bar below hero with character.
+ * Trust Strip — brand value bar below hero.
  */
 import { motion } from "framer-motion";
-import { MapPin, Shield, Zap, Lock, Users, BarChart3, RefreshCw } from "lucide-react";
+import { Shield, Zap, Lock, Users, BarChart3, RefreshCw, Globe, Bot, Package, CheckCircle } from "lucide-react";
 
 const trustItems = [
-  { icon: MapPin, label: "Made in Michigan" },
-  { icon: Shield, label: "Humans First" },
-  { icon: Zap, label: "AI-Powered" },
-  { icon: Lock, label: "Stripe-Secured" },
-  { icon: Users, label: "Your Own Portal" },
-  { icon: BarChart3, label: "Real Reports" },
-  { icon: RefreshCw, label: "Never Abandoned" },
+  { icon: Globe, label: "Custom Built — No Templates" },
+  { icon: Package, label: "Hosting Included" },
+  { icon: Lock, label: "SSL & Security Included" },
+  { icon: BarChart3, label: "Monthly Reports" },
+  { icon: Users, label: "You Own Your Site" },
+  { icon: Shield, label: "No Surprise Fees" },
+  { icon: CheckCircle, label: "Human Support" },
+  { icon: Bot, label: "AI-Powered Recommendations" },
+  { icon: Zap, label: "Domain Management Included" },
+  { icon: RefreshCw, label: "12-Month Partnership" },
 ];
 
 export default function Stats() {

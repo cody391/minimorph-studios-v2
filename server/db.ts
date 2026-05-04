@@ -79,8 +79,200 @@ import {
   InsertBroadcast,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import mysql from "mysql2/promise";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+
+/* ═══════════════════════════════════════════════════════
+   SCHEMA REPAIR — Idempotent DDL recovery
+   Runs at startup to apply any DDL that the migration
+   tracker missed (e.g. due to __drizzle_migrations state
+   corruption). Uses raw mysql2, independent of drizzle.
+   ═══════════════════════════════════════════════════════ */
+export async function repairSchema(): Promise<void> {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) return;
+
+  let conn: mysql.Connection | undefined;
+  try {
+    conn = await mysql.createConnection(dbUrl);
+
+    // Run SQL — swallows expected idempotency errors
+    const safe = async (sqlStr: string) => {
+      try {
+        await conn!.execute(sqlStr);
+      } catch (err: any) {
+        if (err.errno === 1060) return; // ER_DUP_FIELDNAME: column already exists
+        if (err.errno === 1061) return; // ER_DUP_KEYNAME: index already exists
+        if (err.errno === 1054) return; // ER_BAD_FIELD_ERROR in CHECK constraint
+        console.warn(`[SchemaRepair] ${err.message.substring(0, 120)}`);
+      }
+    };
+
+    // ── Tables from 0043 ──────────────────────────────────────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`support_tickets\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`customerId\` int NOT NULL, \`subject\` varchar(255) NOT NULL, \`body\` text NOT NULL,
+      \`status\` enum('open','in_progress','resolved','closed') NOT NULL DEFAULT 'open',
+      \`priority\` enum('low','medium','high','urgent') NOT NULL DEFAULT 'medium',
+      \`category\` enum('billing','technical','website_change','general','other') NOT NULL DEFAULT 'general',
+      \`customerRating\` int, \`ratingToken\` varchar(64),
+      \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+      \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
+    )`);
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`support_ticket_replies\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`ticketId\` int NOT NULL, \`authorId\` int NOT NULL,
+      \`authorRole\` enum('customer','admin') NOT NULL, \`body\` text NOT NULL,
+      \`createdAt\` timestamp NOT NULL DEFAULT (now())
+    )`);
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`rep_messages\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`repId\` int NOT NULL, \`senderRole\` enum('rep','admin') NOT NULL,
+      \`body\` text NOT NULL, \`readAt\` timestamp,
+      \`createdAt\` timestamp NOT NULL DEFAULT (now())
+    )`);
+    // product_catalog: create with ALL columns (including 0048 additions)
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`product_catalog\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`productKey\` varchar(64) NOT NULL UNIQUE, \`name\` varchar(255) NOT NULL,
+      \`description\` text,
+      \`category\` enum('package','addon','one_time') NOT NULL DEFAULT 'package',
+      \`basePrice\` decimal(10,2) NOT NULL,
+      \`discountPercent\` int NOT NULL DEFAULT 0,
+      \`discountDuration\` enum('once','repeating','forever') NOT NULL DEFAULT 'once',
+      \`stripePriceId\` varchar(128),
+      \`stripeProductId\` varchar(100) DEFAULT NULL,
+      \`stripeDiscountPriceId\` varchar(100) DEFAULT NULL,
+      \`active\` boolean NOT NULL DEFAULT true,
+      \`createdAt\` timestamp NOT NULL DEFAULT (now()),
+      \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
+    )`);
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`broadcasts\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`subject\` varchar(255) NOT NULL,
+      \`audience\` enum('all_customers','active_contracts','all_reps','all_leads') NOT NULL,
+      \`body\` text NOT NULL, \`recipientCount\` int NOT NULL DEFAULT 0,
+      \`status\` enum('draft','sending','sent','failed') NOT NULL DEFAULT 'draft',
+      \`sentAt\` timestamp, \`createdAt\` timestamp NOT NULL DEFAULT (now())
+    )`);
+
+    // ── Columns from 0043 ─────────────────────────────────────────────
+    await safe("ALTER TABLE `users` ADD COLUMN `needsStripeConnect` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `contractSignedUserAgent` varchar(500)");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `pdfUrl` varchar(512)");
+
+    // ── Tables from 0045 ──────────────────────────────────────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`scoring_model\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`modelVersion\` varchar(64) NOT NULL, \`weights\` json NOT NULL,
+      \`trainingSize\` int NOT NULL DEFAULT 0, \`accuracy\` decimal(5,4),
+      \`createdAt\` timestamp NOT NULL DEFAULT (now())
+    )`);
+
+    // ── Columns from 0044 ─────────────────────────────────────────────
+    await safe("ALTER TABLE `support_tickets` ADD COLUMN `customerRating` int");
+    await safe("ALTER TABLE `support_tickets` ADD COLUMN `ratingToken` varchar(64)");
+    await safe("ALTER TABLE `commissions` ADD COLUMN `rateApplied` decimal(5,2)");
+
+    // ── Columns from 0045 ─────────────────────────────────────────────
+    await safe("ALTER TABLE `leads` ADD COLUMN `emailVerified` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `leads` ADD COLUMN `intelligenceCard` json");
+    await safe("ALTER TABLE `leads` ADD COLUMN `checkoutSentAt` timestamp");
+    await safe("ALTER TABLE `leads` ADD COLUMN `checkoutUrl` varchar(512)");
+    await safe("ALTER TABLE `leads` ADD COLUMN `selfClosed` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `leads` ADD COLUMN `excludedReason` varchar(100)");
+
+    // ── Tables from 0046 ──────────────────────────────────────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`coaching_insights\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`feedbackId\` int NOT NULL, \`repId\` int NOT NULL,
+      \`title\` varchar(255) NOT NULL, \`lessonContent\` text NOT NULL,
+      \`ci_category\` enum('objection_handling','closing','rapport','discovery','product_knowledge','tone','follow_up','listening','urgency','personalization') NOT NULL,
+      \`ci_status\` enum('pending_review','published','rejected') NOT NULL DEFAULT 'pending_review',
+      \`publishedAt\` timestamp, \`publishedBy\` int,
+      \`ci_createdAt\` timestamp NOT NULL DEFAULT (now())
+    )`);
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`rep_availability\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`repId\` int NOT NULL, \`dayOfWeek\` int NOT NULL,
+      \`startTime\` varchar(5) NOT NULL, \`endTime\` varchar(5) NOT NULL,
+      \`isAvailable\` boolean NOT NULL DEFAULT true,
+      \`timezone\` varchar(64) NOT NULL DEFAULT 'America/Chicago',
+      \`ra_createdAt\` timestamp NOT NULL DEFAULT (now()),
+      \`ra_updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
+    )`);
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`system_settings\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`settingKey\` varchar(128) NOT NULL, \`settingValue\` text NOT NULL,
+      \`description\` text,
+      \`ss_updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+      \`updatedBy\` int,
+      UNIQUE KEY \`system_settings_key_unique\` (\`settingKey\`)
+    )`);
+    await conn.execute(`INSERT IGNORE INTO \`system_settings\` (\`settingKey\`, \`settingValue\`, \`description\`) VALUES
+      ('lead_engine_active','true','Master switch for the entire lead generation engine'),
+      ('job_scraper_active','true','Enable/disable the Google Maps scraping job'),
+      ('job_scorer_active','true','Enable/disable the website scoring job'),
+      ('job_enrichment_active','true','Enable/disable the business enrichment job'),
+      ('job_outreach_active','true','Enable/disable the automated outreach job'),
+      ('job_auto_feed_active','true','Enable/disable the auto-feed reps job'),
+      ('job_reengagement_active','true','Enable/disable the cold lead re-engagement job'),
+      ('daily_sms_cap','50','Maximum SMS messages per rep per day'),
+      ('daily_email_cap','200','Maximum emails per rep per day'),
+      ('daily_call_cap','100','Maximum calls per rep per day'),
+      ('outreach_start_hour','8','Earliest hour for outreach (local time, 0-23)'),
+      ('outreach_end_hour','21','Latest hour for outreach (local time, 0-23)')`);
+
+    // ── Columns from 0046 ─────────────────────────────────────────────
+    await safe("ALTER TABLE `reps` ADD COLUMN `assignedPhoneNumber` varchar(32)");
+    await safe("ALTER TABLE `reps` ADD COLUMN `voicemailMessage` text");
+    await safe("ALTER TABLE `reps` ADD COLUMN `lastTrainingCompletedAt` timestamp");
+    await safe("ALTER TABLE `reps` ADD COLUMN `trainingRequiredToday` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `ai_coaching_feedback` ADD COLUMN `promotableToAcademy` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `ai_coaching_feedback` ADD COLUMN `promotionReason` text");
+    await safe("ALTER TABLE `ai_coaching_feedback` ADD COLUMN `promotedToAcademy` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `ai_coaching_feedback` ADD COLUMN `promotedAt` timestamp");
+    await safe("ALTER TABLE `ai_coaching_feedback` ADD COLUMN `promotedBy` int");
+
+    // ── Tables from 0047 ──────────────────────────────────────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`lead_costs\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY,
+      \`leadId\` int, \`scrapedBusinessId\` int, \`customerId\` int,
+      \`costType\` enum('scraping','enrichment','outreach_email','outreach_sms','outreach_call','ai_generation','ai_conversation','ai_coaching','ai_monthly','domain','hosting','commission','commission_recurring','phone_number') NOT NULL,
+      \`amountCents\` int NOT NULL, \`description\` varchar(255),
+      \`tokensUsed\` int, \`durationSeconds\` int, \`repId\` int, \`month\` varchar(7),
+      \`lc_createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await safe("CREATE INDEX `idx_lead_costs_leadId` ON `lead_costs`(`leadId`)");
+    await safe("CREATE INDEX `idx_lead_costs_customerId` ON `lead_costs`(`customerId`)");
+    await safe("CREATE INDEX `idx_lead_costs_month` ON `lead_costs`(`month`)");
+    await safe("CREATE INDEX `idx_lead_costs_costType` ON `lead_costs`(`costType`)");
+
+    // ── Columns from 0047 ─────────────────────────────────────────────
+    await safe("ALTER TABLE `leads` ADD COLUMN `totalCostCents` int NOT NULL DEFAULT 0");
+    await safe("ALTER TABLE `leads` ADD COLUMN `totalRevenueCents` int NOT NULL DEFAULT 0");
+    await safe("ALTER TABLE `leads` ADD COLUMN `lastCostUpdate` timestamp NULL");
+    await safe("ALTER TABLE `customers` ADD COLUMN `totalLifetimeCostCents` int NOT NULL DEFAULT 0");
+    await safe("ALTER TABLE `customers` ADD COLUMN `totalLifetimeRevenueCents` int NOT NULL DEFAULT 0");
+    await safe("ALTER TABLE `customers` ADD COLUMN `lastEconomicsUpdate` timestamp NULL");
+
+    // ── Columns from 0048 ─────────────────────────────────────────────
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `discountDuration` enum('once','repeating','forever') NOT NULL DEFAULT 'once'");
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `stripeProductId` varchar(100) DEFAULT NULL");
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `stripeDiscountPriceId` varchar(100) DEFAULT NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `originalPriceCents` int DEFAULT NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `effectivePriceCents` int DEFAULT NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `contractDiscountPercent` decimal(5,2) DEFAULT NULL");
+
+    console.log("[SchemaRepair] Schema repair complete");
+  } catch (err) {
+    console.error("[SchemaRepair] Fatal error:", err);
+    // Non-fatal — server continues
+  } finally {
+    await conn?.end();
+  }
+}
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -1508,6 +1700,26 @@ export async function updateProductCatalogItem(id: number, data: Partial<typeof 
   const db = await getDb();
   if (!db) return;
   await db.update(productCatalog).set(data).where(eq(productCatalog.id, id));
+}
+
+export async function getProductById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const results = await db.select().from(productCatalog).where(eq(productCatalog.id, id)).limit(1);
+  return results[0] ?? null;
+}
+
+export async function updateProductStripeIds(
+  id: number,
+  data: { stripeProductId: string; stripePriceId: string; stripeDiscountPriceId: string | null }
+) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(productCatalog).set({
+    stripeProductId: data.stripeProductId || null,
+    stripePriceId: data.stripePriceId || null,
+    stripeDiscountPriceId: data.stripeDiscountPriceId,
+  }).where(eq(productCatalog.id, id));
 }
 
 /* ═══════════════════════════════════════════════════════

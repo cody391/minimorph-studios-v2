@@ -96,7 +96,7 @@ export default function FreeAudit() {
         <div className="container flex items-center justify-between h-16">
           <Link href="/">
             <span className="text-xl font-bold text-foreground cursor-pointer" style={{ fontFamily: "'DM Serif Display', serif" }}>
-              MiniMorph
+              MiniMorph Studios
             </span>
           </Link>
           <Link href="/get-started">

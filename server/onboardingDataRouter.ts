@@ -565,4 +565,53 @@ export const onboardingDataRouter = router({
       isFullyOnboarded: true,
     };
   }),
+
+  getRepOnboardingDetails: adminProcedure
+    .input(z.object({ repId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const [rep] = await db.select().from(reps).where(eq(reps.id, input.repId)).limit(1);
+      if (!rep) throw new TRPCError({ code: "NOT_FOUND", message: "Rep not found" });
+
+      const [user] = await db.select().from(users).where(eq(users.id, rep.userId)).limit(1);
+      const [trustRecord] = await db.select().from(repOnboardingData).where(eq(repOnboardingData.userId, rep.userId)).limit(1);
+      const [assessment] = await db.select().from(repAssessments).where(eq(repAssessments.userId, rep.userId)).limit(1);
+      const [application] = await db.select().from(repApplications).where(eq(repApplications.repId, rep.id)).limit(1);
+
+      const steps = [
+        { key: "values", label: "Values Quiz", completed: true },
+        { key: "account", label: "Account Created", completed: true },
+        { key: "trust-gate", label: "NDA Signed", completed: !!trustRecord?.ndaSignedAt, detail: trustRecord?.ndaSignedAt ? new Date(trustRecord.ndaSignedAt).toLocaleDateString() : null },
+        { key: "assessment", label: "Assessment Passed", completed: assessment?.status === "passed", detail: assessment ? `Score: ${assessment.status}` : null },
+        { key: "application", label: "Extended Application", completed: !!application },
+        { key: "paperwork", label: "Paperwork Completed", completed: !!rep.paperworkCompletedAt, detail: rep.paperworkCompletedAt ? new Date(rep.paperworkCompletedAt).toLocaleDateString() : null },
+        { key: "payout", label: "Stripe Connect", completed: !!rep.stripeConnectOnboarded },
+        { key: "academy", label: "Training Started", completed: rep.status === "active" || rep.status === "certified" },
+      ];
+
+      const completedCount = steps.filter(s => s.completed).length;
+      const currentStep = steps.findIndex(s => !s.completed) + 1;
+
+      const now = Date.now();
+      const stuckStep = steps.find(s => !s.completed);
+      const repCreatedAt = user?.createdAt ? new Date(user.createdAt).getTime() : now;
+      const hoursStuck = stuckStep ? Math.round((now - repCreatedAt) / (1000 * 60 * 60)) : 0;
+
+      return {
+        repId: rep.id,
+        userId: rep.userId,
+        steps,
+        completedCount,
+        totalSteps: steps.length,
+        currentStep,
+        isFullyOnboarded: completedCount === steps.length,
+        hoursStuck,
+        isStuck: hoursStuck >= 48 && completedCount < steps.length,
+        ndaSignedAt: trustRecord?.ndaSignedAt ?? null,
+        paperworkCompletedAt: rep.paperworkCompletedAt ?? null,
+        stripeConnectOnboarded: !!rep.stripeConnectOnboarded,
+      };
+    }),
 });

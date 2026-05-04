@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -479,28 +479,136 @@ function ComposeSmsDialog({ open, onClose, leads }: { open: boolean; onClose: ()
 function CallsChannel({ leads }: { leads: any[] }) {
   const [showDialer, setShowDialer] = useState(false);
   const { data: callLogs, isLoading } = trpc.repComms.myCallLogs.useQuery();
-  const { data: voiceToken } = trpc.repComms.getVoiceToken.useQuery();
+  const { data: voiceTokenData } = trpc.repComms.getVoiceToken.useQuery();
+  const utils = trpc.useUtils();
+
+  // Twilio Device state
+  const deviceRef = useRef<any>(null);
+  const [deviceReady, setDeviceReady] = useState(false);
+  const [deviceError, setDeviceError] = useState<string | null>(null);
+  const [activeCall, setActiveCall] = useState<any>(null);
+  const [callStatus, setCallStatus] = useState<"idle" | "connecting" | "ringing" | "connected">("idle");
+  const [callDuration, setCallDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Initialize Twilio Device when token is available
+  useEffect(() => {
+    if (!voiceTokenData?.token) return;
+    let device: any;
+    import("@twilio/voice-sdk").then(({ Device }) => {
+      device = new Device(voiceTokenData.token, { logLevel: 1 });
+      device.on("ready", () => { setDeviceReady(true); setDeviceError(null); });
+      device.on("error", (err: any) => { setDeviceError(err.message); });
+      device.register();
+      deviceRef.current = device;
+    }).catch((err) => setDeviceError(err.message));
+    return () => { device?.destroy(); deviceRef.current = null; };
+  }, [voiceTokenData?.token]);
+
+  // Call duration timer
+  useEffect(() => {
+    if (callStatus === "connected") {
+      setCallDuration(0);
+      timerRef.current = setInterval(() => setCallDuration((d) => d + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (callStatus === "idle") setCallDuration(0);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [callStatus]);
+
+  const startCall = useCallback(async (toNumber: string, leadId?: number) => {
+    if (!deviceRef.current || !deviceReady) {
+      toast.error("Browser calling not ready. Check your Twilio setup.");
+      return;
+    }
+    try {
+      setCallStatus("connecting");
+      const call = await deviceRef.current.connect({ params: { To: toNumber } });
+      setActiveCall(call);
+      call.on("ringing", () => setCallStatus("ringing"));
+      call.on("accept", () => setCallStatus("connected"));
+      call.on("disconnect", () => {
+        setCallStatus("idle");
+        setActiveCall(null);
+        setIsMuted(false);
+        utils.repComms.myCallLogs.invalidate();
+        toast.success("Call ended");
+      });
+      call.on("cancel", () => { setCallStatus("idle"); setActiveCall(null); });
+      call.on("error", (err: any) => { toast.error(err.message); setCallStatus("idle"); setActiveCall(null); });
+    } catch (err: any) {
+      toast.error(err.message);
+      setCallStatus("idle");
+    }
+  }, [deviceReady, utils]);
+
+  const hangup = useCallback(() => { activeCall?.disconnect(); }, [activeCall]);
+  const toggleMute = useCallback(() => {
+    if (!activeCall) return;
+    const next = !isMuted;
+    activeCall.mute(next);
+    setIsMuted(next);
+  }, [activeCall, isMuted]);
+
+  const formatDuration = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-serif text-off-white">Calls</h3>
         <div className="flex gap-2">
-          {voiceToken?.error && (
+          {(voiceTokenData?.error || deviceError) && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
                   <Badge className="text-[10px] bg-yellow-50 text-yellow-700"><AlertCircle className="w-3 h-3 mr-1" /> Setup needed</Badge>
                 </TooltipTrigger>
-                <TooltipContent><p className="text-xs max-w-[200px]">{voiceToken.error}</p></TooltipContent>
+                <TooltipContent><p className="text-xs max-w-[200px]">{voiceTokenData?.error || deviceError}</p></TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
-          <Button onClick={() => setShowDialer(true)} className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm">
-            <PhoneCall className="w-4 h-4 mr-2" /> New Call
-          </Button>
+          {callStatus === "idle" && (
+            <Button
+              onClick={() => setShowDialer(true)}
+              disabled={!deviceReady}
+              className="bg-electric hover:bg-electric-light text-white rounded-full font-sans text-sm"
+            >
+              <PhoneCall className="w-4 h-4 mr-2" /> New Call
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Active call panel */}
+      {callStatus !== "idle" && (
+        <Card className="border-green-500/30 bg-green-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-sans text-off-white font-medium capitalize">{callStatus}…</p>
+                {callStatus === "connected" && (
+                  <p className="text-lg font-mono text-green-400">{formatDuration(callDuration)}</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={toggleMute}
+                  className={`rounded-full ${isMuted ? "border-red-400 text-red-400" : "border-soft-gray"}`}
+                >
+                  {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </Button>
+                <Button size="sm" onClick={hangup} className="rounded-full bg-red-600 hover:bg-red-700 text-white">
+                  <PhoneOff className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Call Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -542,7 +650,15 @@ function CallsChannel({ leads }: { leads: any[] }) {
         </CardContent>
       </Card>
 
-      {showDialer && <DialerDialog open={showDialer} onClose={() => setShowDialer(false)} leads={leads} />}
+      {showDialer && (
+        <DialerDialog
+          open={showDialer}
+          onClose={() => setShowDialer(false)}
+          leads={leads}
+          deviceReady={deviceReady}
+          onCall={startCall}
+        />
+      )}
     </div>
   );
 }
@@ -633,19 +749,18 @@ function CallRow({ call }: { call: any }) {
   );
 }
 
-function DialerDialog({ open, onClose, leads }: { open: boolean; onClose: () => void; leads: any[] }) {
+function DialerDialog({
+  open, onClose, leads, deviceReady, onCall,
+}: {
+  open: boolean;
+  onClose: () => void;
+  leads: any[];
+  deviceReady: boolean;
+  onCall: (toNumber: string, leadId?: number) => Promise<void>;
+}) {
   const [leadId, setLeadId] = useState<string>("");
   const [toNumber, setToNumber] = useState("");
-  const utils = trpc.useUtils();
-
-  const initiateCall = trpc.repComms.initiateCall.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Call initiated! +${data.pointsEarned} points`);
-      utils.repComms.myCallLogs.invalidate();
-      onClose();
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
+  const [calling, setCalling] = useState(false);
 
   const handleSelectLead = (id: string) => {
     setLeadId(id);
@@ -653,7 +768,17 @@ function DialerDialog({ open, onClose, leads }: { open: boolean; onClose: () => 
     if (lead?.phone) setToNumber(lead.phone);
   };
 
-  // Dialpad
+  const handleCall = async () => {
+    if (!toNumber) return;
+    setCalling(true);
+    try {
+      await onCall(toNumber, leadId ? Number(leadId) : undefined);
+      onClose();
+    } finally {
+      setCalling(false);
+    }
+  };
+
   const dialPad = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"];
 
   return (
@@ -661,6 +786,13 @@ function DialerDialog({ open, onClose, leads }: { open: boolean; onClose: () => 
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle className="font-serif text-off-white">Make a Call</DialogTitle></DialogHeader>
         <div className="space-y-4">
+          {!deviceReady && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+              <AlertCircle className="w-4 h-4 text-yellow-400 shrink-0" />
+              <p className="text-xs text-yellow-300 font-sans">Browser calling not ready. Twilio API keys may need configuration.</p>
+            </div>
+          )}
+
           {leads?.length > 0 && (
             <div>
               <Label className="text-off-white/80 text-sm">Call a Lead</Label>
@@ -678,7 +810,7 @@ function DialerDialog({ open, onClose, leads }: { open: boolean; onClose: () => 
             className="text-center text-lg font-mono tracking-wider"
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {dialPad.map((key) => (
               <Button key={key} variant="outline" className="h-12 text-lg font-mono" onClick={() => setToNumber((p) => p + key)}>
                 {key}
@@ -687,18 +819,15 @@ function DialerDialog({ open, onClose, leads }: { open: boolean; onClose: () => 
           </div>
 
           <div className="flex gap-2">
-            <Button
-              onClick={() => setToNumber((p) => p.slice(0, -1))}
-              variant="outline" className="flex-1 rounded-full"
-            >
+            <Button onClick={() => setToNumber((p) => p.slice(0, -1))} variant="outline" className="flex-1 rounded-full">
               Delete
             </Button>
             <Button
-              onClick={() => initiateCall.mutate({ toNumber, leadId: leadId ? Number(leadId) : undefined })}
-              disabled={initiateCall.isPending || !toNumber}
+              onClick={handleCall}
+              disabled={calling || !toNumber || !deviceReady}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-full"
             >
-              {initiateCall.isPending ? "Calling..." : "Call"} <PhoneCall className="w-4 h-4 ml-2" />
+              {calling ? "Connecting…" : "Call"} <PhoneCall className="w-4 h-4 ml-2" />
             </Button>
           </div>
         </div>

@@ -5,6 +5,7 @@ const PerformanceHub = lazy(() => import("./rep/PerformanceHub"));
 const SalesAcademy = lazy(() => import("./rep/SalesAcademy"));
 const CommsHub = lazy(() => import("./rep/CommsHub"));
 const SupportTicketsPanel = lazy(() => import("./rep/SupportTicketsPanel"));
+const MessagesTab = lazy(() => import("./rep/MessagesTab"));
 const RepSettingsPanel = lazy(() => import("./rep/RepSettingsPanel"));
 const AppGuide = lazy(() => import("./rep/AppGuide"));
 const TeamFeed = lazy(() => import("./rep/TeamFeed"));
@@ -100,7 +101,7 @@ export default function RepDashboard() {
             <Button onClick={() => { setLocation("/login"); }} className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8 py-5 w-full" size="lg">Sign In</Button>
             <div className="relative my-5">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/50" /></div>
-              <div className="relative flex justify-center text-xs"><span className="bg-charcoal px-3 text-soft-gray/60 font-sans">New to MiniMorph?</span></div>
+              <div className="relative flex justify-center text-xs"><span className="bg-charcoal px-3 text-soft-gray/60 font-sans">New to MiniMorph Studios?</span></div>
             </div>
             <Button variant="outline" onClick={() => setLocation("/become-rep/values")} className="w-full rounded-full border-border text-off-white font-sans">
               Apply to Become a Rep
@@ -183,8 +184,42 @@ export default function RepDashboard() {
   const currentTier = (accountabilityTier?.tier || "bronze") as string;
   const TierIcon = tierIcons[currentTier] || Shield;
 
+  // Morning training gate: if accessCheck says not allowed, show a non-dismissable overlay
+  const showTrainingGate = accessCheck && !accessCheck.allowed;
+
   return (
     <div className="min-h-screen bg-midnight">
+      {/* Part 5: Morning training gate overlay — non-dismissable */}
+      {showTrainingGate && (
+        <div className="fixed inset-0 z-50 bg-midnight/95 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="max-w-md w-full">
+            <Card className="border-electric/30 shadow-2xl">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                  <GraduationCap className="w-8 h-8 text-electric" />
+                </div>
+                <h2 className="text-2xl font-serif text-off-white mb-2">Morning Training Required</h2>
+                <p className="text-sm text-soft-gray font-sans mb-2 leading-relaxed">
+                  {accessCheck.reason}
+                </p>
+                <p className="text-xs text-soft-gray/60 font-sans mb-6">
+                  Complete your daily coaching reviews and quizzes to unlock the Pipeline and Comms tabs for today.
+                </p>
+                <Button
+                  onClick={() => setActiveTab("training")}
+                  className="w-full bg-electric hover:bg-electric-light text-midnight font-sans rounded-full py-5 mb-3"
+                  size="lg"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" /> Go to Training
+                </Button>
+                <p className="text-[10px] text-soft-gray/40 font-sans">
+                  This gate resets daily. Completing training unlocks full dashboard access.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-charcoal text-off-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
@@ -236,6 +271,10 @@ export default function RepDashboard() {
               <TabsTrigger value="leaderboard" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Board</TabsTrigger>
               <TabsTrigger value="team" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Team</TabsTrigger>
               <TabsTrigger value="support" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Support</TabsTrigger>
+              <TabsTrigger value="messages" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white relative">
+                Messages
+                <UnreadMessagesBadge />
+              </TabsTrigger>
               <TabsTrigger value="settings" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Settings</TabsTrigger>
               <TabsTrigger value="guide" className="font-sans text-[11px] sm:text-xs px-2 sm:px-3 min-h-[44px] data-[state=active]:bg-electric data-[state=active]:text-white">Guide</TabsTrigger>
             </TabsList>
@@ -666,6 +705,13 @@ export default function RepDashboard() {
           <TabsContent value="support" className="space-y-6">
             <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
               <SupportTicketsPanel repId={repProfile.id} />
+            </Suspense>
+          </TabsContent>
+
+          {/* ═══════ MESSAGES TAB ═══════ */}
+          <TabsContent value="messages" className="space-y-6">
+            <Suspense fallback={<div className="animate-pulse h-64 bg-electric/5 rounded-xl" />}>
+              <MessagesTab repId={repProfile.id} />
             </Suspense>
           </TabsContent>
 
@@ -1212,6 +1258,20 @@ function ComposeEmailDialog({ open, onClose, leads, templates }: { open: boolean
   );
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   UNREAD MESSAGES BADGE
+   ═══════════════════════════════════════════════════════ */
+function UnreadMessagesBadge() {
+  const { data } = trpc.repMessages.countUnreadForRep.useQuery(undefined, { refetchInterval: 30000 });
+  const count = data?.count ?? 0;
+  if (count === 0) return null;
+  return (
+    <span className="ml-1 bg-electric text-white text-[9px] font-bold rounded-full h-4 min-w-4 flex items-center justify-center px-1">
+      {count > 9 ? "9+" : count}
+    </span>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════
    STRIPE CONNECT SETUP COMPONENT

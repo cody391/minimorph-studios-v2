@@ -16,7 +16,7 @@
 import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { getDb } from "./db";
+import { getDb, getAvgRatingForRep } from "./db";
 import { eq, desc, and, gte, lte, sql, count, asc, isNull, inArray } from "drizzle-orm";
 import {
   reps,
@@ -363,6 +363,8 @@ export const accountabilityRouter = router({
 
     const totalInteractions = callsMade + followUpsSent + meetingsBooked;
 
+    const ratingData = await getAvgRatingForRep(rep.id);
+
     const scores = calculatePerformanceScore({
       callsMade,
       followUpsSent,
@@ -370,8 +372,8 @@ export const accountabilityRouter = router({
       leadsAssigned,
       leadsConverted,
       dealsClosed,
-      avgClientRating: 4.0, // TODO: wire to actual client feedback
-      totalRatings: 0,
+      avgClientRating: ratingData ? ratingData.avg : 0,
+      totalRatings: ratingData ? ratingData.total : 0,
       totalInteractions,
       flaggedInteractions,
       activeStrikes,

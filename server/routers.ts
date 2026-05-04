@@ -34,6 +34,17 @@ import { processSiteChangeRequest } from "./services/siteUpdater";
 import { generateContractText } from "./services/contractService";
 import { createHash } from "crypto";
 import { recordCost, calculateAiCost } from "./services/costTracker";
+
+function getStripePriceId(tier: string): string | null {
+  const map: Record<string, string> = {
+    starter: ENV.stripePriceStarter,
+    growth: ENV.stripePriceGrowth,
+    premium: ENV.stripePricePremium,
+    enterprise: ENV.stripePriceEnterprise,
+  };
+  return map[tier] || null;
+}
+
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -1304,20 +1315,20 @@ const contractsRouter = router({
           customer_id: String(customer.id),
           rep_closed: "true",
         },
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: `${pkg.name} Package`,
-                description: pkg.description,
-              },
-              unit_amount: Math.round(pkg.monthlyPrice * 100),
-              recurring: { interval: "month" },
-            },
-            quantity: 1,
-          },
-        ],
+        line_items: (() => {
+          const priceId = getStripePriceId(contract.packageTier);
+          return priceId
+            ? [{ price: priceId, quantity: 1 }]
+            : [{
+                price_data: {
+                  currency: "usd",
+                  product_data: { name: `${pkg.name} Package`, description: pkg.description },
+                  unit_amount: Math.round(pkg.monthlyPrice * 100),
+                  recurring: { interval: "month" },
+                },
+                quantity: 1,
+              }];
+        })(),
         success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/get-started?cancelled=true`,
       });
@@ -1933,6 +1944,7 @@ const ordersRouter = router({
     .mutation(async ({ input, ctx }) => {
       const Stripe = (await import("stripe")).default;
       const { getPackage } = await import("./stripe-products");
+      const { getCheckoutPriceId } = await import("./services/stripePriceSync");
 
       const stripeKey = ENV.stripeSecretKey;
       if (!stripeKey) throw new Error("Stripe not configured");
@@ -1942,6 +1954,29 @@ const ordersRouter = router({
       if (!pkg) throw new Error("Invalid package tier");
 
       const origin = ctx.req.headers.origin || ctx.req.headers.referer || "http://localhost:3000";
+
+      // Look up the product in the catalog for up-to-date Stripe price IDs
+      const catalog = await db.getProductCatalog();
+      const catalogProduct = catalog.find(
+        (p: any) => p.productKey === input.packageTier && p.category === "package"
+      );
+
+      // Use DB price ID (discount or base) when available, fall back to ENV/price_data
+      const dbPriceId = catalogProduct ? getCheckoutPriceId(catalogProduct as any) : null;
+      const envPriceId = getStripePriceId(input.packageTier);
+      const resolvedPriceId = dbPriceId || envPriceId;
+
+      const lineItems = resolvedPriceId
+        ? [{ price: resolvedPriceId, quantity: 1 as const }]
+        : [{
+            price_data: {
+              currency: "usd",
+              product_data: { name: pkg.name, description: pkg.description },
+              unit_amount: pkg.monthlyPriceInCents,
+              recurring: { interval: "month" as const },
+            },
+            quantity: 1 as const,
+          }];
 
       // Create the checkout session — monthly subscription
       const session = await stripe.checkout.sessions.create({
@@ -1964,30 +1999,21 @@ const ordersRouter = router({
           package_tier: input.packageTier,
           business_name: input.businessName || "",
         },
-        line_items: [
-          {
-            price_data: {
-              currency: "usd",
-              product_data: {
-                name: pkg.name,
-                description: pkg.description,
-              },
-              unit_amount: pkg.monthlyPriceInCents,
-              recurring: { interval: "month" },
-            },
-            quantity: 1,
-          },
-        ],
+        line_items: lineItems,
         return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       });
 
       // Create a pending order in the database
+      const effectivePriceCents = catalogProduct
+        ? Math.round(parseFloat(catalogProduct.basePrice as string) * (1 - (catalogProduct.discountPercent || 0) / 100) * 100)
+        : pkg.monthlyPriceInCents;
+
       const dbModule = await import("./db");
       await dbModule.createOrder({
         userId: ctx.user.id,
         stripeCheckoutSessionId: session.id,
         packageTier: input.packageTier,
-        amount: pkg.monthlyPriceInCents,
+        amount: effectivePriceCents,
         customerEmail: ctx.user.email || undefined,
         customerName: ctx.user.name || undefined,
         businessName: input.businessName || undefined,
@@ -3781,13 +3807,31 @@ const productsRouter = router({
       description: z.string().optional(),
       basePrice: z.string().optional(),
       discountPercent: z.number().optional(),
-      stripePriceId: z.string().optional(),
+      discountDuration: z.enum(["once", "repeating", "forever"]).optional(),
       active: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
       await db.updateProductCatalogItem(id, data as any);
-      return { success: true };
+
+      const updated = await db.getProductById(id);
+      if (!updated) return { success: true, stripeSynced: false };
+
+      try {
+        const { syncProductToStripe } = await import("./services/stripePriceSync");
+        const stripeResult = await syncProductToStripe(updated as any);
+        await db.updateProductStripeIds(id, stripeResult);
+        return {
+          success: true,
+          stripeSynced: true,
+          stripeProductId: stripeResult.stripeProductId,
+          stripePriceId: stripeResult.stripePriceId,
+          stripeDiscountPriceId: stripeResult.stripeDiscountPriceId,
+        };
+      } catch (err: any) {
+        console.error("[Products] Stripe sync failed:", err);
+        return { success: true, stripeSynced: false, error: err.message };
+      }
     }),
 });
 
@@ -4134,6 +4178,12 @@ const adminRouter = router({
       const expensiveLeads = await db.getTopExpensiveLeads(5);
       const roiCustomers = await db.getTopRoiCustomers(5);
       return { month, summary, expensiveLeads, roiCustomers };
+    }),
+
+  syncAllToStripe: adminProcedure
+    .mutation(async () => {
+      const { syncAllProductsToStripe } = await import("./services/stripePriceSync");
+      return await syncAllProductsToStripe();
     }),
 });
 

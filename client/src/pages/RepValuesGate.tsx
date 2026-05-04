@@ -282,7 +282,7 @@ export default function RepValuesGate() {
                 className="mt-1"
               />
               <label htmlFor="values-ack" className="text-off-white font-sans text-sm leading-relaxed cursor-pointer">
-                <strong>I have read and understand MiniMorph's values, Code of Conduct, and expectations.</strong>{" "}
+                <strong>I have read and understand MiniMorph Studios' values, Code of Conduct, and expectations.</strong>{" "}
                 I am a person of honest, trustworthy, and moral character. I understand that
                 this application process is thorough and I commit to taking it seriously.
                 I want to represent MiniMorph with integrity and professionalism.
