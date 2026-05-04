@@ -30,6 +30,8 @@ const footerLinks = [
       { label: "Get Started", href: "/get-started", isRoute: true },
       { label: "Client Portal", href: "/portal", isRoute: true },
       { label: "Become a Rep", href: "/become-rep", isRoute: true },
+      { label: "Rep Login", href: "/login?next=/rep", isRoute: true },
+      { label: "Admin Login", href: "/login?next=/admin", isRoute: true },
     ],
   },
 ];
@@ -59,13 +61,13 @@ export default function Footer() {
               <span className="font-serif text-xl text-off-white tracking-tight">MiniMorph Studios</span>
             </div>
             <p className="text-sm font-sans text-off-white/40 leading-relaxed mb-6 max-w-sm">
-              We build custom websites for small businesses across the United States — and then stick around to make sure they keep working.
+              We build custom websites for small businesses across the United States — then stick around every month to maintain, improve, and report on them.
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-sans text-off-white/40">
                 <Mail size={14} className="text-electric/50" />
-                <a href="mailto:hello@minimorphstudios.com" className="hover:text-electric transition-colors">
-                  hello@minimorphstudios.com
+                <a href="mailto:hello@minimorphstudios.net" className="hover:text-electric transition-colors">
+                  hello@minimorphstudios.net
                 </a>
               </div>
             </div>
