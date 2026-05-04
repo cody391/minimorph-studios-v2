@@ -1509,11 +1509,20 @@ export async function bootstrapAdminUser(): Promise<void> {
     const existing = await getUserByEmail(ENV.adminEmail);
 
     if (existing) {
-      // Ensure role is admin (in case it was demoted somehow)
+      const updates: Record<string, unknown> = { openId: existing.openId };
+      let needsUpdate = false;
       if (existing.role !== "admin") {
-        await upsertUser({ openId: existing.openId, role: "admin" });
+        updates.role = "admin";
+        needsUpdate = true;
         console.log("[AdminBootstrap] Updated existing user to admin role:", ENV.adminEmail);
       }
+      if (!existing.passwordHash && ENV.adminPassword) {
+        updates.passwordHash = await bcrypt.hash(ENV.adminPassword, 12);
+        updates.loginMethod = "email_password";
+        needsUpdate = true;
+        console.log("[AdminBootstrap] Set password for existing admin:", ENV.adminEmail);
+      }
+      if (needsUpdate) await upsertUser(updates as any);
       return;
     }
 
