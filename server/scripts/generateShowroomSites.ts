@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { invokeLLM } from "../_core/llm";
+import { getBestImage } from "../services/imageService";
 import { createPagesProject, deployToPages, addCustomDomain } from "../services/cloudflareDeployment";
 import { ENV } from "../_core/env";
 
@@ -104,15 +105,37 @@ Ecommerce Product Grid:
 
 FOOTER REQUIREMENTS: Business name, navigation, contact info, social links, copyright, Powered by MiniMorph Studios.
 
-MINIMORPH BANNER (top of every page):
+MINIMORPH BANNER (top of every page, BEFORE navigation):
 <div style='background:#0a0a12;color:#fff;padding:10px 20px;text-align:center;font-size:14px;position:sticky;top:0;z-index:9999'>
-MiniMorph Studios Demo - [Business Name] | Built on the [Package] plan | <a href='https://minimorphstudios.net/get-started' style='color:#3b82f6;font-weight:600'>Start Your Build</a>
+🏗️ MiniMorph Studios Demo — [Business Name] | Built on the [Package] plan — $[price]/mo | <a href='https://www.minimorphstudios.net/get-started' style='color:#3b82f6;font-weight:600;margin-left:8px'>Start Your Build →</a>
 </div>`;
+
+async function injectImages(html: string, imageType: string, primaryColor: string): Promise<string> {
+  const tokens = [
+    "{{HERO_IMAGE}}",
+    "{{GALLERY_IMAGE_1}}",
+    "{{GALLERY_IMAGE_2}}",
+    "{{GALLERY_IMAGE_3}}",
+    "{{ABOUT_IMAGE}}",
+  ];
+  const slots = ["hero", "gallery", "gallery", "gallery", "about"];
+  console.log(`      → Fetching ${tokens.filter(t => html.includes(t)).length} real images from Replicate...`);
+  const urls = await Promise.all(
+    slots.map((slot) => getBestImage(imageType, slot, primaryColor))
+  );
+  let result = html;
+  tokens.forEach((token, i) => {
+    result = result.split(token).join(urls[i]);
+  });
+  return result;
+}
 
 async function generateSiteHtml(params: {
   businessName: string;
   packageTier: string;
   industry: string;
+  imageType: string;
+  primaryColor: string;
   pages: string[];
   questionnaire: Record<string, unknown>;
 }): Promise<string> {
@@ -127,7 +150,11 @@ You never reference external CSS files or JS files.
 You never use frameworks like Bootstrap, React, or Vue.
 You create genuine custom designs that reflect the brand perfectly.
 
-For images: use CSS gradients, shapes, and SVG illustrations.
+For images: use REAL <img> tags with these exact placeholder tokens as the src (they will be swapped for real AI-generated photos before deployment):
+- Hero/banner image: <img src="{{HERO_IMAGE}}" style="width:100%;height:600px;object-fit:cover;display:block" alt="[business name]">
+- Gallery images: src="{{GALLERY_IMAGE_1}}", src="{{GALLERY_IMAGE_2}}", src="{{GALLERY_IMAGE_3}}" — use 100% width, aspect-ratio:4/3, object-fit:cover
+- About/team photo: src="{{ABOUT_IMAGE}}" — portrait or square format, object-fit:cover
+- All decorative backgrounds, gradients, and non-photo elements still use CSS
 
 Pages must include intelligent internal linking. Navigation must work across all pages using relative hrefs (about.html, services.html, etc.).
 
@@ -171,7 +198,7 @@ ${questionnaireStr}
 Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
             },
           ],
-          maxTokens: 3500,
+          maxTokens: 8000,
         });
 
         const raw = typeof result.choices[0]?.message?.content === "string"
@@ -187,6 +214,8 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
           .replace(/^```html?\s*/im, "")
           .replace(/\s*```\s*$/im, "")
           .trim();
+        // Inject real AI-generated images in place of token placeholders
+        html = await injectImages(html, params.imageType, params.primaryColor);
         // Cooldown after successful generation to respect 8k TPM rate limit
         console.log(`      (cooling down 90s for rate limit...)`);
         await new Promise((r) => setTimeout(r, 90000));
@@ -219,6 +248,8 @@ const SHOWROOM_SITES = [
     packageTier: "Starter",
     monthlyPrice: 195,
     industry: "General Contractor",
+    imageType: "contractor",
+    primaryColor: "#e07b39",
     pages: ["index", "services", "projects", "quote", "contact"],
     questionnaireData: {
       businessDescription: "Family-owned general contractor. 22 years building foundations, structural framing, roofing, and full renovations. Father started it, son runs it. Licensed in 3 states. Zero structural failures in 22 years.",
@@ -246,6 +277,8 @@ const SHOWROOM_SITES = [
     packageTier: "Growth",
     monthlyPrice: 295,
     industry: "Farm to Table Restaurant",
+    imageType: "restaurant",
+    primaryColor: "#c8934a",
     pages: ["index", "menu", "about", "reservations", "private-dining", "contact"],
     questionnaireData: {
       businessDescription: "Farm-to-table waterfront restaurant. Seasonal menu changes weekly based on what local farms bring us. Wood-fired everything. Executive chef with 18 years fine dining experience. Opened 2018, fully booked most weekends.",
@@ -286,6 +319,8 @@ const SHOWROOM_SITES = [
     packageTier: "Growth",
     monthlyPrice: 295,
     industry: "High-Intensity Fitness Studio",
+    imageType: "gym",
+    primaryColor: "#00d4ff",
     pages: ["index", "classes", "memberships", "trainers", "free-trial", "contact"],
     questionnaireData: {
       businessDescription: "High-intensity functional fitness studio. Max 12 per class, always coached never just supervised. 340 active members. 94% retention after month one. Average member loses 18 lbs in first 90 days. 5 certified coaches, all former competitive athletes.",
@@ -321,6 +356,8 @@ const SHOWROOM_SITES = [
     packageTier: "Pro",
     monthlyPrice: 395,
     industry: "Luxury Hair Salon & Spa",
+    imageType: "salon",
+    primaryColor: "#c9a84c",
     pages: ["index", "services", "team", "gallery", "book", "gift-cards", "contact"],
     questionnaireData: {
       businessDescription: "Luxury appointment-only hair salon and day spa. Color specialists and certified Great Lengths extension studio, only one in the region. 200+ five-star Google reviews. Clientele includes local executives, brides, and people who have been burned by cheaper salons.",
@@ -364,6 +401,8 @@ const SHOWROOM_SITES = [
     packageTier: "Pro",
     monthlyPrice: 395,
     industry: "Independent Boutique Retail",
+    imageType: "boutique",
+    primaryColor: "#2d4a2d",
     pages: ["index", "shop", "new-arrivals", "collections", "about", "contact"],
     questionnaireData: {
       businessDescription: "Independent women's clothing and lifestyle boutique. Every item personally selected, nothing mass-produced. 90% from small independent designers you cannot find anywhere else locally. Personal styling included with every purchase over $150. 6 years, fiercely loyal local following.",
@@ -396,6 +435,8 @@ const SHOWROOM_SITES = [
     packageTier: "Enterprise",
     monthlyPrice: 495,
     industry: "Specialty Coffee Roaster + Ecommerce",
+    imageType: "coffee",
+    primaryColor: "#c47a2a",
     pages: ["index", "shop", "subscriptions", "our-story", "brewing-guides", "wholesale", "contact"],
     questionnaireData: {
       businessDescription: "Specialty coffee roaster. Direct-trade single-origin beans from Ethiopia, Colombia, Guatemala, Sumatra. Small-batch roasted to order, never sitting on a shelf. 800 active monthly subscribers. Ships nationwide within 48 hours of roast. 4.9 stars across 640 reviews. Founded by a Q Grader.",
@@ -464,6 +505,8 @@ async function generateAndDeployAll(): Promise<SiteResult[]> {
             businessName: site.businessName,
             packageTier: site.packageTier,
             industry: site.industry,
+            imageType: site.imageType,
+            primaryColor: site.primaryColor,
             pages: ["index"],
             questionnaire: site.questionnaireData,
           });
