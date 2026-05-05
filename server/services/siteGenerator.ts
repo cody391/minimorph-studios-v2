@@ -199,13 +199,14 @@ async function injectImages(
   html: string,
   businessType: string,
   primaryColor: string,
+  customerPhotoUrl?: string,
 ): Promise<string> {
   const { getBestImage } = await import("./imageService");
   let result = html;
   for (const [slot, slotType] of Object.entries(IMAGE_SLOTS)) {
     if (!result.includes(slot)) continue;
     console.log(`[SiteGen] Fetching image for slot: ${slot}`);
-    const url = await getBestImage(businessType, slotType, primaryColor);
+    const url = await getBestImage(businessType, slotType, primaryColor, customerPhotoUrl);
     result = result.split(slot).join(url);
   }
   return result;
@@ -281,6 +282,7 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     const avoidPatterns = Array.isArray(q.avoidPatterns)
       ? (q.avoidPatterns as string[])
       : [];
+    const customerPhotoUrl = (q.customerPhotoUrl as string) || undefined;
 
     const competitorSection = competitorWeaknesses.length > 0
       ? `SECTION A — COMPETITIVE INTELLIGENCE:
@@ -463,7 +465,7 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
     for (const pageName of Object.keys(pages)) {
       try {
         // Primary: replace HERO_IMAGE / GALLERY_IMAGE_1 / etc. tokens
-        pages[pageName] = await injectImages(pages[pageName], websiteType, primaryColor);
+        pages[pageName] = await injectImages(pages[pageName], websiteType, primaryColor, customerPhotoUrl);
       } catch {
         // Best-effort — never block delivery
       }
