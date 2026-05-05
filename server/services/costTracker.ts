@@ -30,9 +30,12 @@ export const COSTS = {
   SITE_GENERATION_PER_PAGE: 5, // ~$0.048 → 5¢ (6K output tokens @ claude-sonnet)
   ELENA_ONBOARDING: 2,         // ~$0.012 → 2¢ (full onboarding conversation)
   COMPETITOR_SCRAPE: 1,        // ~$0.008 → 1¢ (per competitor URL analyzed)
-  REPLICATE_HERO: 1,           // ~$0.003 → 1¢ (minimum; Flux 1.1 Pro hero image)
+  NANO_BANANA_2: 7,            // ~$0.067 → 7¢ (Gemini image generation primary)
+  REPLICATE_ULTRA: 1,          // ~$0.006 → 1¢ (Flux 1.1 Pro Ultra fallback)
+  REPLICATE_HERO: 1,           // ~$0.006 → 1¢ (legacy alias)
   UNSPLASH_IMAGE: 0,           // FREE — gallery/about/team slots
-  GEMINI_IMAGE: 1,             // ~$0.002 → 1¢ (Gemini fallback image)
+  GEMINI_IMAGE: 7,             // ~$0.067 → 7¢ (alias for NANO_BANANA_2)
+  R2_STORAGE: 0,               // FREE tier — Cloudflare R2
   CLOUDFLARE_PAGES_DEPLOY: 0,  // FREE tier — wrangler deploy
 } as const;
 

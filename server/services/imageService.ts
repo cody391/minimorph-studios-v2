@@ -1,6 +1,61 @@
 import axios from "axios";
 import { ENV } from "../_core/env";
 
+// ─── Contextual vibe detection ────────────────────────────────────────────────
+
+type ImageVibe = "utilitarian" | "lifestyle" | "luxury" | "documentary";
+
+function determineVibe(businessType: string): ImageVibe {
+  const type = businessType.toLowerCase();
+  if (
+    type.includes("contractor") ||
+    type.includes("plumber") ||
+    type.includes("mechanic") ||
+    type.includes("electrician") ||
+    type.includes("roofer") ||
+    type.includes("hvac") ||
+    type.includes("construction") ||
+    type.includes("handyman") ||
+    type.includes("painter") ||
+    type.includes("welder") ||
+    type.includes("mason") ||
+    type.includes("carpenter")
+  )
+    return "utilitarian";
+
+  if (
+    type.includes("salon") ||
+    type.includes("boutique") ||
+    type.includes("spa") ||
+    type.includes("jewelry") ||
+    type.includes("luxury") ||
+    type.includes("fine dining") ||
+    type.includes("wedding") ||
+    type.includes("florist") ||
+    type.includes("interior design") ||
+    type.includes("real estate")
+  )
+    return "luxury";
+
+  if (
+    type.includes("coffee") ||
+    type.includes("restaurant") ||
+    type.includes("gym") ||
+    type.includes("fitness") ||
+    type.includes("cafe") ||
+    type.includes("bar") ||
+    type.includes("yoga") ||
+    type.includes("bakery") ||
+    type.includes("brewery") ||
+    type.includes("food") ||
+    type.includes("personal trainer") ||
+    type.includes("crossfit")
+  )
+    return "lifestyle";
+
+  return "documentary";
+}
+
 // ─── Cloudflare R2 upload ─────────────────────────────────────────────────────
 
 async function uploadToR2(
@@ -197,12 +252,8 @@ export async function getUnsplashImage(query: string): Promise<string | null> {
   }
 }
 
-// ─── Hyper-realistic suffix appended to every prompt ─────────────────────────
 
-const HYPER_REAL =
-  "Hyper-realistic. No AI generated look. Shot on Canon 5D Mark IV. Real photograph only. Photojournalism quality. Indistinguishable from a real professional photograph. Natural imperfections. Authentic lighting. Not staged. Not stock photo looking. Candid professional quality. No lens flares. No HDR look. No oversaturation. No plastic skin. No perfect symmetry. No stock photo composition.";
-
-// ─── Detailed per-business-type, per-slot prompts ────────────────────────────
+// ─── Per-business-type, per-slot prompts ─────────────────────────────────────
 
 export function buildDetailedPrompt(
   businessType: string,
@@ -210,40 +261,52 @@ export function buildDetailedPrompt(
 ): string {
   const prompts: Record<string, Record<string, string>> = {
     contractor: {
-      hero: `Wide-angle documentary photograph of an active home construction site at golden hour. Experienced workers in worn safety gear framing timber walls, sawdust in the air, lumber stacks in foreground, blue sky with soft clouds behind. Shot on Canon 5D Mark IV with 24mm lens, f/5.6, natural raking sunlight. ${HYPER_REAL}`,
-      gallery: `Environmental portrait photograph of a beautifully finished modern kitchen renovation — quartz countertops, custom cabinetry, pendant lights, natural window light streaming in from the left. Wide shot showing full space, slight imperfections in real tile grout. Shot on Canon 5D Mark IV with 35mm lens, f/4, diffused daylight. ${HYPER_REAL}`,
-      about: `Candid portrait of a weathered male contractor in his early 50s on a job site. Hard hat pushed back, work-worn Carhartt shirt, genuine relaxed smile mid-conversation. Job site framing visible in background, overcast diffused light. Shot on Canon 5D Mark IV with 85mm lens at f/2.8, shallow depth of field. ${HYPER_REAL}`,
-      team: `Candid documentary group photograph of a four-person construction crew on a completed project. Workers in mismatched PPE gear, genuine laughter, afternoon golden hour light. Shot wide at f/5.6 on Canon 5D Mark IV with 35mm lens, natural shadows, dust particles visible in air. ${HYPER_REAL}`,
+      hero: "A construction crew framing a house at golden hour. Workers in worn safety gear, lumber stacks, sawdust in the air, warm sunlight. Documentary style.",
+      gallery:
+        "A beautifully finished modern kitchen renovation. Quartz countertops, custom cabinets, natural window light streaming in.",
+      about:
+        "A weathered male contractor in his 50s on a job site. Hard hat, genuine smile, job site visible behind him.",
+      team: "Four construction workers laughing together at a completed job site. Golden hour light, authentic candid moment.",
     },
     restaurant: {
-      hero: `Wide-angle interior photograph of a warm upscale farm-to-table restaurant at dinner service — empty but set tables, Edison bulb pendant lights, reclaimed wood walls, candles lit, leather banquettes. No people. Overcast natural light from front windows mixed with warm interior. Shot on Canon 5D Mark IV with 17mm tilt-shift lens, f/8. ${HYPER_REAL}`,
-      gallery: `Close-up food photography of a beautifully plated seasonal entrée on a handmade ceramic plate — delicate sauce work, fresh microgreens, slight imperfection in the plating. Shot overhead on a worn linen tablecloth with soft window light from the left. Canon 5D Mark IV with 100mm macro lens, f/4.5. ${HYPER_REAL}`,
-      about: `Candid portrait of a confident head chef in her early 40s in a working restaurant kitchen during service. White chef coat slightly stained, genuine focused expression, motion blur of other staff in background. Warm overhead kitchen lighting. Shot on Canon 5D Mark IV with 85mm lens, f/2.2. ${HYPER_REAL}`,
-      team: `Documentary photograph of a restaurant kitchen crew plating dishes during service — steam rising from pots, motion blur on hands, multiple staff in frame, warm amber overhead light. Shot at 1/60s on Canon 5D Mark IV with 35mm lens to capture authentic motion. ${HYPER_REAL}`,
+      hero: "An upscale farm-to-table restaurant interior at dinner service. Edison bulb lighting, wooden tables, candles lit, no people.",
+      gallery:
+        "A beautifully plated seasonal dish on a handmade ceramic plate. Microgreens, delicate sauce work, natural window light.",
+      about:
+        "A confident female head chef in a working kitchen during service. White coat, focused expression, steam in background.",
+      team: "Restaurant kitchen crew plating dishes during dinner service. Steam rising, motion blur on hands, warm amber light.",
     },
     gym: {
-      hero: `Wide-angle architectural photograph of a modern functional fitness studio — rubber hex tile floors, racks of dumbbells, pull-up rigs, chalk dust in the air, dramatic overhead track lighting. No people. Shot on Canon 5D Mark IV with 16mm lens, f/8, mixed LED and natural light from side windows. ${HYPER_REAL}`,
-      gallery: `Dynamic sports photograph of an athletic woman mid-clean-and-jerk, barbell overhead, muscles defined, chalk flying, intense focused expression. Shot at 1/500s to freeze motion, dramatic side lighting, slight motion blur on barbell plates. Canon 5D Mark IV with 70mm lens, f/3.5. ${HYPER_REAL}`,
-      about: `Candid portrait of a female personal trainer in her early 30s in a real gym setting — athletic wear, clipboard in hand, natural genuine smile while looking off-camera. Gym equipment and members blurred in background, overcast window light. Canon 5D Mark IV with 85mm lens at f/2.8. ${HYPER_REAL}`,
-      team: `Group photograph of four coaches in branded athletic wear standing informally in a gym — different heights and builds, authentic relaxed postures, not posed. Mixed natural and overhead lighting. Shot on Canon 5D Mark IV with 35mm lens, f/5.6, late afternoon light. ${HYPER_REAL}`,
+      hero: "A modern high-intensity fitness studio interior. Rubber floors, dumbbells, pull-up rigs, dramatic overhead lighting, no people.",
+      gallery:
+        "An athletic woman mid-lift with a barbell overhead. Chalk flying, intense focus, dramatic side lighting.",
+      about:
+        "A female personal trainer in a real gym. Athletic wear, genuine smile, equipment blurred behind her.",
+      team: "Four fitness coaches standing informally in a gym. Different builds, relaxed postures, natural afternoon light.",
     },
     salon: {
-      hero: `Wide interior photograph of a boutique hair salon during a quiet afternoon — modern styling chairs with real leather wear, large mirrors, plants, marble counters, tool holders with real tools. Soft diffused natural light from tall windows. No people. Canon 5D Mark IV with 24mm lens, f/6.3, overcast daylight. ${HYPER_REAL}`,
-      gallery: `Close-up beauty photography of a real model's hair — stunning balayage color melt from brunette to caramel blonde, natural waves, slight flyaways and texture. Photographed in a salon chair with soft window light from the left. Canon 5D Mark IV with 135mm lens at f/2.8. ${HYPER_REAL}`,
-      about: `Candid portrait of a stylish female hairstylist in her mid-30s at her station — holding a brush mid-action, creative tattoos visible on forearm, genuine engaged expression. Salon mirrors and products slightly blurred in background. Soft natural window light. Canon 5D Mark IV with 85mm at f/2.2. ${HYPER_REAL}`,
-      team: `Candid group photograph of three salon stylists in a real salon — each with distinct personal style and hair, mid-conversation with natural smiles, not looking at camera. Warm afternoon light, real salon environment with tools and products visible. Canon 5D Mark IV with 35mm at f/5.6. ${HYPER_REAL}`,
+      hero: "A boutique hair salon interior on a quiet afternoon. Styling chairs, large mirrors, plants, soft natural window light, no people.",
+      gallery:
+        "A stunning balayage hair color result on a real model. Brunette to caramel, natural waves, soft window light.",
+      about:
+        "A stylish female hairstylist in her 30s at her station. Mid-action with a brush, genuine expression, salon behind her.",
+      team: "Three salon stylists in a real salon mid-conversation. Each with distinct personal style, warm afternoon light.",
     },
     boutique: {
-      hero: `Wide interior photograph of an independent women's clothing boutique — curated racks of real garments, wooden fixtures, vintage-style rugs, natural linen and woven baskets. No people. Soft overcast natural light from large front windows. Canon 5D Mark IV with 24mm lens at f/7.1. ${HYPER_REAL}`,
-      gallery: `Flat lay fashion editorial on a real linen surface — curated clothing items, small accessories, handwritten tag, natural imperfect wrinkles in fabric. Soft natural diffused overhead light, slight shadows showing texture. Canon 5D Mark IV with 50mm lens at f/4, directly overhead. ${HYPER_REAL}`,
-      about: `Candid portrait of a boutique owner in her early 40s — stylish but not overdone, mid-task arranging a clothing rack, genuine absorbed expression, warm natural window light from the side. Boutique interior visible behind her. Canon 5D Mark IV with 85mm at f/2.5. ${HYPER_REAL}`,
-      team: `Candid lifestyle photograph of the boutique owner and one employee unpacking new arrival boxes — both laughing, tissue paper and garments in motion, warm afternoon light, authentic mess of packaging on the floor. Canon 5D Mark IV with 35mm at f/4. ${HYPER_REAL}`,
+      hero: "An independent women's clothing boutique interior. Curated racks, wooden fixtures, natural linen, soft natural light, no people.",
+      gallery:
+        "A flat lay of curated clothing items on linen. Small accessories, handwritten tag, soft natural overhead light.",
+      about:
+        "A boutique owner in her 40s arranging a clothing rack. Stylish, absorbed in her work, warm natural window light.",
+      team: "A boutique owner and employee unpacking new arrivals. Both laughing, tissue paper in motion, warm afternoon light.",
     },
     coffee: {
-      hero: `Wide-angle interior photograph of a specialty coffee roastery — exposed brick walls, burlap coffee sacks stacked, a large drum roaster with visible patina, warm amber pendant lighting, wooden shelving with labeled bags. No people. Canon 5D Mark IV with 17mm lens at f/8, warm tungsten and natural light mix. ${HYPER_REAL}`,
-      gallery: `Close-up product photograph of a freshly pulled espresso in a ceramic demitasse — crema forming with natural swirl imperfections, slight steam rising, dark wooden bar surface with coffee grounds nearby. Soft side window light. Canon 5D Mark IV with 100mm macro at f/3.5. ${HYPER_REAL}`,
-      about: `Candid portrait of a male barista in his early 30s — short beard, coffee-stained apron, mid-calibration of a grinder, intense focus and quiet confidence. Warm roastery ambient light from side, shelves of coffee bags blurred behind. Canon 5D Mark IV with 85mm at f/2. ${HYPER_REAL}`,
-      team: `Documentary photograph of two roastery staff at work — one monitoring the roaster dials, one hand-scooping freshly roasted beans, natural teamwork with no eye contact to camera. Warm amber overhead light, real industrial equipment. Canon 5D Mark IV with 35mm at f/4, 1/80s. ${HYPER_REAL}`,
+      hero: "A specialty coffee roastery interior. Exposed brick, burlap coffee sacks, drum roaster, warm amber pendant lighting, no people.",
+      gallery:
+        "A freshly pulled espresso in a ceramic cup. Crema forming, slight steam rising, dark wooden bar surface.",
+      about:
+        "A male barista in his 30s calibrating a grinder. Short beard, coffee-stained apron, focused and confident.",
+      team: "Two roastery staff at work. One monitoring the roaster, one scooping beans. Warm amber light, authentic teamwork.",
     },
   };
 
@@ -254,8 +317,144 @@ export function buildDetailedPrompt(
   return (
     prompts[typeKey]?.[slot] ||
     prompts[typeKey]?.hero ||
-    `Professional DSLR photograph, natural lighting, editorial quality. ${HYPER_REAL}`
+    "A professional business photograph, natural lighting, authentic scene."
   );
+}
+
+// ─── Claude prompt generator — calls Claude API to craft the Gemini prompt ───
+
+const VIBE_RULES: Record<ImageVibe, string> = {
+  utilitarian: `
+VIBE: UTILITARIAN — grit, labor, unglamorous truth
+- Lighting: pick one — flickering greenish overhead fluorescent / harsh overhead work light / 1 stop underexposed with heavy digital noise in shadows / blown out highlights from work lamp
+- Lens contamination: pick one — fingerprint smudge on lens causing hazy glare / dust on sensor creating faint grey spots / water droplet on lens edge causing streak
+- Technical failure: pick one — slightly out of focus missed autofocus / heavy motion blur on moving hands from slow shutter / camera shake blur on frame / accidental partial finger over lens corner
+- Material truth: oil stains not just marks / dirt under fingernails / torn clothing not just worn / rust and grease not just patina / sweat stains on fabric
+- Background: cluttered debris, tools scattered, accidental foreground objects, construction mess
+- NO beauty. NO cinematic flair. NO golden hour. NO balanced lighting.`,
+
+  luxury: `
+VIBE: LUXURY — refined, textured, understated
+- Lighting: soft diffused natural window light only / cool morning light / never harsh or fluorescent / light through condensation-hazed glass
+- Imperfections: slight fabric fray on linen / condensation on glass surfaces / natural skin pores visible / micro-scratches on polished surfaces / slight asymmetry in arrangement
+- Technical: shallow depth of field f/1.4-f/2 / soft focus on background / natural lens vignette at corners / chromatic aberration on high-contrast edges
+- Background: clean but lived-in not sterile — real objects present not arranged
+- NO grit. NO oil stains. NO construction debris. NO harsh light.`,
+
+  lifestyle: `
+VIBE: LIFESTYLE — warm, human, candid movement
+- Lighting: warm mixed conflicting sources always — window light fighting warm tungsten interior / practical lights visible in frame
+- Imperfections: steam rising from surfaces / condensation on cold glasses / food smears on surfaces / sweat from physical activity / motion blur on moving hands and bodies
+- Technical: handheld feel slight lean / slight grain from pushing film / shallow depth on background / dust motes floating in shafts of light
+- Background: authentic environment with real life in it — not cleaned before shooting
+- NO sterile. NO posed. NO perfect arrangement. NO balanced lighting.`,
+
+  documentary: `
+VIBE: DOCUMENTARY — honest, unfiltered, real
+- Lighting: whatever was available — mixed ugly conflicting sources / available light only
+- Lens contamination: film grain / lens contamination / natural scratches on sensor
+- Technical: handheld slightly imperfect framing / subject cut off awkwardly at frame edge
+- Background: real environment completely unmodified — clutter, mess, ordinary objects
+- NO staging. NO cleanup. NO beauty lighting. NO deliberate composition.`,
+};
+
+async function generateImagePrompt(
+  businessType: string,
+  slot: string,
+  subNiche?: string,
+): Promise<string> {
+  const vibe = determineVibe(businessType);
+
+  const systemPrompt = `You are a Professional Creative Director generating prompts for Gemini Nano Banana 2. Your goal is images indistinguishable from real documentary or editorial photographs taken on location.
+
+CURRENT VIBE: ${vibe.toUpperCase()}
+${VIBE_RULES[vibe]}
+
+OPTICAL PHYSICS — apply to ALL vibes:
+- Always include ONE lens flaw:
+  chromatic aberration at high contrast edges /
+  slight lens flare from nearest light source /
+  natural lens vignette darkening corners /
+  soft focus on edges sharp only in center third
+
+- Always include ONE micro-imperfection:
+  visible dust motes floating in shafts of light /
+  oil stains on metal surfaces /
+  frayed fabric threads at stress points /
+  dry cracked skin texture on hands and knuckles /
+  sweat beads on skin near hairline /
+  micro-scratches on polished surfaces
+
+- Camera: one COLOR film stock only —
+  Kodak Portra 400, Fujifilm 160NS, or Kodak Ektar 100
+  One lens 35mm to 85mm. One aperture f/1.4 to f/4.
+
+- Always: unprocessed RAW file aesthetic /
+  grain from pushing film one stop /
+  mixed lighting — never perfect or balanced
+
+COMPOSITION:
+- Off-center always — rule of thirds
+- Low angle for hero shots
+- Face partially out of frame — cut at jaw or forehead
+- Subject mid-task never posing
+
+ABSOLUTE BANNED WORDS — instant fail if present:
+hyperrealistic, photorealistic, 4k, 8k, high resolution,
+detailed, stunning, cinematic, epic, dramatic, powerful,
+beautiful, heroic, perfect, crisp, vibrant, golden hour,
+bokeh, professional photography, studio lighting,
+dramatic lighting, sharp, clear, vivid, magic hour
+
+SELF-CORRECTION before outputting:
+1. Does this match the ${vibe} vibe? If no, fix it.
+2. Is lighting mixed and unflattering? If no, add conflict.
+3. Is there a lens flaw? If no, add one.
+4. Is there a micro-imperfection? If no, add one.
+5. Any banned words? Remove them all.
+6. Does it sound like a stock photo? Add more grit.
+7. Is composition off-center? If no, fix it.
+
+OUTPUT: One paragraph only. No preamble. Pure prompt.`;
+
+  const userMessage = `Generate a Nano Banana 2 image prompt for: ${businessType} business, ${slot} image slot.
+Vibe detected: ${vibe}
+${subNiche ? "Specific sub-niche: " + subNiche : ""}
+
+Industry strategies:
+- utilitarian: grit action dust worn gear messy site harsh lighting
+- luxury: texture softness restraint quiet elegance natural window light
+- lifestyle: warmth human connection candid movement steam and condensation
+- documentary: honest unfiltered real environment available light`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ENV.anthropicApiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 400,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMessage }],
+      }),
+    });
+
+    const data = (await response.json()) as any;
+    const prompt = data.content?.[0]?.text?.trim();
+
+    if (prompt && prompt.length > 50) {
+      console.log(`[PromptGen] ${businessType}/${slot} (${vibe}):`, prompt.slice(0, 80) + "...");
+      return prompt;
+    }
+  } catch (e) {
+    console.error("[PromptGen] Failed:", e);
+  }
+
+  return buildDetailedPrompt(businessType, slot);
 }
 
 // ─── SVG gradient fallback — absolute last resort ────────────────────────────
@@ -288,10 +487,11 @@ export async function getBestImage(
   slot: string,
   primaryColor = "#1a1a1a",
   customerPhotoUrl?: string,
+  subNiche?: string,
 ): Promise<string> {
   if (customerPhotoUrl) return customerPhotoUrl;
 
-  const prompt = buildDetailedPrompt(businessType, slot);
+  const prompt = await generateImagePrompt(businessType, slot, subNiche);
 
   const geminiUrl = await generateImageGeminiNanoBanana(prompt);
   if (geminiUrl) {
