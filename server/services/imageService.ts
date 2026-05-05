@@ -190,7 +190,7 @@ export async function generateImage(
             negative_prompt: REPLICATE_NEGATIVE_PROMPT,
             width,
             height,
-            output_format: "webp",
+            output_format: "jpg",
             output_quality: 90,
             num_inference_steps: 28,
             guidance_scale: 3.5,

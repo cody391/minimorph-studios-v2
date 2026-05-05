@@ -104,10 +104,11 @@ function findSvgGradients(html: string): string[] {
   return matches;
 }
 
-// Returns all real image URLs embedded in img src attributes (used by force-replace mode)
+// Returns all real image URLs from <img> src attributes (used by force-replace mode)
 function findAllImages(html: string): string[] {
   const matches: string[] = [];
-  const re = /src=["'](https:\/\/[^"'\s>]+)["']/g;
+  // Only match src inside <img ...> tags, not script/link/other tags
+  const re = /<img\b[^>]*\bsrc=["'](https:\/\/[^"'\s>]+)["'][^>]*>/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     matches.push(m[1]);
