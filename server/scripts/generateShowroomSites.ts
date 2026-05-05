@@ -1,30 +1,49 @@
 import "dotenv/config";
-import { invokeLLM } from "../_core/llm";
 import { getBestImage } from "../services/imageService";
 import { createPagesProject, deployToPages, addCustomDomain } from "../services/cloudflareDeployment";
 import { ENV } from "../_core/env";
+
+// Call Anthropic directly with extended output beta (64K tokens) for large HTML generation
+async function generateHtml(systemPrompt: string, userPrompt: string): Promise<string> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": ENV.anthropicApiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-beta": "output-128k-2025-02-19",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 16000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Anthropic API error: ${res.status} ${err.slice(0, 200)}`);
+  }
+  const data = await res.json() as any;
+  return data.content?.[0]?.text ?? "";
+}
 
 // Inlined to avoid importing siteGenerator.ts which pulls in db.ts (MySQL connection)
 const PREMIUM_REQUIREMENTS = `== PREMIUM SHOWCASE REQUIREMENTS ==
 This is a MiniMorph Studios showcase demo site.
 It must look world-class — better than 90% of all small business websites on the internet.
 
-STRICT TOKEN BUDGET — CRITICAL:
-Your ENTIRE HTML output must be under 6000 tokens.
-STYLE BLOCK LIMIT: Maximum 80 lines of CSS total. No more.
-Use CSS variables for all repeated colors. Shorthand everything. Zero utility classes.
-DO NOT write more than 2 @media queries. DO NOT write keyframe animations.
-Output HTML body FIRST (mentally), then write only the CSS needed to style it.
-
 REQUIRED CSS STANDARDS:
 - CSS custom properties for all colors at :root
+- Smooth transitions on ALL interactive elements (transition: all 0.3s ease)
 - Cards: box-shadow 0 4px 24px rgba(0,0,0,0.12)
 - Border radius: 12-16px on all cards
-- Section padding: 80px top and bottom
+- Section padding: 80px-120px top and bottom
 - Max content width: 1200px centered with auto margins
 - Full-viewport hero: min-height 100vh
 - Sticky navigation with backdrop-filter: blur(10px)
-- Mobile responsive with ONE @media (max-width: 768px) block
+- ALL buttons have hover states with color transitions
+- Mobile responsive with @media (max-width: 768px)
 
 REQUIRED TYPOGRAPHY:
 - Display headlines: Georgia or Playfair Display serif, 64-72px, bold
@@ -188,12 +207,7 @@ Start your response with <!DOCTYPE html> and end with </html>.`;
     let html = "";
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const result = await invokeLLM({
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `Generate the ${pageLabel} page for this business.
+        const userContent = `Generate the ${pageLabel} page for this business.
 
 BUSINESS: ${params.businessName}
 INDUSTRY: ${params.industry}
@@ -213,15 +227,9 @@ MANDATORY IMAGE TOKENS — include these exact strings as src attribute values (
   gallery <img src="{{GALLERY_IMAGE_1}}"> <img src="{{GALLERY_IMAGE_2}}"> <img src="{{GALLERY_IMAGE_3}}">
   about/team <img src="{{ABOUT_IMAGE}}">
 
-Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
-            },
-          ],
-          maxTokens: 6000,
-        });
+Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`;
 
-        const raw = typeof result.choices[0]?.message?.content === "string"
-          ? result.choices[0].message.content
-          : "";
+        const raw = await generateHtml(systemPrompt, userContent);
 
         if (!raw.includes("<!DOCTYPE") && !raw.includes("<html")) {
           throw new Error(`Page response missing HTML tags. Got: ${raw.slice(0, 200)}`);
