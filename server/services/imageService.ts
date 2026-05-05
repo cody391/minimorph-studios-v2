@@ -114,125 +114,77 @@ async function uploadToR2(
 }
 
 // ─── Gemini Nano Banana 2 (gemini-3.1-flash-image-preview) ───────────────────
-// Primary image source — photorealistic, ~$0.067/image
+// Sole image provider — 300s timeout, one retry on timeout before giving up
 
 async function generateImageGeminiNanoBanana(
   prompt: string,
+  slotLabel: string,
 ): Promise<string | null> {
   if (!ENV.geminiApiKey) return null;
-  try {
-    // Use axios instead of fetch — avoids undici's headersTimeout which cuts off
-    // Gemini image generation requests that take 60-120s to start responding.
-    const response = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=" +
-        ENV.geminiApiKey,
-      {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-      },
-      {
-        headers: { "Content-Type": "application/json" },
-        timeout: 180000, // 3 minutes
-      },
-    );
 
-    if (response.status !== 200) {
-      console.error("[NanoBanana] API error:", response.status, JSON.stringify(response.data).slice(0, 300));
-      return null;
-    }
-
-    const parts = response.data?.candidates?.[0]?.content?.parts;
-
-    for (const part of parts || []) {
-      if (part.inlineData?.mimeType?.startsWith("image/")) {
-        const imageBuffer = Buffer.from(part.inlineData.data, "base64");
-        const r2Url = await uploadToR2(imageBuffer, part.inlineData.mimeType);
-        if (r2Url) return r2Url;
-        console.log("[NanoBanana] R2 unavailable, using data URL");
-        return "data:image/jpeg;base64," + part.inlineData.data;
-      }
-    }
-
-    console.error("[NanoBanana] No image in response:", JSON.stringify(response.data).slice(0, 300));
-    return null;
-  } catch (e: any) {
-    const status = e?.response?.status;
-    const msg = e?.response?.data?.error?.message || e?.message || String(e);
-    console.error(`[NanoBanana] Error (HTTP ${status ?? "?"}):`, msg.slice(0, 300));
-    return null;
-  }
-}
-
-// ─── Replicate Flux 1.1 Pro Ultra — fallback (~$0.006/image) ─────────────────
-
-const REPLICATE_NEGATIVE_PROMPT =
-  "AI generated, CGI, digital art, illustration, cartoon, anime, painting, render, 3D, fake, plastic, oversaturated, HDR, stock photo";
-
-export async function generateImage(
-  prompt: string,
-  width = 1440,
-  height = 960,
-): Promise<string | null> {
-  if (!ENV.replicateApiKey) return null;
-  try {
-    const res = await fetch(
-      "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro-ultra/predictions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + ENV.replicateApiKey,
-          "Content-Type": "application/json",
-          Prefer: "wait=60",
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      // Use axios instead of fetch — avoids undici's headersTimeout which cuts off
+      // Gemini image generation requests that take 60-300s to start responding.
+      const response = await axios.post(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=" +
+          ENV.geminiApiKey,
+        {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
         },
-        body: JSON.stringify({
-          input: {
-            prompt,
-            negative_prompt: REPLICATE_NEGATIVE_PROMPT,
-            width,
-            height,
-            output_format: "jpg",
-            output_quality: 90,
-            num_inference_steps: 28,
-            guidance_scale: 3.5,
-          },
-        }),
-      },
-    );
-    const data = (await res.json()) as any;
-    if (data.output) {
-      return Array.isArray(data.output) ? data.output[0] : data.output;
-    }
-    if (data.id) {
-      for (let i = 0; i < 24; i++) {
-        await new Promise((r) => setTimeout(r, 5000));
-        const poll = (await fetch(
-          "https://api.replicate.com/v1/predictions/" + data.id,
-          { headers: { Authorization: "Bearer " + ENV.replicateApiKey } },
-        ).then((r) => r.json())) as any;
-        if (poll.status === "succeeded") {
-          return Array.isArray(poll.output) ? poll.output[0] : poll.output;
-        }
-        if (poll.status === "failed") {
-          console.error(
-            `[ImageService] Replicate prediction failed: ${JSON.stringify(poll.error)}`,
-          );
-          return null;
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 300000, // 5 minutes
+        },
+      );
+
+      if (response.status !== 200) {
+        console.error("[NanoBanana] API error:", response.status, JSON.stringify(response.data).slice(0, 300));
+        return null;
+      }
+
+      const parts = response.data?.candidates?.[0]?.content?.parts;
+
+      for (const part of parts || []) {
+        if (part.inlineData?.mimeType?.startsWith("image/")) {
+          const imageBuffer = Buffer.from(part.inlineData.data, "base64");
+          const r2Url = await uploadToR2(imageBuffer, part.inlineData.mimeType);
+          const url = r2Url ?? (() => {
+            console.log("[NanoBanana] R2 unavailable, using data URL");
+            return "data:image/jpeg;base64," + part.inlineData.data;
+          })();
+          const label = attempt === 1 ? "Nano Banana 2 ✅" : "Nano Banana 2 retry ✅";
+          console.log(`[ImageService] ${slotLabel} → ${label}`);
+          return url;
         }
       }
-      console.error(
-        `[ImageService] Replicate polling timed out for prediction ${data.id}`,
-      );
+
+      console.error("[NanoBanana] No image in response:", JSON.stringify(response.data).slice(0, 300));
+      return null;
+    } catch (e: any) {
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.error?.message || e?.message || String(e);
+      const isTimeout = e?.code === "ECONNABORTED" || msg.toLowerCase().includes("timeout");
+
+      if (attempt === 1 && isTimeout) {
+        console.log(`[NanoBanana] Timeout on attempt 1 — waiting 10s before retry...`);
+        await new Promise((r) => setTimeout(r, 10000));
+        continue;
+      }
+
+      console.error(`[NanoBanana] Error attempt ${attempt} (HTTP ${status ?? "?"}):`, msg.slice(0, 300));
       return null;
     }
-    console.error(
-      `[ImageService] Replicate bad response (HTTP ${res.status}): ${JSON.stringify(data).slice(0, 300)}`,
-    );
-    return null;
-  } catch (e) {
-    console.error("[ImageService] Replicate error:", e);
-    return null;
   }
+  return null;
 }
+
+// ─── Replicate — DISABLED ─────────────────────────────────────────────────────
+// Replicate (Flux 1.1 Pro Ultra) removed as fallback. Gemini is sole provider.
+// Rate-limiting below $5 account credit caused SVG gradients across all sites.
+// If Gemini fails (both attempts), the pipeline falls through to SVG gradient.
+// Re-enable here if a second provider is ever needed.
 
 // ─── Unsplash (legacy free fallback, requires UNSPLASH_ACCESS_KEY) ────────────
 
@@ -499,9 +451,8 @@ function buildGradientSvg(primaryColor: string): string {
 //
 // Provider priority:
 //   1. Customer photo — always wins if provided
-//   2. Gemini Nano Banana 2 — photorealistic, ~$0.067/image (primary)
-//   3. Replicate Flux 1.1 Pro Ultra — fallback if Gemini unavailable, ~$0.006/image
-//   4. SVG gradient — absolute last resort only
+//   2. Gemini Nano Banana 2 — 300s timeout, one retry on timeout
+//   3. SVG gradient — last resort if both Gemini attempts fail
 
 export async function getBestImage(
   businessType: string,
@@ -514,18 +465,9 @@ export async function getBestImage(
 
   const prompt = await generateImagePrompt(businessType, slot, subNiche);
 
-  const geminiUrl = await generateImageGeminiNanoBanana(prompt);
-  if (geminiUrl) {
-    console.log(`[ImageService] ${slot} → Nano Banana 2 ✅`);
-    return geminiUrl;
-  }
+  const geminiUrl = await generateImageGeminiNanoBanana(prompt, slot);
+  if (geminiUrl) return geminiUrl;
 
-  const replicateUrl = await generateImage(prompt);
-  if (replicateUrl) {
-    console.log(`[ImageService] ${slot} → Replicate fallback ✅`);
-    return replicateUrl;
-  }
-
-  console.error(`[ImageService] ${slot} → ALL providers failed, using gradient`);
+  console.error(`[ImageService] ${slot} → FAILED both attempts → SVG gradient`);
   return buildGradientSvg(primaryColor);
 }

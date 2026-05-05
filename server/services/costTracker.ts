@@ -31,8 +31,8 @@ export const COSTS = {
   ELENA_ONBOARDING: 2,         // ~$0.012 → 2¢ (full onboarding conversation)
   COMPETITOR_SCRAPE: 1,        // ~$0.008 → 1¢ (per competitor URL analyzed)
   NANO_BANANA_2: 7,            // ~$0.067 → 7¢ (Gemini image generation primary)
-  REPLICATE_ULTRA: 1,          // ~$0.006 → 1¢ (Flux 1.1 Pro Ultra fallback)
-  REPLICATE_HERO: 1,           // ~$0.006 → 1¢ (legacy alias)
+  REPLICATE_ULTRA: 0,          // DISABLED — Replicate removed, Gemini is sole provider
+  REPLICATE_HERO: 0,           // DISABLED — Replicate removed, Gemini is sole provider
   UNSPLASH_IMAGE: 0,           // FREE — gallery/about/team slots
   GEMINI_IMAGE: 7,             // ~$0.067 → 7¢ (alias for NANO_BANANA_2)
   R2_STORAGE: 0,               // FREE tier — Cloudflare R2
