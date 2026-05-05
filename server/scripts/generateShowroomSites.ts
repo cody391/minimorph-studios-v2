@@ -33,24 +33,26 @@ const PREMIUM_REQUIREMENTS = `== PREMIUM SHOWCASE REQUIREMENTS ==
 This is a MiniMorph Studios showcase demo site.
 It must look world-class — better than 90% of all small business websites on the internet.
 
-REQUIRED CSS STANDARDS:
-- CSS custom properties for all colors at :root
-- Smooth transitions on ALL interactive elements (transition: all 0.3s ease)
-- Cards: box-shadow 0 4px 24px rgba(0,0,0,0.12)
-- Border radius: 12-16px on all cards
-- Section padding: 80px-120px top and bottom
-- Max content width: 1200px centered with auto margins
-- Full-viewport hero: min-height 100vh
-- Sticky navigation with backdrop-filter: blur(10px)
-- ALL buttons have hover states with color transitions
-- Mobile responsive with @media (max-width: 768px)
+STYLING APPROACH — TAILWIND CSS (CRITICAL):
+- Include in <head>: <script src="https://cdn.tailwindcss.com"></script>
+- Use ONLY Tailwind utility classes for all styling
+- NO <style> block — zero custom CSS written by you
+- For brand colors use arbitrary values: bg-[#e07b39] text-[#1a1a1a] border-[#c8934a]
+- For gradients: bg-gradient-to-br from-[#color1] to-[#color2]
+- Google Fonts: one <link> in head for the chosen font pair, apply via font-[family] or add to tailwind config inline script
 
-REQUIRED TYPOGRAPHY:
-- Display headlines: Georgia or Playfair Display serif, 64-72px, bold
-- Section headlines: serif, 48px
-- Sub-headlines: sans-serif, 24px
-- Body text: sans-serif, 16px, line-height 1.7
-- Mix serif headlines with clean sans-serif body
+REQUIRED DESIGN STANDARDS (using Tailwind):
+- Hero: min-h-screen flex items-center, large serif font, prominent CTA button
+- Navigation: sticky top-0 bg-opacity-90 backdrop-blur-sm, logo left + CTA right
+- Cards: shadow-xl rounded-2xl with hover:scale-105 transition-transform
+- Section padding: py-20 lg:py-32, max-w-7xl mx-auto px-4
+- Buttons: rounded-full px-8 py-4 font-semibold with hover state color change
+- Responsive: use sm: md: lg: prefixes — mobile-first
+
+REQUIRED TYPOGRAPHY (Tailwind):
+- Headlines: text-6xl lg:text-8xl font-bold font-serif
+- Section headlines: text-4xl lg:text-5xl font-bold
+- Body: text-lg leading-relaxed text-gray-600
 
 REQUIRED CONTENT STANDARDS:
 - Every page has minimum 6 full sections
@@ -175,12 +177,12 @@ async function generateSiteHtml(params: {
 
 You are an expert web designer and developer. You build stunning, conversion-optimized websites.
 
-You embed ALL CSS in a style tag in the head.
-You embed ALL JavaScript in a script tag before body close.
-You use Google Fonts via a single import in the CSS.
-You never reference external CSS files or JS files.
-You never use frameworks like Bootstrap, React, or Vue.
-You create genuine custom designs that reflect the brand perfectly.
+You use Tailwind CSS via CDN — include <script src="https://cdn.tailwindcss.com"></script> in head.
+You use Google Fonts via a single <link> in head for typography.
+You embed any custom JavaScript in a script tag before body close.
+You never use Bootstrap, React, or Vue.
+You create genuine custom designs that reflect the brand perfectly using Tailwind utility classes.
+You do NOT write a <style> block — Tailwind utility classes handle all styling.
 
 For images: use REAL <img> tags with these exact placeholder tokens as the src (they will be swapped for real AI-generated photos before deployment):
 - Hero/banner image: <img src="{{HERO_IMAGE}}" style="width:100%;height:600px;object-fit:cover;display:block" alt="[business name]">
