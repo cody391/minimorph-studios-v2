@@ -171,6 +171,8 @@ async function generateSiteHtml(params: {
   industry: string;
   imageType: string;
   primaryColor: string;
+  primaryBg: string;
+  textColor: string;
   pages: string[];
   questionnaire: Record<string, unknown>;
 }): Promise<string> {
@@ -218,6 +220,12 @@ PACKAGE: ${params.packageTier} plan — $${params.monthlyPrice}/mo (use this EXA
 ALL SITE PAGES (for navigation links): ${navPages}
 THIS PAGE: ${pageLabel}
 
+MANDATORY COLORS — use exactly these, no substitutions:
+  --color-bg: ${params.primaryBg}
+  --color-primary: ${params.primaryColor}
+  --color-text: ${params.textColor}
+Apply these via Tailwind arbitrary values: bg-[${params.primaryBg}] text-[${params.textColor}] and brand accents with text-[${params.primaryColor}] bg-[${params.primaryColor}].
+
 This is a SHOWROOM DEMO site. Make it the best-looking small business website on the internet.
 ${pageName === "index" ? "Include ALL add-ons listed in addOnsIncluded as fully-styled working widgets on this home page." : "Include relevant add-on widgets if they make sense for this page."}
 Every widget must be visually present and look completely real.
@@ -252,6 +260,11 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`;
         if (!html.includes("</html>")) html += "\n</html>";
         // Inject real AI-generated images in place of token placeholders
         html = await injectImages(html, params.imageType, params.primaryColor);
+        // Force correct price in MiniMorph banner regardless of what LLM wrote
+        html = html.replace(
+          /Built on the \w[\w &]* plan — \$[\d,]+\/mo/g,
+          `Built on the ${params.packageTier} plan — $${params.monthlyPrice}/mo`
+        );
         // Cooldown after successful generation to respect 8k TPM rate limit
         console.log(`      (cooling down 90s for rate limit...)`);
         await new Promise((r) => setTimeout(r, 90000));
@@ -286,6 +299,8 @@ const SHOWROOM_SITES = [
     industry: "General Contractor",
     imageType: "contractor",
     primaryColor: "#e07b39",
+    primaryBg: "#1a1a1a",
+    textColor: "#f5f5f5",
     pages: ["index", "services", "projects", "quote", "contact"],
     questionnaireData: {
       businessDescription: "Family-owned general contractor. 22 years building foundations, structural framing, roofing, and full renovations. Father started it, son runs it. Licensed in 3 states. Zero structural failures in 22 years.",
@@ -315,6 +330,8 @@ const SHOWROOM_SITES = [
     industry: "Farm to Table Restaurant",
     imageType: "restaurant",
     primaryColor: "#c8934a",
+    primaryBg: "#1e120a",
+    textColor: "#f5f0e8",
     pages: ["index", "menu", "about", "reservations", "private-dining", "contact"],
     questionnaireData: {
       businessDescription: "Farm-to-table waterfront restaurant. Seasonal menu changes weekly based on what local farms bring us. Wood-fired everything. Executive chef with 18 years fine dining experience. Opened 2018, fully booked most weekends.",
@@ -357,6 +374,8 @@ const SHOWROOM_SITES = [
     industry: "High-Intensity Fitness Studio",
     imageType: "gym",
     primaryColor: "#00d4ff",
+    primaryBg: "#0a0a0f",
+    textColor: "#e0f7ff",
     pages: ["index", "classes", "memberships", "trainers", "free-trial", "contact"],
     questionnaireData: {
       businessDescription: "High-intensity functional fitness studio. Max 12 per class, always coached never just supervised. 340 active members. 94% retention after month one. Average member loses 18 lbs in first 90 days. 5 certified coaches, all former competitive athletes.",
@@ -394,6 +413,8 @@ const SHOWROOM_SITES = [
     industry: "Luxury Hair Salon & Spa",
     imageType: "salon",
     primaryColor: "#c9a84c",
+    primaryBg: "#12061a",
+    textColor: "#f8f4f0",
     pages: ["index", "services", "team", "gallery", "book", "gift-cards", "contact"],
     questionnaireData: {
       businessDescription: "Luxury appointment-only hair salon and day spa. Color specialists and certified Great Lengths extension studio, only one in the region. 200+ five-star Google reviews. Clientele includes local executives, brides, and people who have been burned by cheaper salons.",
@@ -439,6 +460,8 @@ const SHOWROOM_SITES = [
     industry: "Independent Boutique Retail",
     imageType: "boutique",
     primaryColor: "#2d4a2d",
+    primaryBg: "#ffffff",
+    textColor: "#1a1a1a",
     pages: ["index", "shop", "new-arrivals", "collections", "about", "contact"],
     questionnaireData: {
       businessDescription: "Independent women's clothing and lifestyle boutique. Every item personally selected, nothing mass-produced. 90% from small independent designers you cannot find anywhere else locally. Personal styling included with every purchase over $150. 6 years, fiercely loyal local following.",
@@ -473,6 +496,8 @@ const SHOWROOM_SITES = [
     industry: "Specialty Coffee Roaster + Ecommerce",
     imageType: "coffee",
     primaryColor: "#c47a2a",
+    primaryBg: "#0f0906",
+    textColor: "#f0e6d3",
     pages: ["index", "shop", "subscriptions", "our-story", "brewing-guides", "wholesale", "contact"],
     questionnaireData: {
       businessDescription: "Specialty coffee roaster. Direct-trade single-origin beans from Ethiopia, Colombia, Guatemala, Sumatra. Small-batch roasted to order, never sitting on a shelf. 800 active monthly subscribers. Ships nationwide within 48 hours of roast. 4.9 stars across 640 reviews. Founded by a Q Grader.",
@@ -544,6 +569,8 @@ async function generateAndDeployAll(): Promise<SiteResult[]> {
             industry: site.industry,
             imageType: site.imageType,
             primaryColor: site.primaryColor,
+            primaryBg: site.primaryBg,
+            textColor: site.textColor,
             pages: ["index"],
             questionnaire: site.questionnaireData,
           });
