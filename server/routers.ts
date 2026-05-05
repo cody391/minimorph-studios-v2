@@ -126,23 +126,30 @@ const repsRouter = router({
       const Stripe = (await import("stripe")).default;
       const stripe = new Stripe(ENV.stripeSecretKey || "");
       let accountId = rep.stripeConnectAccountId;
-      if (!accountId) {
-        const account = await stripe.accounts.create({
-          type: "express",
-          email: rep.email,
-          metadata: { repId: String(rep.id), repName: rep.fullName },
-          capabilities: { transfers: { requested: true } },
+      try {
+        if (!accountId) {
+          const account = await stripe.accounts.create({
+            type: "express",
+            email: rep.email,
+            metadata: { repId: String(rep.id), repName: rep.fullName },
+            capabilities: { transfers: { requested: true } },
+          });
+          accountId = account.id;
+          await db.updateRep(rep.id, { stripeConnectAccountId: accountId });
+        }
+        const link = await stripe.accountLinks.create({
+          account: accountId,
+          refresh_url: input.returnUrl,
+          return_url: input.returnUrl,
+          type: "account_onboarding",
         });
-        accountId = account.id;
-        await db.updateRep(rep.id, { stripeConnectAccountId: accountId });
+        return { url: link.url, accountId };
+      } catch (err: any) {
+        const msg = err?.message ?? "Stripe error";
+        throw new Error(msg.includes("signed up for Connect")
+          ? "Stripe Connect is not enabled on this account. An admin needs to activate it at dashboard.stripe.com/connect."
+          : msg);
       }
-      const link = await stripe.accountLinks.create({
-        account: accountId,
-        refresh_url: input.returnUrl,
-        return_url: input.returnUrl,
-        type: "account_onboarding",
-      });
-      return { url: link.url, accountId };
     }),
 
   // Protected: Check Stripe Connect onboarding status

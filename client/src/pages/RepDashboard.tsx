@@ -1291,7 +1291,7 @@ function StripeConnectSetup() {
         toast.success("Stripe Connect onboarding opened in a new tab.");
       }
     },
-    onError: () => toast.error("Failed to create onboarding link. Please try again."),
+    onError: (error) => toast.error(error.message || "Failed to create onboarding link. Please try again."),
   });
 
   if (isLoading) {

@@ -42,8 +42,8 @@ export default function PayoutSetup() {
         );
       }
     },
-    onError: () =>
-      toast.error("Failed to create onboarding link. Please try again."),
+    onError: (error) =>
+      toast.error(error.message || "Failed to create onboarding link. Please try again."),
   });
 
   const { data: connectStatus, isLoading: statusLoading } =
