@@ -145,6 +145,9 @@ export default function Onboarding() {
   const [projectId, setProjectId] = useState<number | null>(null);
   const [uploadingFor, setUploadingFor] = useState<UploadRequest | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isResumed, setIsResumed] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSentInit = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -156,6 +159,56 @@ export default function Onboarding() {
   const chatMutation = trpc.ai.onboardingChat.useMutation();
   const saveQuestionnaireMutation = trpc.onboarding.saveQuestionnaire.useMutation();
   const uploadAssetMutation = trpc.onboarding.uploadAsset.useMutation();
+
+  // Load saved conversation on mount — runs once when project query settles
+  useEffect(() => {
+    if (myProjectQuery.isLoading || historyLoaded) return;
+
+    const project = myProjectQuery.data;
+    if (project?.id) setProjectId(project.id);
+
+    const savedHistory = project?.elenaConversationHistory as Array<{ role: "user" | "assistant"; content: string }> | null;
+
+    if (savedHistory && savedHistory.length > 0) {
+      // Restore the conversation — customer is returning
+      setMessages(savedHistory.map(m => ({ role: m.role, content: m.content })));
+      setIsResumed(true);
+      hasSentInit.current = true; // don't send INIT
+      setLastSaved(project?.lastSavedAt ? new Date(project.lastSavedAt) : new Date());
+
+      // Restore partial summary from saved questionnaire
+      const q = project?.questionnaire as Record<string, unknown> | null;
+      if (q) {
+        setSummary(prev => ({
+          ...prev,
+          businessType: (q.websiteType as string) || prev.businessType,
+          brandTone: (q.brandTone as string) || prev.brandTone,
+          brandColors: (q.brandColors as string[]) || prev.brandColors,
+          targetAudience: (q.targetAudience as string) || prev.targetAudience,
+          contentPreference: (q.contentPreference as string) || prev.contentPreference,
+          questionnaire: q,
+        }));
+      }
+    }
+
+    // If questionnaire was already submitted, mark complete
+    if (project?.stage && !["intake", "questionnaire"].includes(project.stage)) {
+      setCompleted(true);
+    }
+
+    setHistoryLoaded(true);
+  }, [myProjectQuery.isLoading, myProjectQuery.data, historyLoaded]);
+
+  // Warn before leaving mid-conversation
+  useEffect(() => {
+    if (completed || messages.length === 0) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [completed, messages.length]);
 
   // sendMessage defined before the effects that reference it so bundlers don't see a forward reference
   const sendMessage = useCallback(
@@ -201,6 +254,11 @@ export default function Onboarding() {
             addonsAccepted: addonsAccepted.length ? addonsAccepted : undefined,
           },
         ]);
+
+        // Mark last saved timestamp after each successful exchange
+        setLastSaved(new Date());
+        // Dismiss welcome-back banner after customer sends first message
+        setIsResumed(false);
 
         // Update live summary from extractedData
         if (result.extractedData) {
@@ -258,24 +316,17 @@ export default function Onboarding() {
     [messages, projectId, user]
   );
 
-  // Set projectId from user's existing project
-  useEffect(() => {
-    if (myProjectQuery.data?.id) {
-      setProjectId(myProjectQuery.data.id);
-    }
-  }, [myProjectQuery.data]);
-
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Auto-send opening message once user is available
+  // Auto-send opening message — only once historyLoaded confirms no saved history
   useEffect(() => {
-    if (!user || hasSentInit.current || authLoading) return;
+    if (!user || hasSentInit.current || authLoading || !historyLoaded || isResumed) return;
     hasSentInit.current = true;
     sendMessage("INIT");
-  }, [user, authLoading, sendMessage]);
+  }, [user, authLoading, sendMessage, historyLoaded, isResumed]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -387,6 +438,12 @@ export default function Onboarding() {
           <span className="text-xs text-gray-500">
             {user.name || user.email}
           </span>
+          {lastSaved && !completed && (
+            <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3 h-3" />
+              Saved
+            </span>
+          )}
           {completed && (
             <span className="flex items-center gap-1 text-xs text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
               <CheckCircle2 className="w-3 h-3" />
@@ -416,6 +473,17 @@ export default function Onboarding() {
 
           {/* Messages scroll area */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            {/* Welcome back banner — shown when restoring a saved conversation */}
+            {isResumed && messages.length > 0 && (
+              <div className="flex items-center gap-3 bg-[#4a9eff]/10 border border-[#4a9eff]/30 rounded-xl px-4 py-3">
+                <CheckCircle2 className="w-4 h-4 text-[#4a9eff] shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-[#4a9eff]">Welcome back!</p>
+                  <p className="text-xs text-gray-400">We saved your conversation — pick up right where you left off.</p>
+                </div>
+              </div>
+            )}
+
             {messages.length === 0 && isLoading && (
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">

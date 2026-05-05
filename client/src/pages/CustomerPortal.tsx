@@ -905,22 +905,44 @@ function OnboardingProjectTab({
   }
 
   // Still in questionnaire/discovery stage
+  const savedHistory = project?.elenaConversationHistory as Array<unknown> | null;
+  const hasSavedProgress = savedHistory && savedHistory.length > 0;
+  const lastSavedAt = project?.lastSavedAt
+    ? new Date(project.lastSavedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    : null;
+
   return (
     <Card className="border-border/50">
       <CardContent className="py-12 text-center space-y-4">
         <div className="w-16 h-16 rounded-full bg-electric/10 flex items-center justify-center mx-auto">
           <Sparkles className="h-8 w-8 text-electric" />
         </div>
-        <h3 className="text-lg font-serif text-off-white">Continue with Elena</h3>
-        <p className="text-sm text-soft-gray max-w-md mx-auto">
-          Your website project is in progress. Continue your conversation with Elena to complete the discovery process.
-        </p>
+        {hasSavedProgress ? (
+          <>
+            <h3 className="text-lg font-serif text-off-white">Welcome back!</h3>
+            <p className="text-sm text-soft-gray max-w-md mx-auto">
+              Your conversation with Elena is saved and ready to continue.
+              {lastSavedAt && <span className="block text-xs text-electric/60 mt-1">Last saved: {lastSavedAt}</span>}
+            </p>
+            <div className="flex items-center justify-center gap-2 text-xs text-green-400 bg-green-400/10 px-3 py-1.5 rounded-full w-fit mx-auto">
+              <CheckCircle className="h-3 w-3" />
+              Progress saved — you won't lose anything
+            </div>
+          </>
+        ) : (
+          <>
+            <h3 className="text-lg font-serif text-off-white">Continue with Elena</h3>
+            <p className="text-sm text-soft-gray max-w-md mx-auto">
+              Your website project is in progress. Continue your conversation with Elena to complete the discovery process.
+            </p>
+          </>
+        )}
         <Button
           onClick={onNavigateToOnboarding}
           className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
         >
           <Sparkles className="h-4 w-4 mr-2" />
-          Continue with Elena
+          {hasSavedProgress ? "Resume Conversation" : "Continue with Elena"}
         </Button>
       </CardContent>
     </Card>

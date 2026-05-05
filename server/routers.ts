@@ -2454,6 +2454,35 @@ const onboardingRouter = router({
       return db.getOnboardingProjectByCustomerId(custs[0].id);
     }),
 
+  // Protected: save Elena conversation progress incrementally (called after every message)
+  saveProgress: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        elenaConversationHistory: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })).optional(),
+        partialQuestionnaire: z.record(z.string(), z.unknown()).optional(),
+        currentStep: z.number().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      const updates: Record<string, unknown> = { lastSavedAt: new Date() };
+      if (input.elenaConversationHistory !== undefined) {
+        updates.elenaConversationHistory = input.elenaConversationHistory;
+      }
+      if (input.partialQuestionnaire !== undefined) {
+        updates.questionnaire = input.partialQuestionnaire;
+      }
+      if (input.currentStep !== undefined) {
+        updates.currentStep = input.currentStep;
+      }
+      await db.updateOnboardingProject(input.projectId, updates as any);
+      return { success: true, savedAt: new Date().toISOString() };
+    }),
+
   // Protected: save questionnaire from Elena chat and trigger site generation
   saveQuestionnaire: protectedProcedure
     .input(
@@ -3225,6 +3254,30 @@ ${integrationSection}${scrapedSection}`;
         .replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/g, "")
         .replace(/<addons_selected>[\s\S]*?<\/addons_selected>/g, "")
         .trim();
+
+      // Auto-save full conversation history after every exchange — server-side, always runs
+      if (input.projectId) {
+        const historyEntry = (text: string) =>
+          text
+            .replace(/<upload_request\b[^>]*\/>/g, "")
+            .replace(/<addon_accepted\b[^>]*\/>/g, "")
+            .replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/g, "")
+            .replace(/<addons_selected>[\s\S]*?<\/addons_selected>/g, "")
+            .trim();
+
+        const savedHistory = [
+          ...(input.history || []).filter((m) => m.role !== "system"),
+          { role: "user" as const, content: input.message },
+          { role: "assistant" as const, content: historyEntry(aiResponse) },
+        ];
+
+        db.updateOnboardingProject(input.projectId, {
+          elenaConversationHistory: savedHistory,
+          lastSavedAt: new Date(),
+        } as any).catch((err) =>
+          console.error("[onboardingChat] History auto-save failed:", err)
+        );
+      }
 
       return {
         response: cleanedResponse,

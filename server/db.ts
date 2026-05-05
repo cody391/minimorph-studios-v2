@@ -257,13 +257,18 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `customers` ADD COLUMN `totalLifetimeRevenueCents` int NOT NULL DEFAULT 0");
     await safe("ALTER TABLE `customers` ADD COLUMN `lastEconomicsUpdate` timestamp NULL");
 
-    // ── Columns from 0048 ─────────────────────────────────────────────
+    // ── Columns from previous 0048 batch ──────────────────────────────
     await safe("ALTER TABLE `product_catalog` ADD COLUMN `discountDuration` enum('once','repeating','forever') NOT NULL DEFAULT 'once'");
     await safe("ALTER TABLE `product_catalog` ADD COLUMN `stripeProductId` varchar(100) DEFAULT NULL");
     await safe("ALTER TABLE `product_catalog` ADD COLUMN `stripeDiscountPriceId` varchar(100) DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `originalPriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `effectivePriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `contractDiscountPercent` decimal(5,2) DEFAULT NULL");
+
+    // ── Columns from 0048 (Elena progress save) ────────────────────────
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `elenaConversationHistory` json NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `lastSavedAt` timestamp NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `currentStep` int NOT NULL DEFAULT 1");
 
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {

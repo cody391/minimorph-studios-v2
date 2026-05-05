@@ -430,6 +430,11 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   approvedAt: timestamp("approvedAt"),
   revisionsRemaining: int("revisionsRemaining").default(3),
 
+  // Elena onboarding progress — persisted after every message exchange
+  elenaConversationHistory: json("elenaConversationHistory"), // {role, content}[]
+  lastSavedAt: timestamp("lastSavedAt"),
+  currentStep: int("currentStep").default(1).notNull(),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -132,6 +132,7 @@ export function QuestionnaireWizard({
   // ── Mutations ──
   const createProject = trpc.onboarding.create.useMutation();
   const submitQuestionnaire = trpc.onboarding.submitQuestionnaire.useMutation();
+  const saveProgress = trpc.onboarding.saveProgress.useMutation();
 
   const aiChat = trpc.ai.onboardingChat.useMutation({
     onSuccess: (data) => {
@@ -363,10 +364,25 @@ export function QuestionnaireWizard({
   };
 
   const goNext = () => {
-    if (step < 5) setStep(step + 1);
+    const nextStep = Math.min(step + 1, 5);
+    setStep(nextStep);
+    if (projectId) {
+      saveProgress.mutate({
+        projectId,
+        currentStep: nextStep,
+        partialQuestionnaire: buildPayload(),
+      });
+    }
   };
   const goBack = () => {
-    if (step > 1) setStep(step - 1);
+    const prevStep = Math.max(step - 1, 1);
+    setStep(prevStep);
+    if (projectId) {
+      saveProgress.mutate({
+        projectId,
+        currentStep: prevStep,
+      });
+    }
   };
 
   // ── Render ──
@@ -408,6 +424,9 @@ export function QuestionnaireWizard({
         <span className="text-xs font-medium text-electric/60">
           Step {step} of 5 — {Math.round((step / 5) * 100)}% complete
         </span>
+        {saveProgress.isSuccess && (
+          <span className="ml-3 text-xs text-green-600 font-medium">✓ Progress saved</span>
+        )}
         <div className="mt-1.5 h-1.5 w-full max-w-xs mx-auto bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-electric rounded-full transition-all duration-500"
