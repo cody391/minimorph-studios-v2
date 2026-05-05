@@ -4,36 +4,36 @@ import { ENV } from "../_core/env";
 import { getProjectName } from "./cloudflareDeployment";
 import { injectImages as injectImageComments } from "./imageInjector";
 
-const PREMIUM_REQUIREMENTS = `== PREMIUM SHOWCASE REQUIREMENTS ==
-This is a MiniMorph Studios showcase demo site.
-It must look world-class — better than 90% of all small business websites on the internet.
+const PREMIUM_REQUIREMENTS = `== MINIMORPH STUDIOS — WORLD-CLASS SITE REQUIREMENTS ==
 
-REQUIRED CSS STANDARDS:
-- CSS custom properties for all colors at :root
-- Smooth transitions on ALL interactive elements (transition: all 0.3s ease)
-- Cards: box-shadow 0 4px 24px rgba(0,0,0,0.12)
-- Border radius: 12-16px on all cards
-- Section padding: 80px-120px top and bottom
-- Max content width: 1200px centered with auto margins
-- Full-viewport hero: min-height 100vh
-- Sticky navigation with backdrop-filter: blur(10px)
-- ALL buttons have hover states with color transitions
-- Mobile responsive with @media (max-width: 768px)
+SECTION C — EFFICIENCY RULES (follow exactly):
+1. Include in <head>: <script src="https://cdn.tailwindcss.com"></script>
+2. Include ONE Google Fonts <link> in <head> — never use @import
+3. NO <style> block — zero custom CSS written by you
+4. Use Tailwind utility classes for ALL styling
+5. For brand colors use arbitrary values: bg-[#e07b39] text-[#1a1a1a]
+6. Maximum 1 <script> block before </body> for interactivity
+7. NO animation libraries — use Tailwind transition classes only
+8. Target 25-35KB HTML — rich and complete but not bloated
+9. Use semantic HTML: <section> <article> <nav> <main> <footer>
+10. Every image uses token placeholders (listed below)
 
-REQUIRED TYPOGRAPHY:
-- Display headlines: Georgia or Playfair Display serif, 64-72px, bold
-- Section headlines: serif, 48px
-- Sub-headlines: sans-serif, 24px
-- Body text: sans-serif, 16px, line-height 1.7
-- Mix serif headlines with clean sans-serif body
+TAILWIND DESIGN STANDARDS:
+- Hero: min-h-screen flex items-center, large font, prominent CTA
+- Navigation: sticky top-0 bg-opacity-90 backdrop-blur-sm, logo left + CTA right
+- Cards: shadow-xl rounded-2xl hover:scale-105 transition-transform duration-300
+- Section padding: py-20 lg:py-32, max-w-7xl mx-auto px-4 sm:px-6 lg:px-8
+- Buttons: rounded-full px-8 py-4 font-semibold with hover state color shift
+- Responsive: mobile-first with sm: md: lg: breakpoint prefixes
+- Typography: text-6xl lg:text-8xl font-bold for hero, text-4xl for sections
 
-REQUIRED CONTENT STANDARDS:
-- Every page has minimum 6 full sections
-- Zero placeholder text — all copy is specific, compelling, and written for that exact business
-- Real pricing, real service names, real details
-- Testimonials include specific results and numbers
-- CTAs are large, prominent, colored with hover effects
-- Navigation has business logo/name + CTA button
+SECTION D — CONTENT RULES (zero exceptions):
+- ZERO placeholder text — every word is specific to this exact business
+- Real service names with real prices from questionnaire data
+- Real testimonials from questionnaire — specific results and numbers
+- Real origin story and differentiators from questionnaire
+- Specific CTAs for this business type (not "Learn More" — be concrete)
+- Real phone/email/address if provided in questionnaire
 
 ADD-ON SHOWCASE REQUIREMENTS:
 Each add-on must be VISUALLY PRESENT on the page.
@@ -116,6 +116,44 @@ MINIMORPH BANNER (top of every page):
 <div style='background:#0a0a12;color:#fff;padding:10px 20px;text-align:center;font-size:14px;position:sticky;top:0;z-index:9999'>
 MiniMorph Studios Demo — [Business Name] | Built on the [Package] plan | <a href='https://minimorphstudios.net/get-started' style='color:#3b82f6;font-weight:600'>Start Your Build</a>
 </div>`;
+
+// ─── Quality scoring — run before deployment, retry if score < 70 ─────────────
+
+function scoreGeneratedSite(html: string): {
+  score: number;
+  issues: string[];
+  pass: boolean;
+} {
+  const issues: string[] = [];
+  let score = 100;
+
+  if (/lorem ipsum/i.test(html)) {
+    issues.push("Contains placeholder text"); score -= 30;
+  }
+  if (!html.includes("<nav")) {
+    issues.push("Missing navigation"); score -= 10;
+  }
+  if ((html.match(/<section/g) || []).length < 4) {
+    issues.push("Too few sections (need 4+)"); score -= 15;
+  }
+  if (!/testimonial|review/i.test(html)) {
+    issues.push("No social proof"); score -= 10;
+  }
+  if (!html.includes("tel:") && !html.includes("mailto:")) {
+    issues.push("No contact links"); score -= 10;
+  }
+  if ((html.match(/<img/g) || []).length < 2) {
+    issues.push("Too few images (need 2+)"); score -= 15;
+  }
+  if (html.length < 15000) {
+    issues.push(`HTML too short (${html.length} chars — likely incomplete)`); score -= 25;
+  }
+  if (!html.includes("Built on the")) {
+    issues.push("Missing MiniMorph banner"); score -= 5;
+  }
+
+  return { score, issues, pass: score >= 70 };
+}
 
 function getPagesForBusinessType(websiteType: string): string[] {
   switch ((websiteType || "").toLowerCase()) {
@@ -223,56 +261,74 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
 
     // Extract key questionnaire fields for prompt
     const q = questionnaire || {};
-    const brandColors = (q.brandColors as string) || "Not specified — choose modern, professional colors";
     const brandTone = (q.brandTone as string) || "professional";
     const rawColorsStr = Array.isArray(q.brandColors)
       ? (q.brandColors as string[]).join(" ")
       : (q.brandColors as string) || "";
     const primaryColorMatch = rawColorsStr.match(/#[0-9a-fA-F]{3,6}/);
     const primaryColor = primaryColorMatch ? primaryColorMatch[0] : "#1a1a1a";
+    const primaryBg = (q.primaryBg as string) || "#ffffff";
+    const textColor = (q.textColor as string) || "#1a1a1a";
     const targetAudience = (q.targetAudience as string) || "local customers";
-    const competitorSites = Array.isArray(q.competitorSites) ? (q.competitorSites as string[]).join(", ") : (q.competitorSites as string) || "None specified";
-    const inspirationSites = Array.isArray(q.inspirationSites) ? (q.inspirationSites as string[]).join(", ") : (q.inspirationSites as string) || "None specified";
     const specialRequests = (q.specialRequests as string) || "None";
     const mustHaveFeatures = Array.isArray(q.mustHaveFeatures) ? (q.mustHaveFeatures as string[]).join(", ") : "Standard";
+
+    // Competitive intelligence (collected by Elena)
+    const competitorWeaknesses = Array.isArray(q.competitorWeaknesses)
+      ? (q.competitorWeaknesses as string[])
+      : [];
+    const inspirationStyle = (q.inspirationStyle as Record<string, string>) || {};
+    const avoidPatterns = Array.isArray(q.avoidPatterns)
+      ? (q.avoidPatterns as string[])
+      : [];
+
+    const competitorSection = competitorWeaknesses.length > 0
+      ? `SECTION A — COMPETITIVE INTELLIGENCE:
+Your job is to make these competitor sites look amateur by comparison.
+Competitor weaknesses to exploit:
+${competitorWeaknesses.map((w, i) => `  ${i + 1}. ${w}`).join("\n")}
+
+Specifically:
+- If competitors use stock photos → use HERO_IMAGE and GALLERY tokens (real AI photos)
+- If competitors have no pricing → show clear pricing tables
+- If competitors have weak CTAs → use bold, urgent, specific CTAs
+- If competitors look dated → use Tailwind's modern utility-first design
+- If competitors have no testimonials → lead every page with real results`
+      : "";
+
+    const inspirationSection = Object.keys(inspirationStyle).length > 0 || avoidPatterns.length > 0
+      ? `SECTION B — DESIGN DIRECTION:
+The customer loves these design qualities: ${JSON.stringify(inspirationStyle)}
+${avoidPatterns.length > 0 ? `Avoid these patterns the customer hates:\n${avoidPatterns.map((p, i) => `  ${i + 1}. ${p}`).join("\n")}` : ""}`
+      : "";
 
     const fullQuestionnaireText = JSON.stringify(q, null, 2);
 
     const systemPrompt = `${PREMIUM_REQUIREMENTS}
+${competitorSection ? "\n" + competitorSection : ""}
+${inspirationSection ? "\n" + inspirationSection : ""}
 
-You are an expert web designer and developer. You build stunning, conversion-optimized websites for small businesses. You write clean, modern HTML5, CSS3, and vanilla JavaScript. Your sites are:
-- Fully mobile responsive (mobile-first)
-- Fast loading (no external dependencies except Google Fonts)
-- SEO optimized (proper meta tags, semantic HTML, schema markup)
-- Conversion focused (clear CTAs, trust signals, social proof)
-- Visually professional (not generic — truly custom to this business)
-- Accessible (proper alt tags, contrast ratios, semantic elements)
+You are an expert web designer using Tailwind CSS CDN (already included via <script src="https://cdn.tailwindcss.com"></script>).
+You use Google Fonts via a single <link> in <head>.
+You write at most ONE <script> block before </body> for interactivity.
+You NEVER write a <style> block — Tailwind utilities handle all styling.
+You NEVER use Bootstrap, React, Vue, or any CSS animation library.
+You create genuinely custom designs using Tailwind arbitrary values for brand colors.
+You are mobile-first, using sm: md: lg: breakpoint prefixes throughout.
+SEO: include <meta name="description">, Open Graph tags, and schema markup on every page.
 
-You embed ALL CSS in a <style> tag in the <head>.
-You embed ALL JavaScript in a <script> tag before </body>.
-You use Google Fonts via a single @import in the CSS.
-You never reference external CSS files or JS files.
-You never use frameworks like Bootstrap, React, or Vue.
-You create genuine custom designs that reflect the brand perfectly.
+IMAGES — use these exact tokens as img src or background-image values:
+  <img src="HERO_IMAGE" class="w-full h-[600px] object-cover" alt="[desc]">
+  <img src="GALLERY_IMAGE_1" class="w-full aspect-[4/3] object-cover" alt="[desc]">
+  <img src="GALLERY_IMAGE_2" class="w-full aspect-[4/3] object-cover" alt="[desc]">
+  <img src="GALLERY_IMAGE_3" class="w-full aspect-[4/3] object-cover" alt="[desc]">
+  <img src="ABOUT_IMAGE" class="w-full aspect-square object-cover" alt="[desc]">
+  <img src="TEAM_IMAGE_1" class="w-full aspect-square object-cover rounded-full" alt="[desc]">
+  <img src="TEAM_IMAGE_2" class="w-full aspect-square object-cover rounded-full" alt="[desc]">
+HERO_IMAGE must appear on every page. These tokens are auto-replaced with real photos.
 
-IMAGES: For every image in the generated HTML use these exact token strings — never use placeholder.com, picsum.photos, or any other placeholder URL:
-
-For hero/section backgrounds:
-<div style='background-image:url(HERO_IMAGE);background-size:cover;background-position:center;min-height:100vh'>
-
-For inline images:
-<img src='GALLERY_IMAGE_1' alt='[description]' style='width:100%;height:100%;object-fit:cover'/>
-
-Available tokens (use each where it fits the content):
-HERO_IMAGE, GALLERY_IMAGE_1, GALLERY_IMAGE_2, GALLERY_IMAGE_3, ABOUT_IMAGE, TEAM_IMAGE_1, TEAM_IMAGE_2, BACKGROUND_IMAGE
-
-These tokens will be automatically replaced with real AI-generated photos after generation. You MUST use at least HERO_IMAGE on every page.
-
-Pages must include intelligent internal linking between each other.
-Navigation must use relative hrefs matching the page list (about.html, services.html, contact.html, etc.).
-
-Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>.
-No JSON, no markdown fences, no explanation.`;
+Navigation must use relative hrefs: about.html, services.html, contact.html, etc.
+Output ONLY raw HTML starting with <!DOCTYPE html> — no JSON, no markdown, no explanation.`;
 
     const navLinks = pageList
       .map((p) => (p === "index" ? "/" : `/${p}`))
@@ -284,16 +340,13 @@ PACKAGE: ${project.packageTier}
 WEBSITE TYPE: ${websiteType}
 ALL SITE PAGES (for navigation): ${navLinks}
 
-BRAND COLORS: ${brandColors}
+MANDATORY COLORS — use exactly these via Tailwind arbitrary values, no substitutions:
+  Background:    bg-[${primaryBg}]     (page background)
+  Primary accent: bg-[${primaryColor}] text-[${primaryColor}] (buttons, highlights)
+  Text:          text-[${textColor}]   (body text)
+
 BRAND TONE: ${brandTone}
 TARGET AUDIENCE: ${targetAudience}
-
-COMPETITOR SITES (what we need to beat):
-${competitorSites}
-
-INSPIRATION SITES (what the customer loves):
-${inspirationSites}
-
 MUST-HAVE FEATURES: ${mustHaveFeatures}
 SPECIAL REQUESTS: ${specialRequests}
 
@@ -353,6 +406,18 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
             .replace(/^```html?\s*/im, "")
             .replace(/\s*```\s*$/im, "")
             .trim();
+
+          // Close truncated documents gracefully
+          if (!html.includes("</body>")) html += "\n</body>";
+          if (!html.includes("</html>")) html += "\n</html>";
+
+          // Quality gate — retry if score is too low
+          const quality = scoreGeneratedSite(html);
+          console.log(`[SiteGen] ${pageLabel} quality score: ${quality.score}/100${quality.issues.length ? " — " + quality.issues.join("; ") : " ✅"}`);
+          if (!quality.pass && attempt < 3) {
+            throw new Error(`Quality score ${quality.score}/100 (need 70+): ${quality.issues.join("; ")}`);
+          }
+
           break;
         } catch (pageErr: any) {
           if (attempt < 3) {
@@ -493,20 +558,12 @@ export async function generateSiteHtmlDirect(params: {
 }): Promise<string> {
   const systemPrompt = `${PREMIUM_REQUIREMENTS}
 
-You are an expert web designer and developer. You build stunning, conversion-optimized websites.
+You are an expert web designer using Tailwind CSS CDN. Include <script src="https://cdn.tailwindcss.com"></script> in every page's <head>.
+Use a single Google Fonts <link> for typography. No <style> block. No external framework.
+For images add a comment <!-- REPLACE WITH: description --> where photos would go, and use HERO_IMAGE / GALLERY_IMAGE_1 tokens where applicable.
+Pages must link to each other using relative hrefs (about.html, services.html, etc.).
 
-You embed ALL CSS in a <style> tag in the <head>.
-You embed ALL JavaScript in a <script> tag before </body>.
-You use Google Fonts via a single @import in the CSS.
-You never reference external CSS files or JS files.
-You never use frameworks like Bootstrap, React, or Vue.
-You create genuine custom designs that reflect the brand perfectly.
-
-For images: use CSS gradients, shapes, and SVG illustrations. Add a comment <!-- REPLACE WITH: description --> where photos would go.
-
-Pages must include intelligent internal linking. Navigation must work across all pages using relative hrefs (about.html, services.html, etc.).
-
-Output ONLY a valid JSON object where each key is a page name and each value is the complete HTML for that page.
+Output ONLY a valid JSON object where each key is a page name and each value is complete HTML.
 Output ONLY valid JSON, no markdown fences, no explanation, no wrapper key.`;
 
   const userPrompt = `Generate a complete, world-class ${params.industry} website for this business.

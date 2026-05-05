@@ -1,6 +1,6 @@
 import { ENV } from "../_core/env";
 
-// ─── Replicate ────────────────────────────────────────────────────────────────
+// ─── Replicate (hero images — AI quality, ~$0.003/image) ─────────────────────
 
 export async function generateImage(
   prompt: string,
@@ -35,7 +35,6 @@ export async function generateImage(
     if (data.output) {
       return Array.isArray(data.output) ? data.output[0] : data.output;
     }
-    // Poll if the synchronous wait didn't complete in time
     if (data.id) {
       for (let i = 0; i < 12; i++) {
         await new Promise((r) => setTimeout(r, 5000));
@@ -56,7 +55,7 @@ export async function generateImage(
   }
 }
 
-// ─── Unsplash ─────────────────────────────────────────────────────────────────
+// ─── Unsplash (gallery/about/team — free) ────────────────────────────────────
 
 export async function getUnsplashImage(query: string): Promise<string | null> {
   if (!ENV.unsplashAccessKey) return null;
@@ -74,75 +73,79 @@ export async function getUnsplashImage(query: string): Promise<string | null> {
   }
 }
 
-// ─── Business-type prompt library ─────────────────────────────────────────────
+// ─── Unsplash query library — optimized search strings per business type/slot ─
 
-const PROMPTS: Record<string, Record<string, string>> = {
-  restaurant: {
-    hero: "Upscale farm-to-table restaurant interior, warm Edison bulb lighting, wooden tables, intimate atmosphere, no people, professional photography",
-    gallery:
-      "Beautifully plated gourmet dish, natural lighting, food photography, high resolution",
-    about:
-      "Restaurant chef at work in professional kitchen, warm lighting, culinary craftsmanship",
-  },
-  contractor: {
-    hero: "Professional construction workers on modern home project, blue sky, safety equipment, craftsmanship visible, natural daylight",
-    gallery:
-      "Completed modern home construction, clean lines, professional finish, architectural photography",
-    about:
-      "Professional contractor reviewing blueprints on job site, confident, natural light",
-  },
-  gym: {
-    hero: "Modern high-intensity fitness studio, premium equipment, dramatic lighting, no people, professional photography",
-    gallery:
-      "Athletic person doing functional fitness exercise, dramatic lighting, motivational",
-    about:
-      "Professional personal trainer in modern gym, confident, fitness equipment background",
-  },
-  salon: {
-    hero: "Luxury hair salon interior, modern styling chairs, professional lighting, upscale aesthetic, no people",
-    gallery:
-      "Professional hair styling result, beautiful balayage treatment, high-end salon photography",
-    about: "Professional hair stylist at work, skilled and confident, warm lighting",
-  },
-  boutique: {
-    hero: "Elegant independent clothing boutique interior, curated displays, natural window light, minimalist aesthetic, no people",
-    gallery:
-      "Beautifully styled clothing outfit flat lay, natural light, editorial fashion photography",
-    about:
-      "Boutique owner arranging curated clothing display, natural light, professional",
-  },
-  coffee: {
-    hero: "Specialty coffee roastery interior, espresso machine, warm amber lighting, artisan atmosphere, no people",
-    gallery: "Perfectly crafted latte art in ceramic mug, warm tones, food photography",
-    about: "Expert barista crafting espresso drink, professional technique, warm atmosphere",
-  },
-};
+function getUnsplashQuery(businessType: string, slot: string): string {
+  const queries: Record<string, Record<string, string>> = {
+    restaurant: {
+      hero:    "upscale restaurant interior warm lighting",
+      gallery: "gourmet food plating professional photography",
+      about:   "chef professional kitchen portrait",
+      team:    "restaurant staff professional portrait",
+    },
+    contractor: {
+      hero:    "modern home construction professional architecture",
+      gallery: "home renovation completed project interior",
+      about:   "contractor professional worksite confident",
+      team:    "construction worker professional portrait",
+    },
+    gym: {
+      hero:    "modern gym fitness studio interior dramatic lighting",
+      gallery: "fitness workout athletic photography",
+      about:   "personal trainer professional portrait gym",
+      team:    "fitness coach professional portrait",
+    },
+    salon: {
+      hero:    "luxury hair salon interior modern upscale",
+      gallery: "professional hair styling balayage result",
+      about:   "hair stylist professional portrait confident",
+      team:    "salon stylist professional portrait",
+    },
+    boutique: {
+      hero:    "boutique clothing store interior minimal natural light",
+      gallery: "fashion clothing editorial photography curated",
+      about:   "boutique owner professional portrait",
+      team:    "fashion retail professional portrait",
+    },
+    coffee: {
+      hero:    "specialty coffee roastery interior warm amber",
+      gallery: "latte art coffee professional photography",
+      about:   "barista professional portrait coffee espresso",
+      team:    "coffee shop barista professional",
+    },
+  };
 
-// ─── Primary entry point ──────────────────────────────────────────────────────
-
-export async function getBestImage(
-  businessType: string,
-  slot: string,
-  primaryColor = "#1a1a1a",
-): Promise<string> {
   const typeKey =
-    Object.keys(PROMPTS).find((k) => businessType.toLowerCase().includes(k)) ||
+    Object.keys(queries).find((k) => businessType.toLowerCase().includes(k)) ||
     "restaurant";
 
-  const prompt =
-    PROMPTS[typeKey]?.[slot] ||
-    PROMPTS[typeKey]?.hero ||
-    "Professional small business exterior, clean modern aesthetic, natural lighting, no people";
+  return (
+    queries[typeKey]?.[slot] ||
+    queries[typeKey]?.hero ||
+    `${businessType} professional photography`
+  );
+}
 
-  // 1. Replicate (AI-generated, best quality)
-  const replicateUrl = await generateImage(prompt);
-  if (replicateUrl) return replicateUrl;
+// ─── AI prompt library — detailed prompts for Replicate hero images ───────────
 
-  // 2. Unsplash (stock photo fallback)
-  const unsplashUrl = await getUnsplashImage(businessType + " " + slot);
-  if (unsplashUrl) return unsplashUrl;
+const HERO_PROMPTS: Record<string, string> = {
+  restaurant:
+    "Upscale farm-to-table restaurant interior, warm Edison bulb lighting, wooden tables, intimate atmosphere, no people, professional photography, sharp focus",
+  contractor:
+    "Professional construction workers on modern home project, blue sky, safety equipment, craftsmanship visible, natural daylight, photorealistic",
+  gym:
+    "Modern high-intensity fitness studio, premium equipment, dramatic lighting, no people, professional photography, wide angle",
+  salon:
+    "Luxury hair salon interior, modern styling chairs, professional lighting, upscale aesthetic, no people, editorial photography",
+  boutique:
+    "Elegant independent clothing boutique interior, curated displays, natural window light, minimalist aesthetic, no people, architectural photography",
+  coffee:
+    "Specialty coffee roastery interior, espresso machine, warm amber lighting, artisan atmosphere, no people, editorial food photography",
+};
 
-  // 3. SVG gradient fallback — never shows a broken image
+// ─── SVG gradient fallback ────────────────────────────────────────────────────
+
+function buildGradientSvg(primaryColor: string): string {
   return (
     "data:image/svg+xml," +
     encodeURIComponent(
@@ -155,4 +158,63 @@ export async function getBestImage(
         `</svg>`,
     )
   );
+}
+
+// ─── Primary entry point ──────────────────────────────────────────────────────
+//
+// Cost strategy:
+//   hero   → Replicate AI (~$0.003) — first thing visitors see, worth it
+//   others → Unsplash free stock    — high quality, zero cost
+//   all    → SVG gradient           — last resort, never broken
+
+export async function getBestImage(
+  businessType: string,
+  slot: string,
+  primaryColor = "#1a1a1a",
+  customerPhotoUrl?: string,
+): Promise<string> {
+  // 1. Customer's own photo always wins
+  if (customerPhotoUrl) return customerPhotoUrl;
+
+  const typeKey =
+    Object.keys(HERO_PROMPTS).find((k) => businessType.toLowerCase().includes(k)) ||
+    "restaurant";
+
+  // 2. Hero slot: Replicate AI for maximum first-impression quality
+  if (slot === "hero" && ENV.replicateApiKey) {
+    const prompt =
+      HERO_PROMPTS[typeKey] ||
+      "Professional small business exterior, clean modern aesthetic, natural lighting, no people";
+    const url = await generateImage(prompt);
+    if (url) {
+      console.log(`[ImageService] hero → Replicate ✅`);
+      return url;
+    }
+  }
+
+  // 3. Non-hero (gallery, about, team): Unsplash free stock
+  if (slot !== "hero" && ENV.unsplashAccessKey) {
+    const query = getUnsplashQuery(businessType, slot);
+    const url = await getUnsplashImage(query);
+    if (url) {
+      console.log(`[ImageService] ${slot} → Unsplash ✅`);
+      return url;
+    }
+  }
+
+  // 4. Replicate fallback for any slot (e.g. Unsplash not configured)
+  if (ENV.replicateApiKey) {
+    const prompt =
+      HERO_PROMPTS[typeKey] ||
+      "Professional small business exterior, clean modern aesthetic, natural lighting";
+    const url = await generateImage(prompt);
+    if (url) {
+      console.log(`[ImageService] ${slot} → Replicate fallback ✅`);
+      return url;
+    }
+  }
+
+  // 5. SVG gradient — never shows a broken image
+  console.log(`[ImageService] ${slot} → SVG gradient fallback`);
+  return buildGradientSvg(primaryColor);
 }

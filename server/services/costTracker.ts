@@ -4,24 +4,49 @@ import { eq, sql } from "drizzle-orm";
 
 // Cost constants in cents
 export const COSTS = {
+  // Lead engine
   GOOGLE_MAPS_PLACE: 2,        // $0.02 per place detail
   GOOGLE_MAPS_SEARCH: 2,       // $0.02 per search
   APOLLO_ENRICH: 5,            // $0.05 per enrichment
   HUNTER_EMAIL: 2,             // $0.02 per email found
 
-  RESEND_EMAIL: 1,             // ~$0.001 per email (stored as 1 cent, close enough)
-  TWILIO_SMS: 1,               // ~$0.008 per SMS (rounded up to 1 cent)
-  TWILIO_CALL_PER_MIN: 2,      // ~$0.013 per minute (rounded up to 2 cents)
+  // Comms
+  RESEND_EMAIL: 1,             // ~$0.001 per email
+  TWILIO_SMS: 1,               // ~$0.008 per SMS
+  TWILIO_CALL_PER_MIN: 2,      // ~$0.013 per minute
   TWILIO_NUMBER_MONTHLY: 115,  // $1.15/mo per number
 
   // Anthropic claude-sonnet-4-6: $3/M input, $15/M output
   AI_INPUT_PER_TOKEN: 0.0003,  // cents per input token
   AI_OUTPUT_PER_TOKEN: 0.0015, // cents per output token
 
+  // Infrastructure
   DOMAIN_ANNUAL: 1200,         // $12/yr
   DOMAIN_MONTHLY: 100,         // $1/mo
   S3_MONTHLY: 5,               // ~$0.05/mo
+
+  // ── Site build pipeline ────────────────────────────────────────────────────
+  // Target: under $0.10 per complete site build
+  SITE_GENERATION_PER_PAGE: 5, // ~$0.048 → 5¢ (6K output tokens @ claude-sonnet)
+  ELENA_ONBOARDING: 2,         // ~$0.012 → 2¢ (full onboarding conversation)
+  COMPETITOR_SCRAPE: 1,        // ~$0.008 → 1¢ (per competitor URL analyzed)
+  REPLICATE_HERO: 1,           // ~$0.003 → 1¢ (minimum; Flux 1.1 Pro hero image)
+  UNSPLASH_IMAGE: 0,           // FREE — gallery/about/team slots
+  GEMINI_IMAGE: 1,             // ~$0.002 → 1¢ (Gemini fallback image)
+  CLOUDFLARE_PAGES_DEPLOY: 0,  // FREE tier — wrangler deploy
 } as const;
+
+// Helpers for estimating a full site build cost (in cents)
+export function estimateSiteBuildCost(pageCount: number, hasCompetitors = false): number {
+  return (
+    COSTS.SITE_GENERATION_PER_PAGE * pageCount +
+    COSTS.ELENA_ONBOARDING +
+    (hasCompetitors ? COSTS.COMPETITOR_SCRAPE * 3 : 0) +
+    COSTS.REPLICATE_HERO +  // 1 hero per site
+    COSTS.CLOUDFLARE_PAGES_DEPLOY
+  );
+  // Example: 4 pages + competitors + hero = 5*4 + 2 + 3 + 1 + 0 = 26¢ → ~$0.08 total
+}
 
 export function calculateAiCost(inputTokens: number, outputTokens: number): number {
   return Math.max(1, Math.ceil(
