@@ -101,6 +101,48 @@ export function registerStripeWebhook(app: Express) {
       res.json({ received: true });
     }
   );
+
+  // Connect webhook — events from rep Express accounts (account.updated, payout.paid, etc.)
+  app.post(
+    "/api/stripe/connect-webhook",
+    express.raw({ type: "application/json" }),
+    async (req: Request, res: Response) => {
+      const stripe = getStripe();
+      if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+
+      const sig = req.headers["stripe-signature"] as string;
+      const webhookSecret = ENV.stripeConnectWebhookSecret;
+      if (!webhookSecret) return res.status(500).json({ error: "Connect webhook secret not configured" });
+
+      let event: Stripe.Event;
+      try {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      } catch (err: any) {
+        console.error("[Stripe Connect Webhook] Signature verification failed:", err.message);
+        return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+      }
+
+      console.log(`[Stripe Connect Webhook] ${event.type} (${event.id})`);
+
+      try {
+        if (event.type === "account.updated") {
+          const account = event.data.object as Stripe.Account;
+          const database = await getDb();
+          if (database && account.details_submitted) {
+            await database
+              .update(reps)
+              .set({ stripeConnectOnboarded: true })
+              .where(eq(reps.stripeConnectAccountId, account.id));
+            console.log(`[Stripe Connect] Rep onboarding complete for account ${account.id}`);
+          }
+        }
+      } catch (err) {
+        console.error(`[Stripe Connect Webhook] Error processing ${event.type}:`, err);
+      }
+
+      res.json({ received: true });
+    }
+  );
 }
 
 /* ═══════════════════════════════════════════════════════

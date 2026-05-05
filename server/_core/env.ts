@@ -74,6 +74,7 @@ export const ENV = {
   stripeSecretKey: process.env.CUSTOM_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || "",
   stripePublishableKey: process.env.CUSTOM_STRIPE_PUBLISHABLE_KEY || process.env.VITE_STRIPE_PUBLISHABLE_KEY || "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
+  stripeConnectWebhookSecret: process.env.STRIPE_CONNECT_WEBHOOK_SECRET || "",
   // Stripe pre-created price IDs (used in checkout sessions for proper Stripe reporting)
   stripePriceStarter: process.env.STRIPE_PRICE_STARTER ?? "",
   stripePriceGrowth: process.env.STRIPE_PRICE_GROWTH ?? "",
