@@ -236,8 +236,9 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`;
         if (!raw.includes("<!DOCTYPE") && !raw.includes("<html")) {
           throw new Error(`Page response missing HTML tags. Got: ${raw.slice(0, 200)}`);
         }
-        if (!raw.includes("</html>") && !raw.includes("</body>")) {
-          throw new Error(`Page HTML is truncated (hit token limit before </html>). Length: ${raw.length}`);
+        // If truncated, close the document gracefully (browser handles unclosed tags fine)
+        if (!raw.includes("</html>")) {
+          console.log(`      (HTML truncated at ${raw.length} chars — closing document)`);
         }
 
         // Strip optional markdown code fences
@@ -245,6 +246,9 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`;
           .replace(/^```html?\s*/im, "")
           .replace(/\s*```\s*$/im, "")
           .trim();
+        // Close truncated documents so the browser renders a complete page
+        if (!html.includes("</body>")) html += "\n</body>";
+        if (!html.includes("</html>")) html += "\n</html>";
         // Inject real AI-generated images in place of token placeholders
         html = await injectImages(html, params.imageType, params.primaryColor);
         // Cooldown after successful generation to respect 8k TPM rate limit
