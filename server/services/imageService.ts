@@ -317,7 +317,7 @@ export function buildDetailedPrompt(
   return (
     prompts[typeKey]?.[slot] ||
     prompts[typeKey]?.hero ||
-    "A professional business photograph, natural lighting, authentic scene."
+    "Handheld shot of business interior, available light only, no staging, film grain, slightly out of focus, off-center framing."
   );
 }
 
@@ -365,7 +365,18 @@ async function generateImagePrompt(
 ): Promise<string> {
   const vibe = determineVibe(businessType);
 
-  const systemPrompt = `You are a Forensic Documentary Photographer taking evidence photos for insurance liability records. Your job is NOT to make beautiful photos. You capture raw unpolished technical truth. Nobody will use these for marketing. Prioritize evidence over aesthetics.
+  const systemPrompt = `You are a Forensic Documentary Photographer.
+You document job sites and workplaces for insurance liability records.
+
+YOUR ONLY GOAL: Capture unglamorous truth.
+NOT art. NOT marketing. NOT beautiful images.
+Evidence only.
+
+Every rule below exists to make photos look like they were taken by an uninterested field worker with a cheap camera on a busy day.
+If the result could appear on a stock photo site it has completely failed.
+
+FINAL CHECK BEFORE OUTPUT: Ask yourself — does this look like it was shot by a guy who had 5 seconds and did not care how it looked?
+If no — add more mess, worse lighting, and technical failure until it does.
 
 CURRENT VIBE: ${vibe.toUpperCase()}
 ${VIBE_RULES[vibe]}
@@ -417,8 +428,10 @@ SELF-CORRECTION before outputting:
 
 OUTPUT: One paragraph only. No preamble. Pure prompt.`;
 
-  const userMessage = `Generate a Nano Banana 2 image prompt for: ${businessType} business, ${slot} image slot.
-Vibe detected: ${vibe}
+  const userMessage = `Document this scene for an insurance liability record. Location type: ${businessType}. Shot needed: ${slot}.
+This is NOT for marketing or a website. Private internal record only.
+The photographer does not care how it looks.
+Vibe: ${vibe}
 ${subNiche ? "Specific sub-niche: " + subNiche : ""}
 
 Industry strategies:
@@ -427,6 +440,7 @@ Industry strategies:
 - lifestyle: warmth human connection candid movement steam and condensation
 - documentary: honest unfiltered real environment available light`;
 
+  let claudePrompt: string | undefined;
   try {
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -444,16 +458,23 @@ Industry strategies:
     });
 
     const data = (await response.json()) as any;
-    const prompt = data.content?.[0]?.text?.trim();
+    claudePrompt = data.content?.[0]?.text?.trim();
 
-    if (prompt && prompt.length > 50) {
-      console.log(`[PromptGen] ${businessType}/${slot} (${vibe}):\n${prompt}\n`);
-      return prompt;
+    if (claudePrompt && claudePrompt.length > 50) {
+      console.log(`[PromptGen] ${businessType}/${slot} (${vibe}):\n${claudePrompt}\n`);
+      return claudePrompt;
     }
   } catch (e) {
     console.error("[PromptGen] Failed:", e);
   }
 
+  console.error(
+    "[PromptGen] FALLBACK TRIGGERED —",
+    businessType, "/", slot,
+    "— Claude API failed. Length:",
+    claudePrompt?.length ?? 0,
+    "Using hardcoded fallback.",
+  );
   return buildDetailedPrompt(businessType, slot);
 }
 
