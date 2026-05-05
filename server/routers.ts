@@ -19,7 +19,7 @@ import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
 import { devAccessRouter } from "./devAccessRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
-import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects } from "../drizzle/schema";
+import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users } from "../drizzle/schema";
 import { getDb } from "./db";
 import { eq } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
@@ -2031,6 +2031,28 @@ const ordersRouter = router({
       });
 
       return { clientSecret: session.client_secret, checkoutUrl: null };
+    }),
+
+  // Protected: create a Stripe Customer Portal session so customers can manage billing
+  createPortalSession: protectedProcedure
+    .input(z.object({ returnUrl: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const database = await getDb();
+      if (!database) throw new Error("Database unavailable");
+      const [userRow] = await database
+        .select({ stripeCustomerId: users.stripeCustomerId })
+        .from(users)
+        .where(eq(users.id, ctx.user.id))
+        .limit(1);
+      if (!userRow?.stripeCustomerId) throw new Error("No billing account found. Please complete a purchase first.");
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(ENV.stripeSecretKey);
+      const session = await stripe.billingPortal.sessions.create({
+        customer: userRow.stripeCustomerId,
+        return_url: input.returnUrl,
+        ...(ENV.stripePortalConfigId ? { configuration: ENV.stripePortalConfigId } : {}),
+      });
+      return { url: session.url };
     }),
 
   // Protected: list current user's orders
