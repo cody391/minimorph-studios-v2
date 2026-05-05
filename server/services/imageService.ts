@@ -36,7 +36,7 @@ export async function generateImage(
       return Array.isArray(data.output) ? data.output[0] : data.output;
     }
     if (data.id) {
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 24; i++) {
         await new Promise((r) => setTimeout(r, 5000));
         const poll = (await fetch(
           "https://api.replicate.com/v1/predictions/" + data.id,
@@ -45,9 +45,15 @@ export async function generateImage(
         if (poll.status === "succeeded") {
           return Array.isArray(poll.output) ? poll.output[0] : poll.output;
         }
-        if (poll.status === "failed") return null;
+        if (poll.status === "failed") {
+          console.error(`[ImageService] Replicate prediction failed: ${JSON.stringify(poll.error)}`);
+          return null;
+        }
       }
+      console.error(`[ImageService] Replicate polling timed out for prediction ${data.id}`);
+      return null;
     }
+    console.error(`[ImageService] Replicate bad response (HTTP ${res.status}): ${JSON.stringify(data).slice(0, 300)}`);
     return null;
   } catch (e) {
     console.error("[ImageService] Replicate error:", e);

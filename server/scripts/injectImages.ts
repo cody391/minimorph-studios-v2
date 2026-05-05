@@ -120,6 +120,10 @@ async function processsite(site: typeof SITES[number]): Promise<void> {
 
   for (let i = 0; i < count; i++) {
     const slot = SLOTS[i];
+    if (i > 0) {
+      console.log(`  → (waiting 12s to avoid Replicate rate limit...)`);
+      await new Promise((r) => setTimeout(r, 12000));
+    }
     console.log(`  → [${i + 1}/${count}] Generating ${slot} image...`);
     const url = await getBestImage(site.imageType, slot, site.primaryColor);
     const isSvg = url.startsWith("data:image/svg");
@@ -134,15 +138,12 @@ async function processsite(site: typeof SITES[number]): Promise<void> {
     return;
   }
 
-  // Replace each gradient occurrence in order so each slot gets its own URL.
-  // gradients[] may contain duplicates (all the same URI); we track per-needle counters.
-  const occurrenceCounter = new Map<string, number>();
+  // Replace each gradient occurrence in order. Always replace occurrence 0 (the first
+  // remaining match) — after each replacement the needle count in updatedHtml decrements,
+  // so n=0 is always the correct next target regardless of duplicate needles.
   let updatedHtml = html;
   for (let i = 0; i < count; i++) {
-    const needle = gradients[i];
-    const n = occurrenceCounter.get(needle) ?? 0;
-    updatedHtml = replaceNth(updatedHtml, needle, imageUrls[i], n);
-    occurrenceCounter.set(needle, n + 1);
+    updatedHtml = replaceNth(updatedHtml, gradients[i], imageUrls[i], 0);
   }
 
   console.log(`  → Deploying updated HTML via wrangler...`);
