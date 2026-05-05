@@ -130,9 +130,13 @@ const repsRouter = router({
         if (!accountId) {
           const account = await stripe.accounts.create({
             type: "express",
+            country: "US",
             email: rep.email,
             metadata: { repId: String(rep.id), repName: rep.fullName },
-            capabilities: { transfers: { requested: true } },
+            capabilities: {
+              card_payments: { requested: true },
+              transfers: { requested: true },
+            },
           });
           accountId = account.id;
           await db.updateRep(rep.id, { stripeConnectAccountId: accountId });
