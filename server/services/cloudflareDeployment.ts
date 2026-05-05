@@ -1,7 +1,13 @@
-import { createHash } from "crypto";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { ENV } from "../_core/env";
 
-const CF_API = "https://api.cloudflare.com/client/v4";
+const execFileAsync = promisify(execFile);
+
+const CF_API = "https://api.cloudflare.com/client/v4"; // used for project create, domain management
 
 export function getProjectName(businessName: string, projectId: number): string {
   const slug = businessName
@@ -57,88 +63,42 @@ export async function deployToPages(params: {
     return { success: false, deploymentUrl: "" };
   }
 
-  // Build files map with SHA-256 hashes (required by CF Pages v2 Direct Upload API)
-  const files: Record<string, { content: string; contentType: string; hash: string }> = {};
-
-  for (const [pageName, html] of Object.entries(params.pages)) {
-    const fileName = pageName === "index" ? "index.html" : `${pageName}.html`;
-    files[`/${fileName}`] = {
-      content: html,
-      contentType: "text/html",
-      hash: createHash("sha256").update(html).digest("hex"),
-    };
-  }
-
-  // Add _redirects so clean URLs resolve without .html extension
-  const redirectsContent = Object.keys(params.pages)
-    .filter(p => p !== "index")
-    .map(p => `/${p} /${p}.html 200`)
-    .join("\n");
-  if (redirectsContent) {
-    files["/_redirects"] = {
-      content: redirectsContent,
-      contentType: "text/plain",
-      hash: createHash("sha256").update(redirectsContent).digest("hex"),
-    };
-  }
-
-  // Step 1: POST manifest to create the deployment
-  const manifest: Record<string, string> = {};
-  for (const [path, { hash }] of Object.entries(files)) {
-    manifest[path] = hash;
-  }
-  const manifestForm = new FormData();
-  manifestForm.append("manifest", JSON.stringify(manifest));
-
-  const deployRes = await fetch(
-    `${CF_API}/accounts/${ENV.cloudflareAccountId}/pages/projects/${params.projectName}/deployments`,
-    {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${ENV.cloudflareApiToken}` },
-      body: manifestForm,
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cf-pages-"));
+  try {
+    for (const [pageName, html] of Object.entries(params.pages)) {
+      const fileName = pageName === "index" ? "index.html" : `${pageName}.html`;
+      fs.writeFileSync(path.join(tmpDir, fileName), html, "utf-8");
     }
-  );
 
-  const deployData = await deployRes.json() as any;
-  if (!deployData.success) {
-    throw new Error(`Cloudflare deployment failed: ${JSON.stringify(deployData.errors)}`);
-  }
+    // Add _redirects so clean URLs resolve without .html extension
+    const redirectsContent = Object.keys(params.pages)
+      .filter(p => p !== "index")
+      .map(p => `/${p} /${p}.html 200`)
+      .join("\n");
+    if (redirectsContent) {
+      fs.writeFileSync(path.join(tmpDir, "_redirects"), redirectsContent, "utf-8");
+    }
 
-  const deploymentId: string = deployData.result?.id;
-  const requiredHashes: string[] = deployData.result?.required_file_hashes ?? [];
-
-  // Step 2: Upload each file that CF doesn't already have cached
-  for (const [path, { content, contentType, hash }] of Object.entries(files)) {
-    if (!requiredHashes.includes(hash)) continue;
-    const uploadForm = new FormData();
-    uploadForm.append(hash, new Blob([content], { type: contentType }), path.slice(1));
-    const uploadRes = await fetch(
-      `${CF_API}/accounts/${ENV.cloudflareAccountId}/pages/projects/${params.projectName}/deployments/${deploymentId}/files`,
+    const { stdout, stderr } = await execFileAsync(
+      "npx",
+      ["wrangler@latest", "pages", "deploy", tmpDir, "--project-name", params.projectName, "--branch", "main"],
       {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${ENV.cloudflareApiToken}` },
-        body: uploadForm,
+        env: {
+          ...process.env,
+          CLOUDFLARE_API_TOKEN: ENV.cloudflareApiToken,
+          CLOUDFLARE_ACCOUNT_ID: ENV.cloudflareAccountId,
+        },
+        timeout: 180000,
       }
     );
-    const uploadData = await uploadRes.json() as any;
-    if (!uploadData.success) {
-      throw new Error(`CF file upload failed for ${path}: ${JSON.stringify(uploadData.errors)}`);
-    }
+
+    const output = stdout + stderr;
+    const match = output.match(/https:\/\/[a-f0-9]+\.[^.\s]+\.pages\.dev/);
+    const deploymentUrl = match ? match[0] : `https://${params.projectName}.pages.dev`;
+    return { success: true, deploymentUrl };
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
-
-  // Step 3: Finalize the deployment
-  await fetch(
-    `${CF_API}/accounts/${ENV.cloudflareAccountId}/pages/projects/${params.projectName}/deployments/${deploymentId}/finish`,
-    {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${ENV.cloudflareApiToken}` },
-    }
-  );
-
-  return {
-    success: true,
-    deploymentUrl: deployData.result?.url || `https://${params.projectName}.pages.dev`,
-  };
 }
 
 export async function addCustomDomain(params: {

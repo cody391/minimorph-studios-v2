@@ -111,23 +111,31 @@ MINIMORPH BANNER (top of every page, BEFORE navigation):
 </div>`;
 
 async function injectImages(html: string, imageType: string, primaryColor: string): Promise<string> {
-  const tokens = [
-    "{{HERO_IMAGE}}",
-    "{{GALLERY_IMAGE_1}}",
-    "{{GALLERY_IMAGE_2}}",
-    "{{GALLERY_IMAGE_3}}",
-    "{{ABOUT_IMAGE}}",
-  ];
+  const tokens = ["{{HERO_IMAGE}}", "{{GALLERY_IMAGE_1}}", "{{GALLERY_IMAGE_2}}", "{{GALLERY_IMAGE_3}}", "{{ABOUT_IMAGE}}"];
   const slots = ["hero", "gallery", "gallery", "gallery", "about"];
-  console.log(`      → Fetching ${tokens.filter(t => html.includes(t)).length} real images from Replicate...`);
-  const urls = await Promise.all(
-    slots.map((slot) => getBestImage(imageType, slot, primaryColor))
-  );
-  let result = html;
-  tokens.forEach((token, i) => {
-    result = result.split(token).join(urls[i]);
-  });
-  return result;
+  const usedTokens = tokens.filter(t => html.includes(t));
+
+  if (usedTokens.length > 0) {
+    console.log(`      → Replacing ${usedTokens.length} image tokens with real Replicate images...`);
+    const urls = await Promise.all(slots.map(slot => getBestImage(imageType, slot, primaryColor)));
+    let result = html;
+    tokens.forEach((token, i) => { result = result.split(token).join(urls[i]); });
+    return result;
+  }
+
+  // Fallback: LLM used CSS gradients — override hero/banner sections with real image via injected CSS
+  console.log(`      → No tokens found — injecting hero image via CSS override...`);
+  const heroUrl = await getBestImage(imageType, "hero", primaryColor);
+  const cssOverride = `\n<style>
+/* MiniMorph image injection */
+.hero,.hero-section,#hero,[class*="hero"],[class*="banner"],[class*="jumbotron"],[class*="header-section"] {
+  background-image: url('${heroUrl}') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-blend-mode: overlay !important;
+}
+</style>`;
+  return html.replace("</head>", cssOverride + "\n</head>");
 }
 
 async function generateSiteHtml(params: {
@@ -194,6 +202,11 @@ Every widget must be visually present and look completely real.
 
 FULL QUESTIONNAIRE DATA:
 ${questionnaireStr}
+
+MANDATORY IMAGE TOKENS — include these exact strings as src attribute values (will be replaced with real photos):
+  hero <img src="{{HERO_IMAGE}}"> — full-width, min-height 500px, object-fit:cover
+  gallery <img src="{{GALLERY_IMAGE_1}}"> <img src="{{GALLERY_IMAGE_2}}"> <img src="{{GALLERY_IMAGE_3}}">
+  about/team <img src="{{ABOUT_IMAGE}}">
 
 Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
             },
