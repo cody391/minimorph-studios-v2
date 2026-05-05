@@ -9,17 +9,22 @@ const PREMIUM_REQUIREMENTS = `== PREMIUM SHOWCASE REQUIREMENTS ==
 This is a MiniMorph Studios showcase demo site.
 It must look world-class — better than 90% of all small business websites on the internet.
 
+STRICT TOKEN BUDGET — CRITICAL:
+Your ENTIRE HTML output must be under 6000 tokens.
+STYLE BLOCK LIMIT: Maximum 80 lines of CSS total. No more.
+Use CSS variables for all repeated colors. Shorthand everything. Zero utility classes.
+DO NOT write more than 2 @media queries. DO NOT write keyframe animations.
+Output HTML body FIRST (mentally), then write only the CSS needed to style it.
+
 REQUIRED CSS STANDARDS:
 - CSS custom properties for all colors at :root
-- Smooth transitions on ALL interactive elements (transition: all 0.3s ease)
 - Cards: box-shadow 0 4px 24px rgba(0,0,0,0.12)
 - Border radius: 12-16px on all cards
-- Section padding: 80px-120px top and bottom
+- Section padding: 80px top and bottom
 - Max content width: 1200px centered with auto margins
 - Full-viewport hero: min-height 100vh
 - Sticky navigation with backdrop-filter: blur(10px)
-- ALL buttons have hover states with color transitions
-- Mobile responsive with @media (max-width: 768px)
+- Mobile responsive with ONE @media (max-width: 768px) block
 
 REQUIRED TYPOGRAPHY:
 - Display headlines: Georgia or Playfair Display serif, 64-72px, bold
@@ -211,7 +216,7 @@ MANDATORY IMAGE TOKENS — include these exact strings as src attribute values (
 Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
             },
           ],
-          maxTokens: 8000,
+          maxTokens: 6000,
         });
 
         const raw = typeof result.choices[0]?.message?.content === "string"
@@ -220,6 +225,9 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
 
         if (!raw.includes("<!DOCTYPE") && !raw.includes("<html")) {
           throw new Error(`Page response missing HTML tags. Got: ${raw.slice(0, 200)}`);
+        }
+        if (!raw.includes("</html>") && !raw.includes("</body>")) {
+          throw new Error(`Page HTML is truncated (hit token limit before </html>). Length: ${raw.length}`);
         }
 
         // Strip optional markdown code fences
