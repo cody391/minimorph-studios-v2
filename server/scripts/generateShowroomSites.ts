@@ -167,6 +167,7 @@ async function injectImages(html: string, imageType: string, primaryColor: strin
 async function generateSiteHtml(params: {
   businessName: string;
   packageTier: string;
+  monthlyPrice: number;
   industry: string;
   imageType: string;
   primaryColor: string;
@@ -213,7 +214,7 @@ Start your response with <!DOCTYPE html> and end with </html>.`;
 
 BUSINESS: ${params.businessName}
 INDUSTRY: ${params.industry}
-PACKAGE: ${params.packageTier}
+PACKAGE: ${params.packageTier} plan — $${params.monthlyPrice}/mo (use this EXACT price in the MiniMorph banner)
 ALL SITE PAGES (for navigation links): ${navPages}
 THIS PAGE: ${pageLabel}
 
@@ -539,6 +540,7 @@ async function generateAndDeployAll(): Promise<SiteResult[]> {
           generatedHtml = await generateSiteHtml({
             businessName: site.businessName,
             packageTier: site.packageTier,
+            monthlyPrice: site.monthlyPrice,
             industry: site.industry,
             imageType: site.imageType,
             primaryColor: site.primaryColor,
