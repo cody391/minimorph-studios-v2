@@ -1,6 +1,117 @@
+import axios from "axios";
 import { ENV } from "../_core/env";
 
-// ─── Replicate (hero images — AI quality, ~$0.003/image) ─────────────────────
+// ─── Cloudflare R2 upload ─────────────────────────────────────────────────────
+
+async function uploadToR2(
+  imageBuffer: Buffer,
+  mimeType: string,
+): Promise<string | null> {
+  try {
+    if (
+      !ENV.cloudflareR2Bucket ||
+      !ENV.cloudflareR2AccessKeyId ||
+      !ENV.cloudflareR2SecretAccessKey
+    )
+      return null;
+
+    const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
+
+    const client = new S3Client({
+      region: "auto",
+      endpoint:
+        "https://" + ENV.cloudflareAccountId + ".r2.cloudflarestorage.com",
+      credentials: {
+        accessKeyId: ENV.cloudflareR2AccessKeyId,
+        secretAccessKey: ENV.cloudflareR2SecretAccessKey,
+      },
+    });
+
+    const ext = mimeType.includes("png") ? "png" : "jpg";
+    const key =
+      "site-images/" +
+      Date.now() +
+      "-" +
+      Math.random().toString(36).slice(2) +
+      "." +
+      ext;
+
+    await client.send(
+      new PutObjectCommand({
+        Bucket: ENV.cloudflareR2Bucket,
+        Key: key,
+        Body: imageBuffer,
+        ContentType: mimeType,
+        CacheControl: "public, max-age=31536000",
+      }),
+    );
+
+    const base = ENV.imageAssetCdnBaseUrl
+      ? ENV.imageAssetCdnBaseUrl.replace(/\/$/, "")
+      : "https://" + ENV.cloudflareR2Bucket + ".r2.dev";
+    const publicUrl = base + "/" + key;
+    console.log("[R2] Uploaded:", publicUrl);
+    return publicUrl;
+  } catch (e) {
+    console.error("[R2] Upload failed:", e);
+    return null;
+  }
+}
+
+// ─── Gemini Nano Banana 2 (gemini-3.1-flash-image-preview) ───────────────────
+// Primary image source — photorealistic, ~$0.067/image
+
+async function generateImageGeminiNanoBanana(
+  prompt: string,
+): Promise<string | null> {
+  if (!ENV.geminiApiKey) return null;
+  try {
+    // Use axios instead of fetch — avoids undici's headersTimeout which cuts off
+    // Gemini image generation requests that take 60-120s to start responding.
+    const response = await axios.post(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=" +
+        ENV.geminiApiKey,
+      {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+        timeout: 180000, // 3 minutes
+      },
+    );
+
+    if (response.status !== 200) {
+      console.error("[NanoBanana] API error:", response.status, JSON.stringify(response.data).slice(0, 300));
+      return null;
+    }
+
+    const parts = response.data?.candidates?.[0]?.content?.parts;
+
+    for (const part of parts || []) {
+      if (part.inlineData?.mimeType?.startsWith("image/")) {
+        const imageBuffer = Buffer.from(part.inlineData.data, "base64");
+        const r2Url = await uploadToR2(imageBuffer, part.inlineData.mimeType);
+        if (r2Url) return r2Url;
+        console.log("[NanoBanana] R2 unavailable, using data URL");
+        return "data:image/jpeg;base64," + part.inlineData.data;
+      }
+    }
+
+    console.error("[NanoBanana] No image in response:", JSON.stringify(response.data).slice(0, 300));
+    return null;
+  } catch (e: any) {
+    const status = e?.response?.status;
+    const msg = e?.response?.data?.error?.message || e?.message || String(e);
+    console.error(`[NanoBanana] Error (HTTP ${status ?? "?"}):`, msg.slice(0, 300));
+    return null;
+  }
+}
+
+// ─── Replicate Flux 1.1 Pro Ultra — fallback (~$0.006/image) ─────────────────
+
+const REPLICATE_NEGATIVE_PROMPT =
+  "AI generated, CGI, digital art, illustration, cartoon, anime, painting, render, 3D, fake, plastic, oversaturated, HDR, lens flare, stock photo";
 
 export async function generateImage(
   prompt: string,
@@ -10,7 +121,7 @@ export async function generateImage(
   if (!ENV.replicateApiKey) return null;
   try {
     const res = await fetch(
-      "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions",
+      "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro-ultra/predictions",
       {
         method: "POST",
         headers: {
@@ -21,6 +132,7 @@ export async function generateImage(
         body: JSON.stringify({
           input: {
             prompt,
+            negative_prompt: REPLICATE_NEGATIVE_PROMPT,
             width,
             height,
             output_format: "webp",
@@ -46,14 +158,20 @@ export async function generateImage(
           return Array.isArray(poll.output) ? poll.output[0] : poll.output;
         }
         if (poll.status === "failed") {
-          console.error(`[ImageService] Replicate prediction failed: ${JSON.stringify(poll.error)}`);
+          console.error(
+            `[ImageService] Replicate prediction failed: ${JSON.stringify(poll.error)}`,
+          );
           return null;
         }
       }
-      console.error(`[ImageService] Replicate polling timed out for prediction ${data.id}`);
+      console.error(
+        `[ImageService] Replicate polling timed out for prediction ${data.id}`,
+      );
       return null;
     }
-    console.error(`[ImageService] Replicate bad response (HTTP ${res.status}): ${JSON.stringify(data).slice(0, 300)}`);
+    console.error(
+      `[ImageService] Replicate bad response (HTTP ${res.status}): ${JSON.stringify(data).slice(0, 300)}`,
+    );
     return null;
   } catch (e) {
     console.error("[ImageService] Replicate error:", e);
@@ -61,7 +179,7 @@ export async function generateImage(
   }
 }
 
-// ─── Unsplash (gallery/about/team — free) ────────────────────────────────────
+// ─── Unsplash (legacy free fallback, requires UNSPLASH_ACCESS_KEY) ────────────
 
 export async function getUnsplashImage(query: string): Promise<string | null> {
   if (!ENV.unsplashAccessKey) return null;
@@ -79,77 +197,68 @@ export async function getUnsplashImage(query: string): Promise<string | null> {
   }
 }
 
-// ─── Unsplash query library — optimized search strings per business type/slot ─
+// ─── Hyper-realistic suffix appended to every prompt ─────────────────────────
 
-function getUnsplashQuery(businessType: string, slot: string): string {
-  const queries: Record<string, Record<string, string>> = {
-    restaurant: {
-      hero:    "upscale restaurant interior warm lighting",
-      gallery: "gourmet food plating professional photography",
-      about:   "chef professional kitchen portrait",
-      team:    "restaurant staff professional portrait",
-    },
+const HYPER_REAL =
+  "Hyper-realistic. No AI generated look. Shot on Canon 5D Mark IV. Real photograph only. Photojournalism quality. Indistinguishable from a real professional photograph. Natural imperfections. Authentic lighting. Not staged. Not stock photo looking. Candid professional quality. No lens flares. No HDR look. No oversaturation. No plastic skin. No perfect symmetry. No stock photo composition.";
+
+// ─── Detailed per-business-type, per-slot prompts ────────────────────────────
+
+export function buildDetailedPrompt(
+  businessType: string,
+  slot: string,
+): string {
+  const prompts: Record<string, Record<string, string>> = {
     contractor: {
-      hero:    "modern home construction professional architecture",
-      gallery: "home renovation completed project interior",
-      about:   "contractor professional worksite confident",
-      team:    "construction worker professional portrait",
+      hero: `Wide-angle documentary photograph of an active home construction site at golden hour. Experienced workers in worn safety gear framing timber walls, sawdust in the air, lumber stacks in foreground, blue sky with soft clouds behind. Shot on Canon 5D Mark IV with 24mm lens, f/5.6, natural raking sunlight. ${HYPER_REAL}`,
+      gallery: `Environmental portrait photograph of a beautifully finished modern kitchen renovation — quartz countertops, custom cabinetry, pendant lights, natural window light streaming in from the left. Wide shot showing full space, slight imperfections in real tile grout. Shot on Canon 5D Mark IV with 35mm lens, f/4, diffused daylight. ${HYPER_REAL}`,
+      about: `Candid portrait of a weathered male contractor in his early 50s on a job site. Hard hat pushed back, work-worn Carhartt shirt, genuine relaxed smile mid-conversation. Job site framing visible in background, overcast diffused light. Shot on Canon 5D Mark IV with 85mm lens at f/2.8, shallow depth of field. ${HYPER_REAL}`,
+      team: `Candid documentary group photograph of a four-person construction crew on a completed project. Workers in mismatched PPE gear, genuine laughter, afternoon golden hour light. Shot wide at f/5.6 on Canon 5D Mark IV with 35mm lens, natural shadows, dust particles visible in air. ${HYPER_REAL}`,
+    },
+    restaurant: {
+      hero: `Wide-angle interior photograph of a warm upscale farm-to-table restaurant at dinner service — empty but set tables, Edison bulb pendant lights, reclaimed wood walls, candles lit, leather banquettes. No people. Overcast natural light from front windows mixed with warm interior. Shot on Canon 5D Mark IV with 17mm tilt-shift lens, f/8. ${HYPER_REAL}`,
+      gallery: `Close-up food photography of a beautifully plated seasonal entrée on a handmade ceramic plate — delicate sauce work, fresh microgreens, slight imperfection in the plating. Shot overhead on a worn linen tablecloth with soft window light from the left. Canon 5D Mark IV with 100mm macro lens, f/4.5. ${HYPER_REAL}`,
+      about: `Candid portrait of a confident head chef in her early 40s in a working restaurant kitchen during service. White chef coat slightly stained, genuine focused expression, motion blur of other staff in background. Warm overhead kitchen lighting. Shot on Canon 5D Mark IV with 85mm lens, f/2.2. ${HYPER_REAL}`,
+      team: `Documentary photograph of a restaurant kitchen crew plating dishes during service — steam rising from pots, motion blur on hands, multiple staff in frame, warm amber overhead light. Shot at 1/60s on Canon 5D Mark IV with 35mm lens to capture authentic motion. ${HYPER_REAL}`,
     },
     gym: {
-      hero:    "modern gym fitness studio interior dramatic lighting",
-      gallery: "fitness workout athletic photography",
-      about:   "personal trainer professional portrait gym",
-      team:    "fitness coach professional portrait",
+      hero: `Wide-angle architectural photograph of a modern functional fitness studio — rubber hex tile floors, racks of dumbbells, pull-up rigs, chalk dust in the air, dramatic overhead track lighting. No people. Shot on Canon 5D Mark IV with 16mm lens, f/8, mixed LED and natural light from side windows. ${HYPER_REAL}`,
+      gallery: `Dynamic sports photograph of an athletic woman mid-clean-and-jerk, barbell overhead, muscles defined, chalk flying, intense focused expression. Shot at 1/500s to freeze motion, dramatic side lighting, slight motion blur on barbell plates. Canon 5D Mark IV with 70mm lens, f/3.5. ${HYPER_REAL}`,
+      about: `Candid portrait of a female personal trainer in her early 30s in a real gym setting — athletic wear, clipboard in hand, natural genuine smile while looking off-camera. Gym equipment and members blurred in background, overcast window light. Canon 5D Mark IV with 85mm lens at f/2.8. ${HYPER_REAL}`,
+      team: `Group photograph of four coaches in branded athletic wear standing informally in a gym — different heights and builds, authentic relaxed postures, not posed. Mixed natural and overhead lighting. Shot on Canon 5D Mark IV with 35mm lens, f/5.6, late afternoon light. ${HYPER_REAL}`,
     },
     salon: {
-      hero:    "luxury hair salon interior modern upscale",
-      gallery: "professional hair styling balayage result",
-      about:   "hair stylist professional portrait confident",
-      team:    "salon stylist professional portrait",
+      hero: `Wide interior photograph of a boutique hair salon during a quiet afternoon — modern styling chairs with real leather wear, large mirrors, plants, marble counters, tool holders with real tools. Soft diffused natural light from tall windows. No people. Canon 5D Mark IV with 24mm lens, f/6.3, overcast daylight. ${HYPER_REAL}`,
+      gallery: `Close-up beauty photography of a real model's hair — stunning balayage color melt from brunette to caramel blonde, natural waves, slight flyaways and texture. Photographed in a salon chair with soft window light from the left. Canon 5D Mark IV with 135mm lens at f/2.8. ${HYPER_REAL}`,
+      about: `Candid portrait of a stylish female hairstylist in her mid-30s at her station — holding a brush mid-action, creative tattoos visible on forearm, genuine engaged expression. Salon mirrors and products slightly blurred in background. Soft natural window light. Canon 5D Mark IV with 85mm at f/2.2. ${HYPER_REAL}`,
+      team: `Candid group photograph of three salon stylists in a real salon — each with distinct personal style and hair, mid-conversation with natural smiles, not looking at camera. Warm afternoon light, real salon environment with tools and products visible. Canon 5D Mark IV with 35mm at f/5.6. ${HYPER_REAL}`,
     },
     boutique: {
-      hero:    "boutique clothing store interior minimal natural light",
-      gallery: "fashion clothing editorial photography curated",
-      about:   "boutique owner professional portrait",
-      team:    "fashion retail professional portrait",
+      hero: `Wide interior photograph of an independent women's clothing boutique — curated racks of real garments, wooden fixtures, vintage-style rugs, natural linen and woven baskets. No people. Soft overcast natural light from large front windows. Canon 5D Mark IV with 24mm lens at f/7.1. ${HYPER_REAL}`,
+      gallery: `Flat lay fashion editorial on a real linen surface — curated clothing items, small accessories, handwritten tag, natural imperfect wrinkles in fabric. Soft natural diffused overhead light, slight shadows showing texture. Canon 5D Mark IV with 50mm lens at f/4, directly overhead. ${HYPER_REAL}`,
+      about: `Candid portrait of a boutique owner in her early 40s — stylish but not overdone, mid-task arranging a clothing rack, genuine absorbed expression, warm natural window light from the side. Boutique interior visible behind her. Canon 5D Mark IV with 85mm at f/2.5. ${HYPER_REAL}`,
+      team: `Candid lifestyle photograph of the boutique owner and one employee unpacking new arrival boxes — both laughing, tissue paper and garments in motion, warm afternoon light, authentic mess of packaging on the floor. Canon 5D Mark IV with 35mm at f/4. ${HYPER_REAL}`,
     },
     coffee: {
-      hero:    "specialty coffee roastery interior warm amber",
-      gallery: "latte art coffee professional photography",
-      about:   "barista professional portrait coffee espresso",
-      team:    "coffee shop barista professional",
+      hero: `Wide-angle interior photograph of a specialty coffee roastery — exposed brick walls, burlap coffee sacks stacked, a large drum roaster with visible patina, warm amber pendant lighting, wooden shelving with labeled bags. No people. Canon 5D Mark IV with 17mm lens at f/8, warm tungsten and natural light mix. ${HYPER_REAL}`,
+      gallery: `Close-up product photograph of a freshly pulled espresso in a ceramic demitasse — crema forming with natural swirl imperfections, slight steam rising, dark wooden bar surface with coffee grounds nearby. Soft side window light. Canon 5D Mark IV with 100mm macro at f/3.5. ${HYPER_REAL}`,
+      about: `Candid portrait of a male barista in his early 30s — short beard, coffee-stained apron, mid-calibration of a grinder, intense focus and quiet confidence. Warm roastery ambient light from side, shelves of coffee bags blurred behind. Canon 5D Mark IV with 85mm at f/2. ${HYPER_REAL}`,
+      team: `Documentary photograph of two roastery staff at work — one monitoring the roaster dials, one hand-scooping freshly roasted beans, natural teamwork with no eye contact to camera. Warm amber overhead light, real industrial equipment. Canon 5D Mark IV with 35mm at f/4, 1/80s. ${HYPER_REAL}`,
     },
   };
 
   const typeKey =
-    Object.keys(queries).find((k) => businessType.toLowerCase().includes(k)) ||
+    Object.keys(prompts).find((k) => businessType.toLowerCase().includes(k)) ||
     "restaurant";
 
   return (
-    queries[typeKey]?.[slot] ||
-    queries[typeKey]?.hero ||
-    `${businessType} professional photography`
+    prompts[typeKey]?.[slot] ||
+    prompts[typeKey]?.hero ||
+    `Professional DSLR photograph, natural lighting, editorial quality. ${HYPER_REAL}`
   );
 }
 
-// ─── AI prompt library — detailed prompts for Replicate hero images ───────────
-
-const HERO_PROMPTS: Record<string, string> = {
-  restaurant:
-    "Upscale farm-to-table restaurant interior, warm Edison bulb lighting, wooden tables, intimate atmosphere, no people, professional photography, sharp focus",
-  contractor:
-    "Professional construction workers on modern home project, blue sky, safety equipment, craftsmanship visible, natural daylight, photorealistic",
-  gym:
-    "Modern high-intensity fitness studio, premium equipment, dramatic lighting, no people, professional photography, wide angle",
-  salon:
-    "Luxury hair salon interior, modern styling chairs, professional lighting, upscale aesthetic, no people, editorial photography",
-  boutique:
-    "Elegant independent clothing boutique interior, curated displays, natural window light, minimalist aesthetic, no people, architectural photography",
-  coffee:
-    "Specialty coffee roastery interior, espresso machine, warm amber lighting, artisan atmosphere, no people, editorial food photography",
-};
-
-// ─── SVG gradient fallback ────────────────────────────────────────────────────
+// ─── SVG gradient fallback — absolute last resort ────────────────────────────
 
 function buildGradientSvg(primaryColor: string): string {
   return (
@@ -168,10 +277,11 @@ function buildGradientSvg(primaryColor: string): string {
 
 // ─── Primary entry point ──────────────────────────────────────────────────────
 //
-// Cost strategy:
-//   hero   → Replicate AI (~$0.003) — first thing visitors see, worth it
-//   others → Unsplash free stock    — high quality, zero cost
-//   all    → SVG gradient           — last resort, never broken
+// Provider priority:
+//   1. Customer photo — always wins if provided
+//   2. Gemini Nano Banana 2 — photorealistic, ~$0.067/image (primary)
+//   3. Replicate Flux 1.1 Pro Ultra — fallback if Gemini unavailable, ~$0.006/image
+//   4. SVG gradient — absolute last resort only
 
 export async function getBestImage(
   businessType: string,
@@ -179,48 +289,22 @@ export async function getBestImage(
   primaryColor = "#1a1a1a",
   customerPhotoUrl?: string,
 ): Promise<string> {
-  // 1. Customer's own photo always wins
   if (customerPhotoUrl) return customerPhotoUrl;
 
-  const typeKey =
-    Object.keys(HERO_PROMPTS).find((k) => businessType.toLowerCase().includes(k)) ||
-    "restaurant";
+  const prompt = buildDetailedPrompt(businessType, slot);
 
-  // 2. Hero slot: Replicate AI for maximum first-impression quality
-  if (slot === "hero" && ENV.replicateApiKey) {
-    const prompt =
-      HERO_PROMPTS[typeKey] ||
-      "Professional small business exterior, clean modern aesthetic, natural lighting, no people";
-    const url = await generateImage(prompt);
-    if (url) {
-      console.log(`[ImageService] hero → Replicate ✅`);
-      return url;
-    }
+  const geminiUrl = await generateImageGeminiNanoBanana(prompt);
+  if (geminiUrl) {
+    console.log(`[ImageService] ${slot} → Nano Banana 2 ✅`);
+    return geminiUrl;
   }
 
-  // 3. Non-hero (gallery, about, team): Unsplash free stock
-  if (slot !== "hero" && ENV.unsplashAccessKey) {
-    const query = getUnsplashQuery(businessType, slot);
-    const url = await getUnsplashImage(query);
-    if (url) {
-      console.log(`[ImageService] ${slot} → Unsplash ✅`);
-      return url;
-    }
+  const replicateUrl = await generateImage(prompt);
+  if (replicateUrl) {
+    console.log(`[ImageService] ${slot} → Replicate fallback ✅`);
+    return replicateUrl;
   }
 
-  // 4. Replicate fallback for any slot (e.g. Unsplash not configured)
-  if (ENV.replicateApiKey) {
-    const prompt =
-      HERO_PROMPTS[typeKey] ||
-      "Professional small business exterior, clean modern aesthetic, natural lighting";
-    const url = await generateImage(prompt);
-    if (url) {
-      console.log(`[ImageService] ${slot} → Replicate fallback ✅`);
-      return url;
-    }
-  }
-
-  // 5. SVG gradient — never shows a broken image
-  console.log(`[ImageService] ${slot} → SVG gradient fallback`);
+  console.error(`[ImageService] ${slot} → ALL providers failed, using gradient`);
   return buildGradientSvg(primaryColor);
 }
