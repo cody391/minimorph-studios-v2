@@ -166,7 +166,7 @@ async function generateImageGeminiNanoBanana(
 // ─── Replicate Flux 1.1 Pro Ultra — fallback (~$0.006/image) ─────────────────
 
 const REPLICATE_NEGATIVE_PROMPT =
-  "AI generated, CGI, digital art, illustration, cartoon, anime, painting, render, 3D, fake, plastic, oversaturated, HDR, lens flare, stock photo";
+  "AI generated, CGI, digital art, illustration, cartoon, anime, painting, render, 3D, fake, plastic, oversaturated, HDR, stock photo";
 
 export async function generateImage(
   prompt: string,
@@ -261,52 +261,52 @@ export function buildDetailedPrompt(
 ): string {
   const prompts: Record<string, Record<string, string>> = {
     contractor: {
-      hero: "A construction crew framing a house at golden hour. Workers in worn safety gear, lumber stacks, sawdust in the air, warm sunlight. Documentary style.",
+      hero: "Low-angle handheld shot of dirty gloved hands driving chisel into cracked concrete, heavy motion blur on hands, dust plume mid-air, harsh flickering fluorescent overhead, film grain Kodak Portra 400 pushed one stop, f/2.8, face cut off above jaw, safety cone blurred in extreme foreground, off-center.",
       gallery:
-        "A beautifully finished modern kitchen renovation. Quartz countertops, custom cabinets, natural window light streaming in.",
+        "Interior finished kitchen shot quickly from doorway, slightly tilted frame, cabinet door ajar, fingerprints on countertop, cool fluorescent fighting warm pendant, 35mm f/4, film grain, off-center.",
       about:
-        "A weathered male contractor in his 50s on a job site. Hard hat, genuine smile, job site visible behind him.",
-      team: "Four construction workers laughing together at a completed job site. Golden hour light, authentic candid moment.",
+        "Male contractor mid-laugh not looking at camera, sawdust on shoulders, sun-damaged skin, hard hat mid-gesture, job site blurred behind, flat overcast light, 85mm f/1.8, face cut at forehead.",
+      team: "Four workers end of day packing tools, two talking one on phone one walking away, mismatched worn PPE, dirt on forearms, flat overcast, 35mm f/5.6, camera shake.",
     },
     restaurant: {
-      hero: "An upscale farm-to-table restaurant interior at dinner service. Edison bulb lighting, wooden tables, candles lit, no people.",
+      hero: "Empty restaurant before service from near bar, one chair pushed out, wine glass asymmetric shadow on linen, Edison bulbs amber, candle just lit thin smoke wisp, 24mm f/5.6 Kodak Portra 160, slight lean.",
       gallery:
-        "A beautifully plated seasonal dish on a handmade ceramic plate. Microgreens, delicate sauce work, natural window light.",
+        "Overhead plate shot off-center, sauce pooled asymmetrically, microgreen wilting, fingerprint on plate rim, soft window light left, 100mm f/4, film grain.",
       about:
-        "A confident female head chef in a working kitchen during service. White coat, focused expression, steam in background.",
-      team: "Restaurant kitchen crew plating dishes during dinner service. Steam rising, motion blur on hands, warm amber light.",
+        "Chef mid-plating not aware of camera, food stain on coat sleeve, hair out of cap, intense downward focus, steam blurring background, 85mm f/2.2.",
+      team: "Kitchen crew during service, sharp on one face others motion blurred, steam rising, hands fast, warm amber overhead, 35mm f/2.8 1/60s.",
     },
     gym: {
-      hero: "A modern high-intensity fitness studio interior. Rubber floors, dumbbells, pull-up rigs, dramatic overhead lighting, no people.",
+      hero: "Low angle wide fitness studio from corner, rubber floor sharp foreground, chalk dust on nearest dumbbell handles, harsh overhead track lighting hard shadows, no people, 16mm f/8.",
       gallery:
-        "An athletic woman mid-lift with a barbell overhead. Chalk flying, intense focus, dramatic side lighting.",
+        "Woman mid-clean-and-jerk peak position, chalk cloud dispersing, muscles strained genuine grimace, bar bending, face sharp feet blurred, 70mm f/3.5 1/500s dramatic side light.",
       about:
-        "A female personal trainer in a real gym. Athletic wear, genuine smile, equipment blurred behind her.",
-      team: "Four fitness coaches standing informally in a gym. Different builds, relaxed postures, natural afternoon light.",
+        "Trainer mid-coaching not posing, animated expression, sweat at temples, athletic wear with pilling, gym floor blurred, overcast window light, 85mm f/2.0.",
+      team: "Four coaches mid-conversation no camera awareness, one laughing one gesturing one looking away, different body types, late afternoon window light, 35mm f/5.6.",
     },
     salon: {
-      hero: "A boutique hair salon interior on a quiet afternoon. Styling chairs, large mirrors, plants, soft natural window light, no people.",
+      hero: "Salon interior from doorway late afternoon, styling chairs real leather wear, product bottles disorganized, plant with yellowed leaf, overcast window light reflections in mirrors, 24mm f/6.3.",
       gallery:
-        "A stunning balayage hair color result on a real model. Brunette to caramel, natural waves, soft window light.",
+        "Close crop of hair from behind model seated, individual strands flyaways at crown, slight frizz temples, color uneven, window light from left, 135mm f/2.8.",
       about:
-        "A stylish female hairstylist in her 30s at her station. Mid-action with a brush, genuine expression, salon behind her.",
-      team: "Three salon stylists in a real salon mid-conversation. Each with distinct personal style, warm afternoon light.",
+        "Stylist mid-technique not looking at camera, forearm tattoos, product residue on fingers, genuine focus, mirrors blurred behind, soft natural light, 85mm f/2.2.",
+      team: "Three stylists mid-genuine break, one laughing one on phone one with coffee, distinct personal styles, warm afternoon window light, 35mm f/4.",
     },
     boutique: {
-      hero: "An independent women's clothing boutique interior. Curated racks, wooden fixtures, natural linen, soft natural light, no people.",
+      hero: "Boutique interior from front door morning, garments hanging with natural gravity slight wrinkles, wooden fixture visible grain small scuff, one price tag turned wrong, soft overcast through windows no people, 24mm f/7.1.",
       gallery:
-        "A flat lay of curated clothing items on linen. Small accessories, handwritten tag, soft natural overhead light.",
+        "Flat lay overhead clothing on worn natural linen, real weave texture visible, handwritten tag slight ink variation, one item overlapping, asymmetric shadows, 50mm f/4.",
       about:
-        "A boutique owner in her 40s arranging a clothing rack. Stylish, absorbed in her work, warm natural window light.",
-      team: "A boutique owner and employee unpacking new arrivals. Both laughing, tissue paper in motion, warm afternoon light.",
+        "Boutique owner mid-task at rack not posing, reading glasses pushed up, slight concentration frown, wearing own inventory, warm window light left, boutique depth blurred, 85mm f/2.5.",
+      team: "Owner and employee mid-unboxing, tissue paper mid-air, both focused on items not camera, packaging mess on floor, warm afternoon light, motion blur on tissue, 35mm f/4.",
     },
     coffee: {
-      hero: "A specialty coffee roastery interior. Exposed brick, burlap coffee sacks, drum roaster, warm amber pendant lighting, no people.",
+      hero: "Wide coffee roastery from corner, drum roaster heat patina oil stains, burlap sacks coffee ring marks on floor, roasting haze catching pendant light, warm amber tungsten no people, slight lens flare from nearest bulb, 17mm f/8.",
       gallery:
-        "A freshly pulled espresso in a ceramic cup. Crema forming, slight steam rising, dark wooden bar surface.",
+        "Extreme close overhead espresso in ceramic, crema natural irregular surface one bubble breaking, slight steam curl, grounds scattered asymmetrically on dark wood bar, 100mm f/3.5 soft side window.",
       about:
-        "A male barista in his 30s calibrating a grinder. Short beard, coffee-stained apron, focused and confident.",
-      team: "Two roastery staff at work. One monitoring the roaster, one scooping beans. Warm amber light, authentic teamwork.",
+        "Barista mid-calibration of grinder not aware of camera, coffee-stained apron, grounds on back of hand, intense focused downward gaze, warm roastery light left, shelves blurred, 85mm f/2.0.",
+      team: "Two staff working simultaneously neither looking at camera, one writing in worn notebook one hand-scooping beans, warm amber overhead, motion blur on scooping hand, 35mm f/4.",
     },
   };
 
@@ -365,7 +365,7 @@ async function generateImagePrompt(
 ): Promise<string> {
   const vibe = determineVibe(businessType);
 
-  const systemPrompt = `You are a Professional Creative Director generating prompts for Gemini Nano Banana 2. Your goal is images indistinguishable from real documentary or editorial photographs taken on location.
+  const systemPrompt = `You are a Forensic Documentary Photographer taking evidence photos for insurance liability records. Your job is NOT to make beautiful photos. You capture raw unpolished technical truth. Nobody will use these for marketing. Prioritize evidence over aesthetics.
 
 CURRENT VIBE: ${vibe.toUpperCase()}
 ${VIBE_RULES[vibe]}
@@ -447,7 +447,7 @@ Industry strategies:
     const prompt = data.content?.[0]?.text?.trim();
 
     if (prompt && prompt.length > 50) {
-      console.log(`[PromptGen] ${businessType}/${slot} (${vibe}):`, prompt.slice(0, 80) + "...");
+      console.log(`[PromptGen] ${businessType}/${slot} (${vibe}):\n${prompt}\n`);
       return prompt;
     }
   } catch (e) {

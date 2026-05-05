@@ -104,6 +104,17 @@ function findSvgGradients(html: string): string[] {
   return matches;
 }
 
+// Returns all real image URLs embedded in img src attributes (used by force-replace mode)
+function findAllImages(html: string): string[] {
+  const matches: string[] = [];
+  const re = /src=["'](https:\/\/[^"'\s>]+)["']/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    matches.push(m[1]);
+  }
+  return matches;
+}
+
 // Always replaces the first remaining occurrence (n=0) after each swap so
 // duplicates are handled correctly even as the string mutates.
 function replaceFirst(haystack: string, needle: string, replacement: string): string {
@@ -159,7 +170,7 @@ async function generateImageWithStats(
   return { url, provider, valid, durationMs };
 }
 
-async function processSite(site: (typeof SITES)[number]): Promise<SiteReport> {
+async function processSite(site: (typeof SITES)[number], forceReplace: boolean): Promise<SiteReport> {
   const siteStart = Date.now();
   const report: SiteReport = {
     projectName: site.projectName,
@@ -172,7 +183,7 @@ async function processSite(site: (typeof SITES)[number]): Promise<SiteReport> {
   };
 
   console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`Site: ${site.projectName}`);
+  console.log(`Site: ${site.projectName}${forceReplace ? " [FORCE REPLACE]" : ""}`);
 
   let html: string;
   try {
@@ -183,39 +194,47 @@ async function processSite(site: (typeof SITES)[number]): Promise<SiteReport> {
     return report;
   }
 
-  const gradients = findSvgGradients(html);
-  report.imagesTotals = gradients.length;
-  console.log(`  → Found ${gradients.length} SVG gradient placeholder(s)`);
+  // In force-replace mode, replace all existing image URLs; otherwise SVG placeholders only
+  const targets = forceReplace ? findAllImages(html) : findSvgGradients(html);
+  report.imagesTotals = targets.length;
 
-  if (gradients.length === 0) {
-    console.log(`  → No SVG gradients — all images already real, skipping`);
+  if (targets.length === 0) {
+    if (forceReplace) {
+      console.log(`  ⚠️  No img src URLs found in HTML — cannot force replace`);
+    } else {
+      console.log(`  → No SVG gradients — all images already real, skipping`);
+    }
     report.durationMs = Date.now() - siteStart;
     return report;
   }
 
-  const count = Math.min(gradients.length, SLOTS.length);
+  console.log(`  → Found ${targets.length} image(s) to replace`);
+
+  const count = Math.min(targets.length, SLOTS.length);
   const results: ImageResult[] = [];
 
   for (let i = 0; i < count; i++) {
     const slot = SLOTS[i];
     if (i > 0) {
-      // Brief pause so we don't hammer whichever provider is active
       console.log(`  → (pausing 8s between requests...)`);
       await new Promise((r) => setTimeout(r, 8000));
     }
     console.log(`  → [${i + 1}/${count}] Generating ${slot} image...`);
+    console.log(`    Replacing: ${targets[i].slice(0, 80)}...`);
     const result = await generateImageWithStats(site.imageType, slot, site.primaryColor);
 
     if (result.provider === "SVG") {
-      console.log(`    ⚠️  ALL providers failed — gradient fallback`);
+      console.log(`    ⚠️  ALL providers failed — keeping original`);
+      result.url = targets[i]; // keep original rather than SVG gradient
     } else if (!result.valid) {
       console.log(
-        `    ⚠️  ${result.provider}: URL generated but not reachable — using gradient`,
+        `    ⚠️  ${result.provider}: URL not reachable — keeping original`,
       );
-      result.url = gradients[i]; // keep original gradient rather than broken URL
+      result.url = targets[i];
     } else {
+      const urlPreview = result.url.startsWith("data:") ? result.url.slice(0, 40) + "...[base64]" : result.url.slice(0, 80) + "...";
       console.log(
-        `    ✅ ${result.provider} (${(result.durationMs / 1000).toFixed(1)}s): ${result.url.slice(0, 70)}...`,
+        `    ✅ ${result.provider} (${(result.durationMs / 1000).toFixed(1)}s): ${urlPreview}`,
       );
       report.imagesGenerated++;
       report.providers[result.provider] = (report.providers[result.provider] ?? 0) + 1;
@@ -225,17 +244,17 @@ async function processSite(site: (typeof SITES)[number]): Promise<SiteReport> {
     results.push(result);
   }
 
-  const anyReal = results.some((r) => r.provider !== "SVG" && r.valid);
-  if (!anyReal) {
-    console.log(`  ⚠️  All images fell back to gradient — skipping redeployment`);
+  const anyNew = results.some((r) => r.url !== targets[results.indexOf(r)]);
+  if (!anyNew) {
+    console.log(`  ⚠️  No images changed — skipping redeployment`);
     report.durationMs = Date.now() - siteStart;
     return report;
   }
 
-  // Replace each gradient with its corresponding image URL (first-occurrence strategy)
+  // Replace each target URL with its corresponding new image URL
   let updatedHtml = html;
   for (let i = 0; i < count; i++) {
-    updatedHtml = replaceFirst(updatedHtml, gradients[i], results[i].url);
+    updatedHtml = replaceFirst(updatedHtml, targets[i], results[i].url);
   }
 
   console.log(`  → Deploying updated HTML via wrangler...`);
@@ -257,6 +276,7 @@ async function main() {
     ? parseInt(process.env.SITE_LIMIT, 10)
     : SITES.length;
   const sitesToProcess = SITES.slice(0, siteLimitEnv);
+  const forceReplace = process.env.FORCE_REPLACE === "true";
 
   console.log("═══════════════════════════════════════");
   console.log("MiniMorph Showroom — Image Injection");
@@ -267,6 +287,7 @@ async function main() {
   console.log(`CF account     : ${ENV.cloudflareAccountId ? "✅ present" : "❌ missing"}`);
   console.log(`R2 bucket      : ${ENV.cloudflareR2Bucket  ? "✅ " + ENV.cloudflareR2Bucket : "❌ missing (images stored as data URLs)"}`);
   console.log(`Sites to inject: ${sitesToProcess.length} of ${SITES.length}`);
+  console.log(`Force replace  : ${forceReplace ? "✅ YES — replacing ALL existing image URLs" : "❌ no — SVG placeholders only"}`);
   console.log("");
 
   if (!ENV.geminiApiKey && !ENV.replicateApiKey && !ENV.unsplashAccessKey) {
@@ -277,7 +298,7 @@ async function main() {
   const reports: SiteReport[] = [];
 
   for (let i = 0; i < sitesToProcess.length; i++) {
-    const report = await processSite(sitesToProcess[i]);
+    const report = await processSite(sitesToProcess[i], forceReplace);
     reports.push(report);
     if (i < sitesToProcess.length - 1) {
       console.log(`\n  (waiting 15s before next site...)`);
