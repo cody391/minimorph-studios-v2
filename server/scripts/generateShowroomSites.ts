@@ -239,11 +239,10 @@ Return this exact JSON:
       }
     }
 
-    const clean = jsonText
-      .replace(/```json|```/g, "")
-      .trim();
-
-    const intel = JSON.parse(clean);
+    // Extract the JSON object — Claude may prepend thinking text before the JSON
+    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON object found in recon response");
+    const intel = JSON.parse(jsonMatch[0]);
 
     console.log("");
     console.log("    ══ COMPETITIVE INTELLIGENCE ══");
