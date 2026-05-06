@@ -213,52 +213,52 @@ export function buildDetailedPrompt(
 ): string {
   const prompts: Record<string, Record<string, string>> = {
     contractor: {
-      hero: "Low-angle handheld shot of dirty gloved hands driving chisel into cracked concrete, heavy motion blur on hands, dust plume mid-air, harsh flickering fluorescent overhead, film grain Kodak Portra 400 pushed one stop, f/2.8, face cut off above jaw, safety cone blurred in extreme foreground, off-center.",
+      hero: "Low-angle editorial shot looking up at a skilled contractor mid-task on a real job site, hard hat on, hands gripping a tool with confident purpose, natural overcast daylight from outside filling the space evenly, lumber and materials visible in background showing active work, Kodak Portra 400, 35mm f/2.8, off-center composition, subject clearly competent and in command of the space.",
       gallery:
-        "Interior finished kitchen shot quickly from doorway, slightly tilted frame, cabinet door ajar, fingerprints on countertop, cool fluorescent fighting warm pendant, 35mm f/4, film grain, off-center.",
+        "Wide shot of a recently completed interior — tile work, cabinetry, or structural framing — shot from the doorway in soft window light, slight off-center lean, the craftsmanship clearly visible and impressive, 35mm f/4, Kodak Portra 400, natural grain.",
       about:
-        "Male contractor mid-laugh not looking at camera, sawdust on shoulders, sun-damaged skin, hard hat mid-gesture, job site blurred behind, flat overcast light, 85mm f/1.8, face cut at forehead.",
-      team: "Four workers end of day packing tools, two talking one on phone one walking away, mismatched worn PPE, dirt on forearms, flat overcast, 35mm f/5.6, camera shake.",
+        "Contractor standing on a job site looking at plans or work in progress, not posing for the camera, wearing real work gear with appropriate wear, overcast natural light, 50mm f/2.0, slight off-center, face visible and focused — conveys competence not chaos.",
+      team: "Two or three workers on a job site mid-task, coordinating with each other, natural daylight, real work gear, not posed but not chaotic — they look like a team that knows what they are doing, 35mm f/4.",
     },
     restaurant: {
-      hero: "Empty restaurant before service from near bar, one chair pushed out, wine glass asymmetric shadow on linen, Edison bulbs amber, candle just lit thin smoke wisp, 24mm f/5.6 Kodak Portra 160, slight lean.",
+      hero: "Restaurant dining room just before service, tables set with real linen and glassware, warm Edison bulb ambient light creating genuine atmosphere, slight off-center from near the host stand, depth of field pulls focus to a beautifully set table, Kodak Portra 400, 24mm f/4 — inviting and real.",
       gallery:
-        "Overhead plate shot off-center, sauce pooled asymmetrically, microgreen wilting, fingerprint on plate rim, soft window light left, 100mm f/4, film grain.",
+        "Overhead plate of a real dish, genuinely delicious looking — natural asymmetry, real textures, steam rising, soft window light from the left, 100mm f/3.5, off-center composition, the food is the clear hero.",
       about:
-        "Chef mid-plating not aware of camera, food stain on coat sleeve, hair out of cap, intense downward focus, steam blurring background, 85mm f/2.2.",
-      team: "Kitchen crew during service, sharp on one face others motion blurred, steam rising, hands fast, warm amber overhead, 35mm f/2.8 1/60s.",
+        "Chef mid-plating focused entirely on the dish, professional kitchen behind them in soft focus, warm kitchen light, 85mm f/2.2, not aware of camera, clearly skilled and in control.",
+      team: "Kitchen crew mid-service, coordinated and focused, warm amber kitchen light, steam, motion in the background — one face sharp, genuine energy, 35mm f/2.8.",
     },
     gym: {
-      hero: "Low angle wide fitness studio from corner, rubber floor sharp foreground, chalk dust on nearest dumbbell handles, harsh overhead track lighting hard shadows, no people, 16mm f/8.",
+      hero: "Wide editorial shot of the fitness studio from a low corner angle, rubber floor in sharp foreground, equipment arranged and ready, good overhead lighting, no people — the space looks serious and welcoming, 24mm f/5.6.",
       gallery:
-        "Woman mid-clean-and-jerk peak position, chalk cloud dispersing, muscles strained genuine grimace, bar bending, face sharp feet blurred, 70mm f/3.5 1/500s dramatic side light.",
+        "Member mid-lift at peak exertion — real effort, real focus, genuine expression of concentration, side window light, 70mm f/3.5, off-center, the form and effort look impressive.",
       about:
-        "Trainer mid-coaching not posing, animated expression, sweat at temples, athletic wear with pilling, gym floor blurred, overcast window light, 85mm f/2.0.",
-      team: "Four coaches mid-conversation no camera awareness, one laughing one gesturing one looking away, different body types, late afternoon window light, 35mm f/5.6.",
+        "Trainer mid-coaching session, animated and engaged, talking to a member off-frame, natural window light, 85mm f/2.0, not posing — clearly expert and approachable.",
+      team: "Three or four coaches mid-conversation at the gym, natural light, different body types, genuine energy — candid but not caught in an unflattering moment, 35mm f/4.",
     },
     salon: {
-      hero: "Salon interior from doorway late afternoon, styling chairs real leather wear, product bottles disorganized, plant with yellowed leaf, overcast window light reflections in mirrors, 24mm f/6.3.",
+      hero: "Salon interior from the doorway in soft late-afternoon window light, styling chairs and mirrors creating depth, clean and curated but clearly a working space, 24mm f/5.6, slight off-center, inviting and professional.",
       gallery:
-        "Close crop of hair from behind model seated, individual strands flyaways at crown, slight frizz temples, color uneven, window light from left, 135mm f/2.8.",
+        "Close editorial crop of finished hair — color, cut, or style work — from behind the client, window light from left, the work looks genuinely beautiful, 135mm f/2.8, slight grain.",
       about:
-        "Stylist mid-technique not looking at camera, forearm tattoos, product residue on fingers, genuine focus, mirrors blurred behind, soft natural light, 85mm f/2.2.",
-      team: "Three stylists mid-genuine break, one laughing one on phone one with coffee, distinct personal styles, warm afternoon window light, 35mm f/4.",
+        "Stylist mid-technique, focused on the client's hair, soft natural light, genuine concentration, 85mm f/2.2, off-center — expert craft visible.",
+      team: "Three stylists in the salon, mid-work or brief moment between clients, distinct personal styles, warm window light, relaxed and real, 35mm f/4.",
     },
     boutique: {
-      hero: "Boutique interior from front door morning, garments hanging with natural gravity slight wrinkles, wooden fixture visible grain small scuff, one price tag turned wrong, soft overcast through windows no people, 24mm f/7.1.",
+      hero: "Boutique interior from front entrance in morning window light, garments hanging with natural drape, wooden fixtures, curated and intentional space, soft overcast through windows, 24mm f/5.6, no people — the space itself tells the story.",
       gallery:
-        "Flat lay overhead clothing on worn natural linen, real weave texture visible, handwritten tag slight ink variation, one item overlapping, asymmetric shadows, 50mm f/4.",
+        "Flat lay overhead of a key clothing item on natural linen — real fabric texture visible, slight natural asymmetry, soft even light, 50mm f/3.5 — the item looks genuinely beautiful.",
       about:
-        "Boutique owner mid-task at rack not posing, reading glasses pushed up, slight concentration frown, wearing own inventory, warm window light left, boutique depth blurred, 85mm f/2.5.",
-      team: "Owner and employee mid-unboxing, tissue paper mid-air, both focused on items not camera, packaging mess on floor, warm afternoon light, motion blur on tissue, 35mm f/4.",
+        "Boutique owner at the rack or unpacking new inventory, not posing but clearly in their element, warm window light, wearing their own inventory, 85mm f/2.5.",
+      team: "Owner and an employee reviewing new arrivals together, focused on the items, warm afternoon light, genuine and collaborative — real moment not staged, 35mm f/4.",
     },
     coffee: {
-      hero: "Wide coffee roastery from corner, drum roaster heat patina oil stains, burlap sacks coffee ring marks on floor, roasting haze catching pendant light, warm amber tungsten no people, slight lens flare from nearest bulb, 17mm f/8.",
+      hero: "Wide shot of the coffee roastery or café from a corner angle, roasting drum or espresso machine as hero, warm amber pendant light, real patina and texture on equipment, inviting not chaotic, 24mm f/5.6, slight off-center.",
       gallery:
-        "Extreme close overhead espresso in ceramic, crema natural irregular surface one bubble breaking, slight steam curl, grounds scattered asymmetrically on dark wood bar, 100mm f/3.5 soft side window.",
+        "Overhead close-up of a poured espresso in ceramic — real crema, slight steam, grounds on the dark wood bar beside it, soft side window light, 100mm f/3.5, genuinely delicious looking.",
       about:
-        "Barista mid-calibration of grinder not aware of camera, coffee-stained apron, grounds on back of hand, intense focused downward gaze, warm roastery light left, shelves blurred, 85mm f/2.0.",
-      team: "Two staff working simultaneously neither looking at camera, one writing in worn notebook one hand-scooping beans, warm amber overhead, motion blur on scooping hand, 35mm f/4.",
+        "Barista dialing in the grinder or pulling a shot, focused and skilled, warm roastery light, 85mm f/2.0, not aware of the camera — clearly expert.",
+      team: "Two staff working together at the bar or roaster, warm ambient light, coordinated and focused, real moment of craft, 35mm f/4.",
     },
   };
 
@@ -277,37 +277,47 @@ export function buildDetailedPrompt(
 
 const VIBE_RULES: Record<ImageVibe, string> = {
   utilitarian: `
-VIBE: UTILITARIAN — grit, labor, unglamorous truth
-- Lighting: pick one — flickering greenish overhead fluorescent / harsh overhead work light / 1 stop underexposed with heavy digital noise in shadows / blown out highlights from work lamp
-- Lens contamination: pick one — fingerprint smudge on lens causing hazy glare / dust on sensor creating faint grey spots / water droplet on lens edge causing streak
-- Technical failure: pick one — slightly out of focus missed autofocus / heavy motion blur on moving hands from slow shutter / camera shake blur on frame / accidental partial finger over lens corner
-- Material truth: oil stains not just marks / dirt under fingernails / torn clothing not just worn / rust and grease not just patina / sweat stains on fabric
-- Background: cluttered debris, tools scattered, accidental foreground objects, construction mess
-- NO beauty. NO cinematic flair. NO golden hour. NO balanced lighting.`,
+VIBE: UTILITARIAN — competent, real, capable
+- Workers mid-task, focused and clearly skilled — present in the moment, not posing
+- Real job sites with materials and tools actively in use
+- Completed or in-progress work that looks genuinely impressive — the quality is visible
+- Hands working, tools in use, purposeful deliberate movement
+- Natural job site light — overcast sky, large window, single work light used well — honest not punishing
+- Off-center, handheld feel — like someone who belongs on that site took the shot
+- Slight grain, natural texture — images are clear, readable, and trust-building
+- Think: a photojournalist embedded on a job site who has genuine respect for the craft
+- NOT: flickering greenish fluorescents, chaos, debris everywhere, blown-out ugly work lamps
+- NOT: fingerprint smudges, sensor dust, camera shake blur, ugliness for its own sake`,
 
   luxury: `
-VIBE: LUXURY — refined, textured, understated
-- Lighting: soft diffused natural window light only / cool morning light / never harsh or fluorescent / light through condensation-hazed glass
-- Imperfections: slight fabric fray on linen / condensation on glass surfaces / natural skin pores visible / micro-scratches on polished surfaces / slight asymmetry in arrangement
-- Technical: shallow depth of field f/1.4-f/2 / soft focus on background / natural lens vignette at corners / chromatic aberration on high-contrast edges
-- Background: clean but lived-in not sterile — real objects present not arranged
-- NO grit. NO oil stains. NO construction debris. NO harsh light.`,
+VIBE: LUXURY — refined, real, quietly confident
+- Soft natural window light — morning or even overcast — never harsh shadows
+- Real clients or subjects in real moments — relaxed not posed, present not performative
+- Products and spaces that feel curated but genuinely lived in — not sterile showrooms
+- Staff mid-work, focused, clearly expert at what they do
+- Elegant without being clinical — real textures, real objects, natural asymmetry
+- Slight grain, natural imperfections — silk not plastic
+- Think: a magazine photographer shooting a real working day, not a styled set
+- NOT: harsh shadows, ugly light, chaotic backgrounds, anything that looks like an accident`,
 
   lifestyle: `
-VIBE: LIFESTYLE — warm, human, candid movement
-- Lighting: warm mixed conflicting sources always — window light fighting warm tungsten interior / practical lights visible in frame
-- Imperfections: steam rising from surfaces / condensation on cold glasses / food smears on surfaces / sweat from physical activity / motion blur on moving hands and bodies
-- Technical: handheld feel slight lean / slight grain from pushing film / shallow depth on background / dust motes floating in shafts of light
-- Background: authentic environment with real life in it — not cleaned before shooting
-- NO sterile. NO posed. NO perfect arrangement. NO balanced lighting.`,
+VIBE: LIFESTYLE — warm, real, human
+- Real moments of service, craft, and genuine care — not performed for the camera
+- Food that looks genuinely delicious — real texture, real steam, real color
+- People in motion, candid but aware — not frozen mid-grimace, not posed stiffly
+- Warm available light — window, ambient, practical — never studio strobes or cold fluorescent
+- Slight grain, natural warmth, honest imperfection that makes it feel real
+- Think: a food or lifestyle photographer who makes real look better than perfect
+- NOT: clinical sterility, ugly chaos, stock photo arrangements, unflattering grimaces`,
 
   documentary: `
-VIBE: DOCUMENTARY — honest, unfiltered, real
-- Lighting: whatever was available — mixed ugly conflicting sources / available light only
-- Lens contamination: film grain / lens contamination / natural scratches on sensor
-- Technical: handheld slightly imperfect framing / subject cut off awkwardly at frame edge
-- Background: real environment completely unmodified — clutter, mess, ordinary objects
-- NO staging. NO cleanup. NO beauty lighting. NO deliberate composition.`,
+VIBE: DOCUMENTARY — honest, clear, authentic
+- Subject doing their actual work with visible competence and focus
+- Available light, real environment — not staged but not chaotic
+- Clear readable composition — off-center but purposeful, not accidental
+- Grain and texture present — authentic not clinical
+- Think: a skilled editorial photographer finding the honest story
+- NOT: staged perfection or deliberate ugliness — find the honest middle`,
 };
 
 async function generateImagePrompt(
@@ -318,66 +328,53 @@ async function generateImagePrompt(
 ): Promise<string> {
   const vibe = determineVibe(businessType);
 
-  const systemPrompt = `You are a Forensic Documentary Photographer.
-You document job sites and workplaces for insurance liability records.
+  const systemPrompt = `You are a Documentary Brand Photographer.
+You shoot editorial photography for small businesses. Your work looks real and authentic but always makes the subject look capable and trustworthy.
 
-YOUR ONLY GOAL: Capture unglamorous truth.
-NOT art. NOT marketing. NOT beautiful images.
-Evidence only.
+You are NOT shooting stock photos — no fake smiles, no perfect lighting, no staged scenes.
+You are NOT shooting forensic documentation — no chaos, no ugliness for its own sake.
 
-Every rule below exists to make photos look like they were taken by an uninterested field worker with a cheap camera on a busy day.
-If the result could appear on a stock photo site it has completely failed.
-
-FINAL CHECK BEFORE OUTPUT: Ask yourself — does this look like it was shot by a guy who had 5 seconds and did not care how it looked?
-If no — add more mess, worse lighting, and technical failure until it does.
+You are capturing the honest truth of a business in the best possible light.
+The real version of their best day.
+Workers who clearly know what they are doing.
+Spaces that feel lived in and real.
+Work that looks impressive because it IS impressive — not because it was staged.
 
 CURRENT VIBE: ${vibe.toUpperCase()}
 ${VIBE_RULES[vibe]}
 
-OPTICAL PHYSICS — apply to ALL vibes:
-- Always include ONE lens flaw:
-  chromatic aberration at high contrast edges /
-  slight lens flare from nearest light source /
-  natural lens vignette darkening corners /
-  soft focus on edges sharp only in center third
-
-- Always include ONE micro-imperfection:
-  visible dust motes floating in shafts of light /
-  oil stains on metal surfaces /
-  frayed fabric threads at stress points /
-  dry cracked skin texture on hands and knuckles /
-  sweat beads on skin near hairline /
-  micro-scratches on polished surfaces
-
-- Camera: one COLOR film stock only —
-  Kodak Portra 400, Fujifilm 160NS, or Kodak Ektar 100
-  One lens 35mm to 85mm. One aperture f/1.4 to f/4.
-
-- Always: unprocessed RAW file aesthetic /
-  grain from pushing film one stop /
-  mixed lighting — never perfect or balanced
+PHOTOGRAPHIC CRAFT — apply to ALL vibes:
+- Camera: one COLOR film stock — Kodak Portra 400 or Fujifilm 400H
+  One lens 35mm to 85mm. One aperture f/1.8 to f/4.
+- Natural grain from film stock — present but not overwhelming
+- Slight natural vignette at corners — not pushed to black
+- Off-center composition — rule of thirds, subject mid-task
+- Hero shots: low angle looking up at the work or space
+- About/team: subject mid-task, aware but not posed for camera
+- Depth: sharp subject, soft background — not blurred to mush
 
 COMPOSITION:
 - Off-center always — rule of thirds
 - Low angle for hero shots
-- Face partially out of frame — cut at jaw or forehead
-- Subject mid-task never posing
+- Subject mid-task, not posing — but not caught in an unflattering moment
+- Face visible if relevant — not cut off unless the work is the story
 
-ABSOLUTE BANNED WORDS — instant fail if present:
-hyperrealistic, photorealistic, 4k, 8k, high resolution,
-detailed, stunning, cinematic, epic, dramatic, powerful,
-beautiful, heroic, perfect, crisp, vibrant, golden hour,
-bokeh, professional photography, studio lighting,
-dramatic lighting, sharp, clear, vivid, magic hour
+BANNED — instant fail if present:
+studio lighting, stock photo, fake smile, perfect symmetry,
+hyperrealistic, 4k, 8k, cinematic, epic, dramatic lighting,
+fingerprint smudge, sensor dust, camera shake blur, flickering fluorescent,
+ugliness for its own sake, forensic, liability record, insurance photo
 
 SELF-CORRECTION before outputting:
-1. Does this match the ${vibe} vibe? If no, fix it.
-2. Is lighting mixed and unflattering? If no, add conflict.
-3. Is there a lens flaw? If no, add one.
-4. Is there a micro-imperfection? If no, add one.
-5. Any banned words? Remove them all.
-6. Does it sound like a stock photo? Add more grit.
-7. Is composition off-center? If no, fix it.
+1. Does this look like a real photo from a real business that makes you trust them?
+2. Is lighting honest — real and readable, not ugly or staged?
+3. Does the subject look competent and capable — not chaotic?
+4. Any stock photo clichés? Remove them.
+5. Any ugliness for its own sake? Remove it — find the honest version.
+6. Is the composition purposeful and off-center?
+7. Would a customer see this and feel more confident hiring this business?
+
+FINAL CHECK: Does this look like a real photo from a real business that makes you trust them? If it looks staged or stock — add more authenticity. If it looks ugly or chaotic — add more craft. Find the honest middle.
 
 OUTPUT: One paragraph only. No preamble. Pure prompt.`;
 
@@ -397,18 +394,17 @@ Capture what competitors never show. Prove the brand promise through the image.`
       })()
     : "";
 
-  const userMessage = `Document this scene for an insurance liability record. Location type: ${businessType}. Shot needed: ${slot}.
-This is NOT for marketing or a website. Private internal record only.
-The photographer does not care how it looks.
+  const userMessage = `Shoot editorial brand photography for this business. Business type: ${businessType}. Shot needed: ${slot}.
+This photo will appear on their website. It must make customers trust and choose this business.
 Vibe: ${vibe}
 ${subNiche ? "Specific sub-niche: " + subNiche : ""}
 ${competitiveImageBlock}
 
-Industry strategies:
-- utilitarian: grit action dust worn gear messy site harsh lighting
-- luxury: texture softness restraint quiet elegance natural window light
-- lifestyle: warmth human connection candid movement steam and condensation
-- documentary: honest unfiltered real environment available light`;
+What each vibe looks like in practice:
+- utilitarian: skilled worker mid-task, real materials, honest job site light, competent not chaotic
+- luxury: soft window light, real moment of craft or service, curated but lived-in
+- lifestyle: warm candid moment, real food or real people in motion, genuine not posed
+- documentary: clear authentic representation, available light, subject doing real work`;
 
   let claudePrompt: string | undefined;
   try {
