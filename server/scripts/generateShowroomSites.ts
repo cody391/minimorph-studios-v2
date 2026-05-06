@@ -239,10 +239,26 @@ Return this exact JSON:
       }
     }
 
-    // Extract the JSON object — Claude may prepend thinking text before the JSON
-    const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON object found in recon response");
-    const intel = JSON.parse(jsonMatch[0]);
+    // Extract the outermost JSON object using balanced brace counting
+    // (Claude may prepend thinking text, and web search content may include
+    // unescaped characters — greedy regex is not safe here)
+    const start = jsonText.indexOf("{");
+    if (start === -1) throw new Error("No JSON object found in recon response");
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    let end = -1;
+    for (let i = start; i < jsonText.length; i++) {
+      const ch = jsonText[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\" && inString) { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{") depth++;
+      if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
+    }
+    if (end === -1) throw new Error("Unbalanced JSON in recon response");
+    const intel = JSON.parse(jsonText.slice(start, end + 1));
 
     console.log("");
     console.log("    ══ COMPETITIVE INTELLIGENCE ══");
