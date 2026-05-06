@@ -464,9 +464,10 @@ function buildGradientSvg(primaryColor: string): string {
 // ─── Primary entry point ──────────────────────────────────────────────────────
 //
 // Provider priority:
-//   1. Customer photo — always wins if provided
+//   1. Customer photo (hero slot only) — always wins if provided
 //   2. Gemini Nano Banana 2 — 300s timeout, one retry on timeout
-//   3. SVG gradient — last resort if both Gemini attempts fail
+//   3. Unsplash — free photo fallback if Gemini fails
+//   4. SVG gradient — last resort
 
 export async function getBestImage(
   businessType: string,
@@ -476,13 +477,20 @@ export async function getBestImage(
   subNiche?: string,
   imageDirection?: string,
 ): Promise<string> {
-  if (customerPhotoUrl) return customerPhotoUrl;
+  if (customerPhotoUrl && slot === "hero") return customerPhotoUrl;
 
   const prompt = await generateImagePrompt(businessType, slot, subNiche, imageDirection);
 
   const geminiUrl = await generateImageGeminiNanoBanana(prompt, slot);
   if (geminiUrl) return geminiUrl;
 
-  console.error(`[ImageService] ${slot} → FAILED both attempts → SVG gradient`);
+  const query = [subNiche || businessType, slot].filter(Boolean).join(" ");
+  const unsplashUrl = await getUnsplashImage(query);
+  if (unsplashUrl) {
+    console.log(`[ImageService] ${slot} → Unsplash fallback ✅`);
+    return unsplashUrl;
+  }
+
+  console.error(`[ImageService] ${slot} → FAILED all providers → SVG gradient`);
   return buildGradientSvg(primaryColor);
 }

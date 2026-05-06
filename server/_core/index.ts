@@ -19,7 +19,8 @@ import { registerStripeWebhook } from "../stripe-webhook";
 import { registerTwilioWebhooks } from "../twilio-webhooks";
 import { registerResendWebhooks } from "../resend-webhooks";
 import { registerScheduledRoutes } from "../scheduled-routes";
-import { bootstrapAdminUser, seedProductCatalog, getSupportTicketByRatingToken, updateSupportTicketRating, repairSchema } from "../db";
+import { bootstrapAdminUser, seedProductCatalog, getSupportTicketByRatingToken, updateSupportTicketRating, repairSchema, createContactSubmission } from "../db";
+import { notifyOwner } from "./notification";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -123,6 +124,38 @@ async function startServer() {
   registerTwilioWebhooks(app);
   registerResendWebhooks(app);
   registerScheduledRoutes(app);
+
+  // Contact form submissions from generated customer sites (cross-origin)
+  app.options("/api/contact-submit", (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.status(204).end();
+  });
+  app.post("/api/contact-submit", async (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    try {
+      const { name, email, phone, message, businessName } = req.body as Record<string, string>;
+      if (!name?.trim() || !email?.trim()) {
+        return res.status(400).json({ success: false, error: "Name and email are required" });
+      }
+      const fullMessage = [message?.trim(), phone?.trim() ? `Phone: ${phone.trim()}` : ""].filter(Boolean).join("\n");
+      await createContactSubmission({
+        name: name.trim(),
+        email: email.trim(),
+        businessName: businessName?.trim() || undefined,
+        message: fullMessage || undefined,
+      });
+      notifyOwner({
+        title: `Contact Form: ${name.trim()}`,
+        content: `Business: ${businessName || "N/A"}\nEmail: ${email}\n${phone ? `Phone: ${phone}\n` : ""}${message ? `Message: ${message}` : ""}`,
+      }).catch(() => {});
+      return res.json({ success: true });
+    } catch (err) {
+      console.error("[ContactSubmit]", err);
+      return res.status(500).json({ success: false, error: "Server error" });
+    }
+  });
 
   // Public support rating endpoint — linked from resolution emails
   app.get("/api/rate-support", async (req, res) => {

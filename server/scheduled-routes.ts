@@ -332,12 +332,6 @@ export function registerScheduledRoutes(app: Express) {
     })
   );
 
-  // 12. Renewal Check — DEPRECATED: consolidated into monthly-anniversary
-  app.post("/api/scheduled/renewal-check", (req, res) =>
-    runJob(req, res, "renewal-check", async () => {
-      return { deprecated: true, message: "Renewal reminders are now handled by /api/scheduled/monthly-anniversary" };
-    })
-  );
 
   // ─── 13. Health Score Update ───
   app.post(
@@ -515,12 +509,6 @@ export function registerScheduledRoutes(app: Express) {
     });
   });
 
-  // ─── 15. Monthly Competitive Workup — DEPRECATED: consolidated into monthly-anniversary ───
-  app.post("/api/scheduled/monthly-competitive-workup", (req, res) =>
-    runJob(req, res, "monthly-competitive-workup", async () => {
-      return { deprecated: true, message: "Consolidated into /api/scheduled/monthly-anniversary" };
-    })
-  );
 
   // ─── 16. Monthly Anniversary Report — one email per customer per month ───
   app.post("/api/scheduled/monthly-anniversary", (req, res) =>

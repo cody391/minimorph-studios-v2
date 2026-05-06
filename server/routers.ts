@@ -29,7 +29,7 @@ import { formatAnswerBankForPrompt } from "../shared/answerBank";
 import { formatIntegrationMatrixForPrompt } from "../shared/integrationMatrix";
 import { assertRepOwnership, assertCustomerOwnership, assertProjectOwnership, assertLeadOwnership, assertAssetOwnership } from "./ownership";
 import { ENV } from "./_core/env";
-import { generateSiteForProject } from "./services/siteGenerator";
+import { generateSiteForProject, stripDemoBanner } from "./services/siteGenerator";
 import { processSiteChangeRequest } from "./services/siteUpdater";
 import { generateContractText } from "./services/contractService";
 import { createHash } from "crypto";
@@ -113,7 +113,37 @@ const repsRouter = router({
       if (data.status === "certified") {
         updateData.certifiedAt = new Date();
       }
+      const previousRep = await db.getRepById(id);
       await db.updateRep(id, updateData);
+
+      // Send approval email when status changes to active or training
+      if (data.status && previousRep && previousRep.status !== data.status &&
+          (data.status === "active" || data.status === "training")) {
+        try {
+          const { sendEmail } = await import("./services/email");
+          const repUser = previousRep.email ? previousRep : null;
+          if (repUser?.email) {
+            const isActive = data.status === "active";
+            await sendEmail({
+              to: repUser.email,
+              subject: isActive
+                ? "Congratulations — Your MiniMorph Rep Account is Active!"
+                : "Welcome to MiniMorph Training!",
+              html: `<p>Hi ${repUser.fullName || "there"},</p>
+<p>${isActive
+  ? "Your MiniMorph Studios rep account has been approved and is now <strong>active</strong>. You can log in and start closing deals right away."
+  : "Your MiniMorph Studios rep account has been approved for <strong>training</strong>. Log in to access the Academy and complete your certification."
+}</p>
+<p><a href="${ENV.appUrl}/rep">Log in to your Rep Portal</a></p>
+<p>&mdash; The MiniMorph Studios Team</p>`,
+              transactional: true,
+            });
+          }
+        } catch (emailErr) {
+          console.error("[reps.update] Approval email failed:", emailErr);
+        }
+      }
+
       return { success: true };
     }),
 
@@ -2493,6 +2523,22 @@ const onboardingRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
+
+      const q = input.questionnaire;
+      const businessName = (q.businessName as string | undefined)?.trim() || (q.name as string | undefined)?.trim();
+      const websiteType = (q.websiteType as string | undefined)?.trim() || (q.businessType as string | undefined)?.trim() || (q.industry as string | undefined)?.trim();
+      const brandTone = (q.brandTone as string | undefined)?.trim() || (q.tone as string | undefined)?.trim();
+
+      if (!businessName) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Business name is required before generation can start" });
+      }
+      if (!websiteType) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Business type or industry is required before generation can start" });
+      }
+      if (!brandTone) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Brand tone is required before generation can start" });
+      }
+
       await db.updateOnboardingProject(input.projectId, {
         questionnaire: input.questionnaire,
         stage: "assets_upload",
@@ -2735,6 +2781,23 @@ const onboardingRouter = router({
         } catch (contractErr) {
           console.error("[onboarding.markSiteLive] Contract nurturing update failed:", contractErr);
         }
+      }
+
+      // Strip demo banner from all pages and redeploy (fire-and-forget)
+      try {
+        const rawPages = JSON.parse(project.generatedSiteHtml || "{}") as Record<string, string>;
+        const stripped: Record<string, string> = {};
+        for (const [page, html] of Object.entries(rawPages)) {
+          stripped[page] = stripDemoBanner(html);
+        }
+        await db.updateOnboardingProject(input.projectId, { generatedSiteHtml: JSON.stringify(stripped) });
+        if (project.cloudflareProjectName) {
+          const { deployToPages } = await import("./services/cloudflareDeployment");
+          await deployToPages({ projectName: project.cloudflareProjectName, pages: stripped });
+          console.log(`[markSiteLive] Demo banner stripped and redeployed for project ${input.projectId}`);
+        }
+      } catch (bannerErr) {
+        console.error("[markSiteLive] Banner strip/redeploy failed (non-fatal):", bannerErr);
       }
 
       // Notify admin
@@ -3086,6 +3149,11 @@ For restaurants: cuisine, locations, hours, menu (online ordering? reservations?
 For contractors: trade, license number, need a quote form, before/after gallery, emergency services.
 For ecommerce: product count, categories, shipping, existing platform.
 
+Also collect in Phase 4 (naturally woven into conversation):
+- Social handles: "Are you on any social platforms? Instagram, TikTok, Facebook — even if you don't post much, we'll link them in the footer."
+- Testimonials: "Do you have any customer reviews or testimonials you love? Even one or two quotes with a first name and what they said — the more specific the better."
+- Blog topics: "If we're including a blog, what topics would actually help your customers? Think about what questions they ask you most — those are your best posts."
+
 PHASE 5 — BRAND DISCOVERY (informed by everything above)
 Ask about:
   - Brand tone — professional, friendly, bold, elegant, playful, edgy, trustworthy
@@ -3158,6 +3226,9 @@ Once confirmed, FIRST output BOTH tags (no text before them):
   "specialRequests": "...",
   "hasCustomPhotos": false,
   "customerPhotoUrl": null,
+  "socialHandles": {"instagram": "@handle", "facebook": "page-url", "tiktok": "@handle"},
+  "testimonials": [{"quote": "Exact customer quote here", "name": "First name only", "context": "e.g. homeowner in Austin"}],
+  "blogTopics": ["Topic 1 — why it matters to their customers", "Topic 2", "Topic 3"],
   "addonsSelected": [{"product":"Review Collector","price":"$149/mo"}]
 }</questionnaire_data>
 <addons_selected>[{"product":"Review Collector","price":"$149/mo","label":"Automated review collection"}]</addons_selected>
@@ -3294,10 +3365,31 @@ ${integrationSection}${scrapedSection}`;
           { role: "assistant" as const, content: historyEntry(aiResponse) },
         ];
 
-        db.updateOnboardingProject(input.projectId, {
+        // Incrementally merge any <addon_accepted> tags into questionnaireData
+        const addonTagRe = /<addon_accepted\s+product="([^"]+)"\s+price="([^"]+)"\s+label="([^"]+)"\s*\/>/g;
+        let addonMatch: RegExpExecArray | null;
+        const newAddons: { product: string; price: string; label: string }[] = [];
+        while ((addonMatch = addonTagRe.exec(aiResponse)) !== null) {
+          newAddons.push({ product: addonMatch[1], price: addonMatch[2], label: addonMatch[3] });
+        }
+
+        const saveUpdates: Record<string, unknown> = {
           elenaConversationHistory: savedHistory,
           lastSavedAt: new Date(),
-        } as any).catch((err) =>
+        };
+
+        if (newAddons.length > 0) {
+          try {
+            const currentProject = await db.getOnboardingProjectById(input.projectId);
+            const existing = (currentProject?.questionnaire as Record<string, unknown> | null) ?? {};
+            const existingAddons = Array.isArray(existing.addonsSelected) ? existing.addonsSelected as { product: string }[] : [];
+            const existingProducts = new Set(existingAddons.map((a) => a.product));
+            const merged = [...existingAddons, ...newAddons.filter((a) => !existingProducts.has(a.product))];
+            saveUpdates.questionnaire = { ...existing, addonsSelected: merged };
+          } catch {}
+        }
+
+        db.updateOnboardingProject(input.projectId, saveUpdates as any).catch((err) =>
           console.error("[onboardingChat] History auto-save failed:", err)
         );
       }

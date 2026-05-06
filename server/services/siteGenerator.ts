@@ -3,6 +3,7 @@ import { invokeLLM } from "../_core/llm";
 import { ENV } from "../_core/env";
 import { getProjectName } from "./cloudflareDeployment";
 import { injectImages as injectImageComments } from "./imageInjector";
+import { recordCost, COSTS, calculateAiCost } from "./costTracker";
 
 const PREMIUM_REQUIREMENTS = `== MINIMORPH STUDIOS — WORLD-CLASS SITE REQUIREMENTS ==
 
@@ -450,28 +451,56 @@ function ensureRequiredStructure(
   <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
     <h2 class="text-4xl font-bold text-gray-900 text-center mb-4">Get in Touch</h2>
     <p class="text-gray-600 text-center mb-10">Fill out the form below and we'll get back to you within 24 hours.</p>
-    <form class="bg-white rounded-2xl shadow-xl p-8 space-y-6" onsubmit="alert('Thanks! We\\'ll be in touch soon.');return false;">
+    <form id="mm-contact-form" class="bg-white rounded-2xl shadow-xl p-8 space-y-6">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
-        <input type="text" placeholder="Jane Smith" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+        <input name="name" type="text" placeholder="Jane Smith" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-        <input type="email" placeholder="jane@example.com" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+        <input name="email" type="email" placeholder="jane@example.com" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-        <input type="tel" placeholder="(555) 555-5555" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+        <input name="phone" type="tel" placeholder="(555) 555-5555" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-        <textarea rows="4" placeholder="Tell us about your project..." required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition"></textarea>
+        <textarea name="message" rows="4" placeholder="Tell us about your project..." required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition"></textarea>
       </div>
-      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl text-lg transition-colors">
+      <button type="submit" id="mm-contact-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl text-lg transition-colors">
         Send Message →
       </button>
+      <p id="mm-contact-msg" class="text-center text-sm text-gray-500 hidden"></p>
       <p class="text-center text-sm text-gray-500">⚡ We respond within 24 hours during business hours</p>
     </form>
+    <script>
+      (function(){
+        var form = document.getElementById('mm-contact-form');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var btn = document.getElementById('mm-contact-btn');
+          var msg = document.getElementById('mm-contact-msg');
+          var fd = new FormData(form);
+          var data = { name: fd.get('name'), email: fd.get('email'), phone: fd.get('phone'), message: fd.get('message') };
+          btn.disabled = true; btn.textContent = 'Sending…';
+          fetch('${ENV.appUrl}/api/contact-submit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })
+            .then(function(r){ return r.json(); })
+            .then(function(res){
+              if (res.success) {
+                form.reset(); btn.textContent = 'Sent ✓';
+                msg.textContent = "Thanks! We’ll be in touch within 24 hours."; msg.className = 'text-center text-sm text-green-600';
+              } else { throw new Error(res.error || 'Error'); }
+            })
+            .catch(function(){
+              btn.disabled = false; btn.textContent = 'Send Message →';
+              msg.textContent = 'Something went wrong. Please call us directly.'; msg.className = 'text-center text-sm text-red-600';
+            });
+          msg.classList.remove('hidden');
+        });
+      })();
+    </script>
   </div>
 </section>`;
     // Insert before <footer> if present, otherwise before </body>
@@ -482,7 +511,20 @@ function ensureRequiredStructure(
     }
   }
 
+  // Inject Cloudflare Web Analytics before </head> if token is configured and not already present
+  if (ENV.cloudflareAnalyticsToken && !html.includes("cloudflareinsights.com")) {
+    const analyticsSnippet = `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${ENV.cloudflareAnalyticsToken}"}'></script>`;
+    html = html.replace(/<\/head>/i, analyticsSnippet + "\n</head>");
+  }
+
   return html;
+}
+
+export function stripDemoBanner(html: string): string {
+  return html.replace(
+    /<div[^>]*background:#0a0a12[^>]*>[\s\S]*?MiniMorph Studios Demo[\s\S]*?<\/div>/gi,
+    "",
+  );
 }
 
 export async function generateSiteForProject(projectId: number): Promise<void> {
@@ -604,6 +646,14 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
       generationLog: "Phase 0: Researching competitive landscape...",
     });
     const competitiveIntel = await researchCompetitors(websiteType, project.businessName);
+    if (competitiveIntel) {
+      recordCost({
+        costType: "ai_generation",
+        amountCents: COSTS.COMPETITOR_SCRAPE,
+        customerId: project.customerId ?? undefined,
+        description: "Competitive research (web search)",
+      }).catch(() => {});
+    }
     let intel: any = null;
     try {
       if (competitiveIntel) intel = JSON.parse(competitiveIntel);
@@ -774,8 +824,20 @@ ${sharedContext}
 Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
               },
             ],
-            maxTokens: 8000,
+            maxTokens: 16000,
           });
+
+          // Record AI cost for this page generation
+          const usage = (result as any).usage;
+          if (usage) {
+            recordCost({
+              costType: "ai_generation",
+              amountCents: calculateAiCost(usage.prompt_tokens ?? 0, usage.completion_tokens ?? 0),
+              customerId: project.customerId ?? undefined,
+              description: `Site gen page: ${pageLabel}`,
+              tokensUsed: (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0),
+            }).catch(() => {});
+          }
 
           const raw =
             typeof result.choices[0]?.message?.content === "string"
@@ -866,6 +928,21 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
         // Best-effort — never block delivery
       }
     }
+
+    // Generate sitemap.xml and robots.txt
+    const siteBase = (q.domainName as string | undefined) ? `https://${q.domainName}` : "";
+    const today = new Date().toISOString().split("T")[0];
+    pages["sitemap.xml"] = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${Object.keys(pages)
+  .filter((p) => !p.endsWith(".xml") && !p.endsWith(".txt"))
+  .map((p) => {
+    const loc = siteBase ? `${siteBase}/${p === "index" ? "" : p + ".html"}` : `/${p === "index" ? "" : p + ".html"}`;
+    return `  <url><loc>${loc}</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq></url>`;
+  })
+  .join("\n")}
+</urlset>`;
+    pages["robots.txt"] = `User-agent: *\nAllow: /\n${siteBase ? `Sitemap: ${siteBase}/sitemap.xml` : ""}`;
 
     // Store the cloudflare project name so siteDeployment can reuse it
     const cfProjectName = getProjectName(project.businessName, projectId);

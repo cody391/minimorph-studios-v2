@@ -325,15 +325,43 @@ function ensureRequiredStructure(html: string, businessName: string): string {
   <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
     <h2 class="text-4xl font-bold text-gray-900 text-center mb-4">Get in Touch</h2>
     <p class="text-gray-600 text-center mb-10">Fill out the form below and we'll get back to you within 24 hours.</p>
-    <form class="bg-white rounded-2xl shadow-xl p-8 space-y-6" onsubmit="alert('Thanks! We\\'ll be in touch soon.');return false;">
+    <form id="mm-contact-form" class="bg-white rounded-2xl shadow-xl p-8 space-y-6">
       <div><label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-        <input type="text" placeholder="Your name" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></div>
+        <input name="name" type="text" placeholder="Your name" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></div>
       <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-        <input type="email" placeholder="your@email.com" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></div>
+        <input name="email" type="email" placeholder="your@email.com" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></div>
       <div><label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
-        <textarea rows="4" placeholder="How can we help?" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition"></textarea></div>
-      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl text-lg transition-colors">Send Message →</button>
+        <textarea name="message" rows="4" placeholder="How can we help?" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition"></textarea></div>
+      <button id="mm-contact-btn" type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl text-lg transition-colors">Send Message →</button>
+      <p id="mm-contact-msg" class="text-center text-sm text-gray-500 hidden"></p>
     </form>
+    <script>
+      (function(){
+        var form = document.getElementById('mm-contact-form');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          var btn = document.getElementById('mm-contact-btn');
+          var msg = document.getElementById('mm-contact-msg');
+          var fd = new FormData(form);
+          var data = { name: fd.get('name'), email: fd.get('email'), message: fd.get('message'), businessName: '${businessName}' };
+          btn.disabled = true; btn.textContent = 'Sending…';
+          fetch('${ENV.appUrl}/api/contact-submit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })
+            .then(function(r){ return r.json(); })
+            .then(function(res){
+              if (res.success) {
+                form.reset(); btn.textContent = 'Sent ✓';
+                msg.textContent = "Thanks! We'll be in touch within 24 hours."; msg.className = 'text-center text-sm text-green-600';
+              } else { throw new Error(res.error || 'Error'); }
+            })
+            .catch(function(){
+              btn.disabled = false; btn.textContent = 'Send Message →';
+              msg.textContent = 'Something went wrong. Please try again.'; msg.className = 'text-center text-sm text-red-600';
+            });
+          msg.classList.remove('hidden');
+        });
+      })();
+    </script>
   </div>
 </section>`;
     if (/<footer[\s>]/i.test(html)) {
@@ -838,7 +866,7 @@ async function generateAndDeployAll(): Promise<SiteResult[]> {
             primaryColor: site.primaryColor,
             primaryBg: site.primaryBg,
             textColor: site.textColor,
-            pages: ["index"],
+            pages: site.pages,
             questionnaire: site.questionnaireData,
           });
           break;

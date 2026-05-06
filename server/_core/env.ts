@@ -17,7 +17,7 @@ export const ENV = {
   adminName: process.env.ADMIN_NAME || "Admin",
   // AI — Anthropic
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
-  // AI — Replicate (image generation)
+  // AI — Replicate (legacy: disabled — Gemini is the sole image provider)
   replicateApiKey: process.env.REPLICATE_API_KEY ?? "",
   // AI — Google Gemini
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
@@ -85,4 +85,6 @@ export const ENV = {
   cloudflareApiToken: process.env.CLOUDFLARE_API_TOKEN ?? "",
   cloudflareAccountId: process.env.CLOUDFLARE_ACCOUNT_ID ?? "",
   minimorphSitesDomain: process.env.MINIMORPH_SITES_DOMAIN ?? "minimorphsites.com",
+  // Cloudflare Web Analytics — injected into every generated customer site for page view tracking
+  cloudflareAnalyticsToken: process.env.CLOUDFLARE_ANALYTICS_TOKEN ?? "",
 };

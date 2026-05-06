@@ -31,8 +31,6 @@ export const COSTS = {
   ELENA_ONBOARDING: 2,         // ~$0.012 → 2¢ (full onboarding conversation)
   COMPETITOR_SCRAPE: 1,        // ~$0.008 → 1¢ (per competitor URL analyzed)
   NANO_BANANA_2: 7,            // ~$0.067 → 7¢ (Gemini image generation primary)
-  REPLICATE_ULTRA: 0,          // DISABLED — Replicate removed, Gemini is sole provider
-  REPLICATE_HERO: 0,           // DISABLED — Replicate removed, Gemini is sole provider
   UNSPLASH_IMAGE: 0,           // FREE — gallery/about/team slots
   GEMINI_IMAGE: 7,             // ~$0.067 → 7¢ (alias for NANO_BANANA_2)
   R2_STORAGE: 0,               // FREE tier — Cloudflare R2
@@ -45,7 +43,7 @@ export function estimateSiteBuildCost(pageCount: number, hasCompetitors = false)
     COSTS.SITE_GENERATION_PER_PAGE * pageCount +
     COSTS.ELENA_ONBOARDING +
     (hasCompetitors ? COSTS.COMPETITOR_SCRAPE * 3 : 0) +
-    COSTS.REPLICATE_HERO +  // 1 hero per site
+    COSTS.GEMINI_IMAGE +    // 1 hero image per site
     COSTS.CLOUDFLARE_PAGES_DEPLOY
   );
   // Example: 4 pages + competitors + hero = 5*4 + 2 + 3 + 1 + 0 = 26¢ → ~$0.08 total
