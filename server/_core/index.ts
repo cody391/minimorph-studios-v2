@@ -173,6 +173,11 @@ async function startServer() {
     return res.send(`<!DOCTYPE html><html><head><title>Thanks!</title></head><body style="font-family:sans-serif;text-align:center;padding:60px;"><h2>Thanks for your feedback!</h2><p>You rated your support experience ${"⭐".repeat(rating)}.</p><p><a href="/">Back to MiniMorph Studios</a></p></body></html>`);
   });
 
+  // Health check — used by Railway and uptime monitors
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", ts: Date.now() });
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
