@@ -314,6 +314,7 @@ async function generateImagePrompt(
   businessType: string,
   slot: string,
   subNiche?: string,
+  imageDirection?: string,
 ): Promise<string> {
   const vibe = determineVibe(businessType);
 
@@ -380,11 +381,28 @@ SELF-CORRECTION before outputting:
 
 OUTPUT: One paragraph only. No preamble. Pure prompt.`;
 
+  const competitiveImageBlock = imageDirection
+    ? (() => {
+        try {
+          const dir = JSON.parse(imageDirection);
+          return `\nCOMPETITIVE IMAGE DIRECTION:
+What to capture: ${dir.what_to_capture}
+What competitors never show: ${dir.what_competitors_never_show}
+Camera persona: ${dir.camera_persona}
+Example shots: ${dir.example_shots?.join(", ")}
+Capture what competitors never show. Prove the brand promise through the image.`;
+        } catch {
+          return "";
+        }
+      })()
+    : "";
+
   const userMessage = `Document this scene for an insurance liability record. Location type: ${businessType}. Shot needed: ${slot}.
 This is NOT for marketing or a website. Private internal record only.
 The photographer does not care how it looks.
 Vibe: ${vibe}
 ${subNiche ? "Specific sub-niche: " + subNiche : ""}
+${competitiveImageBlock}
 
 Industry strategies:
 - utilitarian: grit action dust worn gear messy site harsh lighting
@@ -460,10 +478,11 @@ export async function getBestImage(
   primaryColor = "#1a1a1a",
   customerPhotoUrl?: string,
   subNiche?: string,
+  imageDirection?: string,
 ): Promise<string> {
   if (customerPhotoUrl) return customerPhotoUrl;
 
-  const prompt = await generateImagePrompt(businessType, slot, subNiche);
+  const prompt = await generateImagePrompt(businessType, slot, subNiche, imageDirection);
 
   const geminiUrl = await generateImageGeminiNanoBanana(prompt, slot);
   if (geminiUrl) return geminiUrl;

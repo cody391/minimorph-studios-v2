@@ -136,154 +136,144 @@ MINIMORPH BANNER (top of every page, BEFORE navigation):
 🏗️ MiniMorph Studios Demo — [Business Name] | Built on the [Package] plan — $[price]/mo | <a href='https://www.minimorphstudios.net/get-started' style='color:#3b82f6;font-weight:600;margin-left:8px'>Start Your Build →</a>
 </div>`;
 
-// ── Site personalities ─────────────────────────────────────────────────────
-// Each personality overrides the generic design standards above so that
-// sites across different industries feel built by different designers.
+// ── Competitive research ────────────────────────────────────────────────────
 
-interface SitePersonality {
-  name: string;
-  overrideRules: string;
-}
+async function researchCompetitors(
+  businessType: string,
+  businessName: string,
+): Promise<string> {
+  try {
+    console.log(`    → Phase 0: Researching ${businessType} competitive landscape...`);
 
-const PERSONALITIES: Record<string, SitePersonality> = {
-  INDUSTRIAL: {
-    name: "INDUSTRIAL",
-    overrideRules: `
-== PERSONALITY: INDUSTRIAL (Contractor / Trades) ==
-OVERRIDE the generic design standards above. Use these instead — no exceptions.
+    const response = await fetch(
+      "https://api.anthropic.com/v1/messages",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ENV.anthropicApiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-beta": "web-search-2025-03-05",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 2000,
+          tools: [{
+            type: "web_search_20250305",
+            name: "web_search",
+          }],
+          system: `You are a brutally honest brand strategist and creative director in 2026.
 
-HERO: Full-bleed photo (<img src="{{HERO_IMAGE}}">) filling 100vw × 100vh. On top: dark overlay (bg-black/60). Centered content: business name in ALL-CAPS, text-7xl lg:text-9xl font-black uppercase tracking-tight text-white. Tagline below in text-xl font-medium text-gray-300 uppercase tracking-widest. Two CTAs side by side: primary solid button + ghost outline button.
+Your job is to find the VISUAL LIES that every business in an industry tells on their website then define the exact opposite positioning.
 
-NAVIGATION: Dark bg (bg-[primaryBg] or bg-zinc-950). Logo/business name LEFT (bold, uppercase). Phone number VISIBLE CENTER in text-[primaryColor] font-bold. "Get Free Estimate" button RIGHT — solid primaryColor bg, white text, no border-radius (sharp corners, rounded-none).
+A Visual Lie is a marketing cliche so overused it has lost all meaning. Examples:
+- Restaurant: perfectly plated food nobody actually eats, smiling chefs who never look stressed, empty dining rooms with perfect golden hour lighting
+- Contractor: smiling worker in clean new hard hat, perfectly organized tool belt, stock photo handshakes
+- Gym: airbrushed athletes, impossible bodies, equipment that is never actually sweaty
+- Salon: models with impossible hair, sterile white everything, no real clients
 
-TYPOGRAPHY (load via Google Fonts <link>):
-- Use Oswald (font-family: 'Oswald', sans-serif) for ALL headings — weight 700, uppercase, tracking-tight
-- Use Inter for body copy — text-lg text-gray-300 leading-relaxed
-- Section labels: text-xs font-bold uppercase tracking-[0.3em] text-[primaryColor] mb-4
+You find these lies by researching what the top competitors actually show on their sites. Then you define the Counter-Strike — the brand promise that makes the truth more powerful than the lie.
 
-SERVICES SECTION: Icon grid layout — 6 cards in a 2×3 or 3×2 grid. Each card: dark bg-zinc-900, no rounded corners (rounded-none), border-l-4 border-[primaryColor], padding p-8. Icon top-left (SVG, primaryColor). Service name in Oswald text-2xl uppercase. One-line description in gray-400.
+Return ONLY valid JSON. No preamble. No markdown backticks. Just the JSON object.`,
+          messages: [{
+            role: "user",
+            content: `Research the competitive landscape for a ${businessType} business called "${businessName}".
 
-TRUST BAR: Full-width stripe bg-[primaryColor]. 4 stats in a flex row: number in text-5xl font-black text-white + label below in text-sm uppercase text-white/80. Stats: years in business, projects completed, states licensed, something like "0 callbacks" or "100% satisfaction".
+Search for:
+- "best ${businessType} websites 2026"
+- "top ${businessType} web design examples"
+- "${businessType} website design trends 2026"
 
-GALLERY: Asymmetric masonry grid using CSS grid-template-areas. Large image (spans 2 rows) + 4 smaller images. Sharp corners everywhere, no rounded-xl.
+Find the 3 most universal Visual Lies that every ${businessType} website tells. Then define the Counter-Strike positioning.
 
-CONTACT/CTA SECTIONS: Solid primaryColor background, white text. Bold headline in Oswald. Centered. No soft gradients — hard color blocks.
-
-CARDS: Never use rounded-2xl. Use rounded-none or rounded-sm. No hover:scale — use hover:border-[primaryColor] transition instead.
-
-SECTION STRUCTURE ORDER: Nav → Hero (fullbleed) → Trust bar → Services grid → Gallery → Testimonials → Contact CTA → Footer
-SECTION COLORS: Alternate bg-zinc-950 and bg-zinc-900. Never light backgrounds — this is a dark industrial site.`,
+Return this exact JSON:
+{
+  "visual_lies_found": [
+    {
+      "lie": "the visual cliche they all use",
+      "why_it_fails": "why customers dont believe it"
+    },
+    {
+      "lie": "second cliche",
+      "why_it_fails": "why it fails"
+    },
+    {
+      "lie": "third cliche",
+      "why_it_fails": "why it fails"
+    }
+  ],
+  "counter_strike": {
+    "personality_anchor": "one sentence — what THIS site IS that the competition is afraid to be",
+    "brand_promise": "the truth this site tells that competitors hide",
+    "tone": "exactly how copy should sound — be specific",
+    "avoid_words": ["word1", "word2", "word3"],
+    "power_words": ["word1", "word2", "word3"]
   },
-
-  EDITORIAL: {
-    name: "EDITORIAL",
-    overrideRules: `
-== PERSONALITY: EDITORIAL (Salon / Boutique / Luxury) ==
-OVERRIDE the generic design standards above. Use these instead — no exceptions.
-
-HERO: Split-panel layout. Left half (w-1/2): full-height <img src="{{HERO_IMAGE}}"> covering exactly 50vw, object-fit:cover, no overlay. Right half (w-1/2): vertically centered text block. Business name in thin italic serif text-5xl lg:text-7xl font-light italic. Tagline in text-sm uppercase tracking-[0.4em] text-gray-500 mb-8. CTA: underlined text link style (NOT a filled button) — border-b border-current pb-1 text-sm uppercase tracking-widest.
-
-NAVIGATION: Transparent or white bg. Business name/logo CENTERED using absolute positioning, or left-aligned in thin serif. Nav links in text-xs uppercase tracking-[0.25em] font-medium. NO filled CTA button in nav — use a text link or thin outline. Sticky nav with border-b border-gray-100.
-
-TYPOGRAPHY (load via Google Fonts <link>):
-- Use Cormorant Garamond (weight 300 and 400) for ALL headings — light weight, italic style
-- Use DM Sans for all body copy — text-base text-gray-600 leading-loose
-- Section labels: text-[10px] uppercase tracking-[0.5em] text-gray-400 mb-6 font-sans
-- Accent: small text-[primaryColor] used sparingly — only on key words or borders
-
-SERVICES SECTION: Clean horizontal list or 2-column editorial grid. Each service: lots of white space, thin top border border-gray-200, service name in Cormorant text-3xl italic, price right-aligned in text-sm tracking-widest. No icon grid. No cards with shadow.
-
-TEAM SECTION: Portrait photos with name and title below. Full-width individual feature blocks (image left, bio text right) for key staff members. Serif names, all lowercase except proper nouns.
-
-GALLERY: Symmetric clean grid (3 or 4 columns), consistent aspect ratio, no asymmetry. Large gap (gap-6 or gap-8). Zero rounded corners on images (rounded-none, overflow-hidden on container).
-
-CTAs: Ghost buttons (outline style) or text-underline links. NEVER a solid filled button except for the final booking CTA — which should be: bg-[primaryColor] text-white px-12 py-4 text-xs uppercase tracking-[0.3em] font-medium (not bold).
-
-WHITESPACE: Extreme. py-32 lg:py-48 between sections. max-w-4xl mx-auto for text blocks (NOT max-w-7xl).
-
-SECTION STRUCTURE ORDER: Nav → Split Hero → Brand statement (1 sentence, full width, huge italic serif) → Services list → Gallery → Team → Testimonials (1-2 large quotes) → Newsletter signup → Footer
-SECTION COLORS: White (#ffffff) and cream (#faf9f7) alternating. primaryBg used only in footer. Never dark sections except footer.`,
+  "design_direction": {
+    "hero_style": "specific hero approach that counters the lies",
+    "layout_feel": "specific layout personality",
+    "typography_direction": "font personality that matches the counter-strike",
+    "color_application": "how to use the brand color to reinforce the truth",
+    "section_order": ["hero", "section2", "section3", "section4", "section5", "footer"],
+    "avoid_design": ["design cliche 1", "cliche 2", "cliche 3"]
   },
+  "image_direction": {
+    "what_to_capture": "specific forensic photo direction that proves the brand promise",
+    "what_competitors_never_show": "the real thing we show that they hide",
+    "camera_persona": "specific documentary photographer persona for this niche",
+    "example_shots": ["shot1", "shot2", "shot3"]
+  }
+}`,
+          }],
+        }),
+      },
+    );
 
-  WARM_LIFESTYLE: {
-    name: "WARM LIFESTYLE",
-    overrideRules: `
-== PERSONALITY: WARM LIFESTYLE (Restaurant / Coffee / Bakery) ==
-OVERRIDE the generic design standards above. Use these instead — no exceptions.
+    const data = await response.json() as any;
 
-HERO: Full-bleed <img src="{{HERO_IMAGE}}"> 100vw × 100vh. Over it: gradient overlay from-transparent via-black/20 to-black/70 applied as absolute inset child. Centered content: eyebrow text in italic serif text-lg text-[primaryColor] mb-2. Business name in text-6xl lg:text-8xl font-bold font-serif text-white. Tagline in text-xl text-white/80 max-w-lg mt-4. ONE solid CTA button — bg-[primaryColor] text-white px-10 py-4 rounded-full font-medium mt-8.
+    const content = data.content || [];
+    let jsonText = "";
+    for (const block of content) {
+      if (block.type === "text") {
+        jsonText += block.text;
+      }
+    }
 
-NAVIGATION: Sticky, bg-white/90 backdrop-blur-md border-b border-gray-100. Logo/name LEFT in thin serif font. Nav links centered in text-sm font-medium text-gray-600. Reserve/Order button RIGHT — small, rounded-full outline border-[primaryColor] text-[primaryColor] px-5 py-2 hover:bg-[primaryColor] hover:text-white.
+    const clean = jsonText
+      .replace(/```json|```/g, "")
+      .trim();
 
-TYPOGRAPHY (load via Google Fonts <link>):
-- Use Playfair Display (700) for all headings — elegant, warm serif
-- Use Lato (400, 300) for body copy — text-lg text-gray-600 leading-relaxed
-- Section labels: Playfair Display italic, text-[primaryColor], small size (text-base)
-- Accent numbers/stats: Playfair Display bold, large (text-6xl), text-[primaryColor]
+    const intel = JSON.parse(clean);
 
-MENU / PRODUCT SECTION: Handwritten-style section title (use Playfair Display italic). Items listed in clean 2-column grid: item name bold left, price right, description below in text-sm text-gray-500 italic. Alternating light background rows.
+    console.log("");
+    console.log("    ══ COMPETITIVE INTELLIGENCE ══");
+    console.log("    Visual Lies Found:");
+    intel.visual_lies_found?.forEach((l: any) => {
+      console.log(`      ✗ ${l.lie}`);
+    });
+    console.log("");
+    console.log("    Counter-Strike:");
+    console.log(`      → ${intel.counter_strike?.personality_anchor}`);
+    console.log(`      → Brand promise: ${intel.counter_strike?.brand_promise}`);
+    console.log("    ════════════════════════════");
+    console.log("");
 
-OWNER STORY SECTION: Full-width section, image RIGHT (object-cover, rounded-2xl), text LEFT. Personal tone. Chef/owner name in large italic serif. Quote in blockquote style with left border-l-4 border-[primaryColor].
-
-INSTAGRAM-STYLE GRID: 3×3 grid of color swatches using bg-[color] approximations from brand palette. No actual images here — colored squares with hover overlay showing item names. Add a @handle badge below.
-
-CARDS: rounded-2xl always. shadow-lg. warm hover effects (hover:shadow-xl). Images with aspect-ratio[4/3].
-
-SECTION STRUCTURE ORDER: Nav → Hero (fullbleed overlay) → Featured items/menu highlights → Owner story → Gallery → Reviews → Newsletter signup → Contact/Reservations → Footer
-SECTION COLORS: Alternate between primaryBg (dark warm) and bg-[#faf6f1] (warm cream/off-white). Avoid pure white or pure black sections.`,
-  },
-
-  ENERGETIC: {
-    name: "ENERGETIC",
-    overrideRules: `
-== PERSONALITY: ENERGETIC (Gym / Fitness / CrossFit / Yoga) ==
-OVERRIDE the generic design standards above. Use these instead — no exceptions.
-
-HERO: Split-diagonal layout. Left 55%: dark bg-[primaryBg] with large stat overlaid (e.g. "18 LBS" in text-[9rem] font-black text-[primaryColor] leading-none). Below stat: business name text-4xl font-black uppercase text-white. Tagline text-sm uppercase tracking-widest text-gray-400 mt-2. Two CTAs: solid primaryColor button (shadow-[0_0_20px_primaryColor]) + ghost outline. Right 45%: <img src="{{HERO_IMAGE}}"> object-cover object-top full-height, clipped diagonally using clip-path: polygon(10% 0, 100% 0, 100% 100%, 0% 100%).
-
-NAVIGATION: Near-black bg bg-[primaryBg] or bg-black. Logo left (bold uppercase, text-[primaryColor]). Nav links in text-xs uppercase tracking-widest text-gray-300. "FREE TRIAL" button right — bg-[primaryColor] text-black font-black px-6 py-2 uppercase text-sm with glow: shadow-[0_0_15px_var(--primary)].
-
-TYPOGRAPHY (load via Google Fonts <link>):
-- Use Barlow Condensed (800) for ALL headings — bold condensed, uppercase required
-- Use Barlow (400, 500) for body copy — text-gray-300 text-base
-- Section labels: Barlow Condensed, text-[primaryColor], text-sm uppercase tracking-[0.4em]
-- Stats: text-8xl font-black text-[primaryColor] (for results numbers like "94%" or "18 LBS")
-
-PROGRAMS/CLASSES SECTION: Horizontal card row (overflow-x-auto on mobile). Each card: dark bg-zinc-900 border-t-4 border-[primaryColor]. Class name in Barlow Condensed text-2xl uppercase bold. Intensity indicator (3-5 filled dots in primaryColor). Duration and times. No rounded corners (rounded-none).
-
-DIAGONAL SECTION DIVIDERS: Between sections use a full-width element with clip-path: polygon(0 0, 100% 8%, 100% 100%, 0% 92%) or similar to create angular transitions between dark sections.
-
-TRAINER PROFILES: Dark bg-zinc-900 cards. Coach photo top (grayscale filter that goes color on hover). Name Barlow Condensed bold uppercase. Specialty tag in primaryColor. One-line credential.
-
-RESULTS SECTION: Full-width dark section. 3-4 large transformation numbers (text-8xl text-[primaryColor] font-black) with labels (e.g. "average lbs lost in 90 days", "member retention", "active members"). White text. primaryColor accents.
-
-TESTIMONIALS: Dark bg-zinc-800 cards, no rounded corners. Large quote mark in primaryColor. Member name + result tag.
-
-CTAs: Always solid filled bg-[primaryColor] text-black (or white if light color). Add glow with shadow-[0_0_25px_#color]. Uppercase font-black tracking-widest. NEVER use ghost/outline buttons for primary CTAs.
-
-SECTION STRUCTURE ORDER: Nav → Split-diagonal Hero → Stats bar → Programs/Classes → Trainers → Transformation results → Free Trial form → Testimonials → Footer
-SECTION COLORS: Only dark colors — bg-black, bg-zinc-950, bg-zinc-900, bg-zinc-800. ONE section (Free Trial CTA) can use bg-[primaryColor] with dark text. Never any light or white backgrounds.`,
-  },
-};
-
-function determinePersonality(imageType: string): SitePersonality {
-  const t = imageType.toLowerCase();
-  if (t === "contractor" || t === "construction" || t === "trades") return PERSONALITIES.INDUSTRIAL;
-  if (t === "salon" || t === "boutique" || t === "luxury" || t === "spa") return PERSONALITIES.EDITORIAL;
-  if (t === "restaurant" || t === "coffee" || t === "cafe" || t === "bakery" || t === "food") return PERSONALITIES.WARM_LIFESTYLE;
-  if (t === "gym" || t === "fitness" || t === "yoga" || t === "crossfit") return PERSONALITIES.ENERGETIC;
-  return PERSONALITIES.WARM_LIFESTYLE;
+    return JSON.stringify(intel, null, 2);
+  } catch (e) {
+    console.error("    → Recon failed:", e);
+    return "";
+  }
 }
 
 // ── Image injection ─────────────────────────────────────────────────────────
-async function injectImages(html: string, imageType: string, primaryColor: string): Promise<string> {
+async function injectImages(html: string, imageType: string, primaryColor: string, imageDirection?: string): Promise<string> {
   const tokens = ["{{HERO_IMAGE}}", "{{GALLERY_IMAGE_1}}", "{{GALLERY_IMAGE_2}}", "{{GALLERY_IMAGE_3}}", "{{ABOUT_IMAGE}}"];
   const slots = ["hero", "gallery", "gallery", "gallery", "about"];
   const usedTokens = tokens.filter(t => html.includes(t));
 
   if (usedTokens.length > 0) {
-    console.log(`      → Replacing ${usedTokens.length} image tokens with real Replicate images...`);
-    const urls = await Promise.all(slots.map(slot => getBestImage(imageType, slot, primaryColor)));
+    console.log(`      → Replacing ${usedTokens.length} image tokens with real images...`);
+    const urls = await Promise.all(slots.map(slot => getBestImage(imageType, slot, primaryColor, undefined, undefined, imageDirection)));
     let result = html;
     tokens.forEach((token, i) => { result = result.split(token).join(urls[i]); });
     return result;
@@ -291,7 +281,7 @@ async function injectImages(html: string, imageType: string, primaryColor: strin
 
   // Fallback: LLM used CSS gradients — override hero/banner sections with real image via injected CSS
   console.log(`      → No tokens found — injecting hero image via CSS override...`);
-  const heroUrl = await getBestImage(imageType, "hero", primaryColor);
+  const heroUrl = await getBestImage(imageType, "hero", primaryColor, undefined, undefined, imageDirection);
   const cssOverride = `\n<style>
 /* MiniMorph image injection */
 .hero,.hero-section,#hero,[class*="hero"],[class*="banner"],[class*="jumbotron"],[class*="header-section"] {
@@ -316,11 +306,60 @@ async function generateSiteHtml(params: {
   pages: string[];
   questionnaire: Record<string, unknown>;
 }): Promise<string> {
-  const personality = determinePersonality(params.imageType);
-  console.log(`    → Personality: ${personality.name}`);
+  const competitiveIntel = await researchCompetitors(
+    params.imageType,
+    params.businessName,
+  );
 
-  const systemPrompt = `${PREMIUM_REQUIREMENTS}
-${personality.overrideRules}
+  let intel: any = null;
+  try {
+    if (competitiveIntel) {
+      intel = JSON.parse(competitiveIntel);
+    }
+  } catch {}
+
+  const competitiveBlock = intel ? `════════════════════════════════════════
+PHASE 0 — COMPETITIVE INTELLIGENCE
+This site must be a brand argument not just a website. Research confirmed these Visual Lies dominate this industry:
+
+${intel.visual_lies_found?.map((l: any) =>
+    `✗ LIE: "${l.lie}"\n  Why it fails: ${l.why_it_fails}`
+  ).join("\n\n")}
+
+COUNTER-STRIKE POSITIONING:
+Personality Anchor: ${intel.counter_strike?.personality_anchor}
+Brand Promise: ${intel.counter_strike?.brand_promise}
+Tone: ${intel.counter_strike?.tone}
+Words to AVOID: ${intel.counter_strike?.avoid_words?.join(", ")}
+Power words to USE: ${intel.counter_strike?.power_words?.join(", ")}
+
+DESIGN DIRECTION:
+Hero: ${intel.design_direction?.hero_style}
+Layout: ${intel.design_direction?.layout_feel}
+Typography: ${intel.design_direction?.typography_direction}
+Color: ${intel.design_direction?.color_application}
+Section order: ${intel.design_direction?.section_order?.join(" → ")}
+NEVER use these design cliches: ${intel.design_direction?.avoid_design?.join(", ")}
+
+IMAGE DIRECTION:
+What to capture: ${intel.image_direction?.what_to_capture}
+What competitors never show: ${intel.image_direction?.what_competitors_never_show}
+Camera persona: ${intel.image_direction?.camera_persona}
+Example shots: ${intel.image_direction?.example_shots?.join(", ")}
+
+CRITICAL DIRECTIVE:
+Every design decision must counter the lies above.
+Every copy line must reinforce the brand promise.
+Every image must show what competitors hide.
+This site must make the competition look dishonest by simply telling the truth.
+════════════════════════════════════════
+` : "";
+
+  const imageDirection = intel?.image_direction
+    ? JSON.stringify(intel.image_direction)
+    : undefined;
+
+  const systemPrompt = `${competitiveBlock}${PREMIUM_REQUIREMENTS}
 
 You are an expert web designer and developer. You build stunning, conversion-optimized websites.
 
@@ -403,7 +442,7 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`;
         if (!html.includes("</body>")) html += "\n</body>";
         if (!html.includes("</html>")) html += "\n</html>";
         // Inject real AI-generated images in place of token placeholders
-        html = await injectImages(html, params.imageType, params.primaryColor);
+        html = await injectImages(html, params.imageType, params.primaryColor, imageDirection);
         // Force correct price in MiniMorph banner regardless of what LLM wrote
         html = html.replace(
           /Built on the \w[\w &]* plan — \$[\d,]+\/mo/g,
