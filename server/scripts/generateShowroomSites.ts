@@ -239,6 +239,10 @@ Return this exact JSON:
       }
     }
 
+    if (!jsonText.trim()) {
+      throw new Error(`No text content in recon response. Raw: ${JSON.stringify(data).slice(0, 400)}`);
+    }
+
     // Extract the outermost JSON object using balanced brace counting
     // (Claude may prepend thinking text, and web search content may include
     // unescaped characters — greedy regex is not safe here)
