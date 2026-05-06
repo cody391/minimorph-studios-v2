@@ -103,14 +103,25 @@ Ecommerce Product Grid:
 [product cards with name, description, price, Add to Cart button in primary color]
 </div>
 
-FOOTER REQUIREMENTS:
-Every site must have a proper footer with:
+FOOTER REQUIREMENTS (non-negotiable — audited after generation):
+Every page MUST end with a <footer> tag containing:
 - Business name and tagline
-- Navigation links
-- Contact info (phone, email, address)
-- Social media links
-- Copyright line
+- Navigation links: Home, About, Services, Contact
+- Contact info: phone (as tel: link), email (as mailto: link), address/service area
+- Copyright line with current year
 - 'Powered by MiniMorph Studios' in small text
+MISSING FOOTER = AUTOMATIC FAILURE. Do not omit under any circumstances.
+
+PHONE NUMBER IN NAV/HEADER (non-negotiable):
+The navigation or hero section MUST include a visible, clickable phone number:
+  <a href="tel:PHONENUMBER">📞 (555) 555-5555</a>
+If the business has no phone yet, use: <a href="#contact">📞 Call for a free quote</a>
+MISSING PHONE IN NAV/HERO = AUTOMATIC FAILURE.
+
+CONTACT FORM (non-negotiable):
+Every page MUST include a real contact form with at minimum: name, email, phone, message fields, and a submit button.
+Not a button that says "Contact Us" — an actual <form> with <input> elements.
+MISSING CONTACT FORM = AUTOMATIC FAILURE.
 
 MINIMORPH BANNER (top of every page):
 <div style='background:#0a0a12;color:#fff;padding:10px 20px;text-align:center;font-size:14px;position:sticky;top:0;z-index:9999'>
@@ -150,6 +161,15 @@ function scoreGeneratedSite(html: string): {
   }
   if (!html.includes("Built on the")) {
     issues.push("Missing MiniMorph banner"); score -= 5;
+  }
+  if (!/<footer[\s>]/i.test(html)) {
+    issues.push("Missing footer"); score -= 20;
+  }
+  if (!/tel:/i.test(html.slice(0, 6000))) {
+    issues.push("No phone number in nav/hero area"); score -= 15;
+  }
+  if (!/<form[\s>]/i.test(html)) {
+    issues.push("No contact form"); score -= 10;
   }
 
   return { score, issues, pass: score >= 70 };
@@ -211,6 +231,120 @@ async function injectImages(
     result = result.split(slot).join(url);
   }
   return result;
+}
+
+// ─── Post-processing safety net ───────────────────────────────────────────────
+// Guarantees footer, phone in nav, and contact form are present regardless of
+// what the LLM produced. Runs after every page generation as a hard backstop.
+
+function ensureRequiredStructure(
+  html: string,
+  opts: { businessName: string; phone?: string; email?: string; address?: string },
+): string {
+  const { businessName } = opts;
+  const phone = opts.phone?.trim() || "";
+  const email = opts.email?.trim() || "";
+  const address = opts.address?.trim() || "";
+  const year = new Date().getFullYear();
+
+  const telHref = phone ? `tel:${phone.replace(/\D/g, "")}` : "#contact";
+  const phoneDisplay = phone || "Call for a free quote";
+  const telLink = `<a href="${telHref}" class="hover:text-white transition-colors">${phoneDisplay}</a>`;
+  const emailLink = email
+    ? `<a href="mailto:${email}" class="hover:text-white transition-colors">${email}</a>`
+    : "";
+
+  // ── Fix 1: Footer ───────────────────────────────────────────────────────────
+  if (!/<footer[\s>]/i.test(html)) {
+    const footer = `
+<footer class="bg-gray-900 text-gray-400 py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <div>
+        <h3 class="text-white font-bold text-xl mb-4">${businessName}</h3>
+        ${address ? `<p class="mb-3 text-sm">${address}</p>` : ""}
+        <p class="mb-2 text-sm">${telLink}</p>
+        ${emailLink ? `<p class="text-sm">${emailLink}</p>` : ""}
+      </div>
+      <div>
+        <h4 class="text-white font-semibold text-lg mb-4">Quick Links</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/" class="hover:text-white transition-colors">Home</a></li>
+          <li><a href="about.html" class="hover:text-white transition-colors">About</a></li>
+          <li><a href="services.html" class="hover:text-white transition-colors">Services</a></li>
+          <li><a href="contact.html" class="hover:text-white transition-colors">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold text-lg mb-4">Contact Us</h4>
+        <p class="mb-2 text-sm">
+          <a href="${telHref}" class="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+            📞 ${phoneDisplay}
+          </a>
+        </p>
+        ${email ? `<p class="text-sm"><a href="mailto:${email}" class="text-blue-400 hover:text-blue-300 transition-colors">${email}</a></p>` : ""}
+      </div>
+    </div>
+    <div class="border-t border-gray-800 mt-10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <p class="text-sm">© ${year} ${businessName}. All rights reserved.</p>
+      <p class="text-xs text-gray-600">Powered by <a href="https://minimorphstudios.net" class="hover:text-gray-400 transition-colors">MiniMorph Studios</a></p>
+    </div>
+  </div>
+</footer>`;
+    html = html.replace(/<\/body>/i, footer + "\n</body>");
+  }
+
+  // ── Fix 2: Phone number in nav/hero area ────────────────────────────────────
+  if (!/tel:/i.test(html.slice(0, 6000))) {
+    const phoneChip = `<a href="${telHref}" class="hidden sm:inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap">📞 ${phoneDisplay}</a>`;
+    // Prefer injecting before </nav>; fall back to after opening <body>
+    if (/<\/nav>/i.test(html)) {
+      html = html.replace(/<\/nav>/i, phoneChip + "\n</nav>");
+    } else {
+      html = html.replace(/<body[^>]*>/i, (match) => match + "\n" + phoneChip);
+    }
+  }
+
+  // ── Fix 3: Contact form ─────────────────────────────────────────────────────
+  if (!/<form[\s>]/i.test(html)) {
+    const contactSection = `
+<section id="contact" class="py-20 bg-gray-50">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-4xl font-bold text-gray-900 text-center mb-4">Get in Touch</h2>
+    <p class="text-gray-600 text-center mb-10">Fill out the form below and we'll get back to you within 24 hours.</p>
+    <form class="bg-white rounded-2xl shadow-xl p-8 space-y-6" onsubmit="alert('Thanks! We\\'ll be in touch soon.');return false;">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+        <input type="text" placeholder="Jane Smith" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+        <input type="email" placeholder="jane@example.com" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+        <input type="tel" placeholder="(555) 555-5555" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+        <textarea rows="4" placeholder="Tell us about your project..." required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition"></textarea>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl text-lg transition-colors">
+        Send Message →
+      </button>
+      <p class="text-center text-sm text-gray-500">⚡ We respond within 24 hours during business hours</p>
+    </form>
+  </div>
+</section>`;
+    // Insert before <footer> if present, otherwise before </body>
+    if (/<footer[\s>]/i.test(html)) {
+      html = html.replace(/<footer[\s>]/i, (m) => contactSection + "\n" + m);
+    } else {
+      html = html.replace(/<\/body>/i, contactSection + "\n</body>");
+    }
+  }
+
+  return html;
 }
 
 export async function generateSiteForProject(projectId: number): Promise<void> {
@@ -433,6 +567,14 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
           }
         }
       }
+
+      // Guarantee footer, phone-in-nav, and contact form regardless of LLM output
+      html = ensureRequiredStructure(html, {
+        businessName: project.businessName,
+        phone: (q.phone as string) || (q.phoneNumber as string) || "",
+        email: (q.email as string) || project.contactEmail || "",
+        address: (q.address as string) || (q.serviceArea as string) || "",
+      });
 
       pages[pageName] = html;
     }
