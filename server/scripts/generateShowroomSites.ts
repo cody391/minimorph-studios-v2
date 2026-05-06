@@ -284,6 +284,68 @@ Return this exact JSON:
   }
 }
 
+// ── Structural safety net (Fix 8: showrooms now get ensureRequiredStructure) ─
+function ensureRequiredStructure(html: string, businessName: string): string {
+  const year = new Date().getFullYear();
+
+  if (!/<footer[\s>]/i.test(html)) {
+    const footer = `
+<footer class="bg-gray-900 text-gray-400 py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+      <div>
+        <h3 class="text-white font-bold text-xl mb-4">${businessName}</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/" class="hover:text-white transition-colors">Home</a></li>
+          <li><a href="about.html" class="hover:text-white transition-colors">About</a></li>
+          <li><a href="contact.html" class="hover:text-white transition-colors">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold text-lg mb-4">Get Started</h4>
+        <a href="https://www.minimorphstudios.net/get-started" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-3 rounded-full transition-colors">Start Your Build →</a>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold text-lg mb-4">MiniMorph Studios</h4>
+        <p class="text-sm">World-class websites for small businesses. Custom AI photography, competitive positioning, full-service build and hosting.</p>
+      </div>
+    </div>
+    <div class="border-t border-gray-800 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <p class="text-sm">© ${year} ${businessName}. All rights reserved.</p>
+      <p class="text-xs text-gray-600">Powered by <a href="https://minimorphstudios.net" class="hover:text-gray-400 transition-colors">MiniMorph Studios</a></p>
+    </div>
+  </div>
+</footer>`;
+    html = html.replace(/<\/body>/i, footer + "\n</body>");
+  }
+
+  if (!/<form[\s>]/i.test(html)) {
+    const contactSection = `
+<section id="contact" class="py-20 bg-gray-50">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-4xl font-bold text-gray-900 text-center mb-4">Get in Touch</h2>
+    <p class="text-gray-600 text-center mb-10">Fill out the form below and we'll get back to you within 24 hours.</p>
+    <form class="bg-white rounded-2xl shadow-xl p-8 space-y-6" onsubmit="alert('Thanks! We\\'ll be in touch soon.');return false;">
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <input type="text" placeholder="Your name" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" placeholder="your@email.com" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></div>
+      <div><label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+        <textarea rows="4" placeholder="How can we help?" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition"></textarea></div>
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl text-lg transition-colors">Send Message →</button>
+    </form>
+  </div>
+</section>`;
+    if (/<footer[\s>]/i.test(html)) {
+      html = html.replace(/<footer[\s>]/i, (m) => contactSection + "\n" + m);
+    } else {
+      html = html.replace(/<\/body>/i, contactSection + "\n</body>");
+    }
+  }
+
+  return html;
+}
+
 // ── Image injection ─────────────────────────────────────────────────────────
 async function injectImages(html: string, imageType: string, primaryColor: string, imageDirection?: string): Promise<string> {
   const tokens = ["{{HERO_IMAGE}}", "{{GALLERY_IMAGE_1}}", "{{GALLERY_IMAGE_2}}", "{{GALLERY_IMAGE_3}}", "{{ABOUT_IMAGE}}"];
@@ -462,6 +524,8 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`;
         if (!html.includes("</html>")) html += "\n</html>";
         // Inject real AI-generated images in place of token placeholders
         html = await injectImages(html, params.imageType, params.primaryColor, imageDirection);
+        // Guarantee footer + contact form (Fix 8: structural safety net for showrooms)
+        html = ensureRequiredStructure(html, params.businessName);
         // Force correct price in MiniMorph banner regardless of what LLM wrote
         html = html.replace(
           /Built on the \w[\w &]* plan — \$[\d,]+\/mo/g,

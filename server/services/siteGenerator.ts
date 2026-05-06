@@ -175,20 +175,31 @@ function scoreGeneratedSite(html: string): {
   return { score, issues, pass: score >= 70 };
 }
 
-function getPagesForBusinessType(websiteType: string): string[] {
+function getPagesForBusinessType(websiteType: string, features?: string[]): string[] {
+  const hasBlog = features?.some(f =>
+    f.toLowerCase().includes("blog") || f.toLowerCase().includes("seo_schema") || f.toLowerCase().includes("seo autopilot")
+  );
+  let pages: string[];
   switch ((websiteType || "").toLowerCase()) {
     case "restaurant":
-      return ["index", "menu", "about", "reservations", "contact"];
+      pages = ["index", "menu", "about", "reservations", "contact"];
+      break;
     case "contractor":
-      return ["index", "services", "about", "gallery", "quote", "contact"];
+      pages = ["index", "services", "about", "gallery", "quote", "contact"];
+      break;
     case "ecommerce":
-      return ["index", "products", "about", "contact"];
+      pages = ["index", "products", "about", "contact"];
+      break;
     case "service_business":
     case "service business":
-      return ["index", "about", "services", "contact"];
+      pages = ["index", "about", "services", "contact"];
+      break;
     default:
-      return ["index", "about", "services", "contact"];
+      pages = ["index", "about", "services", "contact"];
   }
+  if (hasBlog) pages.push("blog");
+  pages.push("privacy");
+  return pages;
 }
 
 async function fetchAssetAsBase64(url: string): Promise<string | null> {
@@ -202,6 +213,132 @@ async function fetchAssetAsBase64(url: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+// ── Visual Lies competitive research (same framework as showroom generator) ──
+async function researchCompetitors(
+  businessType: string,
+  businessName: string,
+): Promise<string> {
+  try {
+    console.log(`[SiteGen] Phase 0: Researching ${businessType} competitive landscape for ${businessName}...`);
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ENV.anthropicApiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "web-search-2025-03-05",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 2000,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        system: `You are a brutally honest brand strategist and creative director in 2026.
+
+Your job is to find the VISUAL LIES that every business in an industry tells on their website then define the exact opposite positioning.
+
+A Visual Lie is a marketing cliche so overused it has lost all meaning. Examples:
+- Restaurant: perfectly plated food nobody actually eats, smiling chefs who never look stressed
+- Contractor: smiling worker in clean new hard hat, stock photo handshakes
+- Gym: airbrushed athletes, impossible bodies
+- Salon: models with impossible hair, sterile white everything
+
+You find these lies by researching what the top competitors actually show on their sites. Then you define the Counter-Strike — the brand promise that makes the truth more powerful than the lie.
+
+Return ONLY valid JSON. No preamble. No markdown backticks. Just the JSON object.`,
+        messages: [{
+          role: "user",
+          content: `Research the competitive landscape for a ${businessType} business called "${businessName}".
+
+Search for:
+- "best ${businessType} websites 2026"
+- "top ${businessType} web design examples"
+- "${businessType} website design trends 2026"
+
+Find the 3 most universal Visual Lies that every ${businessType} website tells. Then define the Counter-Strike positioning.
+
+Return this exact JSON:
+{
+  "visual_lies_found": [
+    {"lie": "the visual cliche they all use", "why_it_fails": "why customers dont believe it"},
+    {"lie": "second cliche", "why_it_fails": "why it fails"},
+    {"lie": "third cliche", "why_it_fails": "why it fails"}
+  ],
+  "counter_strike": {
+    "personality_anchor": "one sentence — what THIS site IS that the competition is afraid to be",
+    "brand_promise": "the truth this site tells that competitors hide",
+    "tone": "exactly how copy should sound — be specific",
+    "avoid_words": ["word1", "word2", "word3"],
+    "power_words": ["word1", "word2", "word3"]
+  },
+  "design_direction": {
+    "hero_style": "specific hero approach that counters the lies",
+    "layout_feel": "specific layout personality",
+    "typography_direction": "font personality that matches the counter-strike",
+    "color_application": "how to use the brand color to reinforce the truth",
+    "section_order": ["hero", "section2", "section3", "section4", "section5", "footer"],
+    "avoid_design": ["design cliche 1", "cliche 2", "cliche 3"]
+  },
+  "image_direction": {
+    "what_to_capture": "specific photo direction that proves the brand promise",
+    "what_competitors_never_show": "the real thing we show that they hide",
+    "camera_persona": "specific documentary photographer persona for this niche",
+    "example_shots": ["shot1", "shot2", "shot3"]
+  }
+}`,
+        }],
+      }),
+    });
+    const data = await response.json() as any;
+    const content = data.content || [];
+    let jsonText = "";
+    for (const block of content) {
+      if (block.type === "text") jsonText += block.text;
+    }
+    if (!jsonText.trim()) throw new Error("No text content in recon response");
+    const start = jsonText.indexOf("{");
+    if (start === -1) throw new Error("No JSON object found in recon response");
+    let depth = 0, inString = false, escape = false, end = -1;
+    for (let i = start; i < jsonText.length; i++) {
+      const ch = jsonText[i];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\" && inString) { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{") depth++;
+      if (ch === "}") { depth--; if (depth === 0) { end = i; break; } }
+    }
+    if (end === -1) throw new Error("Unbalanced JSON in recon response");
+    const intel = JSON.parse(jsonText.slice(start, end + 1));
+    console.log("[SiteGen] Competitive intel ready:");
+    intel.visual_lies_found?.forEach((l: any) => console.log(`  ✗ ${l.lie}`));
+    console.log(`  → ${intel.counter_strike?.personality_anchor}`);
+    return JSON.stringify(intel, null, 2);
+  } catch (e) {
+    console.error("[SiteGen] Competitive recon failed:", e);
+    return "";
+  }
+}
+
+// ── Bridge add-ons selected by Elena to mustHaveFeatures feature flags ────────
+function bridgeAddonsToFeatures(
+  addonsSelected: any[],
+  mustHaveFeatures: string[],
+): string[] {
+  const features = [...(mustHaveFeatures || [])];
+  for (const addon of (addonsSelected || [])) {
+    const name = (addon.product || addon.name || "").toLowerCase();
+    if (name.includes("review")) features.push("review_widget");
+    if (name.includes("booking")) features.push("booking_widget");
+    if (name.includes("chatbot") || name.includes("chat bot")) features.push("chat_widget");
+    if (name.includes("lead")) features.push("lead_capture");
+    if (name.includes("seo")) features.push("seo_schema");
+    if (name.includes("social")) features.push("social_feed");
+    if (name.includes("email")) features.push("email_signup");
+    if (name.includes("blog")) features.push("blog");
+  }
+  return Array.from(new Set(features));
 }
 
 const IMAGE_SLOTS: Record<string, string> = {
@@ -221,13 +358,14 @@ async function injectImages(
   primaryColor: string,
   customerPhotoUrl?: string,
   subNiche?: string,
+  imageDirection?: string,
 ): Promise<string> {
   const { getBestImage } = await import("./imageService");
   let result = html;
   for (const [slot, slotType] of Object.entries(IMAGE_SLOTS)) {
     if (!result.includes(slot)) continue;
     console.log(`[SiteGen] Fetching image for slot: ${slot}`);
-    const url = await getBestImage(businessType, slotType, primaryColor, customerPhotoUrl, subNiche);
+    const url = await getBestImage(businessType, slotType, primaryColor, customerPhotoUrl, subNiche, imageDirection);
     result = result.split(slot).join(url);
   }
   return result;
@@ -386,47 +524,140 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     const assets = await db.listProjectAssets(projectId);
     const questionnaire = project.questionnaire as Record<string, unknown> | null;
 
-    // Determine which pages to build based on business type
-    const websiteType = (questionnaire?.websiteType as string) || "other";
-    const pageList = getPagesForBusinessType(websiteType);
+    // ── Questionnaire extraction ─────────────────────────────────────────────
+    const q = questionnaire || {};
+    const websiteType = (q.websiteType as string) || "other";
 
     // Build asset summary for prompt
     const assetSummary = assets.length > 0
       ? assets.map(a => `- ${a.category}: ${a.fileName} (available at: ${a.fileUrl})`).join("\n")
       : "No assets uploaded — use CSS gradients, shapes, and SVG illustrations as placeholders.";
 
-    // Extract key questionnaire fields for prompt
-    const q = questionnaire || {};
+    // ── Color extraction (Fix 2 & 9: primaryBg, textColor, secondary color) ──
     const brandTone = (q.brandTone as string) || "professional";
     const rawColorsStr = Array.isArray(q.brandColors)
       ? (q.brandColors as string[]).join(" ")
       : (q.brandColors as string) || "";
-    const primaryColorMatch = rawColorsStr.match(/#[0-9a-fA-F]{3,6}/);
-    const primaryColor = primaryColorMatch ? primaryColorMatch[0] : "#1a1a1a";
-    const primaryBg = (q.primaryBg as string) || "#ffffff";
-    const textColor = (q.textColor as string) || "#1a1a1a";
+    const colorMatches = rawColorsStr.match(/#[0-9a-fA-F]{3,6}/g) || [];
+    const primaryColor = colorMatches[0] || "#1a1a1a";
+    const secondaryColor = colorMatches[1] || primaryColor;
+
+    // Use explicit primaryBg from Elena if set; otherwise derive from brandTone
+    const primaryBg = (q.primaryBg as string) || (() => {
+      const tone = brandTone.toLowerCase();
+      if (tone === "bold" || tone === "edgy") return primaryColor;
+      if (tone === "elegant" || tone === "luxury") return "#fafaf8";
+      return "#ffffff";
+    })();
+
+    // Use explicit textColor if set; otherwise derive from background luminance
+    const textColor = (q.textColor as string) || (() => {
+      const hex = primaryBg.replace("#", "");
+      if (hex.length === 6) {
+        const r = parseInt(hex.slice(0, 2), 16);
+        const g = parseInt(hex.slice(2, 4), 16);
+        const b = parseInt(hex.slice(4, 6), 16);
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.45 ? "#ffffff" : "#1a1a1a";
+      }
+      return "#1a1a1a";
+    })();
+
+    // ── Feature bridge (Fix 3: addonsSelected → mustHaveFeatures) ────────────
     const targetAudience = (q.targetAudience as string) || "local customers";
     const specialRequests = (q.specialRequests as string) || "None";
-    const mustHaveFeatures = Array.isArray(q.mustHaveFeatures) ? (q.mustHaveFeatures as string[]).join(", ") : "Standard";
+    const mustHaveFeaturesRaw = Array.isArray(q.mustHaveFeatures) ? (q.mustHaveFeatures as string[]) : [];
+    const addonsSelectedRaw = Array.isArray(q.addonsSelected) ? (q.addonsSelected as any[]) : [];
+    const mergedFeatures = bridgeAddonsToFeatures(addonsSelectedRaw, mustHaveFeaturesRaw);
+    const mustHaveFeatures = mergedFeatures.join(", ") || "Standard";
 
-    // Competitive intelligence (collected by Elena)
+    // ── New explicit contact/business fields (Fix 2 additions) ───────────────
+    const phone = (q.phone as string) || (q.phoneNumber as string) || "";
+    const email = (q.email as string) || project.contactEmail || "";
+    const address = (q.address as string) || (q.serviceArea as string) || "";
+    const hours = (q.hours as string) || "";
+    const licenseNumber = (q.licenseNumber as string) || "";
+    const yearsInBusiness = (q.yearsInBusiness as string) || "";
+    const ownerName = (q.ownerName as string) || project.contactName || "";
+    const uniqueDifferentiator = (q.uniqueDifferentiator as string) || "";
+    const targetCustomerDescription = (q.targetCustomerDescription as string) || targetAudience;
+    const pricingDisplay = (q.pricingDisplay as string) || "contact_for_pricing";
+
+    // ── Competitive intelligence from Elena's conversation ────────────────────
     const competitorWeaknesses = Array.isArray(q.competitorWeaknesses)
       ? (q.competitorWeaknesses as string[])
+      : [];
+    const competitorSites = Array.isArray(q.competitorSites)
+      ? (q.competitorSites as Array<{ url?: string; whatYouWantToBeat?: string }>)
       : [];
     const inspirationStyle = (q.inspirationStyle as Record<string, string>) || {};
     const avoidPatterns = Array.isArray(q.avoidPatterns)
       ? (q.avoidPatterns as string[])
       : [];
     const customerPhotoUrl = (q.customerPhotoUrl as string) || undefined;
-    const subNiche = (q.websiteType as string) || (q.businessType as string) || undefined;
+    const subNiche = websiteType || (q.businessType as string) || undefined;
 
-    const competitorSection = competitorWeaknesses.length > 0
-      ? `SECTION A — COMPETITIVE INTELLIGENCE:
-Your job is to make these competitor sites look amateur by comparison.
-Competitor weaknesses to exploit:
-${competitorWeaknesses.map((w, i) => `  ${i + 1}. ${w}`).join("\n")}
+    // ── Page list (after mergedFeatures — blog + privacy included) ────────────
+    const pageList = getPagesForBusinessType(websiteType, mergedFeatures);
 
-Specifically:
+    // ── Phase 0: Visual Lies competitive research (Fix 1 & 4) ────────────────
+    await db.updateOnboardingProject(projectId, {
+      generationLog: "Phase 0: Researching competitive landscape...",
+    });
+    const competitiveIntel = await researchCompetitors(websiteType, project.businessName);
+    let intel: any = null;
+    try {
+      if (competitiveIntel) intel = JSON.parse(competitiveIntel);
+    } catch {}
+
+    const competitiveBlock = intel ? `════════════════════════════════════════
+PHASE 0 — COMPETITIVE INTELLIGENCE (Live Research)
+This site must be a brand argument, not just a website. Research confirmed these Visual Lies dominate this industry:
+
+${intel.visual_lies_found?.map((l: any) =>
+      `✗ LIE: "${l.lie}"\n  Why it fails: ${l.why_it_fails}`
+    ).join("\n\n")}
+
+COUNTER-STRIKE POSITIONING:
+Personality Anchor: ${intel.counter_strike?.personality_anchor}
+Brand Promise: ${intel.counter_strike?.brand_promise}
+Tone: ${intel.counter_strike?.tone}
+Words to AVOID: ${intel.counter_strike?.avoid_words?.join(", ")}
+Power words to USE: ${intel.counter_strike?.power_words?.join(", ")}
+
+DESIGN DIRECTION:
+Hero: ${intel.design_direction?.hero_style}
+Layout: ${intel.design_direction?.layout_feel}
+Typography: ${intel.design_direction?.typography_direction}
+Color: ${intel.design_direction?.color_application}
+Section order: ${intel.design_direction?.section_order?.join(" → ")}
+NEVER use these design clichés: ${intel.design_direction?.avoid_design?.join(", ")}
+
+IMAGE DIRECTION:
+What to capture: ${intel.image_direction?.what_to_capture}
+What competitors never show: ${intel.image_direction?.what_competitors_never_show}
+Camera persona: ${intel.image_direction?.camera_persona}
+Example shots: ${intel.image_direction?.example_shots?.join(", ")}
+
+CRITICAL DIRECTIVE:
+Every design decision must counter the lies above.
+Every copy line must reinforce the brand promise.
+Every image must show what competitors hide.
+This site must make the competition look dishonest by simply telling the truth.
+════════════════════════════════════════
+` : "";
+
+    // imageDirection threads from recon → injectImages → getBestImage (Fix 4)
+    const imageDirection = intel?.image_direction
+      ? JSON.stringify(intel.image_direction)
+      : undefined;
+
+    // ── Elena's competitive brief (from conversation) ─────────────────────────
+    const competitorSection = competitorWeaknesses.length > 0 || competitorSites.length > 0
+      ? `SECTION A — ELENA'S COMPETITIVE BRIEF (from customer research):
+${competitorWeaknesses.length > 0 ? `Competitor weaknesses Elena identified:\n${competitorWeaknesses.map((w, i) => `  ${i + 1}. ${w}`).join("\n")}` : ""}
+${competitorSites.length > 0 ? `Competitor sites:\n${competitorSites.map(c => `  - ${c.url || "?"}: ${c.whatYouWantToBeat || ""}`).join("\n")}` : ""}
+
+Use this to:
 - If competitors use stock photos → use HERO_IMAGE and GALLERY tokens (real AI photos)
 - If competitors have no pricing → show clear pricing tables
 - If competitors have weak CTAs → use bold, urgent, specific CTAs
@@ -435,14 +666,14 @@ Specifically:
       : "";
 
     const inspirationSection = Object.keys(inspirationStyle).length > 0 || avoidPatterns.length > 0
-      ? `SECTION B — DESIGN DIRECTION:
-The customer loves these design qualities: ${JSON.stringify(inspirationStyle)}
+      ? `SECTION B — DESIGN DIRECTION FROM CUSTOMER:
+Design qualities the customer loves: ${JSON.stringify(inspirationStyle)}
 ${avoidPatterns.length > 0 ? `Avoid these patterns the customer hates:\n${avoidPatterns.map((p, i) => `  ${i + 1}. ${p}`).join("\n")}` : ""}`
       : "";
 
     const fullQuestionnaireText = JSON.stringify(q, null, 2);
 
-    const systemPrompt = `${PREMIUM_REQUIREMENTS}
+    const systemPrompt = `${competitiveBlock}${PREMIUM_REQUIREMENTS}
 ${competitorSection ? "\n" + competitorSection : ""}
 ${inspirationSection ? "\n" + inspirationSection : ""}
 
@@ -465,7 +696,9 @@ IMAGES — use these exact tokens as img src or background-image values:
   <img src="TEAM_IMAGE_2" class="w-full aspect-square object-cover rounded-full" alt="[desc]">
 HERO_IMAGE must appear on every page. These tokens are auto-replaced with real photos.
 
-Navigation must use relative hrefs: about.html, services.html, contact.html, etc.
+For the PRIVACY page: generate a complete, business-specific privacy policy covering data collection, cookies, contact info use, and third-party services. Use the business name and contact details. Standard legal language is appropriate for this page type.
+
+Navigation must use relative hrefs: about.html, services.html, contact.html, privacy.html, etc.
 Output ONLY raw HTML starting with <!DOCTYPE html> — no JSON, no markdown, no explanation.`;
 
     const navLinks = pageList
@@ -474,19 +707,32 @@ Output ONLY raw HTML starting with <!DOCTYPE html> — no JSON, no markdown, no 
 
     const sharedContext = `BUSINESS: ${project.businessName}
 CONTACT: ${project.contactName} (${project.contactEmail})
+OWNER: ${ownerName}
 PACKAGE: ${project.packageTier}
 WEBSITE TYPE: ${websiteType}
 ALL SITE PAGES (for navigation): ${navLinks}
 
 MANDATORY COLORS — use exactly these via Tailwind arbitrary values, no substitutions:
-  Background:    bg-[${primaryBg}]     (page background)
-  Primary accent: bg-[${primaryColor}] text-[${primaryColor}] (buttons, highlights)
-  Text:          text-[${textColor}]   (body text)
+  Background:       bg-[${primaryBg}]            (page background)
+  Primary accent:   bg-[${primaryColor}] text-[${primaryColor}]  (buttons, highlights)
+  Secondary accent: bg-[${secondaryColor}] text-[${secondaryColor}]  (section highlights, secondary elements)
+  Text:             text-[${textColor}]            (body text)
 
 BRAND TONE: ${brandTone}
 TARGET AUDIENCE: ${targetAudience}
-MUST-HAVE FEATURES: ${mustHaveFeatures}
+TARGET CUSTOMER IN DETAIL: ${targetCustomerDescription}
+${uniqueDifferentiator ? `UNIQUE DIFFERENTIATOR: ${uniqueDifferentiator}` : ""}
+MUST-HAVE FEATURES & ADD-ONS: ${mustHaveFeatures}
+PRICING DISPLAY PREFERENCE: ${pricingDisplay}
 SPECIAL REQUESTS: ${specialRequests}
+
+CONTACT INFO (use throughout — nav, footer, contact page, schema markup):
+${phone ? `  Phone: ${phone}` : "  Phone: not provided — use placeholder"}
+${email ? `  Email: ${email}` : ""}
+${address ? `  Address/Service Area: ${address}` : ""}
+${hours ? `  Hours: ${hours}` : ""}
+${licenseNumber ? `  License: ${licenseNumber}` : ""}
+${yearsInBusiness ? `  Years in Business: ${yearsInBusiness}` : ""}
 
 FULL QUESTIONNAIRE DATA:
 ${fullQuestionnaireText}
@@ -608,8 +854,8 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
     });
     for (const pageName of Object.keys(pages)) {
       try {
-        // Primary: replace HERO_IMAGE / GALLERY_IMAGE_1 / etc. tokens
-        pages[pageName] = await injectImages(pages[pageName], websiteType, primaryColor, customerPhotoUrl, subNiche);
+        // Primary: replace HERO_IMAGE / GALLERY_IMAGE_1 / etc. tokens (Fix 4: imageDirection wired)
+        pages[pageName] = await injectImages(pages[pageName], websiteType, primaryColor, customerPhotoUrl, subNiche, imageDirection);
       } catch {
         // Best-effort — never block delivery
       }
