@@ -21,7 +21,7 @@ import { devAccessRouter } from "./devAccessRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
 import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users } from "../drizzle/schema";
 import { getDb } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
 import { teamFeedRouter } from "./teamFeedRouter";
 import { invokeLLM } from "./_core/llm";
@@ -2449,6 +2449,45 @@ const onboardingRouter = router({
       return db.getOnboardingProjectByCustomerId(custs[0].id);
     }),
 
+  // Protected: find the most recent self-service project for this user (pre-payment)
+  mySelfServiceProject: protectedProcedure
+    .query(async ({ ctx }) => {
+      const { onboardingProjects } = await import("../drizzle/schema");
+      const database = await getDb();
+      if (!database) return null;
+      const rows = await database
+        .select()
+        .from(onboardingProjects)
+        .where(
+          and(
+            eq((onboardingProjects as any).userId, ctx.user.id),
+            eq((onboardingProjects as any).source, "self_service")
+          )
+        )
+        .orderBy(desc(onboardingProjects.createdAt))
+        .limit(1);
+      // Only return if still pre-payment (no customerId yet)
+      const project = rows[0];
+      if (!project || project.customerId) return null;
+      return project;
+    }),
+
+  // Protected: create a self-service onboarding project (called immediately after email capture + registration)
+  createSelfServiceProject: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const project = await db.createOnboardingProject({
+        customerId: null as any,
+        businessName: "Pending",
+        contactName: ctx.user.name || ctx.user.email,
+        contactEmail: ctx.user.email,
+        packageTier: "starter",
+        stage: "intake",
+        userId: ctx.user.id,
+        source: "self_service",
+      } as any);
+      return { projectId: project.id };
+    }),
+
   // Protected: save Elena conversation progress incrementally (called after every message)
   saveProgress: protectedProcedure
     .input(
@@ -2695,31 +2734,19 @@ const onboardingRouter = router({
         }
       }
 
-      // Look up selfSourced flag from commission so webhook has full traceability
-      let elenaCheckoutSelfSourced = false;
-      if (project.contractId) {
-        const elenaCommissions = await db.getActiveCommissionsByContract(project.contractId);
-        const elenaInitialCommission = elenaCommissions.find((c: any) => c.type === "initial_sale");
-        elenaCheckoutSelfSourced = elenaInitialCommission?.selfSourced ?? false;
-      }
-
+      const isRepClosed = !!project.customerId;
       const origin = ctx.req.headers.origin || ENV.appUrl || "https://minimorphstudios.net";
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        customer_email: project.contactEmail || undefined,
-        allow_promotion_codes: true,
-        subscription_data: {
-          metadata: {
-            project_id: String(project.id),
-            contract_id: String(project.contractId || ""),
-            customer_id: String(project.customerId),
-            package_tier: packageTier,
-            business_name: project.businessName || "",
-            rep_closed: "true",
-            self_sourced: elenaCheckoutSelfSourced ? "true" : "false",
-          },
-        },
-        metadata: {
+
+      // Build metadata based on source
+      let sessionMeta: Record<string, string>;
+      if (isRepClosed) {
+        let elenaCheckoutSelfSourced = false;
+        if (project.contractId) {
+          const elenaCommissions = await db.getActiveCommissionsByContract(project.contractId);
+          const elenaInitialCommission = elenaCommissions.find((c: any) => c.type === "initial_sale");
+          elenaCheckoutSelfSourced = elenaInitialCommission?.selfSourced ?? false;
+        }
+        sessionMeta = {
           project_id: String(project.id),
           contract_id: String(project.contractId || ""),
           customer_id: String(project.customerId),
@@ -2729,10 +2756,31 @@ const onboardingRouter = router({
           business_name: project.businessName || "",
           rep_closed: "true",
           self_sourced: elenaCheckoutSelfSourced ? "true" : "false",
-        },
+        };
+      } else {
+        // Self-service: no customer yet — webhook uses user_id to create one
+        sessionMeta = {
+          project_id: String(project.id),
+          user_id: String(ctx.user.id),
+          customer_email: project.contactEmail || "",
+          customer_name: project.contactName || "",
+          package_tier: packageTier,
+          business_name: project.businessName !== "Pending" ? project.businessName || "" : ((q.businessName as string) || ""),
+          source: "self_service",
+        };
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer_email: project.contactEmail || undefined,
+        allow_promotion_codes: true,
+        subscription_data: { metadata: sessionMeta },
+        metadata: sessionMeta,
         line_items: lineItems as any,
         success_url: `${origin}/portal?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/portal?payment=cancelled`,
+        cancel_url: isRepClosed
+          ? `${origin}/portal?payment=cancelled`
+          : `${origin}/get-started?cancelled=true`,
       });
 
       if (!session.url) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create checkout session" });
@@ -3021,6 +3069,15 @@ Always end with a helpful question or a specific suggestion.`;
         return { response: reviewResponse, extractedData: null, addonsSelected: null };
       }
 
+      // ── Detect self-service project ───────────────────────────────────
+      let projectSource = "rep_closed";
+      if (input.projectId) {
+        try {
+          const proj = await db.getOnboardingProjectById(input.projectId);
+          projectSource = (proj as any)?.source || "rep_closed";
+        } catch {}
+      }
+
       // ── Scrape any URLs from recent conversation ──────────────────────
       const recentHistory = [
         ...(input.history || []),
@@ -3275,7 +3332,19 @@ Then ask: "Do you have any of your own photos — your space, your work, your te
 
 Also add: "If you want to review the visual direction before we build, just hit Support and we can walk through it together."
 
-PHASE 7.5 — PACKAGE CONFIRMATION
+PHASE 7.5 — ${projectSource === "self_service" ? `PLAN RECOMMENDATION
+Based on everything you've learned about their business, explicitly recommend ONE specific package. Say something like:
+"Based on what you've told me about [BusinessName], here's what I recommend: the [Plan] plan at $[price]/mo."
+
+Then give 2-3 specific reasons tailored to THEIR situation — not generic features, but reasons that connect directly to what they told you. For example:
+- "You mentioned you're competing against [competitor] — the Growth plan gives you 10 pages which is enough to build dedicated service pages for each of your offerings, which is exactly how you outrank them in local search."
+- "Since you take appointments, the Growth plan gives you the add-on integrations you need to bolt on the Booking Widget without upgrading later."
+- "You've got a solid list of services and you want to rank for all of them — the Pro plan's 20 pages lets us give each service its own SEO page, which is the difference between ranking on page 1 and not ranking at all."
+
+After giving your recommendation, ask: "Does that sound like the right fit, or do you want me to walk you through the others?"
+If they want to switch plans, respect it. If they confirm, lock it in and move to Phase 8.
+
+Store confirmed tier as "packageTier" in <questionnaire_data>.` : `PACKAGE CONFIRMATION
 Before the final summary, confirm the customer's package tier.
 The project record has a packageTier field set by their sales rep. Reference it directly:
 "Before I hand this off — just confirming you're on our [Growth/Pro/Starter] plan at $[price]/mo, which includes [key features for that tier]. Does that match what your rep outlined?"
@@ -3283,7 +3352,7 @@ The project record has a packageTier field set by their sales rep. Reference it 
 If packageTier is known (starter/growth/premium), just confirm it and move on.
 If unclear or not set, ask: "Quick one — did your rep mention which plan you're starting with? We have Starter at $195/mo (5 pages), Growth at $295/mo (10 pages + blog), or Pro at $395/mo (20 pages + priority support). I want to make sure everything we've discussed fits your plan."
 
-Store confirmed tier as "packageTier" in <questionnaire_data>.
+Store confirmed tier as "packageTier" in <questionnaire_data>.`}
 
 PHASE 8 — CONFIRMATION WITH COMPETITIVE BRIEF
 Summarize with real strategic framing:
@@ -3342,7 +3411,19 @@ Once confirmed, FIRST output ALL THREE tags in this exact order (no text before 
 }</questionnaire_data>
 <addons_selected>[{"product":"Review Collector","price":"$149/mo","label":"Automated review collection"}]</addons_selected>
 
-THEN deliver the closing speech — warm, personal, covering everything they need to know about the ongoing relationship. Use their actual business name, industry, and competitor names where known. Structure it like this:
+THEN deliver the closing speech. ${projectSource === "self_service" ? `Warm, personal, focused on completing payment. Structure it like this:
+
+"Alright — I've got everything I need. Here's what happens next:
+
+**Complete payment:** Click the button below to secure your spot. Payment is handled by Stripe — takes about 60 seconds.
+
+**Portal access:** You'll receive a confirmation email within minutes with your Customer Portal login link. From there you can track your project, request changes, and communicate directly with the team.
+
+**Your preview:** Once payment is confirmed, the build team gets started immediately. You'll have a live preview of your site within 2–3 business days.
+
+**Monthly intel:** Every month we'll send you a competitor analysis report — what [their top competitor] is doing, where they're falling behind, and three specific things you can do to beat them. It comes right to your inbox.
+
+It's been genuinely fun learning about [BusinessName]. [Personalized closing line.] You've got something really special here — now let's build it."` : `Warm, personal, covering everything they need to know about the ongoing relationship. Use their actual business name, industry, and competitor names where known. Structure it like this:
 
 "Alright — I've handed your project off to the team and they're starting on your site now. Here's what happens from here:
 
@@ -3358,7 +3439,7 @@ THEN deliver the closing speech — warm, personal, covering everything they nee
 
 **Renewal:** Your 12-month agreement auto-renews at the same rate. You'll get reminders at 60, 30, and 7 days before renewal — plenty of time to make changes if you want.
 
-It's been genuinely fun learning about [BusinessName]. [Personalized closing line referencing something specific they shared — their industry, a competitor, their location, or an interesting detail about their business.] You've got something really special here. Now let's go show the competition what you're made of."
+It's been genuinely fun learning about [BusinessName]. [Personalized closing line referencing something specific they shared — their industry, a competitor, their location, or an interesting detail about their business.] You've got something really special here. Now let's go show the competition what you're made of."`}
 
 == ONGOING RELATIONSHIP (proactively mention when relevant) ==
 

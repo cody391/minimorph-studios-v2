@@ -51,17 +51,24 @@ export async function assertProjectOwnership(user: User, projectId: number): Pro
   const database = await getDb();
   if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
 
-  // Get the project's customerId
   const projects = await database
-    .select({ customerId: onboardingProjects.customerId })
+    .select({ customerId: onboardingProjects.customerId, userId: (onboardingProjects as any).userId })
     .from(onboardingProjects)
     .where(eq(onboardingProjects.id, projectId))
     .limit(1);
-  if (!projects.length || !projects[0].customerId) {
+  if (!projects.length) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
   }
 
-  // Verify the customer belongs to this user
+  // Self-service projects have no customerId until after payment — verify by userId
+  if (!projects[0].customerId) {
+    if (!projects[0].userId || projects[0].userId !== user.id) {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+    }
+    return;
+  }
+
+  // Rep-closed projects: verify the customer belongs to this user
   const custs = await database
     .select({ userId: customers.userId })
     .from(customers)

@@ -267,25 +267,41 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
   }
 
-  // ── 6. Create onboarding project (idempotent) ─────────────────────
+  // ── 6. Create or update onboarding project (idempotent) ──────────────
   if (customerId) {
-    const existingProject = await db.getOnboardingProjectByCustomerId(customerId);
-
-    if (existingProject) {
-      console.log(`[Stripe] Onboarding project already exists for customer ${customerId}: project=${existingProject.id}`);
+    // For self-service: the project already exists (created during email capture)
+    // Find it by project_id in metadata and update with the new customerId/contractId
+    const metaProjectId = session.metadata?.project_id ? parseInt(session.metadata.project_id) : NaN;
+    if (!isNaN(metaProjectId)) {
+      const existingById = await db.getOnboardingProjectById(metaProjectId);
+      if (existingById && !existingById.customerId) {
+        // Self-service project — link it to the newly created customer/contract
+        await db.updateOnboardingProject(metaProjectId, {
+          customerId,
+          contractId: contractId || undefined,
+          stage: "questionnaire",
+        });
+        console.log(`[Stripe] Self-service project ${metaProjectId} linked to customer ${customerId}`);
+      }
     } else {
-      const newProject = await db.createOnboardingProject({
-        customerId,
-        orderId: orderRow?.id || undefined,
-        contractId: contractId || undefined,
-        businessName,
-        contactName: customerName,
-        contactEmail: customerEmail || "",
-        contactPhone: session.metadata?.phone || undefined,
-        packageTier,
-        stage: "questionnaire",
-      });
-      console.log(`[Stripe] Onboarding project created: project=${newProject.id}, customer=${customerId}`);
+      // Rep-closed flow: create onboarding project if not already linked to customer
+      const existingProject = await db.getOnboardingProjectByCustomerId(customerId);
+      if (existingProject) {
+        console.log(`[Stripe] Onboarding project already exists for customer ${customerId}: project=${existingProject.id}`);
+      } else {
+        const newProject = await db.createOnboardingProject({
+          customerId,
+          orderId: orderRow?.id || undefined,
+          contractId: contractId || undefined,
+          businessName,
+          contactName: customerName,
+          contactEmail: customerEmail || "",
+          contactPhone: session.metadata?.phone || undefined,
+          packageTier,
+          stage: "questionnaire",
+        });
+        console.log(`[Stripe] Onboarding project created: project=${newProject.id}, customer=${customerId}`);
+      }
     }
   }
 

@@ -271,6 +271,10 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `lastSavedAt` timestamp NULL");
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `currentStep` int NOT NULL DEFAULT 1");
 
+    // ── Self-service project tracking ─────────────────────────────────────
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `userId` int NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `source` varchar(50) NULL DEFAULT 'rep_closed'");
+
     // ── Remove enterprise from packageTier enums across all tables ────────
     await safe("ALTER TABLE `orders` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
     await safe("ALTER TABLE `contracts` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");

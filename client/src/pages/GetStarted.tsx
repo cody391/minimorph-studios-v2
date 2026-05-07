@@ -1,741 +1,745 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import {
-  ArrowLeft, ArrowRight, Check, Sparkles,
-  Shield, ChevronLeft, Eye, EyeOff, Lock, AlertTriangle, FileText,
-} from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import {
+  Loader2, Send, Upload, CheckCircle2, ArrowRight,
+  Sparkles, CreditCard, Lock, Globe,
+} from "lucide-react";
+import { Streamdown } from "streamdown";
 
-const STEPS = [
-  { id: 1, title: "Your Business", description: "Tell us about you" },
-  { id: 2, title: "Choose a Plan", description: "Pick your package" },
-  { id: 3, title: "Style Preferences", description: "Your design vision" },
-  { id: 4, title: "Review & Pay", description: "Confirm and checkout" },
-];
+/* ═══════════════════════════════════════════════════════
+   TYPES (mirrored from Onboarding.tsx)
+   ═══════════════════════════════════════════════════════ */
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+  uploadRequests?: UploadRequest[];
+  addonsAccepted?: AddonAccepted[];
+};
+type UploadRequest = { type: string; label: string; hint: string };
+type AddonAccepted = { product: string; price: string; label: string };
+type PaymentReadyData = {
+  packageTier?: string;
+  monthlyTotal?: number;
+  addons?: Array<{ product: string; price: number }>;
+};
 
-const PACKAGE_DEFAULTS = [
-  {
-    tier: "starter" as const,
-    name: "Starter",
-    defaultPrice: 195,
-    pages: 5,
-    features: ["Up to 5 pages", "Mobile-responsive design", "Contact/quote form", "Basic SEO setup", "Customer portal access", "Monthly performance report", "1 content update per month", "Email support"],
-    popular: false,
-  },
-  {
-    tier: "growth" as const,
-    name: "Growth",
-    defaultPrice: 295,
-    pages: 10,
-    features: ["Up to 10 pages", "Everything in Starter", "Blog or news section", "Google Analytics setup", "2 content updates per month", "AI-assisted recommendations", "Priority email support", "Add-on integrations available"],
-    popular: true,
-  },
-  {
-    tier: "premium" as const,
-    name: "Pro",
-    defaultPrice: 395,
-    pages: 20,
-    features: ["Up to 20 pages", "Everything in Growth", "Advanced SEO pages", "4 content updates per month", "Review widget setup", "Booking integration", "SMS lead alerts", "Priority support with faster response"],
-    popular: false,
-  },
-];
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════════ */
+function getAttr(tag: string, name: string): string {
+  const m = tag.match(new RegExp(`${name}="([^"]*)"`));
+  return m ? m[1] : "";
+}
 
-const STYLES = [
-  { id: "modern", label: "Modern & Clean", desc: "Minimalist layouts, lots of whitespace, sans-serif fonts", icon: "✦" },
-  { id: "bold", label: "Bold & Dynamic", desc: "Strong colors, large typography, eye-catching animations", icon: "◆" },
-  { id: "elegant", label: "Elegant & Refined", desc: "Serif fonts, muted tones, sophisticated feel", icon: "❖" },
-  { id: "playful", label: "Playful & Friendly", desc: "Rounded shapes, bright colors, approachable vibe", icon: "●" },
-  { id: "corporate", label: "Corporate & Professional", desc: "Structured, trustworthy, traditional business feel", icon: "■" },
-  { id: "creative", label: "Creative & Artistic", desc: "Unique layouts, experimental typography, standout design", icon: "◇" },
-];
+function parseUploadRequests(text: string): UploadRequest[] {
+  const requests: UploadRequest[] = [];
+  const tagRegex = /<upload_request\b[^>]*\/>/g;
+  let m;
+  while ((m = tagRegex.exec(text)) !== null) {
+    const tag = m[0];
+    const type = getAttr(tag, "type");
+    const label = getAttr(tag, "label") || type;
+    const hint = getAttr(tag, "hint");
+    if (type) requests.push({ type, label, hint });
+  }
+  return requests;
+}
 
-const INDUSTRIES = [
-  "Restaurant / Food", "Fitness / Wellness", "Real Estate", "Law / Legal",
-  "Healthcare / Dental", "Retail / E-commerce", "Professional Services",
-  "Construction / Home", "Education", "Technology", "Other",
-];
+function parseAddonsAccepted(text: string): AddonAccepted[] {
+  const addons: AddonAccepted[] = [];
+  const tagRegex = /<addon_accepted\b[^>]*\/>/g;
+  let m;
+  while ((m = tagRegex.exec(text)) !== null) {
+    const tag = m[0];
+    const product = getAttr(tag, "product");
+    const price = getAttr(tag, "price");
+    const label = getAttr(tag, "label") || product;
+    if (product) addons.push({ product, price, label });
+  }
+  return addons;
+}
+
+function stripXmlTags(text: string): string {
+  return text
+    .replace(/<payment_ready>[\s\S]*?<\/payment_ready>/g, "")
+    .replace(/<upload_request\b[^>]*\/>/g, "")
+    .replace(/<addon_accepted\b[^>]*\/>/g, "")
+    .replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/g, "")
+    .replace(/<addons_selected>[\s\S]*?<\/addons_selected>/g, "")
+    .trim();
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let pw = "";
+  for (let i = 0; i < 12; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+  return pw;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════════════════ */
+type Stage = "capture" | "creating" | "chat";
 
 export default function GetStarted() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated } = useAuth();
-  const [step, setStep] = useState(1);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [contractAgreed, setContractAgreed] = useState(false);
-  const [formData, setFormData] = useState({
-    businessName: "",
-    contactName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    industry: "",
-    website: "",
-    selectedPackage: "",
-    stylePreference: "",
-    colorPreference: "",
-    inspirationSites: "",
-    additionalNotes: "",
+  const { user, loading: authLoading } = useAuth();
+
+  const [stage, setStage] = useState<Stage>("capture");
+  const [email, setEmail] = useState("");
+  const [projectId, setProjectId] = useState<number | null>(null);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+
+  // Chat state
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [paymentReady, setPaymentReady] = useState<PaymentReadyData | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [uploadingFor, setUploadingFor] = useState<UploadRequest | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [addonsInSummary, setAddonsInSummary] = useState<AddonAccepted[]>([]);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasSentInit = useRef(false);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // tRPC mutations
+  const registerMutation = trpc.localAuth.register.useMutation();
+  const createProjectMutation = trpc.onboarding.createSelfServiceProject.useMutation();
+  const chatMutation = trpc.ai.onboardingChat.useMutation();
+  const saveProgressMutation = trpc.onboarding.saveProgress.useMutation();
+  const createCheckoutMutation = trpc.onboarding.createCheckoutAfterElena.useMutation();
+  const uploadAssetMutation = trpc.onboarding.uploadAsset.useMutation();
+
+  // Check if the user already has an in-progress self-service project
+  const selfServiceProjectQuery = trpc.onboarding.mySelfServiceProject.useQuery(undefined, {
+    enabled: !!user && !authLoading,
   });
 
-  const registerMutation = trpc.localAuth.register.useMutation();
-  const loginMutation = trpc.localAuth.login.useMutation();
-  const checkoutMutation = trpc.orders.createCheckout.useMutation();
-  const submitContactMutation = trpc.contact.submit.useMutation();
+  // Resume existing project if the user is already logged in
+  useEffect(() => {
+    if (authLoading || stage !== "capture") return;
+    if (!user) return;
+    if (selfServiceProjectQuery.isLoading) return;
 
-  const { data: catalogItems = [] } = trpc.products.list.useQuery();
-  const PACKAGES = useMemo(() => {
-    const catalog = catalogItems as any[];
-    return PACKAGE_DEFAULTS.map(pkg => {
-      const dbItem = catalog.find((p: any) => p.productKey === pkg.tier && p.category === "package");
-      const basePrice = dbItem ? parseFloat(dbItem.basePrice) : pkg.defaultPrice;
-      const discount = dbItem?.discountPercent ?? 0;
-      const price = discount > 0 ? Math.round(basePrice * (1 - discount / 100)) : basePrice;
-      return { ...pkg, price, basePrice, discount };
-    });
-  }, [catalogItems]);
-
-  const updateField = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const passwordsMatch = formData.password === formData.confirmPassword;
-  const passwordLongEnough = formData.password.length >= 8;
-
-  const canProceed = useMemo(() => {
-    switch (step) {
-      case 1:
-        if (isAuthenticated) {
-          return formData.businessName && formData.contactName && formData.email;
-        }
-        return formData.businessName && formData.contactName && formData.email && passwordLongEnough && passwordsMatch;
-      case 2: return !!formData.selectedPackage;
-      case 3: return !!formData.stylePreference;
-      case 4: return contractAgreed;
-      default: return false;
+    if (selfServiceProjectQuery.data?.id) {
+      // Resume in-progress project
+      setProjectId(selfServiceProjectQuery.data.id);
+      const saved = selfServiceProjectQuery.data.elenaConversationHistory as Array<{ role: "user" | "assistant"; content: string }> | null;
+      if (saved && saved.length > 0) {
+        setMessages(saved.map(m => ({ role: m.role, content: m.content })));
+        hasSentInit.current = true;
+      }
+      setStage("chat");
     }
-  }, [step, formData, isAuthenticated, passwordLongEnough, passwordsMatch]);
+  }, [user, authLoading, selfServiceProjectQuery.isLoading, selfServiceProjectQuery.data, stage]);
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      // Step 1: Create account if not logged in
-      if (!isAuthenticated) {
-        try {
-          await registerMutation.mutateAsync({
-            email: formData.email,
-            password: formData.password,
-            name: formData.contactName,
-          });
-        } catch (regError: any) {
-          // If email already exists, try logging in
-          if (regError.message?.includes("already registered")) {
-            try {
-              await loginMutation.mutateAsync({
-                email: formData.email,
-                password: formData.password,
-              });
-            } catch {
-              toast.error("This email is already registered. Please use the correct password or log in first.");
-              setIsSubmitting(false);
-              return;
-            }
-          } else {
-            toast.error(regError.message || "Failed to create account");
-            setIsSubmitting(false);
-            return;
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const isInit = text === "INIT";
+      const displayText = isInit ? "" : text;
+      const history = messages.map(m => ({
+        role: m.role as "user" | "assistant",
+        content: m.role === "assistant" ? stripXmlTags(m.content) : m.content,
+      }));
+
+      if (!isInit) setMessages(prev => [...prev, { role: "user", content: displayText }]);
+      setInput("");
+      setIsLoading(true);
+
+      const apiMessage = isInit
+        ? "Hello! I'm interested in getting a website built."
+        : text;
+
+      try {
+        const result = await chatMutation.mutateAsync({
+          projectId: projectId ?? undefined,
+          message: apiMessage,
+          history,
+        });
+
+        const raw = result.response;
+        const uploadRequests = parseUploadRequests(raw);
+        const addonsAccepted = parseAddonsAccepted(raw);
+        const cleaned = stripXmlTags(raw);
+
+        setMessages(prev => [
+          ...prev,
+          {
+            role: "assistant",
+            content: cleaned,
+            uploadRequests: uploadRequests.length ? uploadRequests : undefined,
+            addonsAccepted: addonsAccepted.length ? addonsAccepted : undefined,
+          },
+        ]);
+
+        if (result.paymentReady) {
+          setPaymentReady(result.paymentReady as PaymentReadyData);
+          if (projectId && result.extractedData) {
+            saveProgressMutation.mutate({
+              projectId,
+              partialQuestionnaire: result.extractedData as Record<string, unknown>,
+            });
           }
         }
-      }
 
-      // Step 2: Submit contact/order details for the rep to follow up
-      const selectedPkg = PACKAGES.find((p) => p.tier === formData.selectedPackage);
-      const selectedStyle = STYLES.find((s) => s.id === formData.stylePreference);
-      const message = [
-        `Package: ${selectedPkg?.name} ($${selectedPkg?.price}/mo)`,
-        `Industry: ${formData.industry || "Not specified"}`,
-        `Style: ${selectedStyle?.label || "Not specified"}`,
-        formData.colorPreference ? `Color preference: ${formData.colorPreference}` : "",
-        formData.inspirationSites ? `Inspiration: ${formData.inspirationSites}` : "",
-        formData.additionalNotes ? `Notes: ${formData.additionalNotes}` : "",
-        formData.website ? `Current website: ${formData.website}` : "",
-
-      ].filter(Boolean).join("\n");
-
-      await submitContactMutation.mutateAsync({
-        name: formData.contactName,
-        email: formData.email,
-        businessName: formData.businessName,
-        message,
-      });
-
-      // Step 3: Create Stripe checkout session
-      const tier = formData.selectedPackage as "starter" | "growth" | "premium";
-      const result = await checkoutMutation.mutateAsync({
-        packageTier: tier,
-        businessName: formData.businessName,
-      });
-
-      if (result.clientSecret) {
-        toast.success("Proceeding to secure checkout...");
-        setLocation(`/checkout?cs=${encodeURIComponent(result.clientSecret)}&return=/get-started`);
-      } else if (result.checkoutUrl) {
-        // Fallback for hosted checkout (e.g. email payment links)
-        toast.success("Redirecting to secure checkout...");
-        // On mobile: redirect in same window (new tabs unreliable on phones)
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-        if (isMobile) {
-          window.location.href = result.checkoutUrl;
-        } else {
-          window.open(result.checkoutUrl, "_blank");
-          setStep(5);
+        if (addonsAccepted.length) {
+          setAddonsInSummary(prev => [...prev, ...addonsAccepted]);
         }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const isLlmError = msg.includes("LLM") || msg.includes("ANTHROPIC") || msg.includes("authentication");
+        toast.error(isLlmError
+          ? "AI service is temporarily unavailable. Please try again in a moment."
+          : "Failed to send message. Please try again.");
+      } finally {
+        setIsLoading(false);
+        setTimeout(() => inputRef.current?.focus(), 50);
       }
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    },
+    [messages, projectId, chatMutation, saveProgressMutation]
+  );
+
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isLoading]);
+
+  // Auto-send INIT once project is ready and we haven't sent one yet
+  useEffect(() => {
+    if (stage !== "chat" || hasSentInit.current || isLoading || messages.length > 0) return;
+    hasSentInit.current = true;
+    sendMessage("INIT");
+  }, [stage, isLoading, messages.length, sendMessage]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && !isLoading) sendMessage(input.trim());
     }
   };
 
-  // Success state
-  if (step === 5) {
+  const handleFileUpload = useCallback(
+    async (req: UploadRequest, file: File) => {
+      if (!projectId) { toast.error("No project found."); return; }
+      if (file.size > 10 * 1024 * 1024) { toast.error("File too large. Max 10MB."); return; }
+      setUploading(true);
+      setUploadingFor(req);
+      try {
+        const buffer = await file.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+        );
+        await uploadAssetMutation.mutateAsync({
+          projectId,
+          fileName: file.name,
+          fileBase64: base64,
+          mimeType: file.type,
+          category: req.type as any,
+        });
+        toast.success(`${req.label} uploaded!`);
+        setUploadingFor(null);
+        sendMessage(`I've just uploaded the ${req.label}: ${file.name}`);
+      } catch {
+        toast.error("Upload failed. Please try again.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [projectId, uploadAssetMutation, sendMessage]
+  );
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setStage("creating");
+    const pw = generateTempPassword();
+    setTempPassword(pw);
+
+    try {
+      // Create account (or fail gracefully if email exists)
+      try {
+        await registerMutation.mutateAsync({
+          email: email.trim(),
+          password: pw,
+          name: email.split("@")[0],
+        });
+      } catch (regErr: any) {
+        if (regErr.message?.includes("already registered") || regErr.message?.includes("already exists")) {
+          toast.error(
+            "You already have an account. Log in first, then come back here.",
+            { duration: 6000, action: { label: "Log in", onClick: () => setLocation("/login?returnTo=/get-started") } }
+          );
+          setStage("capture");
+          return;
+        }
+        throw regErr;
+      }
+
+      // Create the self-service project (now logged in)
+      const { projectId: newId } = await createProjectMutation.mutateAsync();
+      setProjectId(newId);
+      setStage("chat");
+
+      toast.success(`Account created! Save your temp password: ${pw}`, {
+        duration: 12000,
+        description: "You can change it in your portal settings.",
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong. Please try again.");
+      setStage("capture");
+    }
+  };
+
+  /* ─── LOADING ─────────────────────────────────────────── */
+  if (authLoading || (user && selfServiceProjectQuery.isLoading && stage === "capture")) {
     return (
-      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
-        <div className="max-w-lg text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="h-8 w-8 text-emerald-400" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a14]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#4a9eff]" />
+      </div>
+    );
+  }
+
+  /* ─── EMAIL CAPTURE ──────────────────────────────────── */
+  if (stage === "capture") {
+    return (
+      <div className="min-h-screen bg-[#0a0a14] flex flex-col items-center justify-center px-4">
+        {/* Back link */}
+        <div className="absolute top-6 left-6">
+          <Link href="/">
+            <span className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors cursor-pointer">
+              <span className="text-lg font-bold text-[#4a9eff]">M</span>
+              <span className="font-semibold text-white text-sm">MiniMorph Studios</span>
+            </span>
+          </Link>
+        </div>
+
+        <div className="w-full max-w-md">
+          {/* Elena avatar */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-2xl shadow-2xl">
+                E
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-400 rounded-full border-2 border-[#0a0a14]" />
+            </div>
           </div>
-          <h1 className="text-3xl font-serif text-off-white mb-3">Almost There!</h1>
-          <p className="text-base text-soft-gray font-sans mb-2">
-            Your account has been created and your order for the <strong className="text-off-white">{PACKAGES.find((p) => p.tier === formData.selectedPackage)?.name}</strong> package has been submitted.
-          </p>
-          <p className="text-sm text-soft-gray font-sans mb-4">
-            Click below to complete your payment securely.
-          </p>
-          <div className="flex flex-col items-center gap-3">
-            <Button
-              onClick={async () => {
-                try {
-                  const tier = formData.selectedPackage as "starter" | "growth" | "premium";
-                  const result = await checkoutMutation.mutateAsync({
-                    packageTier: tier,
-                    businessName: formData.businessName,
-                  });
-                  if (result.clientSecret) {
-                    setLocation(`/checkout?cs=${encodeURIComponent(result.clientSecret)}&return=/get-started`);
-                  } else if (result.checkoutUrl) {
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-                    if (isMobile) {
-                      window.location.href = result.checkoutUrl;
-                    } else {
-                      window.open(result.checkoutUrl, "_blank");
-                    }
-                  }
-                } catch {
-                  toast.error("Failed to create checkout session");
-                }
-              }}
-              className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
-            >
-              <Lock className="h-4 w-4 mr-2" />
-              Complete Payment
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setLocation("/portal")}
-              className="font-sans text-sm rounded-full border-border/50 min-h-[44px]"
-            >
-              Go to My Dashboard
-            </Button>
-            <button
-              onClick={() => setLocation("/")}
-              className="text-xs text-soft-gray/60 hover:text-soft-gray font-sans mt-2"
-            >
-              Back to Home
-            </button>
+
+          {/* Headline */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl sm:text-4xl font-serif text-white mb-3 leading-tight">
+              Let's build your website.
+            </h1>
+            <p className="text-gray-400 font-sans text-base leading-relaxed">
+              Tell Elena what you're looking for. She'll walk you through everything — plan, pricing, and your site brief — then you pay only when you're ready.
+            </p>
           </div>
+
+          {/* Email form */}
+          <form onSubmit={handleEmailSubmit} className="space-y-4">
+            <Input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              required
+              className="h-12 bg-[#13131f] border-[#2a2a40] text-white placeholder-gray-500 text-base focus:border-[#4a9eff]/60 rounded-xl"
+              autoFocus
+            />
+            <Button
+              type="submit"
+              disabled={!email.trim()}
+              className="w-full h-12 bg-[#4a9eff] hover:bg-[#3a8eef] text-white font-semibold text-base rounded-xl flex items-center justify-center gap-2"
+            >
+              Start Talking to Elena
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </form>
+
+          {/* Trust line */}
+          <p className="text-center text-xs text-gray-600 mt-4">
+            No credit card required until you're ready to start.
+          </p>
+
+          {/* Already logged in? */}
+          {user && (
+            <p className="text-center text-sm text-gray-500 mt-3">
+              Logged in as <span className="text-gray-300">{user.email}</span>.{" "}
+              <button
+                onClick={async () => {
+                  setStage("creating");
+                  const { projectId: newId } = await createProjectMutation.mutateAsync();
+                  setProjectId(newId);
+                  setStage("chat");
+                }}
+                className="text-[#4a9eff] hover:underline"
+              >
+                Start a new project →
+              </button>
+            </p>
+          )}
+
+          {!user && (
+            <p className="text-center text-xs text-gray-600 mt-2">
+              Already have an account?{" "}
+              <Link href="/login?returnTo=/get-started" className="text-[#4a9eff] hover:underline">
+                Log in
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-midnight">
-      {/* Header */}
-      <div className="border-b border-border/30 bg-charcoal/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <button onClick={() => setLocation("/")} className="flex items-center gap-2 text-sm text-soft-gray hover:text-off-white font-sans transition-colors">
-            <ChevronLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">MiniMorph Studios</span>
-          </button>
-          {/* Mobile: compact step indicator */}
-          <span className="sm:hidden text-xs font-sans text-off-white/70">{step}/{STEPS.length}</span>
-          {/* Desktop: full step dots */}
-          <div className="hidden sm:flex items-center gap-2">
-            {STEPS.map((s) => (
-              <div key={s.id} className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-sans transition-all ${
-                  step > s.id ? "bg-green-500 text-white" : step === s.id ? "bg-charcoal text-off-white" : "bg-electric/10 text-soft-gray/60"
-                }`}>
-                  {step > s.id ? <Check className="h-3.5 w-3.5" /> : s.id}
-                </div>
-                {s.id < STEPS.length && <div className={`w-6 h-0.5 ${step > s.id ? "bg-green-500" : "bg-electric/10"}`} />}
-              </div>
-            ))}
-          </div>
+  /* ─── CREATING ───────────────────────────────────────── */
+  if (stage === "creating") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a14]">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-[#4a9eff] mx-auto mb-4" />
+          <p className="text-gray-400 font-sans">Setting up your session with Elena…</p>
         </div>
       </div>
+    );
+  }
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-        {/* Step Header */}
-        <div className="mb-8">
-          <p className="text-xs text-electric font-sans uppercase tracking-wider mb-2">Step {step} of {STEPS.length}</p>
-          <h1 className="text-2xl font-serif text-off-white mb-1">{STEPS[step - 1].title}</h1>
-          <p className="text-sm text-soft-gray font-sans">{STEPS[step - 1].description}</p>
+  /* ─── CHAT ───────────────────────────────────────────── */
+  return (
+    <div className="h-screen flex flex-col bg-[#0a0a14] overflow-hidden">
+      {/* Top bar */}
+      <header className="flex-none h-14 border-b border-[#1e1e30] flex items-center justify-between px-6 bg-[#0d0d1a]">
+        <Link href="/">
+          <div className="flex items-center gap-2 cursor-pointer">
+            <div className="w-7 h-7 rounded-lg bg-[#4a9eff] flex items-center justify-center text-white font-bold text-xs">
+              M
+            </div>
+            <span className="font-bold text-white text-sm">MiniMorph Studios</span>
+          </div>
+        </Link>
+        <div className="flex items-center gap-3">
+          {tempPassword && (
+            <div className="hidden sm:flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-full px-3 py-1">
+              <span className="text-xs text-amber-400">Save your password:</span>
+              <code className="text-xs font-mono text-amber-300">{tempPassword}</code>
+            </div>
+          )}
+          <span className="text-xs text-gray-500 hidden sm:block">
+            {user?.email}
+          </span>
         </div>
+      </header>
 
-        {/* STEP 1: Business Info + Account */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Business Name *</Label>
-                <Input
-                  value={formData.businessName}
-                  onChange={(e) => updateField("businessName", e.target.value)}
-                  placeholder="Acme Corp"
-                  className="font-sans border-border/50 focus:border-electric"
-                />
+      {/* Main layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Chat panel */}
+        <div className="flex flex-col w-full md:w-[65%] border-r border-[#1e1e30]">
+          {/* Elena header */}
+          <div className="flex-none px-6 py-4 border-b border-[#1e1e30] bg-[#0d0d1a] flex items-center gap-3">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                E
               </div>
-              <div>
-                <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Your Name *</Label>
-                <Input
-                  value={formData.contactName}
-                  onChange={(e) => updateField("contactName", e.target.value)}
-                  placeholder="Jane Smith"
-                  className="font-sans border-border/50 focus:border-electric"
-                />
-              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-[#0d0d1a]" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Email *</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => updateField("email", e.target.value)}
-                  placeholder="jane@acme.com"
-                  className="font-sans border-border/50 focus:border-electric"
-                />
-              </div>
-
+            <div>
+              <p className="font-semibold text-white text-sm">Elena Brooks</p>
+              <p className="text-xs text-gray-400">Creative Director · MiniMorph Studios</p>
             </div>
+          </div>
 
-            {/* Password fields - only show if not already logged in */}
-            {!isAuthenticated && (
-              <>
-                <div className="border-t border-border/20 pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Lock className="h-4 w-4 text-soft-gray" />
-                    <p className="text-sm font-sans text-soft-gray font-medium">Create your account</p>
-                  </div>
-                  <p className="text-xs text-soft-gray font-sans mb-4">
-                    You'll use this to track your project progress and communicate with your team.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Password *</Label>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          value={formData.password}
-                          onChange={(e) => updateField("password", e.target.value)}
-                          placeholder="Min. 8 characters"
-                          className="font-sans border-border/50 focus:border-electric pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-soft-gray/60 hover:text-soft-gray"
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      {formData.password && !passwordLongEnough && (
-                        <p role="alert" className="text-xs text-red-500 mt-1 font-sans">Must be at least 8 characters</p>
-                      )}
-                    </div>
-                    <div>
-                      <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Confirm Password *</Label>
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        value={formData.confirmPassword}
-                        onChange={(e) => updateField("confirmPassword", e.target.value)}
-                        placeholder="Confirm your password"
-                        className="font-sans border-border/50 focus:border-electric"
-                      />
-                      {formData.confirmPassword && !passwordsMatch && (
-                        <p role="alert" className="text-xs text-red-500 mt-1 font-sans">Passwords don't match</p>
-                      )}
-                    </div>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            {/* Initial loading dots */}
+            {messages.length === 0 && isLoading && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                  E
+                </div>
+                <div className="bg-[#13131f] border border-[#1e1e30] rounded-2xl rounded-tl-sm px-4 py-3 max-w-[80%]">
+                  <div className="flex gap-1 items-center h-5">
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:300ms]" />
                   </div>
                 </div>
-                <p className="text-xs text-soft-gray/60 font-sans">
-                  Already have an account?{" "}
-                  <button onClick={() => setLocation("/login")} className="text-electric hover:underline">
-                    Log in here
-                  </button>
-                </p>
+              </div>
+            )}
+
+            {messages.map((msg, i) => (
+              <div key={i}>
+                {msg.role === "assistant" ? (
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-xs flex-shrink-0 mt-0.5">
+                      E
+                    </div>
+                    <div className="space-y-2 max-w-[80%]">
+                      <div className="bg-[#13131f] border border-[#1e1e30] rounded-2xl rounded-tl-sm px-4 py-3">
+                        <div className="text-sm text-gray-200 leading-relaxed prose prose-invert prose-sm max-w-none">
+                          <Streamdown>{msg.content}</Streamdown>
+                        </div>
+                      </div>
+
+                      {/* Upload request cards */}
+                      {msg.uploadRequests?.map((req, ri) => (
+                        <div key={ri} className="border border-[#4a9eff]/30 bg-[#4a9eff]/5 rounded-xl p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Upload className="w-4 h-4 text-[#4a9eff]" />
+                            <span className="text-sm font-medium text-[#4a9eff]">{req.label}</span>
+                          </div>
+                          {req.hint && <p className="text-xs text-gray-400 mb-2">{req.hint}</p>}
+                          <label className="block">
+                            <input
+                              type="file"
+                              className="hidden"
+                              disabled={uploading}
+                              onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(req, f); e.target.value = ""; }}
+                              accept="image/*,.pdf,.doc,.docx,.txt"
+                            />
+                            <span className="inline-flex items-center gap-1.5 text-xs bg-[#4a9eff] hover:bg-[#3a8eef] text-white px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                              {uploading && uploadingFor?.label === req.label ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                              Upload {req.label}
+                            </span>
+                          </label>
+                        </div>
+                      ))}
+
+                      {/* Add-on accepted cards */}
+                      {msg.addonsAccepted?.map((addon, ai) => (
+                        <div key={ai} className="border border-green-500/30 bg-green-500/5 rounded-xl p-3 flex items-center gap-3">
+                          <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-green-400">Added to plan: {addon.product}</p>
+                            <p className="text-xs text-gray-400">{addon.price} · {addon.label}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-end">
+                    <div className="bg-[#4a9eff]/15 border border-[#4a9eff]/20 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[75%]">
+                      <p className="text-sm text-gray-200">{msg.content}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Mid-conversation loading dots */}
+            {isLoading && messages.length > 0 && (
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                  E
+                </div>
+                <div className="bg-[#13131f] border border-[#1e1e30] rounded-2xl rounded-tl-sm px-4 py-3">
+                  <div className="flex gap-1 items-center h-5">
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 bg-[#4a9eff] rounded-full animate-bounce [animation-delay:300ms]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Summary Card */}
+            {paymentReady && (
+              <PaymentSummaryCard
+                data={paymentReady}
+                loading={checkoutLoading}
+                onPay={async () => {
+                  if (!projectId) { toast.error("Project not found. Please try again."); return; }
+                  setCheckoutLoading(true);
+                  try {
+                    const result = await createCheckoutMutation.mutateAsync({ projectId });
+                    window.location.href = result.checkoutUrl;
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Checkout failed");
+                    setCheckoutLoading(false);
+                  }
+                }}
+              />
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input area */}
+          <div className="flex-none border-t border-[#1e1e30] p-4 bg-[#0d0d1a]">
+            <div className="flex gap-3 items-end">
+              <Textarea
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message… (Enter to send, Shift+Enter for newline)"
+                className="flex-1 resize-none bg-[#13131f] border-[#2a2a40] text-gray-200 placeholder-gray-500 text-sm min-h-[44px] max-h-32 focus:border-[#4a9eff]/50 rounded-xl"
+                rows={1}
+                disabled={isLoading}
+              />
+              <Button
+                onClick={() => { if (input.trim() && !isLoading) sendMessage(input.trim()); }}
+                disabled={!input.trim() || isLoading}
+                className="bg-[#4a9eff] hover:bg-[#3a8eef] text-white min-h-[44px] px-4 rounded-xl"
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-600 mt-2">
+              Your progress is automatically saved — you can close this tab and pick up right where you left off.
+            </p>
+          </div>
+        </div>
+
+        {/* Right panel — info sidebar (hidden on mobile) */}
+        <div className="hidden md:flex flex-col w-[35%] overflow-y-auto bg-[#0d0d1a]">
+          <div className="p-6 border-b border-[#1e1e30]">
+            <h3 className="font-semibold text-white text-sm mb-1">How this works</h3>
+            <p className="text-xs text-gray-400">Elena collects everything — you pay only when you're ready</p>
+          </div>
+
+          <div className="flex-1 p-6 space-y-5">
+            {/* Steps */}
+            {[
+              { icon: <Sparkles className="w-4 h-4 text-[#4a9eff]" />, title: "1. Talk to Elena", desc: "She learns your business, recommends a plan, and pitches relevant add-ons." },
+              { icon: <Globe className="w-4 h-4 text-[#7c5cfc]" />, title: "2. She builds your brief", desc: "Every detail — colors, style, competitors, services — captured automatically." },
+              { icon: <CreditCard className="w-4 h-4 text-green-400" />, title: "3. You pay & we build", desc: "After Elena wraps up, you pay securely via Stripe. Preview delivered in 2–3 business days." },
+            ].map((step, i) => (
+              <div key={i} className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#13131f] border border-[#1e1e30] flex items-center justify-center flex-shrink-0">
+                  {step.icon}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">{step.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+
+            <div className="border-t border-[#1e1e30]" />
+
+            {/* What's included */}
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Every plan includes</p>
+              <ul className="space-y-2">
+                {[
+                  "Custom website design & development",
+                  "Mobile-responsive design",
+                  "High-performance hosting & CDN",
+                  "SSL certificate (auto-renewed)",
+                  "Up to 3 revision rounds",
+                  "Customer portal access",
+                  "Monthly performance reports",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-xs text-gray-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Add-ons selected so far */}
+            {addonsInSummary.length > 0 && (
+              <>
+                <div className="border-t border-[#1e1e30]" />
+                <div>
+                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Add-ons selected</p>
+                  <div className="space-y-1.5">
+                    {addonsInSummary.map((addon, i) => (
+                      <div key={i} className="flex items-center justify-between bg-green-500/5 border border-green-500/20 rounded-lg px-3 py-2">
+                        <span className="text-xs text-green-300">{addon.product}</span>
+                        <span className="text-xs text-gray-400">{addon.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
 
-            {isAuthenticated && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                <p className="text-sm text-green-700 font-sans">
-                  Logged in as <strong>{user?.name || user?.email}</strong>. Your order will be linked to this account.
-                </p>
-              </div>
-            )}
-
-            <div>
-              <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Industry</Label>
-              <div className="flex flex-wrap gap-2">
-                {INDUSTRIES.map((ind) => (
-                  <button
-                    key={ind}
-                    onClick={() => updateField("industry", ind)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-sans transition-all ${
-                      formData.industry === ind
-                        ? "bg-charcoal text-off-white"
-                        : "bg-electric/10 text-soft-gray hover:bg-electric/10"
-                    }`}
-                  >
-                    {ind}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Current Website (if any)</Label>
-              <Input
-                value={formData.website}
-                onChange={(e) => updateField("website", e.target.value)}
-                placeholder="https://www.example.com"
-                className="font-sans border-border/50 focus:border-electric"
-              />
-            </div>
+            <div className="border-t border-[#1e1e30]" />
+            <p className="text-xs text-gray-600 leading-relaxed">
+              12-month commitment billed monthly. No setup fees. Cancel with 30 days notice after your first year.
+            </p>
           </div>
-        )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* STEP 2: Package Selection */}
-        {step === 2 && (
-          <div className="space-y-4">
-            {/* Ecommerce Guardrail */}
-            {formData.industry === "Retail / E-commerce" && (
-              <div className="rounded-xl border-2 border-amber-400/50 bg-amber-500/10 p-4 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-800">Ecommerce websites require a custom Commerce package</p>
-                  <p className="text-xs text-amber-700 mt-1">
-                    Online stores with product catalogs, shopping carts, and checkout need specialized infrastructure.
-                    Select any plan below to get started, and our team will contact you with a custom Commerce quote tailored to your product count and needs.
-                  </p>
-                </div>
-              </div>
-            )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-            {PACKAGES.map((pkg) => (
-              <button
-                key={pkg.tier}
-                onClick={() => updateField("selectedPackage", pkg.tier)}
-                className={`text-left p-5 rounded-2xl border-2 transition-all ${
-                  formData.selectedPackage === pkg.tier
-                    ? "border-electric bg-electric/10 shadow-md"
-                    : "border-border/30 hover:border-electric/30"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-base font-serif text-off-white">{pkg.name}</h3>
-                  {pkg.popular && <Badge className="bg-electric/10 text-electric text-[10px] font-sans">Popular</Badge>}
-                </div>
-                <div className="mb-2">
-                  <span className="text-2xl font-serif text-off-white">${pkg.price}</span>
-                  <span className="text-sm text-soft-gray font-sans">/mo</span>
-                </div>
-                <p className="text-[10px] text-soft-gray/50 font-sans mb-0.5">${pkg.price * 12} total over 12 months</p>
-                <p className="text-[10px] text-soft-gray/40 font-sans mb-4">12-month contract, billed monthly</p>
-                <ul className="space-y-2">
-                  {pkg.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-xs text-soft-gray font-sans">
-                      <Check className="h-3 w-3 text-emerald-400 mt-0.5 shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                {formData.selectedPackage === pkg.tier && (
-                  <div className="mt-4 flex items-center gap-1 text-xs text-off-white font-sans font-medium">
-                    <Check className="h-3.5 w-3.5" />
-                    Selected
-                  </div>
-                )}
-              </button>
-            ))}
-            </div>
+/* ═══════════════════════════════════════════════════════
+   PAYMENT SUMMARY CARD
+   ═══════════════════════════════════════════════════════ */
+function PaymentSummaryCard({
+  data,
+  loading,
+  onPay,
+}: {
+  data: PaymentReadyData;
+  loading: boolean;
+  onPay: () => void;
+}) {
+  const tier = data.packageTier ? capitalize(data.packageTier) : "Your";
+  const total = data.monthlyTotal ?? 0;
+  const addons = data.addons ?? [];
+
+  return (
+    <div className="mx-2 my-3">
+      <div className="bg-gradient-to-br from-[#1a2a3a] to-[#13131f] border border-[#4a9eff]/30 rounded-2xl p-5 shadow-xl">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-full bg-[#4a9eff]/15 flex items-center justify-center">
+            <CreditCard className="w-4 h-4 text-[#4a9eff]" />
           </div>
-        )}
-
-        {/* STEP 3: Style Preferences */}
-        {step === 3 && (
-          <div className="space-y-6">
-            <div>
-              <Label className="text-sm font-sans text-soft-gray mb-3 block">Choose a design style</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {STYLES.map((style) => (
-                  <button
-                    key={style.id}
-                    onClick={() => updateField("stylePreference", style.id)}
-                    className={`text-left p-4 rounded-xl border-2 transition-all ${
-                      formData.stylePreference === style.id
-                        ? "border-electric bg-electric/10"
-                        : "border-border/30 hover:border-electric/20"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">{style.icon}</span>
-                      <div>
-                        <p className="text-sm font-medium text-off-white font-sans">{style.label}</p>
-                        <p className="text-xs text-soft-gray font-sans">{style.desc}</p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Color preferences (optional)</Label>
-              <Input
-                value={formData.colorPreference}
-                onChange={(e) => updateField("colorPreference", e.target.value)}
-                placeholder="e.g., Navy blue and gold, earth tones, bright and vibrant"
-                className="font-sans border-border/50 focus:border-electric"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Inspiration websites (optional)</Label>
-              <Textarea
-                value={formData.inspirationSites}
-                onChange={(e) => updateField("inspirationSites", e.target.value)}
-                placeholder="Share links to websites you admire or want yours to feel like..."
-                rows={3}
-                className="font-sans border-border/50 focus:border-electric resize-none"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-sans text-soft-gray mb-1.5 block">Additional notes</Label>
-              <Textarea
-                value={formData.additionalNotes}
-                onChange={(e) => updateField("additionalNotes", e.target.value)}
-                placeholder="Anything else we should know about your vision..."
-                rows={3}
-                className="font-sans border-border/50 focus:border-electric resize-none"
-              />
-            </div>
+          <div>
+            <p className="text-sm font-semibold text-white">Ready to start your website</p>
+            <p className="text-xs text-gray-400">Complete payment to begin your build</p>
           </div>
-        )}
-
-        {/* STEP 4: Review & Pay */}
-        {step === 4 && (
-          <div className="space-y-6">
-            <Card className="border-border/50">
-              <CardContent className="p-6 space-y-5">
-                {/* Business */}
-                <div>
-                  <p className="text-xs text-soft-gray/60 font-sans uppercase tracking-wider mb-2">Business Details</p>
-                  <div className="grid grid-cols-2 gap-3 text-sm font-sans">
-                    <div><span className="text-soft-gray">Business:</span> <span className="text-off-white font-medium">{formData.businessName}</span></div>
-                    <div><span className="text-soft-gray">Contact:</span> <span className="text-off-white font-medium">{formData.contactName}</span></div>
-                    <div><span className="text-soft-gray">Email:</span> <span className="text-off-white font-medium">{formData.email}</span></div>
-                    {formData.industry && <div><span className="text-soft-gray">Industry:</span> <span className="text-off-white font-medium">{formData.industry}</span></div>}
-                  </div>
-                </div>
-
-                <hr className="border-border/20" />
-
-                {/* Package */}
-                <div>
-                  <p className="text-xs text-soft-gray/60 font-sans uppercase tracking-wider mb-2">Selected Package</p>
-                  {(() => {
-                    const pkg = PACKAGES.find((p) => p.tier === formData.selectedPackage);
-                    return pkg ? (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-base font-serif text-off-white">{pkg.name}</p>
-                          <p className="text-xs text-soft-gray font-sans">{pkg.pages} pages • 12-month contract</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-serif text-off-white">${pkg.price}<span className="text-sm text-soft-gray">/mo</span></p>
-                          <p className="text-[10px] text-soft-gray/40 font-sans">${pkg.price * 12}/yr total</p>
-                        </div>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-
-                <hr className="border-border/20" />
-
-                {/* Style */}
-                <div>
-                  <p className="text-xs text-soft-gray/60 font-sans uppercase tracking-wider mb-2">Design Preferences</p>
-                  <div className="text-sm font-sans space-y-1">
-                    <div><span className="text-soft-gray">Style:</span> <span className="text-off-white font-medium">{STYLES.find((s) => s.id === formData.stylePreference)?.label}</span></div>
-                    {formData.colorPreference && <div><span className="text-soft-gray">Colors:</span> <span className="text-off-white font-medium">{formData.colorPreference}</span></div>}
-                    {formData.inspirationSites && <div><span className="text-soft-gray">Inspiration:</span> <span className="text-off-white font-medium">{formData.inspirationSites}</span></div>}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Service Agreement */}
-            {(() => {
-              const pkg = PACKAGES.find((p) => p.tier === formData.selectedPackage);
-              if (!pkg) return null;
-              const endDate = new Date();
-              endDate.setFullYear(endDate.getFullYear() + 1);
-              return (
-                <div className="border border-border/40 rounded-xl overflow-hidden">
-                  <div className="bg-charcoal/60 px-4 py-3 flex items-center gap-2 border-b border-border/30">
-                    <FileText className="h-4 w-4 text-soft-gray/60" />
-                    <p className="text-sm font-medium text-off-white font-sans">12-Month Service Agreement</p>
-                  </div>
-                  <div className="p-4 max-h-48 overflow-y-auto bg-midnight/40">
-                    <pre className="text-xs text-soft-gray font-sans whitespace-pre-wrap leading-relaxed">
-{`WEBSITE DESIGN & SERVICES AGREEMENT — MiniMorph Studios
-
-Package: ${pkg.name} — $${pkg.price}/mo
-Term: 12 months, billed monthly
-Total commitment: $${pkg.price * 12}
-
-WHAT'S INCLUDED
-✓ Professional website design & development
-✓ Mobile-responsive design
-✓ SSL certificate (included, auto-renewed)
-✓ High-performance hosting & CDN (99.9% uptime)
-✓ DNS management & domain handling
-✓ Daily backups & security monitoring
-✓ Up to 3 revision rounds
-✓ Ongoing maintenance & updates
-✓ SEO optimization
-✓ Monthly performance reports
-✓ Customer support
-
-KEY TERMS
-• 12-month minimum commitment from start date
-• First payment due upon checkout completion
-• After 12 months: cancel with 30 days written notice
-• Early termination requires payment of remaining months
-• Additional revisions beyond 3 rounds: $149/round
-• Governing law: Michigan, United States
-
-Domain: ${pkg.tier === "starter" ? "$15/year" : "Free first year, then $15/yr"} (registered & managed by MiniMorph Studios)`}
-                    </pre>
-                  </div>
-                  <div className="px-4 py-3 border-t border-border/30 flex items-start gap-3">
-                    <Checkbox
-                      id="contractAgreed"
-                      checked={contractAgreed}
-                      onCheckedChange={(v) => setContractAgreed(!!v)}
-                      className="mt-0.5"
-                    />
-                    <label htmlFor="contractAgreed" className="text-xs text-soft-gray font-sans cursor-pointer leading-relaxed">
-                      I have read and agree to the 12-month service agreement above. I understand this is a monthly subscription with a 12-month minimum commitment at <strong className="text-off-white">${pkg.price}/mo</strong>.
-                    </label>
-                  </div>
-                </div>
-              );
-            })()}
-
-            <div className="bg-electric/5 rounded-xl p-4 flex items-start gap-3">
-              <Shield className="h-5 w-5 text-soft-gray/60 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-off-white font-sans">Secure Checkout</p>
-                <p className="text-xs text-soft-gray font-sans mt-1">
-                  After clicking "Proceed to Payment", you'll be redirected to Stripe's secure checkout page. Your payment information is never stored on our servers.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-violet/5 rounded-xl p-4 flex items-start gap-3 border border-violet/15">
-              <Sparkles className="h-5 w-5 text-violet/70 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-off-white font-sans">What happens after payment?</p>
-                <p className="text-xs text-soft-gray font-sans mt-1">
-                  You'll receive a portal login email within minutes. Log in and meet Elena — our AI onboarding agent will walk you through everything we need to build your site. First draft arrives in 48–72 hours after your Elena session.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <div className="flex flex-col-reverse sm:flex-row items-center justify-between mt-8 sm:mt-10 pt-4 sm:pt-6 border-t border-border/20 gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setStep(Math.max(1, step - 1))}
-            disabled={step === 1}
-            className="font-sans text-sm rounded-full border-border/50 min-h-[44px]"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-
-          {step < 4 ? (
-            <Button
-              onClick={() => setStep(step + 1)}
-              disabled={!canProceed}
-              className="bg-electric hover:bg-electric-light text-white font-sans text-sm rounded-full px-6 min-h-[44px]"
-            >
-              Continue
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !contractAgreed}
-              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm rounded-full px-8 min-h-[44px]"
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Processing...
-                </div>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4 mr-2" />
-                  Proceed to Payment
-                </>
-              )}
-            </Button>
-          )}
         </div>
 
-        {/* Login link at bottom */}
-        {step === 1 && !isAuthenticated && (
-          <p className="text-center text-xs text-soft-gray/60 font-sans mt-6">
-            Already a customer?{" "}
-            <button onClick={() => setLocation("/login")} className="text-electric hover:underline">
-              Log in to your account
-            </button>
-          </p>
-        )}
+        <div className="bg-[#0d0d1a] rounded-xl p-4 mb-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-300">{tier} Package</span>
+            <span className="text-white font-medium">
+              ${total > 0 ? (total - addons.reduce((s, a) => s + a.price, 0)).toFixed(0) : "—"}/mo
+            </span>
+          </div>
+          {addons.map((a, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <span className="text-gray-400">{a.product}</span>
+              <span className="text-gray-300">+${a.price}/mo</span>
+            </div>
+          ))}
+          <div className="border-t border-[#2a2a40] pt-2 flex justify-between">
+            <span className="text-sm font-semibold text-white">Total</span>
+            <span className="text-sm font-bold text-[#4a9eff]">${total > 0 ? total.toFixed(0) : "—"}/mo</span>
+          </div>
+        </div>
+
+        <button
+          onClick={onPay}
+          disabled={loading}
+          className="w-full bg-[#4a9eff] hover:bg-[#3a8eef] disabled:opacity-60 text-white font-semibold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+            <><Lock className="w-4 h-4" />Start My Website →</>
+          )}
+        </button>
+        <p className="text-center text-xs text-gray-500 mt-2">
+          Secure payment via Stripe · 12-month commitment billed monthly
+        </p>
       </div>
     </div>
   );

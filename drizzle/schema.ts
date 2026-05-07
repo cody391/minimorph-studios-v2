@@ -435,6 +435,10 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   lastSavedAt: timestamp("lastSavedAt"),
   currentStep: int("currentStep").default(1).notNull(),
 
+  // Self-service tracking — set when customer creates project without a rep
+  userId: int("userId"),
+  source: varchar("source", { length: 50 }).default("rep_closed"),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
