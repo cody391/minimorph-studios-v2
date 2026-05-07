@@ -387,6 +387,51 @@ export async function repairSchema(): Promise<void> {
       console.log(`[SchemaRepair] Purge check skipped: ${e.message.substring(0, 80)}`);
     }
 
+    // ── Clear all non-admin test accounts ─────────────────────────────
+    try {
+      const [flagRows] = await conn.execute<any[]>(
+        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'clear_chelsea_session_v1' LIMIT 1"
+      );
+      if (!(flagRows as any[])[0]) {
+        const [userRows] = await conn.execute<any[]>(
+          "SELECT id, email FROM `users` WHERE role = 'user' AND email != 'cody@wmrum.com'"
+        );
+        console.log("[SchemaRepair] Non-admin users found:", JSON.stringify(userRows));
+
+        for (const user of userRows as any[]) {
+          const userId = user.id;
+          const [projects] = await conn.execute<any[]>(
+            "SELECT id FROM `onboarding_projects` WHERE userId = ?",
+            [userId]
+          );
+          const projectIds = (projects as any[]).map((p: any) => p.id);
+          if (projectIds.length > 0) {
+            const ph = projectIds.map(() => "?").join(",");
+            await conn.execute(
+              `DELETE FROM \`ai_chat_logs\` WHERE projectId IN (${ph})`,
+              projectIds
+            );
+            await conn.execute(
+              `DELETE FROM \`onboarding_projects\` WHERE id IN (${ph})`,
+              projectIds
+            );
+          }
+          await conn.execute(
+            "DELETE FROM `users` WHERE id = ?",
+            [userId]
+          );
+          console.log(`[SchemaRepair] Deleted account: ${user.email}`);
+        }
+
+        await conn.execute(
+          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('clear_chelsea_session_v1', 'true', 'Clear all non-admin test accounts')"
+        );
+        console.log("[SchemaRepair] Test account cleanup complete");
+      }
+    } catch (e: any) {
+      console.log(`[SchemaRepair] Test account clear skipped: ${e.message.substring(0, 80)}`);
+    }
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);
