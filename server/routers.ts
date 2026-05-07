@@ -2826,10 +2826,26 @@ const onboardingRouter = router({
           : `${origin}/get-started?cancelled=true`,
       };
 
-      if (stripePromoCodeId) {
-        sessionParams.discounts = [{ promotion_code: stripePromoCodeId }];
-      } else {
-        sessionParams.allow_promotion_codes = true;
+      // Check if buyer is a rep — apply 25% employee discount
+      if (!stripePromoCodeId && !isRepClosed) {
+        const { reps: repsTable } = await import("../drizzle/schema");
+        const repCheck = await getDb();
+        if (repCheck) {
+          const repRows = await repCheck.select({ id: repsTable.id }).from(repsTable).where(eq(repsTable.userId, ctx.user.id)).limit(1);
+          if (repRows.length > 0) {
+            const repCouponId = await getOrCreateRepCoupon(stripe);
+            stripePromoCodeId = undefined;
+            sessionParams.discounts = [{ coupon: repCouponId }];
+          }
+        }
+      }
+
+      if (!sessionParams.discounts) {
+        if (stripePromoCodeId) {
+          sessionParams.discounts = [{ promotion_code: stripePromoCodeId }];
+        } else {
+          sessionParams.allow_promotion_codes = true;
+        }
       }
 
       const session = await stripe.checkout.sessions.create(sessionParams as any);
@@ -3009,6 +3025,22 @@ const dashboardRouter = router({
 /* ═══════════════════════════════════════════════════════
    AI CHAT ROUTER — Conversational agents for onboarding + portal
    ═══════════════════════════════════════════════════════ */
+
+async function getOrCreateRepCoupon(stripe: any): Promise<string> {
+  const couponId = "rep_discount_25";
+  try {
+    const existing = await stripe.coupons.retrieve(couponId);
+    return existing.id;
+  } catch {
+    const coupon = await stripe.coupons.create({
+      id: couponId,
+      percent_off: 25,
+      duration: "forever",
+      name: "Rep Employee Discount (25% off)",
+    });
+    return coupon.id;
+  }
+}
 
 async function scrapeWebsite(url: string): Promise<string> {
   try {
@@ -4824,7 +4856,6 @@ const adminRouter = router({
       const rows = await database.select().from(coupons).where(eqFn(coupons.id, input.id)).limit(1);
       if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Coupon not found" });
 
-      // Deactivate Stripe promo code (can't delete, only deactivate)
       if (rows[0].stripePromotionCodeId) {
         const Stripe = (await import("stripe")).default;
         const stripeKey = ENV.stripeSecretKey;
@@ -4836,6 +4867,68 @@ const adminRouter = router({
 
       await database.delete(coupons).where(eqFn(coupons.id, input.id));
       return { success: true };
+    }),
+
+  // ── Test account management ────────────────────────────────────────
+  createTestCustomer: adminProcedure
+    .input(z.object({ email: z.string().optional(), name: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      const email = input.email || `test-customer-${Date.now()}@minimorph-test.com`;
+      const name = input.name || "Test Customer";
+      const password = "TestPass123!";
+      const bcrypt = await import("bcryptjs");
+      const hash = await bcrypt.hash(password, 10);
+      const openId = `test_customer_${Date.now()}`;
+      await db.upsertUser({ openId, email, name, passwordHash: hash, loginMethod: "email", role: "user", lastSignedIn: new Date() });
+      const user = await db.getUserByEmail(email);
+      if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create test user" });
+      return { email, password, name, userId: user.id, loginUrl: "/get-started", note: "Use these credentials to test the customer flow at /get-started" };
+    }),
+
+  createTestRep: adminProcedure
+    .input(z.object({ email: z.string().optional(), name: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      const email = input.email || `test-rep-${Date.now()}@minimorph-test.com`;
+      const name = input.name || "Test Rep";
+      const password = "TestPass123!";
+      const bcrypt = await import("bcryptjs");
+      const hash = await bcrypt.hash(password, 10);
+      const openId = `test_rep_${Date.now()}`;
+      await db.upsertUser({ openId, email, name, passwordHash: hash, loginMethod: "email", role: "user", lastSignedIn: new Date() });
+      const user = await db.getUserByEmail(email);
+      if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create test user" });
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const { reps: repsTable } = await import("../drizzle/schema");
+      await database.insert(repsTable).values({
+        userId: user.id,
+        email,
+        fullName: name,
+        status: "active",
+        phone: "555-0100",
+        referralCode: `TEST${Date.now()}`,
+        certifiedAt: new Date(),
+      });
+      return { email, password, name, userId: user.id, loginUrl: "/rep", note: "Use these credentials to test the rep flow at /rep" };
+    }),
+
+  deleteTestAccounts: adminProcedure
+    .mutation(async () => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const { users: usersTable, reps: repsTable, onboardingProjects: projectsTable, aiChatLogs: logsTable } = await import("../drizzle/schema");
+      const { like: likeFn, eq: eqFn } = await import("drizzle-orm");
+      const testUsers = await database.select().from(usersTable).where(likeFn(usersTable.email, "%@minimorph-test.com"));
+      for (const u of testUsers) {
+        const projects = await database.select({ id: projectsTable.id }).from(projectsTable).where(eqFn(projectsTable.userId, u.id));
+        for (const p of projects) {
+          await database.delete(logsTable).where(eqFn(logsTable.projectId, p.id));
+        }
+        await database.delete(projectsTable).where(eqFn(projectsTable.userId, u.id));
+        await database.delete(repsTable).where(eqFn(repsTable.userId, u.id));
+        await database.delete(usersTable).where(eqFn(usersTable.id, u.id));
+      }
+      return { deleted: testUsers.length, emails: testUsers.map(u => u.email) };
     }),
 });
 

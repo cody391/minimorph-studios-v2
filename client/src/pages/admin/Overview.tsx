@@ -17,6 +17,8 @@ import {
   XCircle,
   AlertCircle,
   Activity,
+  FlaskConical,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -163,6 +165,9 @@ export default function Overview() {
 
       {/* Part 8: System Health */}
       <SystemHealthPanel />
+
+      {/* Test Accounts */}
+      <TestAccountsPanel />
     </div>
   );
 }
@@ -429,6 +434,72 @@ function SystemHealthPanel() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* Test account creator */
+function TestAccountsPanel() {
+  const [result, setResult] = useState<any>(null);
+
+  const createCustomer = trpc.admin.createTestCustomer.useMutation({ onSuccess: setResult, onError: (e) => toast.error(e.message) });
+  const createRep = trpc.admin.createTestRep.useMutation({ onSuccess: setResult, onError: (e) => toast.error(e.message) });
+  const deleteAll = trpc.admin.deleteTestAccounts.useMutation({
+    onSuccess: (d) => { setResult(null); toast.success(`Deleted ${d.deleted} test account${d.deleted !== 1 ? "s" : ""}`); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="border-border/50">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-off-white font-serif flex items-center gap-2">
+            <FlaskConical className="w-5 h-5 text-electric" />
+            Test Accounts
+          </CardTitle>
+          <button
+            onClick={() => { if (confirm("Delete all @minimorph-test.com accounts?")) deleteAll.mutate(); }}
+            disabled={deleteAll.isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-700/30 bg-red-900/10 text-red-400 text-xs hover:bg-red-900/20 transition-colors disabled:opacity-50"
+          >
+            <Trash2 className="w-3 h-3" />
+            {deleteAll.isPending ? "Deleting…" : "Delete All Test Accounts"}
+          </button>
+        </div>
+        <p className="text-xs text-soft-gray/60 font-sans mt-1">Create throwaway accounts for testing customer and rep flows. All use @minimorph-test.com emails.</p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-3 flex-wrap">
+          <button
+            onClick={() => createCustomer.mutate({})}
+            disabled={createCustomer.isPending}
+            className="px-4 py-2 bg-electric/10 border border-electric/30 text-electric rounded-lg text-sm hover:bg-electric/20 transition-colors disabled:opacity-50"
+          >
+            {createCustomer.isPending ? "Creating…" : "+ Create Test Customer"}
+          </button>
+          <button
+            onClick={() => createRep.mutate({})}
+            disabled={createRep.isPending}
+            className="px-4 py-2 bg-purple-500/10 border border-purple-500/30 text-purple-400 rounded-lg text-sm hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+          >
+            {createRep.isPending ? "Creating…" : "+ Create Test Rep"}
+          </button>
+        </div>
+
+        {result && (
+          <div className="bg-green-950/20 border border-green-700/30 rounded-lg p-4">
+            <p className="text-green-400 font-medium text-sm mb-3">Account created</p>
+            <div className="font-mono text-xs text-off-white/80 space-y-1">
+              <p>Email: <span className="text-electric">{result.email}</span></p>
+              <p>Password: <span className="text-electric">{result.password}</span></p>
+              <p>Name: {result.name}</p>
+              <p>Login at: <a href={result.loginUrl} className="text-electric underline">{result.loginUrl}</a></p>
+              <p className="text-off-white/40 mt-2">{result.note}</p>
+            </div>
+            <button onClick={() => setResult(null)} className="text-xs text-soft-gray/40 hover:text-soft-gray mt-3">Dismiss</button>
           </div>
         )}
       </CardContent>

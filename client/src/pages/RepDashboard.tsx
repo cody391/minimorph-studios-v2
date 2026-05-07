@@ -27,7 +27,7 @@ import {
   BarChart3, Briefcase, CheckCircle, AlertCircle, Flame, Trophy,
   Star, Zap, Phone, Mail, Calendar, FileText, Send, Sparkles,
   BookOpen, GraduationCap, Shield, MessageSquare, Plus, ChevronRight, Copy,
-  AlertTriangle, Lightbulb, Brain, RefreshCw,
+  AlertTriangle, Lightbulb, Brain, RefreshCw, Globe, ArrowRight,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -289,6 +289,9 @@ export default function RepDashboard() {
 
           {/* ═══════ OVERVIEW TAB ═══════ */}
           <TabsContent value="overview" className="space-y-6">
+            {/* Build My Site card */}
+            <BuildMySiteCard />
+
             {/* Metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {[
@@ -1335,6 +1338,46 @@ function StripeConnectSetup() {
       <p className="text-[10px] text-soft-gray/60 font-sans text-center">
         Powered by Stripe Connect. Your sensitive information is handled securely by Stripe — we never see your bank details or SSN.
       </p>
+    </div>
+  );
+}
+
+/* Build My Site card shown in rep overview tab */
+function BuildMySiteCard() {
+  const [, setLocation] = useLocation();
+  const { data: existingProject } = trpc.onboarding.mySelfServiceProject.useQuery();
+
+  if (existingProject?.stage && existingProject.stage !== "intake") {
+    return (
+      <div className="rounded-xl border border-electric/20 bg-electric/5 p-5">
+        <div className="flex items-center gap-3 mb-2">
+          <Globe className="h-5 w-5 text-electric" />
+          <h3 className="font-semibold text-off-white">My Website</h3>
+        </div>
+        <p className="text-sm text-off-white/60 mb-3">Your site is in progress — stage: {existingProject.stage}</p>
+        <button onClick={() => setLocation("/portal")} className="text-sm text-electric hover:underline">
+          View in portal →
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-xl border border-electric/20 bg-electric/5 p-5 cursor-pointer hover:bg-electric/10 transition-colors"
+      onClick={() => setLocation("/get-started")}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <Globe className="h-5 w-5 text-electric" />
+          <h3 className="font-semibold text-off-white">Build My Website</h3>
+        </div>
+        <ArrowRight className="h-4 w-4 text-electric/50" />
+      </div>
+      <p className="text-sm text-off-white/60">
+        You sell websites every day — you should have one too. Talk to Elena and get your site built.
+      </p>
+      <p className="text-xs text-electric/70 mt-2 font-medium">Rep discount applied automatically at checkout</p>
     </div>
   );
 }
