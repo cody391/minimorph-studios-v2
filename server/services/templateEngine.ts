@@ -128,7 +128,7 @@ const INDUSTRY_PAGES: Record<string, string[]> = {
   gym:         ["classes", "about"],
   salon:       ["services", "gallery", "about"],
   coffee:      ["menu", "about"],
-  boutique:    ["about"],
+  boutique:    ["contact"],
   service:     ["services", "quote", "about"],
   // Custom-generated templates get a minimal page set using shared fallbacks
   custom:      ["contact"],
@@ -486,6 +486,7 @@ export async function injectContentIntoTemplate(
   navCtaHref: string,
   navCtaText: string,
   footerLinks: string,
+  pageName: string = "index",
 ): Promise<string> {
   const fullPath = path.join(process.cwd(), "server", "templates", templatePath);
 
@@ -524,6 +525,225 @@ export async function injectContentIntoTemplate(
   const sortedKeys = Object.keys(tokens).sort((a, b) => b.length - a.length);
   for (const key of sortedKeys) {
     html = html.replaceAll(key, tokens[key] ?? "");
+  }
+
+  // ── UPGRADE 1: Favicon + OG Tags ─────────────────────────────────────────
+
+  const initials = brief.businessName
+    .split(" ")
+    .slice(0, 2)
+    .map((w: string) => w[0]?.toUpperCase() ?? "")
+    .join("");
+
+  const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="${brief.primaryColor}"/><text x="16" y="22" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">${initials}</text></svg>`;
+  const faviconUrl = `data:image/svg+xml,${encodeURIComponent(faviconSvg)}`;
+
+  const heroImage = resolvedImages["HERO_IMAGE"] || "";
+  const ogDesc = copy["META_DESCRIPTION"] || `${brief.servicesOffered.slice(0, 3).join(", ")} in ${brief.serviceArea}`;
+
+  const headTags = `
+  <link rel="icon" type="image/svg+xml" href="${faviconUrl}">
+  <link rel="apple-touch-icon" href="${faviconUrl}">
+  <meta name="theme-color" content="${brief.primaryColor}">
+  <meta property="og:title" content="${brief.businessName}">
+  <meta property="og:description" content="${ogDesc.replace(/"/g, "&quot;")}">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="${heroImage}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${brief.businessName}">
+  <meta name="twitter:description" content="${ogDesc.replace(/"/g, "&quot;")}">
+  <meta name="twitter:image" content="${heroImage}">`;
+
+  html = html.replace("</head>", headTags + "\n</head>");
+
+  // ── UPGRADE 2: Schema.org JSON-LD ────────────────────────────────────────
+
+  const schemaTypeMap: Record<string, string> = {
+    contractor:  "GeneralContractor",
+    construction: "GeneralContractor",
+    restaurant:  "Restaurant",
+    dining:      "Restaurant",
+    gym:         "ExerciseGym",
+    fitness:     "ExerciseGym",
+    salon:       "HairSalon",
+    hair:        "HairSalon",
+    coffee:      "CafeOrCoffeeShop",
+    cafe:        "CafeOrCoffeeShop",
+    boutique:    "ClothingStore",
+    florist:     "Florist",
+    plumb:       "Plumber",
+    electr:      "Electrician",
+    landscap:    "LandscapingBusiness",
+    dental:      "Dentist",
+    medical:     "MedicalBusiness",
+    legal:       "LegalService",
+    law:         "LegalService",
+  };
+
+  const schemaType = Object.entries(schemaTypeMap).find(
+    ([k]) => brief.businessType.toLowerCase().includes(k),
+  )?.[1] ?? "LocalBusiness";
+
+  const foundingYear = new Date().getFullYear() - (parseInt(brief.yearsInBusiness) || 5);
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": schemaType,
+    name: brief.businessName,
+    description: copy["META_DESCRIPTION"] || brief.uniqueDifferentiator,
+    telephone: brief.phone,
+    email: brief.email,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: brief.address,
+      addressLocality: brief.serviceArea,
+    },
+    openingHours: brief.hours,
+    areaServed: brief.serviceArea,
+    founder: { "@type": "Person", name: brief.ownerName },
+    foundingDate: String(foundingYear),
+    priceRange: "$$",
+    image: heroImage,
+  };
+
+  html = html.replace(
+    "</head>",
+    `<script type="application/ld+json">\n${JSON.stringify(schema, null, 2)}\n</script>\n</head>`,
+  );
+
+  // ── UPGRADE 3: Unique page titles + meta descriptions ────────────────────
+
+  const pageTitleMap: Record<string, string> = {
+    index:        `${brief.businessName} | ${brief.serviceArea}`,
+    services:     `Services | ${brief.businessName}`,
+    gallery:      `Our Work | ${brief.businessName}`,
+    about:        `About Us | ${brief.businessName}`,
+    contact:      `Contact | ${brief.businessName}`,
+    quote:        `Free Quote | ${brief.businessName}`,
+    menu:         `Menu | ${brief.businessName}`,
+    reservations: `Reserve a Table | ${brief.businessName}`,
+    classes:      `Classes & Schedule | ${brief.businessName}`,
+    privacy:      `Privacy Policy | ${brief.businessName}`,
+  };
+
+  const pageTitle = pageTitleMap[pageName] ?? `${brief.businessName} | ${brief.serviceArea}`;
+  html = html.replace(/<title>[^<]*<\/title>/i, `<title>${pageTitle}</title>`);
+
+  const pageDescMap: Record<string, string> = {
+    index:        ogDesc,
+    services:     `${brief.servicesOffered.join(", ")} — ${brief.serviceArea}. Call ${brief.phone}.`,
+    gallery:      `Portfolio of work from ${brief.businessName}. Serving ${brief.serviceArea}.`,
+    about:        `Meet ${brief.ownerName} and the team at ${brief.businessName} in ${brief.serviceArea}.`,
+    contact:      `Contact ${brief.businessName}. Call ${brief.phone} or email ${brief.email}.`,
+    quote:        `Get a free quote from ${brief.businessName}. Serving ${brief.serviceArea}.`,
+    menu:         `Full menu from ${brief.businessName} in ${brief.serviceArea}.`,
+    reservations: `Reserve your table at ${brief.businessName}. Call ${brief.phone}.`,
+    privacy:      `Privacy Policy — ${brief.businessName}.`,
+  };
+
+  const pageDesc = pageDescMap[pageName] || ogDesc;
+  html = html.replace(
+    /<meta name="description"[^>]*>/i,
+    `<meta name="description" content="${pageDesc.replace(/"/g, "&quot;")}">`,
+  );
+
+  // ── UPGRADE 4: Canonical URL ──────────────────────────────────────────────
+
+  const canonicalUrl = pageName === "index"
+    ? `https://www.minimorphstudios.net`
+    : `https://www.minimorphstudios.net/${pageName}.html`;
+
+  if (!html.includes('rel="canonical"')) {
+    html = html.replace("</head>", `<link rel="canonical" href="${canonicalUrl}">\n</head>`);
+  }
+
+  // ── UPGRADE 5: Performance — preconnects + lazy images ───────────────────
+
+  const preconnects = `
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://pub-6f98c2c8984f43689b878bcb4a58de09.r2.dev">`;
+
+  if (!html.includes("fonts.googleapis.com")) {
+    html = html.replace("<head>", "<head>" + preconnects);
+  }
+
+  let firstImg = true;
+  html = html.replace(/<img([^>]+)>/gi, (match, attrs: string) => {
+    if (attrs.includes("loading=")) return match;
+    if (firstImg) {
+      firstImg = false;
+      return `<img${attrs} loading="eager" fetchpriority="high" decoding="async">`;
+    }
+    return `<img${attrs} loading="lazy" decoding="async">`;
+  });
+
+  // ── UPGRADE 6: lang attribute ─────────────────────────────────────────────
+
+  if (!html.includes("<html lang")) {
+    html = html.replace(/^<html>$/m, '<html lang="en">');
+    html = html.replace(/<html(?![^>]*\blang\b)([^>]*)>/, '<html lang="en"$1>');
+  }
+
+  // ── UPGRADE 7: Skip-to-main accessibility link ────────────────────────────
+
+  if (!html.includes("skip-link") && !html.includes("Skip to")) {
+    const skipLink = `<a href="#main-content" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;background:#fff;color:#000;padding:0.75rem 1.5rem;z-index:99999;text-decoration:none;font-weight:600" onfocus="this.style.left='0';this.style.width='auto';this.style.height='auto'" onblur="this.style.left='-9999px'">Skip to main content</a>`;
+    html = html.replace("<body>", "<body>" + skipLink);
+  }
+
+  // ── UPGRADE 8: Cookie consent banner ─────────────────────────────────────
+
+  if (!html.includes("mm-cookie")) {
+    const cookieBanner = `
+<div id="mm-cookie" role="dialog" aria-label="Cookie consent" style="position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,0.97);color:#fff;padding:1.25rem 5%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;z-index:9997;font-size:0.875rem;border-top:1px solid rgba(255,255,255,0.1);transform:translateY(100%);transition:transform 0.4s ease">
+  <p style="margin:0;max-width:600px;opacity:0.85;line-height:1.6">We use cookies to improve your experience. By continuing to use this site you agree to our <a href="privacy.html" style="color:${brief.primaryColor};text-decoration:underline">Privacy Policy</a>.</p>
+  <button id="mm-cookie-btn" style="background:${brief.primaryColor};color:#fff;border:none;padding:0.75rem 1.75rem;font-weight:700;font-size:0.875rem;cursor:pointer;white-space:nowrap;letter-spacing:0.05em">Accept &amp; Close</button>
+</div>
+<script>
+(function(){
+  try{if(localStorage.getItem('mmck'))return;}catch(e){}
+  var b=document.getElementById('mm-cookie');
+  if(!b)return;
+  setTimeout(function(){b.style.transform='translateY(0)'},1500);
+  document.getElementById('mm-cookie-btn').addEventListener('click',function(){
+    try{localStorage.setItem('mmck','1');}catch(e){}
+    b.style.transform='translateY(100%)';
+  });
+})();
+</script>`;
+    html = html.replace("</body>", cookieBanner + "\n</body>");
+  }
+
+  // ── UPGRADE 9: Back-to-top button ─────────────────────────────────────────
+
+  if (!html.includes("mm-top")) {
+    const backToTop = `
+<button id="mm-top" aria-label="Back to top" style="position:fixed;bottom:6rem;right:1.5rem;width:44px;height:44px;border-radius:50%;background:${brief.primaryColor};color:#fff;border:none;cursor:pointer;font-size:1.25rem;font-weight:700;opacity:0;transition:opacity 0.3s;z-index:500;box-shadow:0 4px 16px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593;</button>
+<script>
+(function(){
+  var b=document.getElementById('mm-top');
+  if(!b)return;
+  window.addEventListener('scroll',function(){
+    b.style.opacity=window.scrollY>500?'1':'0';
+  },{passive:true});
+})();
+</script>`;
+    html = html.replace("</body>", backToTop + "\n</body>");
+  }
+
+  // ── UPGRADE 10: Print styles ──────────────────────────────────────────────
+
+  if (!html.includes("@media print")) {
+    const printStyles = `<style media="print">
+nav,footer,#mm-banner,#mm-cookie,#mm-top,
+.mm-banner,button[type="submit"]{display:none!important}
+body{color:#000!important;background:#fff!important}
+a{color:#000!important;text-decoration:underline}
+img{max-width:100%!important;page-break-inside:avoid}
+h1,h2,h3{page-break-after:avoid}
+</style>`;
+    html = html.replace("</head>", printStyles + "\n</head>");
   }
 
   return html;
@@ -566,6 +786,7 @@ export async function generateSiteFromTemplate(
     cta.href,
     cta.text,
     footerLinks,
+    "index",
   );
 
   // Inject additional pages
@@ -584,6 +805,7 @@ export async function generateSiteFromTemplate(
           cta.href,
           cta.text,
           footerLinks,
+          pageName,
         );
       } catch (err) {
         console.error(`Failed to render page '${pageName}':`, err);
@@ -604,11 +826,36 @@ export async function generateSiteFromTemplate(
         cta.href,
         cta.text,
         footerLinks,
+        "privacy",
       );
     } catch {
       // privacy page optional
     }
   }
+
+  // ── UPGRADE 11: Sitemap + robots per site ────────────────────────────────
+
+  const siteSlug = brief.businessName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const siteBase = `https://${siteSlug}.minimorphstudios.net`;
+  const today = new Date().toISOString().split("T")[0];
+
+  const htmlPages = Object.keys(pages).filter(
+    p => !p.endsWith(".xml") && !p.endsWith(".txt"),
+  );
+
+  pages["sitemap.xml"] = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${htmlPages.map(p => {
+  const loc = p === "index" ? `${siteBase}/` : `${siteBase}/${p}.html`;
+  const priority = p === "index" ? "1.0" : "0.8";
+  return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+}).join("\n")}
+</urlset>`;
+
+  pages["robots.txt"] = `User-agent: *\nAllow: /\nSitemap: ${siteBase}/sitemap.xml`;
 
   return pages;
 }

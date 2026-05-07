@@ -328,15 +328,18 @@ interface SiteResult {
 
 async function generateAndDeployAll(): Promise<SiteResult[]> {
   const results: SiteResult[] = [];
+  const siteStart = process.env.SITE_START
+    ? parseInt(process.env.SITE_START, 10) - 1  // 1-based input
+    : 0;
   const siteLimit = process.env.SITE_LIMIT
-    ? parseInt(process.env.SITE_LIMIT, 10)
+    ? siteStart + parseInt(process.env.SITE_LIMIT, 10)
     : SHOWROOM_SITES.length;
 
-  for (let i = 0; i < siteLimit; i++) {
+  for (let i = siteStart; i < siteLimit; i++) {
     const { brief, cloudflareProject } = SHOWROOM_SITES[i];
 
     console.log("\n" + "━".repeat(56));
-    console.log(`[${i + 1}/${siteLimit}] ${brief.businessName}`);
+    console.log(`[${i + 1}/${SHOWROOM_SITES.length}] ${brief.businessName}`);
     console.log(`      ${brief.businessType} · ${brief.packageTier} · ${cloudflareProject}`);
 
     try {
