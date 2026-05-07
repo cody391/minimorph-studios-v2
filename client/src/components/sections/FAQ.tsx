@@ -31,8 +31,8 @@ const faqs = [
     a: "It's your home base — project status, support tickets, monthly reports, file uploads, AI recommendations, and direct communication with our team. Every plan includes it. You'll use it more than you think.",
   },
   {
-    q: "Do you work with businesses anywhere in the US?",
-    a: "Yes — MiniMorph Studios works with businesses across the United States. Our process is fully remote and digital from day one. You'll have a dedicated portal, direct communication with your team, and regular check-ins no matter where you're located.",
+    q: "Do you work with businesses outside the US?",
+    a: "Yes — MiniMorph Studios works with businesses worldwide. Our process is fully remote and digital from day one. You'll have a dedicated portal, direct communication with your team, and regular check-ins no matter where you're located.",
   },
   {
     q: "Do you guarantee results?",

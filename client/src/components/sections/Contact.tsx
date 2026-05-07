@@ -63,18 +63,18 @@ export default function Contact() {
             <Button
               size="lg"
               className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-base px-10 py-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300 group"
-              onClick={() => setLocation("/get-started")}
+              onClick={() => setLocation("/free-audit")}
             >
-              Get a Free Quote
+              Get a Free Website Audit
               <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="border-off-white/20 text-off-white hover:bg-off-white/5 font-sans text-base px-10 py-6 rounded-full transition-all duration-300"
-              onClick={() => setLocation("/free-audit")}
+              onClick={() => setLocation("/get-started")}
             >
-              Or Get a Free Audit First
+              Start a Project
             </Button>
           </motion.div>
 

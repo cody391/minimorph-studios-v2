@@ -278,7 +278,7 @@ export default function FreeAudit() {
               {
                 icon: BarChart3,
                 title: "Competitor Comparison",
-                desc: "How you stack up against similar businesses in your area. Know where you stand.",
+                desc: "How you stack up against similar businesses in your space. Know where you stand.",
               },
               {
                 icon: AlertTriangle,

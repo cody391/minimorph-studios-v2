@@ -90,9 +90,9 @@ export default function Navbar() {
           </a>
           <Button
             className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-sm px-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300"
-            onClick={() => setLocation("/get-started")}
+            onClick={() => setLocation("/free-audit")}
           >
-            Get a Free Quote
+            Get Free Audit
           </Button>
         </div>
 
@@ -142,10 +142,10 @@ export default function Navbar() {
                   className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold rounded-full"
                   onClick={() => {
                     setMobileOpen(false);
-                    setLocation("/get-started");
+                    setLocation("/free-audit");
                   }}
                 >
-                  Get a Free Quote
+                  Get Free Audit
                 </Button>
               </div>
             </div>

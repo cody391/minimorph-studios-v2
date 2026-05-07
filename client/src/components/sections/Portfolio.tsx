@@ -45,9 +45,9 @@ export default function Portfolio() {
             transition={{ delay: 0.2 }}
             className="text-lg text-off-white/50 font-sans leading-relaxed max-w-xl mx-auto"
           >
-            Seven sample sites. Seven industries. Seven completely different styles.
-            Each one built on a MiniMorph Studios package with real add-ons you can
-            see working. Click through — these are our showroom floor models.
+            Built for every type of business — retail, trades, hospitality, wellness,
+            services, and more. Each one on a real MiniMorph Studios plan with real
+            add-ons you can see working. Click through — these are our showroom floor models.
           </motion.p>
         </div>
 

@@ -6,18 +6,18 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard, ClipboardList, PenTool, MessageSquare, Rocket, BarChart3,
+  Zap, ClipboardList, PenTool, MessageSquare, Rocket, BarChart3,
   ArrowRight,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
 const steps = [
   {
-    icon: CreditCard,
+    icon: Zap,
     number: "01",
-    title: "Talk to a Rep",
-    description: "A MiniMorph rep walks you through the four tiers, answers every question, and locks in your price. No hidden fees. You'll know the total before you commit to anything.",
-    aside: "Real human, not a bot",
+    title: "Get Your Free Audit",
+    description: "Tell us about your business and get a full website audit — for free. We'll analyze your current site, benchmark you against competitors, and show you exactly what's costing you customers.",
+    aside: "Takes about 2 minutes",
   },
   {
     icon: ClipboardList,
@@ -132,9 +132,9 @@ export default function HowItWorks() {
           <Button
             variant="outline"
             className="border-off-white/15 text-off-white/70 hover:text-off-white hover:bg-off-white/5 font-sans rounded-full"
-            onClick={() => setLocation("/get-started")}
+            onClick={() => setLocation("/free-audit")}
           >
-            Let's get started
+            Get your free audit
             <ArrowRight size={14} className="ml-1.5" />
           </Button>
         </motion.div>

@@ -62,7 +62,7 @@ export default function Footer() {
               <span className="font-serif text-xl text-off-white tracking-tight">MiniMorph Studios</span>
             </div>
             <p className="text-sm font-sans text-off-white/40 leading-relaxed mb-6 max-w-sm">
-              We build custom websites for small businesses across the United States — then stick around every month to maintain, improve, and report on them.
+              We build custom websites for businesses worldwide — then stick around every month to maintain, improve, and report on them.
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-sans text-off-white/40">

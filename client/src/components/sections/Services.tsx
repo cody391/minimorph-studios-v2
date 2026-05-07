@@ -20,7 +20,7 @@ const pillars = [
   {
     icon: Globe,
     title: "Build",
-    description: "Not a template with your logo slapped on. A real site designed around your business, your customers, and your competitors' weaknesses.",
+    description: "We start with a proven design framework for your industry, then write every word of copy specifically for your business — your services, your voice, your customers. Nothing generic.",
     color: "text-electric",
     bg: "bg-electric/10 border-electric/20",
   },

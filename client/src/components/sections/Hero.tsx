@@ -57,7 +57,7 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-lg lg:text-xl text-off-white/60 font-sans leading-relaxed mb-10 max-w-lg"
             >
-              Most agencies disappear after launch. We don't. Every plan includes a dedicated rep, AI-assisted build, monthly reports, and support that actually responds — starting at $195/mo.
+              Most agencies disappear after launch. We don't. Every plan includes a dedicated specialist, AI-assisted build, monthly reports, and support that actually responds — starting at $195/mo.
             </motion.p>
 
             <motion.div
@@ -69,18 +69,18 @@ export default function Hero() {
               <Button
                 size="lg"
                 className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-base px-8 py-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300 group"
-                onClick={() => setLocation("/get-started")}
+                onClick={() => setLocation("/free-audit")}
               >
-                Get a Free Quote
+                Get a Free Website Audit
                 <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="border-off-white/20 text-off-white hover:bg-off-white/5 font-sans text-base px-8 py-6 rounded-full transition-all duration-300"
-                onClick={() => scrollTo("#showroom")}
+                onClick={() => scrollTo("#pricing")}
               >
-                Browse Our Work
+                See Pricing
               </Button>
             </motion.div>
 
@@ -95,15 +95,15 @@ export default function Hero() {
                 <div className="text-[11px] font-sans text-off-white/40">First Draft</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-serif text-off-white">7</div>
-                <div className="text-[11px] font-sans text-off-white/40">Industries Served</div>
+                <div className="text-2xl font-serif text-off-white">Any</div>
+                <div className="text-[11px] font-sans text-off-white/40">Industry</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-serif text-electric">100%</div>
                 <div className="text-[11px] font-sans text-off-white/40">You Own It</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-serif text-off-white">US-Wide</div>
+                <div className="text-2xl font-serif text-off-white">Global</div>
                 <div className="text-[11px] font-sans text-off-white/40">Coverage</div>
               </div>
             </motion.div>
@@ -116,7 +116,7 @@ export default function Hero() {
             >
               <div className="flex items-center gap-2">
                 <Shield size={14} className="text-electric/60" />
-                <span>No templates — every site is custom</span>
+                <span>Designed for your industry, written for your business</span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap size={14} className="text-electric/60" />
