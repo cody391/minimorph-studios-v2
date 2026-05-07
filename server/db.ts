@@ -390,7 +390,7 @@ export async function repairSchema(): Promise<void> {
     // ── Clear all non-admin test accounts ─────────────────────────────
     try {
       const [flagRows] = await conn.execute<any[]>(
-        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'clear_chelsea_session_v1' LIMIT 1"
+        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'clear_chelsea_session_v2' LIMIT 1"
       );
       if (!(flagRows as any[])[0]) {
         const [userRows] = await conn.execute<any[]>(
@@ -424,7 +424,7 @@ export async function repairSchema(): Promise<void> {
         }
 
         await conn.execute(
-          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('clear_chelsea_session_v1', 'true', 'Clear all non-admin test accounts')"
+          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('clear_chelsea_session_v2', 'true', 'Clear all non-admin test accounts')"
         );
         console.log("[SchemaRepair] Test account cleanup complete");
       }
