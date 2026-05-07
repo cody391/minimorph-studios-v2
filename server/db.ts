@@ -280,6 +280,79 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `contracts` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
     await safe("ALTER TABLE `onboarding_projects` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
 
+    // ── One-time customer data purge ──────────────────────────────────────
+    // Gated by a system_settings flag so it only runs once.
+    try {
+      const [flagRows] = await conn.execute<any[]>(
+        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'customer_purge_2026_05' LIMIT 1"
+      );
+      if (!(flagRows as any[])[0]) {
+        console.log("[SchemaRepair] Running one-time customer data purge...");
+        const purgeTables = [
+          "support_ticket_replies",
+          "project_assets",
+          "ai_chat_logs",
+          "nurture_logs",
+          "nps_surveys",
+          "customer_referrals",
+          "monthly_reports",
+          "reports",
+          "upsell_opportunities",
+          "support_tickets",
+          "contact_submissions",
+          "commissions",
+          "onboarding_projects",
+          "orders",
+          "contracts",
+          "customers",
+        ];
+        for (const t of purgeTables) {
+          try {
+            const [[r]] = await conn.execute<any[]>(`SELECT COUNT(*) AS c FROM \`${t}\``);
+            const count = (r as any).c;
+            if (count > 0) await conn.execute(`DELETE FROM \`${t}\``);
+            console.log(`[SchemaRepair]   ✓ ${t}: ${count} rows deleted`);
+          } catch (e: any) {
+            console.log(`[SchemaRepair]   skip ${t}: ${e.message.substring(0, 80)}`);
+          }
+        }
+        // Delete customer user accounts (role=user) — preserve rep accounts
+        try {
+          const [repRows] = await conn.execute<any[]>("SELECT userId FROM `reps`");
+          const repIds: number[] = (repRows as any[]).map((r: any) => r.userId).filter(Boolean);
+          if (repIds.length > 0) {
+            const ph = repIds.map(() => "?").join(",");
+            const [[cr]] = await conn.execute<any[]>(
+              `SELECT COUNT(*) AS c FROM \`users\` WHERE role='user' AND id NOT IN (${ph})`,
+              repIds
+            );
+            const count = (cr as any).c;
+            if (count > 0) {
+              await conn.execute(
+                `DELETE FROM \`users\` WHERE role='user' AND id NOT IN (${ph})`,
+                repIds
+              );
+            }
+            console.log(`[SchemaRepair]   ✓ users (non-rep): ${count} rows deleted`);
+          } else {
+            const [[cr]] = await conn.execute<any[]>("SELECT COUNT(*) AS c FROM `users` WHERE role='user'");
+            const count = (cr as any).c;
+            if (count > 0) await conn.execute("DELETE FROM `users` WHERE role='user'");
+            console.log(`[SchemaRepair]   ✓ users: ${count} rows deleted`);
+          }
+        } catch (e: any) {
+          console.log(`[SchemaRepair]   skip users: ${e.message.substring(0, 80)}`);
+        }
+        // Mark purge as done so it never runs again
+        await conn.execute(
+          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('customer_purge_2026_05', 'true', 'One-time customer data purge — May 2026')"
+        );
+        console.log("[SchemaRepair] Customer data purge complete.");
+      }
+    } catch (e: any) {
+      console.log(`[SchemaRepair] Purge check skipped: ${e.message.substring(0, 80)}`);
+    }
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);
