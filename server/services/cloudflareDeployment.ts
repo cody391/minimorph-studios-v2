@@ -65,13 +65,21 @@ export async function deployToPages(params: {
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cf-pages-"));
   try {
-    for (const [pageName, html] of Object.entries(params.pages)) {
-      const fileName = pageName === "index" ? "index.html" : `${pageName}.html`;
-      fs.writeFileSync(path.join(tmpDir, fileName), html, "utf-8");
+    const htmlPages: string[] = [];
+    for (const [pageName, content] of Object.entries(params.pages)) {
+      // Files with explicit extensions (sitemap.xml, robots.txt) are written as-is
+      const hasExt = /\.[a-z]{2,4}$/.test(pageName);
+      const fileName = hasExt
+        ? pageName
+        : pageName === "index"
+          ? "index.html"
+          : `${pageName}.html`;
+      fs.writeFileSync(path.join(tmpDir, fileName), content, "utf-8");
+      if (!hasExt) htmlPages.push(pageName);
     }
 
     // Add _redirects so clean URLs resolve without .html extension
-    const redirectsContent = Object.keys(params.pages)
+    const redirectsContent = htmlPages
       .filter(p => p !== "index")
       .map(p => `/${p} /${p}.html 200`)
       .join("\n");
