@@ -520,6 +520,96 @@ function ensureRequiredStructure(
   return html;
 }
 
+function injectPremiumFeatures(
+  html: string,
+  pageName: string,
+  businessName: string,
+  primaryColor: string,
+  phone: string,
+  email: string,
+  serviceArea: string,
+  servicesOffered: string[],
+): string {
+  const initials = businessName.split(" ").slice(0, 2).map(w => w[0]?.toUpperCase() ?? "").join("");
+  const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="${primaryColor}"/><text x="16" y="22" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">${initials}</text></svg>`;
+  const faviconUrl = `data:image/svg+xml,${encodeURIComponent(faviconSvg)}`;
+
+  // Favicon + OG + theme-color (only if not already present)
+  if (!html.includes("og:title") && html.includes("</head>")) {
+    const ogDesc = `${servicesOffered.slice(0, 3).join(", ")} in ${serviceArea}`.slice(0, 160);
+    const headTags = `<link rel="icon" type="image/svg+xml" href="${faviconUrl}">
+<link rel="apple-touch-icon" href="${faviconUrl}">
+<meta name="theme-color" content="${primaryColor}">
+<meta property="og:title" content="${businessName}">
+<meta property="og:description" content="${ogDesc}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${businessName}">`;
+    html = html.replace("</head>", headTags + "\n</head>");
+  }
+
+  // Schema.org LocalBusiness JSON-LD
+  if (!html.includes("application/ld+json") && html.includes("</head>")) {
+    const schema = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      name: businessName,
+      ...(phone ? { telephone: phone } : {}),
+      ...(email ? { email } : {}),
+      ...(serviceArea ? { areaServed: serviceArea } : {}),
+      ...(servicesOffered.length ? { hasOfferCatalog: { "@type": "OfferCatalog", name: "Services", itemListElement: servicesOffered.slice(0, 5).map(s => ({ "@type": "Offer", itemOffered: { "@type": "Service", name: s } })) } } : {}),
+    });
+    html = html.replace("</head>", `<script type="application/ld+json">${schema}</script>\n</head>`);
+  }
+
+  // Unique title per page
+  const pageTitles: Record<string, string> = {
+    index: `${businessName} | ${serviceArea}`,
+    services: `Services | ${businessName}`,
+    gallery: `Our Work | ${businessName}`,
+    about: `About | ${businessName}`,
+    contact: `Contact | ${businessName}`,
+    quote: `Free Quote | ${businessName}`,
+    menu: `Menu | ${businessName}`,
+    reservations: `Reservations | ${businessName}`,
+    blog: `Blog | ${businessName}`,
+    products: `Products | ${businessName}`,
+    privacy: `Privacy Policy | ${businessName}`,
+  };
+  if (pageTitles[pageName] && html.match(/<title>[^<]*<\/title>/i)) {
+    html = html.replace(/<title>[^<]*<\/title>/i, `<title>${pageTitles[pageName]}</title>`);
+  }
+
+  // Lazy loading for images (eager on first, lazy on rest)
+  let firstImg = true;
+  html = html.replace(/<img([^>]+)>/gi, (match, attrs) => {
+    if (attrs.includes("loading=")) return match;
+    if (firstImg) { firstImg = false; return `<img${attrs} loading="eager" fetchpriority="high" decoding="async">`; }
+    return `<img${attrs} loading="lazy" decoding="async">`;
+  });
+
+  // Cookie banner
+  if (!html.includes("mm-cookie")) {
+    const cookieBanner = `<div id="mm-cookie" style="position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,10,0.97);color:#fff;padding:1.25rem 5%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;z-index:9997;font-size:0.875rem;border-top:1px solid rgba(255,255,255,0.1);transform:translateY(100%);transition:transform 0.4s ease"><p style="margin:0;max-width:600px;opacity:0.85">We use cookies to improve your experience. By continuing you agree to our <a href="privacy.html" style="color:${primaryColor}">Privacy Policy</a>.</p><button id="mm-cookie-btn" style="background:${primaryColor};color:#fff;border:none;padding:0.75rem 1.75rem;border-radius:4px;font-weight:700;cursor:pointer">Accept</button></div>
+<script>(function(){try{if(localStorage.getItem('mmck'))return;}catch(e){}var b=document.getElementById('mm-cookie');if(!b)return;setTimeout(function(){b.style.transform='translateY(0)'},1500);var btn=document.getElementById('mm-cookie-btn');if(btn)btn.addEventListener('click',function(){try{localStorage.setItem('mmck','1');}catch(e){}b.style.transform='translateY(100%)';});})();</script>`;
+    html = html.replace("</body>", cookieBanner + "\n</body>");
+  }
+
+  // Back to top
+  if (!html.includes("mm-top")) {
+    const backToTop = `<button id="mm-top" aria-label="Back to top" style="position:fixed;bottom:5rem;right:1.5rem;width:44px;height:44px;border-radius:50%;background:${primaryColor};color:#fff;border:none;cursor:pointer;font-size:1.25rem;opacity:0;transition:opacity 0.3s;z-index:500;box-shadow:0 4px 16px rgba(0,0,0,0.3)" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+<script>(function(){var b=document.getElementById('mm-top');if(!b)return;window.addEventListener('scroll',function(){b.style.opacity=window.scrollY>500?'1':'0';},{passive:true});})();</script>`;
+    html = html.replace("</body>", backToTop + "\n</body>");
+  }
+
+  // Print styles
+  if (!html.includes("@media print") && html.includes("</head>")) {
+    html = html.replace("</head>", `<style media="print">nav,footer,#mm-cookie,#mm-top,button{display:none!important}body{color:#000!important;background:#fff!important}a{color:#000!important}</style>\n</head>`);
+  }
+
+  return html;
+}
+
 export function stripDemoBanner(html: string): string {
   return html.replace(
     /<div[^>]*background:#0a0a12[^>]*>[\s\S]*?MiniMorph Studios Demo[\s\S]*?<\/div>/gi,
@@ -540,7 +630,7 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     generationLog: "Starting AI site generation...",
   });
 
-  // Notify customer build has started
+  // Notify customer build has started (email + SMS)
   try {
     const { sendBuildStartedEmail } = await import("./customerEmails");
     await sendBuildStartedEmail({
@@ -552,6 +642,15 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
   } catch (emailErr) {
     console.error("[SiteGenerator] Build started email failed:", emailErr);
   }
+  try {
+    const { sendCustomerSms } = await import("./sms");
+    const q = project.questionnaire as Record<string, unknown> | null;
+    const customerPhone = (q?.phone as string) || project.contactPhone;
+    await sendCustomerSms(
+      customerPhone,
+      `We've started building your ${project.businessName} website! You'll receive a preview link within the next few minutes. — MiniMorph Studios`,
+    );
+  } catch {}
 
   // Notify admin
   try {
@@ -841,6 +940,7 @@ ${assetSummary}`;
           competitorWeaknesses: competitorWeaknesses.length ? competitorWeaknesses : undefined,
           pricingDisplay: pricingDisplay || undefined,
           customerPhotoUrl: customerPhotoUrl || undefined,
+          logoUrl: assets.find(a => a.category === "logo")?.fileUrl || undefined,
         };
 
         await db.updateOnboardingProject(projectId, {
@@ -1000,6 +1100,29 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
       }
     }
 
+    // ── Premium features post-processing — applies to all generated pages ────────
+    // Injects OG tags, Schema.org JSON-LD, unique titles, favicon, lazy images,
+    // cookie banner, back-to-top, and print styles into every HTML page.
+    await db.updateOnboardingProject(projectId, { generationLog: "Injecting premium features..." });
+    const servicesForSeo = Array.isArray(q.servicesOffered) ? (q.servicesOffered as string[]) : [websiteType];
+    for (const pageName of Object.keys(pages)) {
+      if (pageName.endsWith(".xml") || pageName.endsWith(".txt")) continue;
+      try {
+        pages[pageName] = injectPremiumFeatures(
+          pages[pageName],
+          pageName,
+          project.businessName,
+          primaryColor,
+          phone,
+          email,
+          address || (q.serviceArea as string) || "",
+          servicesForSeo,
+        );
+      } catch {
+        // Non-fatal — deliver page without premium injection
+      }
+    }
+
     // Generate sitemap.xml and robots.txt
     const siteBase = (q.domainName as string | undefined) ? `https://${q.domainName}` : "";
     const today = new Date().toISOString().split("T")[0];
@@ -1014,6 +1137,45 @@ ${Object.keys(pages)
   .join("\n")}
 </urlset>`;
     pages["robots.txt"] = `User-agent: *\nAllow: /\n${siteBase ? `Sitemap: ${siteBase}/sitemap.xml` : ""}`;
+
+    // ── Auto-register domain if customer said they need one ──────────────────
+    if ((q.domainStatus as string) === "needs_domain" && (q.domainName as string)) {
+      const domainToRegister = (q.domainName as string).trim().toLowerCase();
+      try {
+        const { registerDomain } = await import("./domainService");
+        const ownerNameParts = ownerName.split(" ");
+        const firstName = ownerNameParts[0] || project.contactName.split(" ")[0] || "Business";
+        const lastName = ownerNameParts.slice(1).join(" ") || project.contactName.split(" ").slice(1).join(" ") || "Owner";
+        const registrationResult = await registerDomain(domainToRegister, {
+          firstName,
+          lastName,
+          email: project.contactEmail,
+          phone: phone || "+15555550100",
+          address: address || "123 Main St",
+          city: (q.serviceArea as string)?.split(",")[0]?.trim() || "Minneapolis",
+          state: "MN",
+          zip: "55401",
+          country: "US",
+        });
+        if (registrationResult.success) {
+          console.log(`[SiteGen] Domain registered: ${domainToRegister}`);
+          await db.updateOnboardingProject(projectId, { domainName: domainToRegister });
+          // Notify customer
+          try {
+            const { sendEmail } = await import("./email");
+            await sendEmail({
+              to: project.contactEmail,
+              subject: `Your domain ${domainToRegister} has been registered!`,
+              html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#111122;color:#eaeaf0"><h2 style="color:#4a9eff">Your domain is registered!</h2><p>We've registered <strong>${domainToRegister}</strong> for you. It will be connected to your site automatically when your build is complete — no action needed.</p><p style="color:#7a7a90">&mdash; The MiniMorph Studios Team</p></div>`,
+            });
+          } catch {}
+        } else {
+          console.warn(`[SiteGen] Domain registration failed for ${domainToRegister}:`, registrationResult.error);
+        }
+      } catch (domainErr: any) {
+        console.warn(`[SiteGen] Domain registration skipped: ${domainErr.message}`);
+      }
+    }
 
     // Store the cloudflare project name so siteDeployment can reuse it
     const cfProjectName = getProjectName(project.businessName, projectId);

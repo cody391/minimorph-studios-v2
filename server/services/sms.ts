@@ -54,6 +54,25 @@ export async function sendSms(params: SendSmsParams): Promise<SendSmsResult> {
 }
 
 /**
+ * Send an SMS to a customer (non-rep) phone number.
+ * Gracefully no-ops if phone is missing or Twilio is not configured.
+ */
+export async function sendCustomerSms(
+  phone: string | undefined | null,
+  message: string,
+): Promise<void> {
+  if (!phone) return;
+  if (!ENV.twilioAccountSid || !ENV.twilioAuthToken || !ENV.twilioPhoneNumber) return;
+  const cleaned = phone.replace(/[^\d+]/g, "");
+  if (cleaned.length < 7) return;
+  try {
+    await sendSms({ to: cleaned.startsWith("+") ? cleaned : `+1${cleaned}`, body: message });
+  } catch {
+    // Best-effort — never block the calling flow
+  }
+}
+
+/**
  * Look up SMS delivery status from Twilio.
  */
 export async function getSmsStatus(messageSid: string) {

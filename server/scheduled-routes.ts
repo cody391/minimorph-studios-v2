@@ -23,6 +23,7 @@ import { getDb } from "./db";
 import { contracts, customers, npsSurveys, nurtureLogs, onboardingProjects, monthlyReports } from "../drizzle/schema";
 import { eq, and, lte, inArray, desc } from "drizzle-orm";
 import { sendNpsSurveyEmail, sendMonthlyReportEmail } from "./services/customerEmails";
+import { getCloudflareAnalytics } from "./services/analytics";
 import { scrapeWebsite } from "./services/webScraper";
 import { invokeLLM } from "./_core/llm";
 import { generateInvoiceHtml, invoiceToBase64 } from "./services/invoiceGenerator";
@@ -581,6 +582,11 @@ export function registerScheduledRoutes(app: Express) {
         const monthLabel = now.toLocaleString("en-US", { month: "long", year: "numeric" });
 
         try {
+          // Fetch real analytics for the past month
+          const monthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split("T")[0];
+          const monthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split("T")[0];
+          const analytics = await getCloudflareAnalytics(monthStart, monthEnd).catch(() => ({ pageviews: 0, visitors: 0, bounceRate: 0 }));
+
           // Generate competitive analysis
           let reportText = "";
           if (project) {
@@ -651,13 +657,19 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
           const safeBusinessName = customer.businessName.replace(/[^a-z0-9]/gi, "-").toLowerCase();
           const invoiceFilename = `invoice-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${safeBusinessName}.html`;
 
+          // Prepend real analytics to the competitive report
+          const analyticsSection = analytics.pageviews > 0 || analytics.visitors > 0
+            ? `## ${monthLabel} Traffic\n- **${analytics.pageviews.toLocaleString()}** total page views\n- **${analytics.visitors.toLocaleString()}** unique visitors\n\n`
+            : "";
+          const fullReport = analyticsSection + reportText;
+
           // Send the unified monthly report email
           await sendMonthlyReportEmail({
             to: customer.email,
             customerName: customer.contactName,
             businessName: customer.businessName,
             monthLabel,
-            competitiveReport: reportText,
+            competitiveReport: fullReport,
             isRenewalMonth,
             renewalDate: isRenewalMonth ? contract.endDate : undefined,
             monthlyPrice,
@@ -687,6 +699,151 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     })
   );
 
+  // ─── 17. Domain status polling — check pending domains every 6 hours ───────
+  app.post("/api/scheduled/domain-status-check", (req, res) =>
+    runJob(req, res, "domain-status-check", async () => {
+      const { checkDomainStatus } = await import("./services/cloudflareDeployment");
+      const { sendEmail } = await import("./services/email");
+      const database = await getDb();
+      if (!database) throw new Error("Database not available");
+      const { onboardingProjects } = await import("../drizzle/schema");
+      const { isNotNull, ne } = await import("drizzle-orm");
+
+      // Find projects with a domain name that aren't yet confirmed live
+      const pending = await database.select().from(onboardingProjects)
+        .where(and(isNotNull(onboardingProjects.domainName), ne(onboardingProjects.stage, "complete")));
+
+      let activated = 0;
+      let stillPending = 0;
+
+      for (const project of pending) {
+        if (!project.domainName || !project.cloudflareProjectName) continue;
+        try {
+          const status = await checkDomainStatus({
+            projectName: project.cloudflareProjectName,
+            domain: project.domainName,
+          });
+          if (status.active) {
+            await database.update(onboardingProjects).set({
+              liveUrl: `https://${project.domainName}`,
+              generatedSiteUrl: `https://${project.domainName}`,
+            }).where(eq(onboardingProjects.id, project.id));
+            // Notify customer
+            if (project.contactEmail) {
+              await sendEmail({
+                to: project.contactEmail,
+                subject: `Your domain ${project.domainName} is live!`,
+                html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#111122;color:#eaeaf0"><h2 style="color:#22c55e">${project.domainName} is live!</h2><p>Your domain is now fully connected and active. Visit your site at: <a href="https://${project.domainName}" style="color:#4a9eff">https://${project.domainName}</a></p><p style="color:#7a7a90">&mdash; The MiniMorph Studios Team</p></div>`,
+              }).catch(() => {});
+            }
+            activated++;
+          } else {
+            stillPending++;
+          }
+        } catch {}
+      }
+      return { checked: pending.length, activated, stillPending };
+    })
+  );
+
+  // ─── 18. Renewal Reminder Emails — send at 14 and 7 days before contract end ───
+  app.post("/api/scheduled/renewal-reminders", (req, res) =>
+    runJob(req, res, "renewal-reminders", async () => {
+      const { sendRenewalReminderEmail } = await import("./services/customerEmails");
+      const database = await getDb();
+      if (!database) throw new Error("Database not available");
+      const now = new Date();
+
+      // Find all active contracts with contractEndDate set
+      const activeContracts = await database
+        .select()
+        .from(contracts)
+        .where(inArray(contracts.status, ["active", "expiring_soon", "renewed"]));
+
+      let sent14 = 0;
+      let sent7 = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+
+      for (const contract of activeContracts) {
+        if (!contract.contractEndDate || !contract.customerId) { skipped++; continue; }
+        const endDate = new Date(contract.contractEndDate);
+        const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        const [customer] = await database.select().from(customers)
+          .where(eq(customers.id, contract.customerId)).limit(1);
+        if (!customer) { skipped++; continue; }
+
+        try {
+          // Use nurture logs as dedup — check if reminder was already sent this cycle
+          const { nurtureLogs } = await import("../drizzle/schema");
+          const reminderKey14 = `renewal_reminder_14_${contract.id}`;
+          const reminderKey7 = `renewal_reminder_7_${contract.id}`;
+
+          if (daysLeft <= 14 && daysLeft > 7) {
+            const existing = await database.select({ id: nurtureLogs.id }).from(nurtureLogs)
+              .where(and(eq(nurtureLogs.contractId, contract.id), eq(nurtureLogs.subject, reminderKey14))).limit(1);
+            if (!existing.length) {
+              await sendRenewalReminderEmail({
+                to: customer.email,
+                customerName: customer.contactName,
+                daysRemaining: daysLeft,
+                packageTier: (contract.packageTier || "starter") as any,
+                endDate,
+              });
+              await database.insert(nurtureLogs).values({
+                customerId: contract.customerId,
+                contractId: contract.id,
+                type: "renewal_outreach",
+                channel: "email",
+                subject: reminderKey14,
+                content: `Renewal reminder sent — ${daysLeft} days before contract end`,
+                status: "sent",
+                scheduledAt: now,
+                sentAt: now,
+              });
+              sent14++;
+            } else {
+              skipped++;
+            }
+          } else if (daysLeft <= 7 && daysLeft > 0) {
+            const existing = await database.select({ id: nurtureLogs.id }).from(nurtureLogs)
+              .where(and(eq(nurtureLogs.contractId, contract.id), eq(nurtureLogs.subject, reminderKey7))).limit(1);
+            if (!existing.length) {
+              await sendRenewalReminderEmail({
+                to: customer.email,
+                customerName: customer.contactName,
+                daysRemaining: daysLeft,
+                packageTier: (contract.packageTier || "starter") as any,
+                endDate,
+              });
+              await database.insert(nurtureLogs).values({
+                customerId: contract.customerId,
+                contractId: contract.id,
+                type: "renewal_outreach",
+                channel: "email",
+                subject: reminderKey7,
+                content: `Renewal reminder sent — ${daysLeft} days before contract end`,
+                status: "sent",
+                scheduledAt: now,
+                sentAt: now,
+              });
+              sent7++;
+            } else {
+              skipped++;
+            }
+          } else {
+            skipped++;
+          }
+        } catch (err: any) {
+          errors.push(`Contract #${contract.id}: ${err.message}`);
+        }
+      }
+
+      return { scanned: activeContracts.length, sent14, sent7, skipped, errors };
+    })
+  );
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -697,5 +854,5 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     });
   });
 
-  console.log("[Scheduled] Registered 16 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 17 scheduled job endpoints at /api/scheduled/*");
 }

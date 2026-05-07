@@ -53,11 +53,40 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
     // Connect custom domain if set
     const domainName = project.domainName;
     if (domainName) {
-      await addCustomDomain({ projectName: cfProjectName, domain: domainName })
-        .catch(err => console.warn(`[Deploy] Custom domain setup warning: ${err.message}`));
-      await addCustomDomain({ projectName: cfProjectName, domain: `www.${domainName}` })
-        .catch(() => {});
-      liveUrl = `https://${domainName}`;
+      try {
+        await addCustomDomain({ projectName: cfProjectName, domain: domainName });
+        await addCustomDomain({ projectName: cfProjectName, domain: `www.${domainName}` }).catch(() => {});
+        liveUrl = `https://${domainName}`;
+
+        // Send DNS setup instructions to customer
+        if (project.contactEmail) {
+          try {
+            const { sendEmail } = await import("./email");
+            await sendEmail({
+              to: project.contactEmail,
+              subject: `Action needed: Connect your domain ${domainName}`,
+              html: `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#111122;color:#eaeaf0">
+<h2 style="color:#4a9eff">One last step — connect your domain</h2>
+<p>To make <strong>${domainName}</strong> point to your new site, update your nameservers at your domain registrar.</p>
+<h3 style="color:#4a9eff">Your new nameservers:</h3>
+<div style="background:#222240;padding:16px;border-radius:8px;font-family:monospace;margin:16px 0">
+  vera.ns.cloudflare.com<br>wade.ns.cloudflare.com
+</div>
+<ol style="color:#c8c8d8;line-height:2">
+  <li>Log in to wherever you bought <strong>${domainName}</strong></li>
+  <li>Find <strong>DNS Settings</strong> or <strong>Nameservers</strong></li>
+  <li>Replace existing nameservers with the two above</li>
+  <li>Save — propagation takes 24–48 hours</li>
+</ol>
+<p style="color:#c8c8d8">We'll send you another email the moment your domain is fully live. If you need help, reply to this email.</p>
+<p style="color:#7a7a90">&mdash; The MiniMorph Studios Team</p>
+</body></html>`,
+            });
+          } catch {}
+        }
+      } catch (err: any) {
+        console.warn(`[Deploy] Custom domain setup warning: ${err.message}`);
+      }
     }
 
     // Mark project as complete

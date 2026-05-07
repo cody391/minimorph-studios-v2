@@ -36,6 +36,7 @@ export interface SiteBrief {
   competitorWeaknesses?: string[];
   pricingDisplay?: string;
   customerPhotoUrl?: string;
+  logoUrl?: string;
 }
 
 // ── Template selection ────────────────────────────────────────────────────────
@@ -547,6 +548,16 @@ export async function injectContentIntoTemplate(
   const sortedKeys = Object.keys(tokens).sort((a, b) => b.length - a.length);
   for (const key of sortedKeys) {
     html = html.replaceAll(key, tokens[key] ?? "");
+  }
+
+  // ── Logo injection — replace text business name in nav with img tag ───────
+  if (brief.logoUrl) {
+    const logoImg = `<img src="${brief.logoUrl}" alt="${brief.businessName}" style="max-height:52px;width:auto;object-fit:contain;display:block">`;
+    // Replace text-only business name in nav/header contexts (case-insensitive, word-boundary safe)
+    html = html
+      .replace(/<!-- LOGO_PLACEHOLDER -->/g, logoImg)
+      .replace(/src="logo\.png"/g, `src="${brief.logoUrl}"`)
+      .replace(/src="logo\.svg"/g, `src="${brief.logoUrl}"`);
   }
 
   // ── UPGRADE 1: Favicon + OG Tags ─────────────────────────────────────────

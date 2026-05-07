@@ -32,25 +32,53 @@ export async function processSiteChangeRequest(
       throw new Error("Could not parse existing site HTML");
     }
 
-    const systemPrompt = `You are an expert web designer updating an existing website based on a change request. You will receive the current HTML pages as JSON and a change request. Apply the changes and return the updated pages in the same JSON format.
+    // Determine which pages are likely affected to keep prompt size reasonable
+    const changeRequestLower = changeRequest.toLowerCase();
+    const pageKeywords: Record<string, string[]> = {
+      index: ["home", "hero", "homepage", "landing", "main"],
+      about: ["about", "story", "team", "owner"],
+      services: ["service", "offering", "pricing", "package"],
+      contact: ["contact", "form", "phone", "email", "address", "hours"],
+      gallery: ["gallery", "photo", "image", "portfolio", "work"],
+      menu: ["menu", "food", "dish", "drink"],
+      quote: ["quote", "estimate", "consultation"],
+      blog: ["blog", "article", "post"],
+    };
+    const affectedPages = Object.keys(pages).filter(name => {
+      if (!pageKeywords[name]) return true; // keep unknown pages
+      if (changeRequestLower.includes(name)) return true;
+      return pageKeywords[name].some(kw => changeRequestLower.includes(kw));
+    });
+    // Always include index; if nothing matched specifically, send all pages
+    const pagesToSendSet = affectedPages.length > 0 ? Array.from(new Set(["index", ...affectedPages])) : Object.keys(pages);
+    const pagesToSend = pagesToSendSet;
+
+    const systemPrompt = `You are an expert web designer updating an existing website based on a change request. You will receive the current HTML pages and a change request. Apply the changes and return the COMPLETE updated pages — full HTML from <!DOCTYPE html> to </html> — in the same JSON format.
 
 Output must be valid JSON (no markdown fences):
 {
   "pages": {
-    "index": "<updated HTML>",
-    "about": "<updated HTML>",
-    "contact": "<updated HTML>"
+    "index": "<complete updated HTML>",
+    "contact": "<complete updated HTML>"
   },
   "summary": "Brief description of what was changed"
 }
 
-Apply ONLY the requested changes. Keep everything else the same. Maintain the same design, color palette, fonts, and structure unless specifically asked to change them.`;
+CRITICAL: Return COMPLETE HTML for every page you modify — not truncated, not summarized.
+Apply ONLY the requested changes. Keep everything else the same. Maintain the same design, color palette, fonts, and structure unless specifically asked to change them.
+Only return pages that are in the input — do not invent new pages.`;
 
-    const pagesText = Object.entries(pages)
-      .map(([name, html]) => `=== ${name}.html ===\n${html.slice(0, 3000)}${html.length > 3000 ? "\n...[truncated]" : ""}`)
+    // Send full HTML — Claude's 200K context window handles this comfortably
+    const pagesText = pagesToSend
+      .map(name => `=== ${name}.html ===\n${pages[name]}`)
       .join("\n\n");
 
-    const userPrompt = `Current site pages:\n${pagesText}\n\nChange request from ${requestedBy}:\n"${changeRequest}"\n\nPlease apply this change request and return the updated pages.`;
+    const skippedPages = Object.keys(pages).filter(p => !pagesToSend.includes(p));
+    const skippedNote = skippedPages.length > 0
+      ? `\n\nNote: The following pages were not included (not affected by this request): ${skippedPages.join(", ")}. Return only the pages listed above.`
+      : "";
+
+    const userPrompt = `Current site pages:\n${pagesText}${skippedNote}\n\nChange request from ${requestedBy}:\n"${changeRequest}"\n\nPlease apply this change request and return the complete updated pages.`;
 
     const result = await invokeLLM({
       messages: [
@@ -77,6 +105,9 @@ Apply ONLY the requested changes. Keep everything else the same. Maintain the sa
       throw new Error("AI response missing 'pages' object");
     }
 
+    // Merge updated pages back with untouched pages (Claude only received affected pages)
+    const mergedPages = { ...pages, ...parsed.pages };
+
     // Append to change history
     const existingHistory = (project.changeHistory as Array<{ request: string; respondedAt: string }>) || [];
     const newHistory = [
@@ -87,7 +118,7 @@ Apply ONLY the requested changes. Keep everything else the same. Maintain the sa
     await db.updateOnboardingProject(projectId, {
       generationStatus: "complete",
       generationLog: parsed.summary || "Change request applied.",
-      generatedSiteHtml: JSON.stringify(parsed.pages),
+      generatedSiteHtml: JSON.stringify(mergedPages),
       changeHistory: newHistory,
       stage: "review",
     });

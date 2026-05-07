@@ -2579,7 +2579,7 @@ const onboardingRouter = router({
         generationStatus: "generating",
         stage: "revisions",
       });
-      // Send confirmation to customer
+      // Send confirmation to customer (email + SMS)
       try {
         const { sendChangesReceivedEmail } = await import("./services/customerEmails");
         await sendChangesReceivedEmail({
@@ -2587,6 +2587,15 @@ const onboardingRouter = router({
           customerName: project.contactName,
           portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
         });
+      } catch {}
+      try {
+        const { sendCustomerSms } = await import("./services/sms");
+        const q = project.questionnaire as Record<string, unknown> | null;
+        const customerPhone = (q?.phone as string) || project.contactPhone;
+        await sendCustomerSms(
+          customerPhone,
+          `We received your changes for ${project.businessName}! Our team will have your updated preview ready shortly. — MiniMorph Studios`,
+        );
       } catch {}
       // Notify admin
       try {
@@ -2748,7 +2757,7 @@ const onboardingRouter = router({
       const [customer] = await database.select().from(customers)
         .where(eq(customers.id, project.customerId ?? 0)).limit(1);
 
-      // Send celebration email — only if auto-deployment hasn't already sent it
+      // Send celebration email + SMS — only if auto-deployment hasn't already sent it
       if (!project.launchedAt) {
         try {
           const { sendSiteLiveEmail } = await import("./services/customerEmails");
@@ -2762,6 +2771,15 @@ const onboardingRouter = router({
         } catch (emailErr) {
           console.error("[onboarding.markSiteLive] Live email failed:", emailErr);
         }
+        try {
+          const { sendCustomerSms } = await import("./services/sms");
+          const q = project.questionnaire as Record<string, unknown> | null;
+          const customerPhone = (q?.phone as string) || project.contactPhone;
+          await sendCustomerSms(
+            customerPhone,
+            `Your ${project.businessName} website is LIVE! View it here: ${input.liveUrl} — The MiniMorph Studios Team`,
+          );
+        } catch {}
       }
 
       // Add to nurturing pipeline — find the active contract and update
@@ -3180,13 +3198,24 @@ Then ask: "Do you have any of your own photos — your space, your work, your te
 
 Also add: "If you want to review the visual direction before we build, just hit Support and we can walk through it together."
 
+PHASE 7.5 — PACKAGE CONFIRMATION
+Before the final summary, confirm the customer's package tier.
+The project record has a packageTier field set by their sales rep. Reference it directly:
+"Before I hand this off — just confirming you're on our [Growth/Premium/Starter/Enterprise] plan at $[price]/mo, which includes [key features for that tier]. Does that match what your rep outlined?"
+
+If packageTier is known (starter/growth/premium/enterprise), just confirm it and move on.
+If unclear or not set, ask: "Quick one — did your rep mention which plan you're starting with? We have Starter at $195/mo (5 pages), Growth at $295/mo (10 pages + blog), Premium at $395/mo (15 pages + priority support), or Enterprise at $495/mo (unlimited). I want to make sure everything we've discussed fits your plan."
+
+Store confirmed tier as "packageTier" in <questionnaire_data>.
+
 PHASE 8 — CONFIRMATION WITH COMPETITIVE BRIEF
 Summarize with real strategic framing:
 "Here's what we're building: [summary of site]
 Here's how we beat [competitor]: [specific strategy]
 What we're keeping from your current site: [list if applicable]
 What's new: [list]
-Add-ons: [list]"
+Add-ons: [list]
+Package: [tier] at $[price]/mo"
 
 Then ask: "Does this match your vision? Anything I'm missing?"
 
@@ -3229,7 +3258,8 @@ Once confirmed, FIRST output BOTH tags (no text before them):
   "socialHandles": {"instagram": "@handle", "facebook": "page-url", "tiktok": "@handle"},
   "testimonials": [{"quote": "Exact customer quote here", "name": "First name only", "context": "e.g. homeowner in Austin"}],
   "blogTopics": ["Topic 1 — why it matters to their customers", "Topic 2", "Topic 3"],
-  "addonsSelected": [{"product":"Review Collector","price":"$149/mo"}]
+  "addonsSelected": [{"product":"Review Collector","price":"$149/mo"}],
+  "packageTier": "starter|growth|premium|enterprise"
 }</questionnaire_data>
 <addons_selected>[{"product":"Review Collector","price":"$149/mo","label":"Automated review collection"}]</addons_selected>
 

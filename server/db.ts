@@ -1840,12 +1840,27 @@ export async function seedProductCatalog() {
   if (!db) return;
 
   const seed = [
+    // ── Core packages ──────────────────────────────────────────────────────────
     { productKey: "starter", name: "Starter Website", description: "5-page professional website, mobile-responsive, SEO optimized", category: "package" as const, basePrice: "195.00", discountPercent: 0, active: true },
     { productKey: "growth", name: "Growth Website", description: "10-page website with blog, lead capture forms, analytics dashboard", category: "package" as const, basePrice: "295.00", discountPercent: 0, active: true },
     { productKey: "premium", name: "Premium Website", description: "15-page website with e-commerce, CRM integration, priority support", category: "package" as const, basePrice: "395.00", discountPercent: 0, active: true },
     { productKey: "enterprise", name: "Enterprise Website", description: "Unlimited pages, custom integrations, dedicated account manager", category: "package" as const, basePrice: "495.00", discountPercent: 0, active: true },
-    { productKey: "seo_addon", name: "SEO Optimization Package", description: "Monthly keyword tracking, backlink building, competitor analysis", category: "addon" as const, basePrice: "99.00", discountPercent: 0, active: true },
-    { productKey: "content_addon", name: "Content Writing (4 posts/mo)", description: "Professional blog posts written by our AI + human team", category: "addon" as const, basePrice: "79.00", discountPercent: 0, active: true },
+    // ── eCommerce packages ─────────────────────────────────────────────────────
+    { productKey: "shop_starter", name: "Shop Starter", description: "Up to 10 products, inquiry-based ordering", category: "package" as const, basePrice: "295.00", discountPercent: 0, active: true },
+    { productKey: "shop_growth", name: "Shop Growth", description: "Up to 25 products, all features", category: "package" as const, basePrice: "395.00", discountPercent: 0, active: true },
+    { productKey: "shop_premium", name: "Shop Premium", description: "Up to 50 products, premium template", category: "package" as const, basePrice: "495.00", discountPercent: 0, active: true },
+    { productKey: "shop_enterprise", name: "Shop Enterprise", description: "Unlimited products, dedicated support", category: "package" as const, basePrice: "595.00", discountPercent: 0, active: true },
+    // ── Add-ons Elena pitches ──────────────────────────────────────────────────
+    { productKey: "review_collector", name: "Review Collector", description: "Automated Google review collection and display", category: "addon" as const, basePrice: "149.00", discountPercent: 0, active: true },
+    { productKey: "booking_widget", name: "Booking Widget", description: "Online appointment booking system embedded on your site", category: "addon" as const, basePrice: "199.00", discountPercent: 0, active: true },
+    { productKey: "ai_chatbot", name: "AI Chatbot", description: "AI-powered website chat assistant for lead capture", category: "addon" as const, basePrice: "299.00", discountPercent: 0, active: true },
+    { productKey: "lead_capture_bot", name: "Lead Capture Bot", description: "Proactive visitor lead capture and qualification", category: "addon" as const, basePrice: "249.00", discountPercent: 0, active: true },
+    { productKey: "seo_autopilot", name: "SEO Autopilot", description: "Monthly blog posts and ongoing SEO optimization", category: "addon" as const, basePrice: "199.00", discountPercent: 0, active: true },
+    { productKey: "social_feed_embed", name: "Social Feed Embed", description: "Live Instagram and Facebook feed embedded on site", category: "addon" as const, basePrice: "49.00", discountPercent: 0, active: true },
+    { productKey: "email_marketing_setup", name: "Email Marketing Setup", description: "Email list setup, templates, and first campaign", category: "addon" as const, basePrice: "149.00", discountPercent: 0, active: true },
+    { productKey: "priority_support", name: "Priority Support", description: "2-hour response SLA for all change requests", category: "addon" as const, basePrice: "99.00", discountPercent: 0, active: true },
+    // ── One-time items ─────────────────────────────────────────────────────────
+    { productKey: "extra_revision_block", name: "Extra Revision Block", description: "One additional round of site revisions", category: "one_time" as const, basePrice: "149.00", discountPercent: 0, active: true },
     { productKey: "setup_fee", name: "One-Time Setup Fee", description: "Domain setup, hosting configuration, launch checklist", category: "one_time" as const, basePrice: "149.00", discountPercent: 0, active: true },
   ];
 

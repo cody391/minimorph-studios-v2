@@ -1120,6 +1120,21 @@ function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
    ═══════════════════════════════════════════════════════ */
 function BillingTab() {
   const { data: orders, isLoading } = trpc.orders.myOrders.useQuery();
+  const [portalLoading, setPortalLoading] = useState(false);
+  const createPortalSession = trpc.orders.createPortalSession.useMutation({
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (err) => {
+      alert(err.message || "Could not open billing portal. Please contact support.");
+      setPortalLoading(false);
+    },
+  });
+
+  const handleManageBilling = () => {
+    setPortalLoading(true);
+    createPortalSession.mutate({ returnUrl: window.location.href });
+  };
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -1197,15 +1212,33 @@ function BillingTab() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
             <Shield className="h-4 w-4 text-electric" />
-            Billing Information
+            Billing Management
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="p-4 rounded-xl bg-midnight-dark/20 border border-border/20">
-            <p className="text-sm text-soft-gray font-sans leading-relaxed">
-              All payments are processed securely through Stripe. To update your payment method, manage your subscription, or download invoices, please contact your account manager through the Support tab.
-            </p>
-          </div>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-soft-gray font-sans leading-relaxed">
+            Update your payment method, download invoices, or manage your subscription directly through our secure billing portal.
+          </p>
+          <button
+            onClick={handleManageBilling}
+            disabled={portalLoading}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-electric text-midnight font-semibold font-sans text-sm hover:bg-electric/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {portalLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-midnight/30 border-t-midnight rounded-full animate-spin" />
+                Opening portal...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="h-4 w-4" />
+                Manage Billing & Invoices
+              </>
+            )}
+          </button>
+          <p className="text-xs text-soft-gray/50 font-sans">
+            Powered by Stripe — all billing data is handled securely and never stored on our servers.
+          </p>
         </CardContent>
       </Card>
     </div>
