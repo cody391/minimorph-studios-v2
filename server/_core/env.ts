@@ -86,4 +86,6 @@ export const ENV = {
   minimorphSitesDomain: process.env.MINIMORPH_SITES_DOMAIN ?? "minimorphsites.com",
   // Cloudflare Web Analytics — injected into every generated customer site for page view tracking
   cloudflareAnalyticsToken: process.env.CLOUDFLARE_ANALYTICS_TOKEN ?? "",
+  // Firecrawl — high-quality web scraping (set FIRECRAWL_API_KEY to enable)
+  firecrawlApiKey: process.env.FIRECRAWL_API_KEY ?? "",
 };

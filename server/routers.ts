@@ -3042,33 +3042,72 @@ async function getOrCreateRepCoupon(stripe: any): Promise<string> {
   }
 }
 
+function cleanHtml(html: string): string {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, " ")
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, " ")
+    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#\d+;/g, " ")
+    .replace(/\s{3,}/g, "\n")
+    .trim()
+    .slice(0, 6000);
+}
+
 async function scrapeWebsite(url: string): Promise<string> {
-  try {
-    const fullUrl = url.startsWith("http") ? url : `https://${url}`;
-    const response = await fetch(fullUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; MiniMorphBot/1.0)",
-        "Accept": "text/html,application/xhtml+xml",
-      },
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!response.ok) return `[${fullUrl} returned ${response.status}]`;
-    const html = await response.text();
-    const text = html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
-      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, " ")
-      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, " ")
-      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#\d+;/g, " ")
-      .replace(/\s{3,}/g, "\n")
-      .trim()
-      .slice(0, 6000);
-    return text || "[Page loaded but no readable content found]";
-  } catch (e: any) {
-    return `[Could not load: ${e.message}]`;
+  const fullUrl = url.startsWith("http") ? url : `https://${url}`;
+
+  // Firecrawl — bypasses bot protection, returns clean markdown
+  if (ENV.firecrawlApiKey) {
+    try {
+      const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${ENV.firecrawlApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: fullUrl, formats: ["markdown"], onlyMainContent: true }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (fcRes.ok) {
+        const data = await fcRes.json();
+        const content: string = data?.data?.markdown || data?.markdown || "";
+        if (content.length > 100) {
+          console.log(`[Scraper] Firecrawl ok: ${fullUrl} (${content.length} chars)`);
+          return content.slice(0, 8000);
+        }
+      }
+    } catch (e: any) {
+      console.log(`[Scraper] Firecrawl failed for ${fullUrl}: ${e.message}`);
+    }
   }
+
+  // Direct fetch fallback — try multiple User-Agents and www/non-www variants
+  const attempts = [
+    { ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", url: fullUrl },
+    { ua: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)", url: fullUrl },
+    { ua: "Mozilla/5.0 (compatible; Googlebot/2.1)", url: fullUrl.includes("www.") ? fullUrl.replace("www.", "") : fullUrl.replace("://", "://www.") },
+  ];
+
+  for (const attempt of attempts) {
+    try {
+      const res = await fetch(attempt.url, {
+        headers: { "User-Agent": attempt.ua, "Accept": "text/html,application/xhtml+xml", "Accept-Language": "en-US,en;q=0.5" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const text = cleanHtml(await res.text());
+        if (text.length > 200) {
+          console.log(`[Scraper] Direct fetch ok: ${attempt.url} (${text.length} chars)`);
+          return text;
+        }
+      }
+    } catch {}
+  }
+
+  return `[Could not load ${fullUrl} — site may be blocking outside requests]`;
 }
 
 function extractUrls(messages: Array<{ role: string; content: string }>): string[] {
