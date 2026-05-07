@@ -830,6 +830,17 @@ ${assetSummary}`;
           imageDirection,
           appUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
           subNiche,
+          // Elena-sourced fields — wire every field she collects
+          addonsSelected: addonsSelectedRaw,
+          socialHandles: (q.socialHandles as Record<string, string>) || undefined,
+          blogTopics: Array.isArray(q.blogTopics) ? (q.blogTopics as string[]) : undefined,
+          specialRequests: (q.specialRequests as string) || undefined,
+          inspirationStyle: (q.inspirationStyle as Record<string, string>) || undefined,
+          avoidPatterns: Array.isArray(q.avoidPatterns) ? (q.avoidPatterns as string[]) : undefined,
+          competitorSites: competitorSites.length ? competitorSites : undefined,
+          competitorWeaknesses: competitorWeaknesses.length ? competitorWeaknesses : undefined,
+          pricingDisplay: pricingDisplay || undefined,
+          customerPhotoUrl: customerPhotoUrl || undefined,
         };
 
         await db.updateOnboardingProject(projectId, {

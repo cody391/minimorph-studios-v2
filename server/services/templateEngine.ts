@@ -25,6 +25,17 @@ export interface SiteBrief {
   imageDirection?: string;
   appUrl?: string;
   subNiche?: string;
+  // Elena-sourced fields
+  addonsSelected?: Array<{ product: string; price?: string; label?: string }>;
+  socialHandles?: { instagram?: string; facebook?: string; tiktok?: string; twitter?: string };
+  blogTopics?: string[];
+  specialRequests?: string;
+  inspirationStyle?: Record<string, string>;
+  avoidPatterns?: string[];
+  competitorSites?: Array<{ url?: string; whatYouWantToBeat?: string }>;
+  competitorWeaknesses?: string[];
+  pricingDisplay?: string;
+  customerPhotoUrl?: string;
 }
 
 // ── Template selection ────────────────────────────────────────────────────────
@@ -413,6 +424,12 @@ export async function generateCustomTemplate(brief: SiteBrief): Promise<string> 
 export async function generateCopyForTemplate(
   brief: SiteBrief,
 ): Promise<Record<string, string>> {
+  const addonList = brief.addonsSelected?.map(a => a.product).join(", ") || "";
+  const avoidList = brief.avoidPatterns?.join(", ") || "";
+  const inspirationDesc = brief.inspirationStyle
+    ? Object.entries(brief.inspirationStyle).map(([k, v]) => `${k}: ${v}`).join(", ")
+    : "";
+
   const prompt = `You are writing website copy for a local business. Return ONLY valid JSON — no markdown, no explanation.
 
 Business: ${brief.businessName}
@@ -423,7 +440,12 @@ Location: ${brief.serviceArea}
 Services: ${brief.servicesOffered.join(", ")}
 Unique differentiator: ${brief.uniqueDifferentiator ?? "quality and reliability"}
 Target customer: ${brief.targetCustomer ?? "local homeowners and businesses"}
+${addonList ? `Active add-ons (must be referenced naturally in copy): ${addonList}` : ""}
+${brief.specialRequests ? `Special requests from customer: ${brief.specialRequests}` : ""}
+${inspirationDesc ? `Design/copy direction customer wants: ${inspirationDesc}` : ""}
+${avoidList ? `Patterns the customer explicitly wants to AVOID: ${avoidList}` : ""}
 ${brief.competitiveIntel ? `Competitive intel: ${brief.competitiveIntel}` : ""}
+${brief.competitorWeaknesses?.length ? `Competitor weaknesses to counter: ${brief.competitorWeaknesses.join("; ")}` : ""}
 ${brief.testimonials?.[0] ? `Real testimonial: "${brief.testimonials[0].quote}" — ${brief.testimonials[0].name}` : ""}
 
 Write compelling, specific, non-generic copy. Avoid clichés. Sound human.
@@ -749,6 +771,191 @@ h1,h2,h3{page-break-after:avoid}
   return html;
 }
 
+// ── Addon widget injection ────────────────────────────────────────────────────
+// Appends purchased addon widgets to the index page before </main> or </body>.
+// Each addon Elena sells maps to a self-contained HTML widget block.
+
+function buildAddonWidgets(brief: SiteBrief): string {
+  const addons = brief.addonsSelected || [];
+  if (!addons.length) return "";
+
+  const primary = brief.primaryColor || "#2563eb";
+  const secondary = brief.secondaryColor || "#1a1a1a";
+  const widgets: string[] = [];
+
+  for (const addon of addons) {
+    const name = (addon.product || "").toLowerCase();
+
+    if (name.includes("review") || name.includes("google review")) {
+      const reviews = brief.testimonials?.slice(0, 3) || [];
+      const cards = reviews.length
+        ? reviews.map(t => `
+            <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+              <div style="color:#fbbc04;font-size:18px;margin-bottom:8px">★★★★★</div>
+              <p style="font-style:italic;margin:0 0 10px;color:#333;font-size:15px">"${t.quote}"</p>
+              <p style="font-weight:600;margin:0;font-size:14px">${t.name}</p>
+              <p style="color:#888;font-size:13px;margin:2px 0 0">via Google Reviews · ${t.context}</p>
+            </div>`).join("")
+        : `<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+            <div style="color:#fbbc04;font-size:18px;margin-bottom:8px">★★★★★</div>
+            <p style="font-style:italic;margin:0 0 10px;color:#333">"${brief.businessName} exceeded every expectation. Truly exceptional service."</p>
+            <p style="font-weight:600;margin:0;font-size:14px">Verified Customer</p>
+            <p style="color:#888;font-size:13px;margin:2px 0 0">via Google Reviews</p>
+          </div>`;
+      widgets.push(`
+<section id="mm-reviews" style="padding:60px 20px;background:#f8f9fa">
+  <div style="max-width:900px;margin:0 auto;text-align:center">
+    <p style="text-align:center;color:#888;font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px">Google Reviews</p>
+    <h2 style="text-align:center;font-size:2rem;font-weight:700;margin:0 0 40px;color:#1a1a1a">What Our Customers Say</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
+      ${cards}
+    </div>
+  </div>
+</section>`);
+    }
+
+    if (name.includes("booking") || name.includes("appointment")) {
+      const services = brief.servicesOffered?.slice(0, 5) || ["Service"];
+      widgets.push(`
+<section id="mm-booking" style="padding:60px 20px;background:#fff">
+  <div style="max-width:480px;margin:0 auto">
+    <h2 style="text-align:center;font-size:2rem;font-weight:700;margin:0 0 8px;color:#1a1a1a">Book Your Appointment</h2>
+    <p style="text-align:center;color:#666;margin:0 0 32px">Choose a service and pick a time that works for you.</p>
+    <div style="background:#fff;border:2px solid ${primary};border-radius:16px;padding:36px;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#1a1a1a">Service</label>
+      <select style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #ddd;font-size:16px">
+        <option>Select a service</option>
+        ${services.map(s => `<option>${s}</option>`).join("")}
+      </select>
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#1a1a1a">Preferred Date</label>
+      <input type="date" style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #ddd;font-size:16px;box-sizing:border-box">
+      <label style="display:block;font-weight:600;margin-bottom:6px;color:#1a1a1a">Preferred Time</label>
+      <select style="width:100%;padding:12px;margin-bottom:24px;border-radius:8px;border:1px solid #ddd;font-size:16px">
+        <option>Morning (8am–12pm)</option>
+        <option>Afternoon (12pm–5pm)</option>
+        <option>Evening (5pm–8pm)</option>
+      </select>
+      <button style="width:100%;padding:16px;background:${primary};color:#fff;border:none;border-radius:10px;font-size:17px;font-weight:600;cursor:pointer">Confirm Booking →</button>
+      <p style="text-align:center;font-size:13px;color:#888;margin:12px 0 0">⚡ We confirm within 2 hours during business hours</p>
+    </div>
+  </div>
+</section>`);
+    }
+
+    if (name.includes("chat") || name.includes("chatbot") || name.includes("ai chat")) {
+      widgets.push(`
+<div id="mm-chat-widget" style="position:fixed;bottom:24px;right:24px;z-index:9998;font-family:system-ui,sans-serif">
+  <div id="mm-chat-box" style="display:none;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.18);width:320px;overflow:hidden;margin-bottom:12px">
+    <div style="background:${primary};padding:16px 20px;color:#fff;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+      <span>💬 Chat with ${brief.businessName}</span>
+      <span id="mm-chat-close" style="cursor:pointer;opacity:0.8;font-size:18px">✕</span>
+    </div>
+    <div id="mm-chat-msgs" style="padding:16px;min-height:120px;max-height:240px;overflow-y:auto;background:#fafafa">
+      <div style="background:#e8f0fe;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;color:#1a1a1a">Hi! How can I help you today?</div>
+    </div>
+    <div style="padding:12px;border-top:1px solid #eee;display:flex;gap:8px">
+      <input id="mm-chat-input" placeholder="Type a message..." style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none">
+      <button id="mm-chat-send" style="padding:10px 16px;background:${primary};color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer">→</button>
+    </div>
+  </div>
+  <button id="mm-chat-btn" style="background:${primary};color:#fff;border:none;border-radius:50px;padding:14px 22px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.2)">💬 Chat with us</button>
+</div>
+<script>
+(function(){
+  var btn=document.getElementById('mm-chat-btn');
+  var box=document.getElementById('mm-chat-box');
+  var close=document.getElementById('mm-chat-close');
+  var send=document.getElementById('mm-chat-send');
+  var input=document.getElementById('mm-chat-input');
+  var msgs=document.getElementById('mm-chat-msgs');
+  if(!btn||!box)return;
+  btn.addEventListener('click',function(){box.style.display=box.style.display==='none'?'block':'none';});
+  if(close)close.addEventListener('click',function(){box.style.display='none';});
+  function addMsg(text,isUser){
+    var d=document.createElement('div');
+    d.style.cssText='border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;max-width:85%;'+(isUser?'background:${primary};color:#fff;margin-left:auto':'background:#e8f0fe;color:#1a1a1a');
+    d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;
+  }
+  if(send&&input){
+    send.addEventListener('click',function(){
+      var t=input.value.trim();if(!t)return;
+      addMsg(t,true);input.value='';
+      setTimeout(function(){addMsg("Thanks for reaching out! A team member will be with you shortly. You can also call us at ${brief.phone || "our number"} for immediate help.",false);},800);
+    });
+    input.addEventListener('keydown',function(e){if(e.key==='Enter')send.click();});
+  }
+})();
+</script>`);
+    }
+
+    if (name.includes("lead") || name.includes("lead capture") || name.includes("lead magnet")) {
+      widgets.push(`
+<section id="mm-leadcapture" style="padding:60px 20px;background:${secondary}">
+  <div style="max-width:560px;margin:0 auto">
+    <h2 style="text-align:center;font-size:2rem;font-weight:700;margin:0 0 8px;color:#fff">Get Your Free Estimate</h2>
+    <p style="text-align:center;color:rgba(255,255,255,0.75);margin:0 0 32px">Tell us about your project and we'll get back to you within 5 minutes.</p>
+    <form id="mm-lead-form" style="background:rgba(255,255,255,0.08);border-radius:16px;padding:36px;border:1px solid rgba(255,255,255,0.15)">
+      <input name="name" placeholder="Your Name" required style="width:100%;padding:14px;margin-bottom:14px;border-radius:8px;border:none;font-size:16px;box-sizing:border-box">
+      <input name="email" type="email" placeholder="Email Address" required style="width:100%;padding:14px;margin-bottom:14px;border-radius:8px;border:none;font-size:16px;box-sizing:border-box">
+      <input name="phone" type="tel" placeholder="Phone Number" style="width:100%;padding:14px;margin-bottom:14px;border-radius:8px;border:none;font-size:16px;box-sizing:border-box">
+      <textarea name="message" rows="3" placeholder="Tell us about your project..." style="width:100%;padding:14px;margin-bottom:20px;border-radius:8px;border:none;font-size:16px;resize:none;box-sizing:border-box"></textarea>
+      <button type="submit" style="width:100%;padding:16px;background:${primary};color:#fff;border:none;border-radius:10px;font-size:17px;font-weight:600;cursor:pointer">Get My Free Estimate →</button>
+      <p style="text-align:center;font-size:13px;color:rgba(255,255,255,0.6);margin:12px 0 0">⚡ We respond within 5 minutes during business hours</p>
+    </form>
+  </div>
+</section>`);
+    }
+
+    if (name.includes("instagram") || name.includes("social") || name.includes("social proof")) {
+      const handle = brief.socialHandles?.instagram || `@${brief.businessName.toLowerCase().replace(/\s+/g, "")}`;
+      const colors = [primary, secondary, "#e8f0fe", "#f0fdf4", "#fef3c7", "#fce7f3", "#ede9fe", "#f0f9ff", "#fdf4ff"];
+      const cells = Array.from({ length: 9 }, (_, i) => `<div style="background:${colors[i % colors.length]};aspect-ratio:1;border-radius:4px"></div>`).join("");
+      widgets.push(`
+<section id="mm-social" style="padding:60px 20px;background:#fff">
+  <div style="max-width:640px;margin:0 auto;text-align:center">
+    <h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;color:#1a1a1a">Follow Us on Instagram</h2>
+    <p style="color:#888;margin:0 0 28px">${handle}</p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:480px;margin:0 auto 20px">
+      ${cells}
+    </div>
+    <a href="https://instagram.com/${handle.replace("@","")}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:${primary};color:#fff;padding:12px 28px;border-radius:50px;font-weight:600;text-decoration:none">Follow ${handle}</a>
+  </div>
+</section>`);
+    }
+
+    if (name.includes("email") || name.includes("newsletter")) {
+      widgets.push(`
+<section id="mm-newsletter" style="padding:60px 20px;background:linear-gradient(135deg,${primary}22,${secondary}22)">
+  <div style="max-width:520px;margin:0 auto;text-align:center">
+    <h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;color:#1a1a1a">Stay in the Loop</h2>
+    <p style="color:#555;margin:0 0 28px">Get updates, tips, and exclusive offers from ${brief.businessName} — straight to your inbox.</p>
+    <form id="mm-newsletter-form" style="display:flex;gap:10px;max-width:440px;margin:0 auto">
+      <input name="email" type="email" placeholder="Your email address" required style="flex:1;padding:14px 18px;border-radius:50px;border:2px solid ${primary};font-size:15px;outline:none;box-sizing:border-box">
+      <button type="submit" style="padding:14px 24px;background:${primary};color:#fff;border:none;border-radius:50px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap">Subscribe</button>
+    </form>
+    <p style="font-size:12px;color:#999;margin:14px 0 0">No spam ever. Unsubscribe at any time.</p>
+  </div>
+</section>`);
+    }
+  }
+
+  return widgets.join("\n");
+}
+
+// ── Social footer links ───────────────────────────────────────────────────────
+
+function buildSocialLinks(brief: SiteBrief): string {
+  const handles = brief.socialHandles;
+  if (!handles) return "";
+  const links: string[] = [];
+  if (handles.instagram) links.push(`<a href="https://instagram.com/${handles.instagram.replace("@","")}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">Instagram</a>`);
+  if (handles.facebook) links.push(`<a href="${handles.facebook.startsWith("http") ? handles.facebook : `https://facebook.com/${handles.facebook}`}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">Facebook</a>`);
+  if (handles.tiktok) links.push(`<a href="https://tiktok.com/${handles.tiktok.replace("@","")}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">TikTok</a>`);
+  if (handles.twitter) links.push(`<a href="https://twitter.com/${handles.twitter.replace("@","")}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none">X / Twitter</a>`);
+  if (!links.length) return "";
+  return `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px">${links.join("")}</div>`;
+}
+
 // ── Orchestrator ──────────────────────────────────────────────────────────────
 
 export async function generateSiteFromTemplate(
@@ -776,17 +983,43 @@ export async function generateSiteFromTemplate(
 
   const pages: Record<string, string> = {};
 
+  // Build addon widgets once (injected into index page only)
+  const addonWidgetsHtml = buildAddonWidgets(brief);
+  const socialLinksHtml = buildSocialLinks(brief);
+
+  function postProcess(html: string, isIndex: boolean): string {
+    let out = html;
+    // Inject addon widgets before </main> or </footer> on the index page only
+    if (isIndex && addonWidgetsHtml) {
+      if (out.includes("</main>")) {
+        out = out.replace("</main>", addonWidgetsHtml + "\n</main>");
+      } else if (/<footer[\s>]/i.test(out)) {
+        out = out.replace(/<footer[\s>]/i, (m) => addonWidgetsHtml + "\n" + m);
+      } else {
+        out = out.replace("</body>", addonWidgetsHtml + "\n</body>");
+      }
+    }
+    // Inject social links into footer on every page
+    if (socialLinksHtml && out.includes("</footer>")) {
+      out = out.replace("</footer>", socialLinksHtml + "\n</footer>");
+    }
+    return out;
+  }
+
   // Inject index page
-  pages["index"] = await injectContentIntoTemplate(
-    indexTemplatePath,
-    brief,
-    copy,
-    resolvedImages,
-    navLinks,
-    cta.href,
-    cta.text,
-    footerLinks,
-    "index",
+  pages["index"] = postProcess(
+    await injectContentIntoTemplate(
+      indexTemplatePath,
+      brief,
+      copy,
+      resolvedImages,
+      navLinks,
+      cta.href,
+      cta.text,
+      footerLinks,
+      "index",
+    ),
+    true,
   );
 
   // Inject additional pages
@@ -796,16 +1029,19 @@ export async function generateSiteFromTemplate(
       if (!pagePath) return;
 
       try {
-        pages[pageName] = await injectContentIntoTemplate(
-          pagePath,
-          brief,
-          copy,
-          resolvedImages,
-          navLinks,
-          cta.href,
-          cta.text,
-          footerLinks,
-          pageName,
+        pages[pageName] = postProcess(
+          await injectContentIntoTemplate(
+            pagePath,
+            brief,
+            copy,
+            resolvedImages,
+            navLinks,
+            cta.href,
+            cta.text,
+            footerLinks,
+            pageName,
+          ),
+          false,
         );
       } catch (err) {
         console.error(`Failed to render page '${pageName}':`, err);
@@ -817,16 +1053,19 @@ export async function generateSiteFromTemplate(
   const privacyPath = findPageTemplate("shared", "privacy");
   if (privacyPath) {
     try {
-      pages["privacy"] = await injectContentIntoTemplate(
-        privacyPath,
-        brief,
-        copy,
-        resolvedImages,
-        navLinks,
-        cta.href,
-        cta.text,
-        footerLinks,
-        "privacy",
+      pages["privacy"] = postProcess(
+        await injectContentIntoTemplate(
+          privacyPath,
+          brief,
+          copy,
+          resolvedImages,
+          navLinks,
+          cta.href,
+          cta.text,
+          footerLinks,
+          "privacy",
+        ),
+        false,
       );
     } catch {
       // privacy page optional
