@@ -158,7 +158,7 @@ export const contracts = mysqlTable("contracts", {
   id: int("id").autoincrement().primaryKey(),
   customerId: int("customerId").notNull(),
   repId: int("repId").notNull(),
-  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium", "enterprise"]).notNull(),
+  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium"]).notNull(),
   monthlyPrice: decimal("monthlyPrice", { precision: 8, scale: 2 }).notNull(),
   startDate: timestamp("startDate").notNull(),
   endDate: timestamp("endDate").notNull(),
@@ -331,7 +331,7 @@ export const orders = mysqlTable("orders", {
   userId: int("userId").notNull(),
   stripeCheckoutSessionId: varchar("stripeCheckoutSessionId", { length: 255 }),
   stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
-  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium", "enterprise"]).notNull(),
+  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium"]).notNull(),
   status: mysqlEnum("status", ["pending", "paid", "failed", "refunded"]).default("pending").notNull(),
   amount: int("amount").notNull(), // in cents
   currency: varchar("currency", { length: 3 }).default("usd").notNull(),
@@ -375,7 +375,7 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   contactName: varchar("contactName", { length: 255 }).notNull(),
   contactEmail: varchar("contactEmail", { length: 320 }).notNull(),
   contactPhone: varchar("contactPhone", { length: 32 }),
-  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium", "enterprise"]).notNull(),
+  packageTier: mysqlEnum("packageTier", ["starter", "growth", "premium"]).notNull(),
 
   // Domain handling
   domainOption: mysqlEnum("domainOption", ["existing", "new", "undecided"]).default("undecided"),

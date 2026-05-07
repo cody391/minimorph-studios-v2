@@ -1466,9 +1466,8 @@ export default function ShowroomSite() {
 
   /* Build nav items based on tier */
   const navItems = ["About", "Services"];
-  if (site.tier === "Growth" || site.tier === "Pro" || site.tier === "Enterprise") navItems.push("Blog");
-  if (site.tier === "Pro" || site.tier === "Enterprise") navItems.push("Reviews");
-  if (site.tier === "Enterprise") navItems.push("Shop");
+  if (site.tier === "Growth" || site.tier === "Pro") navItems.push("Blog");
+  if (site.tier === "Pro") navItems.push("Reviews");
   navItems.push("Contact");
 
   return (

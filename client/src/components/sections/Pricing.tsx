@@ -1,7 +1,6 @@
 /*
- * Pricing — 4 tiers: Starter, Growth, Pro, Commerce.
- * Growth highlighted. Commerce labeled custom quote.
- * Comparison table below. Legal disclaimers included.
+ * Pricing — 3 tiers: Starter, Growth, Pro.
+ * Growth highlighted. Comparison table below. Legal disclaimers included.
  */
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
@@ -76,45 +75,25 @@ const tiers: Tier[] = [
     ],
     cta: "Start with Pro",
   },
-  {
-    name: "Enterprise",
-    price: "$495/mo",
-    annual: "$5,940 total over 12 months",
-    description: "For large, complex builds — ecommerce, portals, memberships, and multi-location businesses",
-    features: [
-      "Everything in Pro",
-      "Large ecommerce (unlimited products)",
-      "Custom customer portals",
-      "Membership/subscription systems",
-      "Advanced booking systems",
-      "Multi-location support",
-      "Custom integrations",
-      "Priority build queue",
-    ],
-    cta: "Get a Custom Quote",
-  },
 ];
 
-type FeatureRow = { feature: string; starter: boolean | string; growth: boolean | string; pro: boolean | string; enterprise: boolean | string };
+type FeatureRow = { feature: string; starter: boolean | string; growth: boolean | string; pro: boolean | string };
 
 const comparisonRows: FeatureRow[] = [
-  { feature: "Pages included", starter: "Up to 5", growth: "Up to 10", pro: "Up to 20", enterprise: "Unlimited" },
-  { feature: "Mobile-responsive", starter: true, growth: true, pro: true, enterprise: true },
-  { feature: "Contact/quote form", starter: true, growth: true, pro: true, enterprise: true },
-  { feature: "Basic SEO", starter: true, growth: true, pro: true, enterprise: true },
-  { feature: "Customer portal", starter: true, growth: true, pro: true, enterprise: true },
-  { feature: "Monthly report", starter: true, growth: true, pro: true, enterprise: true },
-  { feature: "Content updates/mo", starter: "1", growth: "2", pro: "4", enterprise: "Custom" },
-  { feature: "Blog/news section", starter: false, growth: true, pro: true, enterprise: true },
-  { feature: "Google Analytics", starter: false, growth: true, pro: true, enterprise: true },
-  { feature: "AI recommendations", starter: false, growth: true, pro: true, enterprise: true },
-  { feature: "Advanced SEO pages", starter: false, growth: false, pro: true, enterprise: true },
-  { feature: "Review widget", starter: false, growth: false, pro: true, enterprise: true },
-  { feature: "Booking integration", starter: false, growth: false, pro: true, enterprise: true },
-  { feature: "SMS lead alerts", starter: false, growth: false, pro: true, enterprise: true },
-  { feature: "Ecommerce store", starter: false, growth: false, pro: false, enterprise: true },
-  { feature: "Custom portals/membership", starter: false, growth: false, pro: false, enterprise: true },
-  { feature: "Custom API integrations", starter: false, growth: false, pro: false, enterprise: true },
+  { feature: "Pages included", starter: "Up to 5", growth: "Up to 10", pro: "Up to 20" },
+  { feature: "Mobile-responsive", starter: true, growth: true, pro: true },
+  { feature: "Contact/quote form", starter: true, growth: true, pro: true },
+  { feature: "Basic SEO", starter: true, growth: true, pro: true },
+  { feature: "Customer portal", starter: true, growth: true, pro: true },
+  { feature: "Monthly report", starter: true, growth: true, pro: true },
+  { feature: "Content updates/mo", starter: "1", growth: "2", pro: "4" },
+  { feature: "Blog/news section", starter: false, growth: true, pro: true },
+  { feature: "Google Analytics", starter: false, growth: true, pro: true },
+  { feature: "AI recommendations", starter: false, growth: true, pro: true },
+  { feature: "Advanced SEO pages", starter: false, growth: false, pro: true },
+  { feature: "Review widget", starter: false, growth: false, pro: true },
+  { feature: "Booking integration", starter: false, growth: false, pro: true },
+  { feature: "SMS lead alerts", starter: false, growth: false, pro: true },
 ];
 
 function CellValue({ value }: { value: boolean | string }) {
@@ -132,7 +111,6 @@ const TIER_KEY_MAP: Record<string, string> = {
   Starter: "starter",
   Growth: "growth",
   Pro: "premium",
-  Enterprise: "enterprise",
 };
 
 export default function Pricing() {
@@ -192,7 +170,7 @@ export default function Pricing() {
         </div>
 
         {/* Tier Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
           {activeTiers.map((tier, idx) => (
             <motion.div
               key={tier.name}
@@ -279,16 +257,15 @@ export default function Pricing() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            className="max-w-5xl mx-auto overflow-x-auto"
+            className="max-w-3xl mx-auto overflow-x-auto"
           >
-            <table className="w-full text-sm font-sans min-w-[600px]">
+            <table className="w-full text-sm font-sans min-w-[480px]">
               <thead>
                 <tr className="border-b border-glass-border">
                   <th className="text-left py-3 px-4 text-off-white/50 font-medium">Feature</th>
                   <th className="text-center py-3 px-4 text-off-white/50 font-medium">Starter</th>
                   <th className="text-center py-3 px-4 text-electric font-medium">Growth</th>
                   <th className="text-center py-3 px-4 text-off-white/50 font-medium">Pro</th>
-                  <th className="text-center py-3 px-4 text-off-white/50 font-medium">Enterprise</th>
                 </tr>
               </thead>
               <tbody>
@@ -298,7 +275,6 @@ export default function Pricing() {
                     <td className="py-3 px-4 text-center"><CellValue value={row.starter} /></td>
                     <td className="py-3 px-4 text-center bg-electric/3"><CellValue value={row.growth} /></td>
                     <td className="py-3 px-4 text-center"><CellValue value={row.pro} /></td>
-                    <td className="py-3 px-4 text-center"><CellValue value={row.enterprise} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -306,11 +282,14 @@ export default function Pricing() {
           </motion.div>
         )}
 
-        {/* Ecommerce callout */}
+        {/* Custom callout */}
         <div className="max-w-2xl mx-auto mt-10 p-4 rounded-xl border border-gold/20 bg-gold/5 text-center">
           <p className="text-sm font-sans text-off-white/60">
-            <span className="text-gold font-medium">Building an online store?</span>{" "}
-            Our Enterprise plan covers ecommerce, or ask your rep about a custom Commerce package tailored to your product count and needs.
+            <span className="text-gold font-medium">Need something bigger?</span>{" "}
+            Ecommerce, custom portals, multi-location, or complex integrations — reach out and we'll scope it together.{" "}
+            <a href="mailto:hello@minimorphstudios.net" className="text-electric/70 hover:text-electric transition-colors underline underline-offset-2">
+              hello@minimorphstudios.net
+            </a>
           </p>
         </div>
 

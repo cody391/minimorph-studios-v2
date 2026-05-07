@@ -20,10 +20,10 @@ describe("Pending Payment Flow", () => {
       expect(PACKAGES.premium.setupFeeInCents).toBe(0);
     });
 
-    it("commerce tier is not in PACKAGES (replaced by enterprise)", () => {
-      // Commerce was replaced by the Enterprise tier
+    it("only starter, growth, and premium tiers exist in PACKAGES", () => {
       expect((PACKAGES as any).commerce).toBeUndefined();
-      expect(PACKAGES.enterprise.monthlyPrice).toBe(495);
+      expect((PACKAGES as any).enterprise).toBeUndefined();
+      expect(PACKAGES.premium.monthlyPrice).toBe(395);
     });
   });
 

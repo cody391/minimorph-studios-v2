@@ -52,10 +52,10 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
   {
     id: "pricing_enterprise",
     patterns: ["enterprise price", "enterprise plan", "large site", "ecommerce plan", "complex site", "membership site", "portal plan"],
-    classification: "answer",
+    classification: "escalate",
     category: "pricing",
-    question: "How much does the Enterprise plan cost?",
-    answer: "The Enterprise plan is $495/month with no setup fee. It includes everything in Pro plus large ecommerce stores with unlimited products, custom customer portals, membership and subscription systems, multi-location support, advanced booking systems, custom integrations, and priority build queue. All on a 12-month commitment billed monthly.",
+    question: "What if I need something bigger than Pro?",
+    answer: "For large ecommerce stores, custom portals, membership systems, or multi-location builds, we put together a custom quote. Email hello@minimorphstudios.net with your project details and we'll scope it together — no surprise invoices.",
   },
   {
     id: "pricing_commerce",
@@ -141,7 +141,7 @@ export const ANSWER_BANK: AnswerBankEntry[] = [
     category: "technical",
     question: "Do I need my own domain name?",
     answer:
-      "If you already have a domain, we connect it to your new site and handle all DNS setup and SSL — you don't need to touch anything technical. If you need a new domain, we register it for you via Namecheap. Domain registration is free for the first year on Growth, Pro, and Enterprise plans, and $15/year on Starter. All renewals are $15/yr and we manage everything in-house. Hosting, SSL, CDN, security monitoring, and daily backups are all included in every plan.",
+      "If you already have a domain, we connect it to your new site and handle all DNS setup and SSL — you don't need to touch anything technical. If you need a new domain, we register it for you via Namecheap. Domain registration is free for the first year on Growth and Pro plans, and $15/year on Starter. All renewals are $15/yr and we manage everything in-house. Hosting, SSL, CDN, security monitoring, and daily backups are all included in every plan.",
   },
   {
     id: "tech_seo",

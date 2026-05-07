@@ -14,7 +14,7 @@ export interface ShowroomSite {
   tagline: string;
   industry: string;
   location: string;
-  tier: "Starter" | "Growth" | "Pro" | "Enterprise";
+  tier: "Starter" | "Growth" | "Pro";
   tierPrice: string;
   price: number;
   liveUrl?: string;
@@ -329,9 +329,9 @@ export const showroomSites: ShowroomSite[] = [
     tagline: "Small batch. Big flavor. No shortcuts.",
     industry: "Coffee Roaster",
     location: "Portland, OR",
-    tier: "Enterprise",
-    tierPrice: "$495/mo",
-    price: 495,
+    tier: "Pro",
+    tierPrice: "$395/mo",
+    price: 395,
     resultStat: "$12,400 online orders, month one",
     showcasedAddOns: ["Ecommerce", "Subscriptions", "AI Chat", "Email"],
     heroImage: "",
@@ -359,7 +359,7 @@ export const showroomSites: ShowroomSite[] = [
       "Monthly sales and traffic reports",
     ],
     personality:
-      "Rich and tactile — dark espresso tones, golden amber accents, and copy that makes you smell the beans. This is our Enterprise tier showpiece: product pages, cart, subscriptions, and a brand story that makes you want to buy before you even see the price.",
+      "Rich and tactile — dark espresso tones, golden amber accents, and copy that makes you smell the beans. Pro tier with add-on ecommerce: product pages, subscriptions, and a brand story that makes you want to buy before you even see the price.",
     ownerQuote:
       "We roast 200 pounds a week and ship nationwide. Our old site worked, but it didn't tell our story. This one does.",
     ownerName: "Ben & Sara N.",

@@ -694,27 +694,12 @@ You must be able to recite these in your sleep. Every conversation should natura
 
 **Selling angle:** "This is the 'never worry about your website again' package. We become your digital department."
 
-### Enterprise — $495/mo
-**Who it's for:** Large, complex builds — ecommerce, portals, memberships, multi-location businesses
-**What they get:**
-- Everything in Pro
-- Large ecommerce (unlimited products)
-- Custom customer portals
-- Membership/subscription systems
-- Multi-location support
-- Advanced booking systems
-- Custom integrations
-- Priority build queue
-- 12-month contract
-
-**Selling angle:** "For businesses that need serious infrastructure — ecommerce, custom portals, membership systems. We become your full digital operation."
-
 ### Key Pricing Points
 - All plans are simple monthly pricing — no setup fees, no hidden costs
 - 12-month contract for all tiers
 - Customers can upgrade tiers at any time`,
         keyTakeaways: [
-          "Starter ($195/mo) for solopreneurs, Growth ($295/mo) for scaling businesses, Pro ($395/mo) for full competitive advantage, Enterprise ($495/mo) for large complex builds",
+          "Starter ($195/mo) for solopreneurs, Growth ($295/mo) for scaling businesses, Pro ($395/mo) for full competitive advantage",
           "Always lead with the value, not the price — frame cost against what they're losing without a proper site",
           "Simple monthly pricing with no setup fees — easy for prospects to say yes"
         ]
@@ -1864,18 +1849,18 @@ This positions you as a strategic partner, not just a vendor.`,
   {
     id: "advanced-tactics",
     title: "Advanced Tactics",
-    description: "Enterprise selling, multi-stakeholder deals, negotiation mastery, and contract structuring for maximum revenue.",
+    description: "Multi-stakeholder deals, negotiation mastery, and contract structuring for maximum revenue.",
     icon: "Crown",
     estimatedMinutes: 45,
     lessons: [
       {
-        title: "Enterprise Selling & Multi-Stakeholder Deals",
+        title: "High-Value Deals & Multi-Stakeholder Sales",
         content: `## When the Deal Gets Bigger
 
-Enterprise deals (Premium tier, multi-location businesses, franchise owners) involve multiple decision-makers. Here's how to navigate them.
+High-value deals (Pro tier, multi-location businesses, franchise owners) involve multiple decision-makers. Here's how to navigate them.
 
 ### Identifying the Players
-Every enterprise deal has:
+Every complex deal has:
 - **Champion** — The person who loves your solution and advocates internally
 - **Decision Maker** — The person who signs the check (often the owner or CFO)
 - **Influencer** — People whose opinions the decision maker trusts
@@ -1887,7 +1872,7 @@ Never rely on a single contact. Build relationships with multiple stakeholders:
 2. Request a meeting with the decision maker: "I'd love to walk [Decision Maker] through what we discussed."
 3. Neutralize blockers: "I'd actually love to get [Blocker]'s input — their technical perspective would be valuable."
 
-### The Enterprise Pitch Adjustment
+### The High-Value Pitch Adjustment
 For larger deals, shift your language:
 - From "website" to "digital infrastructure"
 - From "monthly cost" to "annual investment"
@@ -1901,12 +1886,12 @@ For larger deals, shift your language:
 4. **Protect your margins.** Your commission depends on the deal size. Discounting hurts you directly.
 5. **Create urgency with deadlines.** "This pricing is valid through [date]."
 
-### The Contract Close for Enterprise
-"Based on everything we've discussed, I'd recommend starting with the Premium package for your main location, with the option to roll out to your other locations at a 15% multi-site discount. I can have the agreement ready by [date]. Does that timeline work for your team?"`,
+### The Contract Close for High-Value Deals
+"Based on everything we've discussed, I'd recommend starting with the Pro package for your main location, with the option to roll out to your other locations at a 15% multi-site discount. I can have the agreement ready by [date]. Does that timeline work for your team?"`,
         keyTakeaways: [
-          "Enterprise deals have Champions, Decision Makers, Influencers, and Blockers — map them all",
+          "High-value deals have Champions, Decision Makers, Influencers, and Blockers — map them all",
           "Multi-thread: build relationships with multiple stakeholders, not just one contact",
-          "Shift language for enterprise: 'digital infrastructure' not 'website', 'annual investment' not 'monthly cost'",
+          "Shift language for bigger deals: 'digital infrastructure' not 'website', 'annual investment' not 'monthly cost'",
           "Never negotiate against yourself — state your price and wait. Trade features, don't discount."
         ]
       }
@@ -1914,7 +1899,7 @@ For larger deals, shift your language:
     quiz: [
       {
         id: "at-1",
-        question: "In an enterprise deal, the 'Blocker' is usually:",
+        question: "In a multi-stakeholder deal, the 'Blocker' is usually:",
         type: "multiple_choice",
         options: [
           "The person who signs the check",
@@ -1951,7 +1936,7 @@ For larger deals, shift your language:
           "Adding hidden fees"
         ],
         correctAnswer: 1,
-        explanation: "Anchoring sets the reference point. If you start with Enterprise ($495/mo), Pro ($395/mo) feels like a bargain. If you start with Starter ($195/mo), Growth feels expensive. Always anchor high.",
+        explanation: "Anchoring sets the reference point. If you start with Pro ($395/mo), Growth ($295/mo) feels like a bargain. If you start with Starter ($195/mo), Growth feels expensive. Always anchor high.",
         difficulty: "medium"
       }
     ],
@@ -2116,7 +2101,7 @@ Your pipeline is a kanban board with forward-only progression. Here's exactly wh
 **What it means:** You've sent a formal proposal with pricing.
 **Your job:**
 - Use the "Generate Proposal" button — AI creates a personalized proposal based on the lead's needs
-- Choose the right package tier (Starter $195/mo, Growth $295/mo, Pro $395/mo, Enterprise $495/mo)
+- Choose the right package tier (Starter $195/mo, Growth $295/mo, Pro $395/mo)
 - Follow up within 48 hours if no response
 - Handle objections using LAER framework (from Module 4)
 - Move to "Negotiating" if they push back on price/terms
@@ -2168,7 +2153,7 @@ You can only move leads FORWARD through stages. You cannot move a lead backward.
           "Pipeline stages are forward-only: Assigned → Contacted → Proposal Sent → Negotiating → Closed",
           "Make first contact within 4 hours of assignment or the lead gets reassigned",
           "Use the AI Proposal Generator — it creates personalized proposals that close better than templates",
-          "Package tiers: Starter ($195/mo), Growth ($295/mo), Pro ($395/mo), Enterprise ($495/mo)",
+          "Package tiers: Starter ($195/mo), Growth ($295/mo), Pro ($395/mo)",
           "When you close a deal, commission is auto-calculated and a new lead backfills your pipeline",
           "Log every interaction — the system tracks activity and it affects your performance score"
         ]
@@ -2299,7 +2284,7 @@ Your accountability tier determines your commission rate AND how the system trea
 
 **MRR = Monthly Recurring Revenue.** Every deal you close contributes to your running total. A Starter deal ($195/mo) adds $195 to your MRR. A Growth deal ($295/mo) adds $295. Close enough deals consistently and you advance automatically.
 
-**Platinum perks beyond commission:** First pick on high-value enterprise leads, mentor designation, and exemption from daily training requirements. The system gets out of your way when you've proven yourself.`,
+**Platinum perks beyond commission:** First pick on high-value leads, mentor designation, and exemption from daily training requirements. The system gets out of your way when you've proven yourself.`,
         keyTakeaways: [
           "Performance score below 40 = lead flow FROZEN until you improve",
           "4-hour acceptance window: make first contact or the lead gets reassigned",
@@ -2574,12 +2559,12 @@ Your commission is based on the **annual value** of the deal — not monthly.
 
 **Formula:** Commission = (Monthly Price × 12) × Your Tier Rate
 
-| Tier | Rate | Starter ($195/mo) | Growth ($295/mo) | Pro ($395/mo) | Enterprise ($495/mo) |
-|------|------|-------------------|------------------|----------------|----------------------|
-| Bronze | 10% | $234 | $354 | $474 | $594 |
-| Silver | 12% | $280.80 | $424.80 | $568.80 | $712.80 |
-| Gold | 14% | $327.60 | $495.60 | $663.60 | $831.60 |
-| Platinum | 15% | $351 | $531 | $711 | $891 |
+| Tier | Rate | Starter ($195/mo) | Growth ($295/mo) | Pro ($395/mo) |
+|------|------|-------------------|------------------|----------------|
+| Bronze | 10% | $234 | $354 | $474 |
+| Silver | 12% | $280.80 | $424.80 | $568.80 |
+| Gold | 14% | $327.60 | $495.60 | $663.60 |
+| Platinum | 15% | $351 | $531 | $711 |
 
 ### Self-Sourced Leads = Double Commission
 

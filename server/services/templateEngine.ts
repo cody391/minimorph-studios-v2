@@ -108,7 +108,6 @@ const TIER_LEVEL: Record<string, number> = {
   starter: 0,
   growth: 1,
   premium: 2,
-  enterprise: 3,
 };
 
 export function stripPackageSections(html: string, packageTier: string): string {
@@ -130,13 +129,8 @@ export function stripPackageSections(html: string, packageTier: string): string 
       .replace(/<!-- IF_PREMIUM_PLUS_END -->/g, "");
   }
 
-  if (level < 3) {
-    html = html.replace(/<!-- IF_ENTERPRISE_START -->[\s\S]*?<!-- IF_ENTERPRISE_END -->/g, "");
-  } else {
-    html = html
-      .replace(/<!-- IF_ENTERPRISE_START -->/g, "")
-      .replace(/<!-- IF_ENTERPRISE_END -->/g, "");
-  }
+  // Enterprise tier removed — always strip enterprise-gated blocks
+  html = html.replace(/<!-- IF_ENTERPRISE_START -->[\s\S]*?<!-- IF_ENTERPRISE_END -->/g, "");
 
   return html;
 }

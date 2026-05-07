@@ -80,7 +80,6 @@ export const ENV = {
   stripePriceStarter: process.env.STRIPE_PRICE_STARTER ?? "",
   stripePriceGrowth: process.env.STRIPE_PRICE_GROWTH ?? "",
   stripePricePremium: process.env.STRIPE_PRICE_PREMIUM ?? "",
-  stripePriceEnterprise: process.env.STRIPE_PRICE_ENTERPRISE ?? "",
   // Cloudflare — Pages deployment for customer sites
   cloudflareApiToken: process.env.CLOUDFLARE_API_TOKEN ?? "",
   cloudflareAccountId: process.env.CLOUDFLARE_ACCOUNT_ID ?? "",

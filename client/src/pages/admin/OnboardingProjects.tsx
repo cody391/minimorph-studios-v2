@@ -66,7 +66,7 @@ const EMPTY_FORM = {
   businessName: "",
   contactName: "",
   contactEmail: "",
-  packageTier: "starter" as "starter" | "growth" | "premium" | "enterprise",
+  packageTier: "starter" as "starter" | "growth" | "premium",
   websiteType: "service_business" as "service_business" | "restaurant" | "contractor" | "ecommerce" | "other",
   brandTone: "professional" as "professional" | "friendly" | "bold" | "elegant" | "playful",
   brandColors: "",
@@ -605,7 +605,6 @@ export default function OnboardingProjects() {
                       <SelectItem value="starter">Starter</SelectItem>
                       <SelectItem value="growth">Growth</SelectItem>
                       <SelectItem value="premium">Premium</SelectItem>
-                      <SelectItem value="enterprise">Enterprise</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

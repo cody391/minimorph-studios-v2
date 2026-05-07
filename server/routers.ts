@@ -40,7 +40,6 @@ function getStripePriceId(tier: string): string | null {
     starter: ENV.stripePriceStarter,
     growth: ENV.stripePriceGrowth,
     premium: ENV.stripePricePremium,
-    enterprise: ENV.stripePriceEnterprise,
   };
   return map[tier] || null;
 }
@@ -492,7 +491,7 @@ const leadsRouter = router({
         messages: [
           {
             role: "system",
-            content: "You are a business research assistant. Given a business name, contact info, and industry, generate a brief enrichment profile. Return JSON with: companySize (string), estimatedRevenue (string), onlinePresence (string rating: poor/fair/good/excellent), websiteNeeds (string[]), competitorExamples (string[]), recommendedPackage (starter/growth/premium/enterprise), and enrichmentSummary (2-3 sentence summary).",
+            content: "You are a business research assistant. Given a business name, contact info, and industry, generate a brief enrichment profile. Return JSON with: companySize (string), estimatedRevenue (string), onlinePresence (string rating: poor/fair/good/excellent), websiteNeeds (string[]), competitorExamples (string[]), recommendedPackage (starter/growth/premium), and enrichmentSummary (2-3 sentence summary).",
           },
           {
             role: "user",
@@ -512,7 +511,7 @@ const leadsRouter = router({
                 onlinePresence: { type: "string", enum: ["poor", "fair", "good", "excellent"], description: "Current online presence rating" },
                 websiteNeeds: { type: "array", items: { type: "string" }, description: "Key website needs" },
                 competitorExamples: { type: "array", items: { type: "string" }, description: "Example competitors with good websites" },
-                recommendedPackage: { type: "string", enum: ["starter", "growth", "premium", "enterprise"], description: "Recommended package tier" },
+                recommendedPackage: { type: "string", enum: ["starter", "growth", "premium"], description: "Recommended package tier" },
                 enrichmentSummary: { type: "string", description: "2-3 sentence enrichment summary" },
               },
               required: ["companySize", "estimatedRevenue", "onlinePresence", "websiteNeeds", "competitorExamples", "recommendedPackage", "enrichmentSummary"],
@@ -698,7 +697,7 @@ const leadsRouter = router({
     .input(
       z.object({
         leadId: z.number(),
-        packageTier: z.enum(["starter", "growth", "premium", "enterprise"]),
+        packageTier: z.enum(["starter", "growth", "premium"]),
         monthlyPrice: z.string(),
         discountPercent: z.number().min(0).max(5).default(0),
         notes: z.string().optional(),
@@ -906,7 +905,7 @@ const leadsRouter = router({
     .input(
       z.object({
         leadId: z.number(),
-        packageTier: z.enum(["starter", "growth", "premium", "enterprise"]),
+        packageTier: z.enum(["starter", "growth", "premium"]),
         customNotes: z.string().optional(),
       })
     )
@@ -1944,7 +1943,7 @@ const ordersRouter = router({
   createCheckout: protectedProcedure
     .input(
       z.object({
-        packageTier: z.enum(["starter", "growth", "premium", "enterprise"]),
+        packageTier: z.enum(["starter", "growth", "premium"]),
         businessName: z.string().optional(),
       })
     )
@@ -2076,7 +2075,7 @@ const onboardingRouter = router({
         contactName: z.string().min(1),
         contactEmail: z.string().email(),
         contactPhone: z.string().optional(),
-        packageTier: z.enum(["starter", "growth", "premium", "enterprise"]),
+        packageTier: z.enum(["starter", "growth", "premium"]),
         orderId: z.number().optional(),
       })
     )
@@ -3090,7 +3089,7 @@ Hosting/security pitch (use when relevant): "Your site is hosted on our enterpri
 
 2. If YES: "Perfect — we'll connect it to your new site. What's the domain?" Then: "We'll handle all the DNS setup and SSL certificate on our end — you don't need to do anything technical. Just point it at us and we take it from there."
 
-3. If NO: "No problem at all — we'll register one for you as part of your setup. Any ideas for a domain name? Usually it's just [businessname].com or something close. I can suggest a few options based on your business name." Suggest 3-4 options. Ask what feels right. Then: "Since you're on [Growth/Pro/Enterprise], your domain is included free for the first year — we register it, set up DNS, SSL, everything. After year one it's just $15/yr."
+3. If NO: "No problem at all — we'll register one for you as part of your setup. Any ideas for a domain name? Usually it's just [businessname].com or something close. I can suggest a few options based on your business name." Suggest 3-4 options. Ask what feels right. Then: "Since you're on [Growth/Pro], your domain is included free for the first year — we register it, set up DNS, SSL, everything. After year one it's just $15/yr."
 
 4. If UNSURE: "No worries — we'll brainstorm that together during the build. Usually it's just your business name dot com, or something clever. We'll lock it in before we launch."
 
@@ -3279,10 +3278,10 @@ Also add: "If you want to review the visual direction before we build, just hit 
 PHASE 7.5 — PACKAGE CONFIRMATION
 Before the final summary, confirm the customer's package tier.
 The project record has a packageTier field set by their sales rep. Reference it directly:
-"Before I hand this off — just confirming you're on our [Growth/Premium/Starter/Enterprise] plan at $[price]/mo, which includes [key features for that tier]. Does that match what your rep outlined?"
+"Before I hand this off — just confirming you're on our [Growth/Pro/Starter] plan at $[price]/mo, which includes [key features for that tier]. Does that match what your rep outlined?"
 
-If packageTier is known (starter/growth/premium/enterprise), just confirm it and move on.
-If unclear or not set, ask: "Quick one — did your rep mention which plan you're starting with? We have Starter at $195/mo (5 pages), Growth at $295/mo (10 pages + blog), Premium at $395/mo (15 pages + priority support), or Enterprise at $495/mo (unlimited). I want to make sure everything we've discussed fits your plan."
+If packageTier is known (starter/growth/premium), just confirm it and move on.
+If unclear or not set, ask: "Quick one — did your rep mention which plan you're starting with? We have Starter at $195/mo (5 pages), Growth at $295/mo (10 pages + blog), or Pro at $395/mo (20 pages + priority support). I want to make sure everything we've discussed fits your plan."
 
 Store confirmed tier as "packageTier" in <questionnaire_data>.
 
@@ -3301,7 +3300,7 @@ Once they confirm, naturally mention the contract: "One last thing before we han
 
 Once confirmed, FIRST output BOTH tags (no text before them):
 Once confirmed, FIRST output ALL THREE tags in this exact order (no text before them), then deliver the closing message:
-<payment_ready>{"packageTier":"starter|growth|premium|enterprise","monthlyTotal":"total including addons as number","addons":[{"product":"name","price":49}]}</payment_ready>
+<payment_ready>{"packageTier":"starter|growth|premium","monthlyTotal":"total including addons as number","addons":[{"product":"name","price":49}]}</payment_ready>
 <questionnaire_data>{
   "websiteType": "service_business|restaurant|contractor|ecommerce|other",
   "businessName": "...",
@@ -3339,7 +3338,7 @@ Once confirmed, FIRST output ALL THREE tags in this exact order (no text before 
   "testimonials": [{"quote": "Exact customer quote here", "name": "First name only", "context": "e.g. homeowner in Austin"}],
   "blogTopics": ["Topic 1 — why it matters to their customers", "Topic 2", "Topic 3"],
   "addonsSelected": [{"product":"Review Collector","price":"$149/mo"}],
-  "packageTier": "starter|growth|premium|enterprise"
+  "packageTier": "starter|growth|premium"
 }</questionnaire_data>
 <addons_selected>[{"product":"Review Collector","price":"$149/mo","label":"Automated review collection"}]</addons_selected>
 

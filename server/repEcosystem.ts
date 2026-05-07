@@ -57,8 +57,8 @@ function calculateLevel(points: number): "rookie" | "closer" | "ace" | "elite" |
 const QUIZ_QUESTIONS = [
   {
     id: 1,
-    question: "What are MiniMorph Studios' four website packages?",
-    options: ["Basic, Pro, Enterprise, Custom", "Starter, Growth, Premium, Enterprise", "Bronze, Silver, Gold, Platinum", "Small, Medium, Large, XL"],
+    question: "What are MiniMorph Studios' three website packages?",
+    options: ["Basic, Pro, Custom", "Starter, Growth, Pro", "Bronze, Silver, Gold", "Small, Medium, Large"],
     correctAnswer: 1,
   },
   {
@@ -499,7 +499,7 @@ export const repCommsRouter = router({
             role: "system",
             content: `You are a professional email writer for MiniMorph Studios sales reps. Write a ${input.purpose} email.
 The rep's name is ${rep.fullName}. MiniMorph Studios builds premium websites for small businesses.
-Packages: Starter ($195/mo), Growth ($295/mo), Pro ($395/mo), Enterprise ($495/mo).
+Packages: Starter ($195/mo), Growth ($295/mo), Pro ($395/mo).
 Write in a professional but warm tone. Keep it concise (under 200 words).
 Return JSON: { "subject": "...", "body": "..." }`,
           },

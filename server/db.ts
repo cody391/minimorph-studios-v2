@@ -271,8 +271,10 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `lastSavedAt` timestamp NULL");
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `currentStep` int NOT NULL DEFAULT 1");
 
-    // ── From 0037: add enterprise to orders.packageTier enum ─────────────
-    await safe("ALTER TABLE `orders` MODIFY COLUMN `packageTier` enum('starter','growth','premium','enterprise') NOT NULL");
+    // ── Remove enterprise from packageTier enums across all tables ────────
+    await safe("ALTER TABLE `orders` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
+    await safe("ALTER TABLE `contracts` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
+    await safe("ALTER TABLE `onboarding_projects` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
 
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
@@ -685,7 +687,7 @@ export async function getDashboardStats() {
 export async function createOrder(data: {
   userId: number;
   stripeCheckoutSessionId?: string;
-  packageTier: "starter" | "growth" | "premium" | "enterprise";
+  packageTier: "starter" | "growth" | "premium";
   amount: number;
   customerEmail?: string;
   customerName?: string;
@@ -1848,12 +1850,10 @@ export async function seedProductCatalog() {
     { productKey: "starter", name: "Starter Website", description: "5-page professional website, mobile-responsive, SEO optimized", category: "package" as const, basePrice: "195.00", discountPercent: 0, active: true },
     { productKey: "growth", name: "Growth Website", description: "10-page website with blog, lead capture forms, analytics dashboard", category: "package" as const, basePrice: "295.00", discountPercent: 0, active: true },
     { productKey: "premium", name: "Premium Website", description: "15-page website with e-commerce, CRM integration, priority support", category: "package" as const, basePrice: "395.00", discountPercent: 0, active: true },
-    { productKey: "enterprise", name: "Enterprise Website", description: "Unlimited pages, custom integrations, dedicated account manager", category: "package" as const, basePrice: "495.00", discountPercent: 0, active: true },
     // ── eCommerce packages ─────────────────────────────────────────────────────
     { productKey: "shop_starter", name: "Shop Starter", description: "Up to 10 products, inquiry-based ordering", category: "package" as const, basePrice: "295.00", discountPercent: 0, active: true },
     { productKey: "shop_growth", name: "Shop Growth", description: "Up to 25 products, all features", category: "package" as const, basePrice: "395.00", discountPercent: 0, active: true },
     { productKey: "shop_premium", name: "Shop Premium", description: "Up to 50 products, premium template", category: "package" as const, basePrice: "495.00", discountPercent: 0, active: true },
-    { productKey: "shop_enterprise", name: "Shop Enterprise", description: "Unlimited products, dedicated support", category: "package" as const, basePrice: "595.00", discountPercent: 0, active: true },
     // ── Add-ons Elena pitches ──────────────────────────────────────────────────
     { productKey: "review_collector", name: "Review Collector", description: "Automated Google review collection and display", category: "addon" as const, basePrice: "149.00", discountPercent: 0, active: true },
     { productKey: "booking_widget", name: "Booking Widget", description: "Online appointment booking system embedded on your site", category: "addon" as const, basePrice: "199.00", discountPercent: 0, active: true },

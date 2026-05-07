@@ -7,7 +7,7 @@ import { PACKAGES as SHARED_PACKAGES, type PackageKey } from "../shared/pricing"
 
 export interface PackageDefinition {
   name: string;
-  tier: "starter" | "growth" | "premium" | "enterprise";
+  tier: "starter" | "growth" | "premium";
   description: string;
   monthlyPriceInCents: number;
   monthlyPrice: number;
@@ -42,15 +42,6 @@ export const PACKAGES: Record<string, PackageDefinition> = {
     monthlyPrice: SHARED_PACKAGES.premium.monthlyPrice,
     setupFeeInCents: 0,
     features: [...SHARED_PACKAGES.premium.features],
-  },
-  enterprise: {
-    name: SHARED_PACKAGES.enterprise.name,
-    tier: SHARED_PACKAGES.enterprise.tier,
-    description: SHARED_PACKAGES.enterprise.description,
-    monthlyPriceInCents: SHARED_PACKAGES.enterprise.monthlyPriceInCents,
-    monthlyPrice: SHARED_PACKAGES.enterprise.monthlyPrice,
-    setupFeeInCents: 0,
-    features: [...SHARED_PACKAGES.enterprise.features],
   },
 };
 

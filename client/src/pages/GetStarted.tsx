@@ -47,14 +47,6 @@ const PACKAGE_DEFAULTS = [
     features: ["Up to 20 pages", "Everything in Growth", "Advanced SEO pages", "4 content updates per month", "Review widget setup", "Booking integration", "SMS lead alerts", "Priority support with faster response"],
     popular: false,
   },
-  {
-    tier: "enterprise" as const,
-    name: "Enterprise",
-    defaultPrice: 495,
-    pages: 999,
-    features: ["Everything in Pro", "Large ecommerce (unlimited products)", "Custom portals", "Membership/subscription systems", "Multi-location support", "Custom integrations", "Priority build queue"],
-    popular: false,
-  },
 ];
 
 const STYLES = [
@@ -186,7 +178,7 @@ export default function GetStarted() {
       });
 
       // Step 3: Create Stripe checkout session
-      const tier = formData.selectedPackage as "starter" | "growth" | "premium" | "enterprise";
+      const tier = formData.selectedPackage as "starter" | "growth" | "premium";
       const result = await checkoutMutation.mutateAsync({
         packageTier: tier,
         businessName: formData.businessName,
@@ -233,7 +225,7 @@ export default function GetStarted() {
             <Button
               onClick={async () => {
                 try {
-                  const tier = formData.selectedPackage as "starter" | "growth" | "premium" | "enterprise";
+                  const tier = formData.selectedPackage as "starter" | "growth" | "premium";
                   const result = await checkoutMutation.mutateAsync({
                     packageTier: tier,
                     businessName: formData.businessName,
@@ -587,7 +579,7 @@ export default function GetStarted() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-base font-serif text-off-white">{pkg.name}</p>
-                          <p className="text-xs text-soft-gray font-sans">{pkg.pages === 999 ? "Full site + custom features" : `${pkg.pages} pages`} • 12-month contract</p>
+                          <p className="text-xs text-soft-gray font-sans">{pkg.pages} pages • 12-month contract</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-serif text-off-white">${pkg.price}<span className="text-sm text-soft-gray">/mo</span></p>
@@ -636,7 +628,7 @@ WHAT'S INCLUDED
 ✓ Professional website design & development
 ✓ Mobile-responsive design
 ✓ SSL certificate (included, auto-renewed)
-✓ Enterprise hosting & CDN (99.9% uptime)
+✓ High-performance hosting & CDN (99.9% uptime)
 ✓ DNS management & domain handling
 ✓ Daily backups & security monitoring
 ✓ Up to 3 revision rounds
