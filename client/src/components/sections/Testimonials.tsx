@@ -8,7 +8,7 @@ import { Star, Quote, TrendingUp, Users, Clock } from "lucide-react";
 const caseStudies = [
   {
     quote:
-      "I built our old site on Wix at 2am after watching a YouTube tutorial. It showed. MiniMorph rebuilt the whole thing, set up online booking, and now I get texts when someone books instead of checking email like it's 2009. Three times the bookings in month one. I should've done this years ago.",
+      "I built our old site on Wix at 2am after a YouTube tutorial. It showed. The Elena chat took 20 minutes to nail our whole vibe — colors, competitors, everything. MiniMorph had a draft in two days. Three times the bookings in month one. I should've done this years ago.",
     name: "Sarah M.",
     role: "Owner, Lakeshore Auto Detailing",
     industry: "Auto Detailing",
@@ -18,7 +18,7 @@ const caseStudies = [
   },
   {
     quote:
-      "They asked us what we hated about other restaurant websites. I said 'PDF menus and stock photos of food that isn't ours.' They laughed, agreed, and built us something completely different. Our menu page gets more views than the homepage now. Also, they suggested online ordering before we even thought of it.",
+      "Elena asked what we hated about other restaurant websites. I said 'PDF menus and stock photos of food that isn't ours.' She noted it, and the site they built looks nothing like every other place on the block. Our menu page gets more views than the homepage. 2,400 visitors last month.",
     name: "Marcus & Lisa G.",
     role: "Owners, G&L Chillidog",
     industry: "Restaurant",
@@ -28,7 +28,7 @@ const caseStudies = [
   },
   {
     quote:
-      "I pour concrete. I don't do websites. MiniMorph handles everything — I just log into the portal when I need something changed. Last month they told me to add a project gallery before I even asked. Already got two leads from it. These people actually pay attention.",
+      "I pour concrete. I don't do websites. The portal makes it so I barely have to think about it — I log in when I need something changed and it's done in 48 hours. Last month the AI flagged that I needed a project gallery before I even asked. Already got two leads from it.",
     name: "James R.",
     role: "Owner, Shoreline Concrete & Masonry",
     industry: "Contractor",

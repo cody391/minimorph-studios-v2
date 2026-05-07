@@ -86,6 +86,7 @@ const tiers: Tier[] = [
       "Large ecommerce (unlimited products)",
       "Custom customer portals",
       "Membership/subscription systems",
+      "Advanced booking systems",
       "Multi-location support",
       "Custom integrations",
       "Priority build queue",

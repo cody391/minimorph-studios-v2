@@ -320,7 +320,7 @@ export default function BecomeRep() {
           </button>
           <h1 className="text-3xl sm:text-4xl font-serif mb-3">Become a MiniMorph Rep</h1>
           <p className="text-lg text-white/80 font-sans max-w-2xl mx-auto">
-            Join our network of sales professionals. Earn <span className="text-electric font-medium">10-20% commission</span> on every sale. Part-timers earn <span className="text-electric font-medium">$500-2,000/mo</span>. Full-timers? <span className="text-electric font-medium">$5,000-15,000+/mo</span>. No cap.
+            Join our network of sales professionals. Earn <span className="text-electric font-medium">10–15% commission</span> on every sale. Part-timers earn <span className="text-electric font-medium">$500–2,000/mo</span>. Full-timers? <span className="text-electric font-medium">$5,000–15,000+/mo</span>. No cap.
           </p>
         </div>
       </div>
@@ -716,23 +716,42 @@ export default function BecomeRep() {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-sans text-soft-gray">Part-Time (5 hrs/wk)</span>
-                      <span className="text-sm font-serif text-off-white">$500 - $2,000/mo</span>
+                      <span className="text-sm font-serif text-off-white">$500–$2,000/mo</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-sans text-soft-gray">Side Hustle (15 hrs/wk)</span>
-                      <span className="text-sm font-serif text-off-white">$2,000 - $5,000/mo</span>
+                      <span className="text-sm font-serif text-off-white">$2,000–$5,000/mo</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-sans text-soft-gray">Full-Time (40 hrs/wk)</span>
-                      <span className="text-sm font-serif text-off-white font-medium">$5,000 - $15,000/mo</span>
+                      <span className="text-sm font-serif text-off-white font-medium">$5,000–$15,000/mo</span>
                     </div>
                     <div className="flex justify-between items-center border-t border-electric/10 pt-2">
-                      <span className="text-xs font-sans text-electric font-medium">Top Performers</span>
+                      <span className="text-xs font-sans text-electric font-medium">Platinum Tier (15%)</span>
                       <span className="text-sm font-serif text-electric font-bold">$20,000+/mo</span>
                     </div>
                   </div>
+                  <div className="mt-3 pt-3 border-t border-electric/10 space-y-1.5">
+                    <p className="text-[10px] text-soft-gray/80 font-sans font-medium uppercase tracking-wide">Tier Earning Examples</p>
+                    <div className="flex justify-between text-[11px] font-sans">
+                      <span className="text-soft-gray">Bronze (10%) — 5 deals/mo at $2,340 avg</span>
+                      <span className="text-off-white font-medium">$1,170/mo</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-sans">
+                      <span className="text-soft-gray">Silver (12%) — 10 deals/mo at $2,940 avg</span>
+                      <span className="text-off-white font-medium">$3,528/mo</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-sans">
+                      <span className="text-soft-gray">Gold (14%) — 20 deals/mo at $3,540 avg</span>
+                      <span className="text-off-white font-medium">$9,912/mo</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-sans">
+                      <span className="text-electric/80">Platinum (15%) — 30 deals/mo at $4,740 avg</span>
+                      <span className="text-electric font-bold">$21,330/mo</span>
+                    </div>
+                  </div>
                   <p className="text-[10px] text-soft-gray/60 font-sans mt-2">
-                    Based on 10% base commission. Legend tier reps earn 20%, doubling these figures. No cap on earnings.
+                    Based on 10% base commission (Bronze). Platinum tier reps earn 15%, increasing these figures by 50%. No cap on earnings.
                   </p>
                 </div>
                 <div className="flex gap-3">

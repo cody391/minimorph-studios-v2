@@ -10,6 +10,7 @@ const footerLinks = [
     links: [
       { label: "About", href: "#services" },
       { label: "How It Works", href: "#how-it-works" },
+      { label: "Become a Rep", href: "/become-rep", isRoute: true },
       { label: "Privacy Policy", href: "/privacy", isRoute: true },
       { label: "Terms of Service", href: "/terms", isRoute: true },
     ],
@@ -100,7 +101,7 @@ export default function Footer() {
       <div className="border-t border-glass-border">
         <div className="container py-6 flex flex-col items-center gap-4">
           <p className="text-xs font-sans text-off-white/25">
-            &copy; 2026 MiniMorph Studios LLC. All rights reserved.
+            &copy; {new Date().getFullYear()} MiniMorph Studios LLC. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <a

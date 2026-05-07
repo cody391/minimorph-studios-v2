@@ -92,7 +92,7 @@ export default function Navbar() {
             className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-sm px-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300"
             onClick={() => setLocation("/get-started")}
           >
-            Start a Project
+            Get a Free Quote
           </Button>
         </div>
 
@@ -145,7 +145,7 @@ export default function Navbar() {
                     setLocation("/get-started");
                   }}
                 >
-                  Start a Project
+                  Get a Free Quote
                 </Button>
               </div>
             </div>

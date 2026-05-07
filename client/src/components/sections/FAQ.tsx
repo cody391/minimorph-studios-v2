@@ -38,6 +38,18 @@ const faqs = [
     q: "Do you guarantee results?",
     a: "We don't promise specific traffic numbers or revenue targets — anyone who does is lying. What we do guarantee: a professionally built site, monthly maintenance, real reports, and AI-powered recommendations that get smarter over time.",
   },
+  {
+    q: "Is there a setup fee?",
+    a: "There's no separate setup fee — your first month's payment covers the build, design, and launch. What you pay per month is what you pay every month. No surprise invoices, no gotchas.",
+  },
+  {
+    q: "How is this different from Wix or Squarespace?",
+    a: "Wix and Squarespace give you a tool and leave you to figure it out. We give you a team. We build the site for you, maintain it every month, provide real analytics, AI recommendations, and actual human support. You never touch a template — we handle everything.",
+  },
+  {
+    q: "What happens when my 12-month agreement ends?",
+    a: "After your 12 months, you can cancel with 30 days' written notice — no penalty, no runaround. Early cancellation requires payment of remaining months in the agreement. Your content and domain are always yours to take with you.",
+  },
 ];
 
 export default function FAQ() {

@@ -50,7 +50,7 @@ export default function Contact() {
           >
             You've read this far, which means your current website situation probably
             isn't cutting it. Pick a plan, answer some questions, and let us handle the
-            rest. First draft in 2–4 weeks. Monthly support forever after.
+            rest. First draft in 48–72 hours. Monthly support forever after.
           </motion.p>
 
           <motion.div
@@ -86,8 +86,8 @@ export default function Contact() {
             className="mt-8 text-sm text-off-white/40 font-sans"
           >
             Not ready yet? No pressure. Email us at{" "}
-            <a href="mailto:hello@minimorphstudios.com" className="text-electric/60 hover:text-electric transition-colors underline underline-offset-2">
-              hello@minimorphstudios.com
+            <a href="mailto:hello@minimorphstudios.net" className="text-electric/60 hover:text-electric transition-colors underline underline-offset-2">
+              hello@minimorphstudios.net
             </a>
             {" "}whenever you're ready. We'll be here.
           </motion.p>

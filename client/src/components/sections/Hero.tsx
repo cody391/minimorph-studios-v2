@@ -57,7 +57,7 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-lg lg:text-xl text-off-white/60 font-sans leading-relaxed mb-10 max-w-lg"
             >
-              Most agencies hand you a website and disappear. We build yours, launch it, and then actually maintain it — every single month. Portal access, real reports, human support. The boring stuff that keeps your site working while you run your business.
+              Most agencies vanish after launch day. We build your site and stick around every month — real reports, real support, AI-powered recommendations that actually improve over time.
             </motion.p>
 
             <motion.div
@@ -87,8 +87,32 @@ export default function Hero() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="mt-10 flex items-center gap-8 pb-8 border-b border-off-white/10"
+            >
+              <div className="text-center">
+                <div className="text-2xl font-serif text-off-white">48h</div>
+                <div className="text-[11px] font-sans text-off-white/40">First Draft</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-serif text-off-white">7</div>
+                <div className="text-[11px] font-sans text-off-white/40">Industries Served</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-serif text-electric">100%</div>
+                <div className="text-[11px] font-sans text-off-white/40">You Own It</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-serif text-off-white">US-Wide</div>
+                <div className="text-[11px] font-sans text-off-white/40">Coverage</div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="mt-14 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-off-white/40 font-sans"
+              className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-off-white/40 font-sans"
             >
               <div className="flex items-center gap-2">
                 <Shield size={14} className="text-electric/60" />
@@ -96,7 +120,7 @@ export default function Hero() {
               </div>
               <div className="flex items-center gap-2">
                 <Zap size={14} className="text-electric/60" />
-                <span>First draft in 2–4 weeks</span>
+                <span>First draft in 48–72 hours</span>
               </div>
               <div className="flex items-center gap-2">
                 <BarChart3 size={14} className="text-electric/60" />
@@ -164,7 +188,7 @@ export default function Hero() {
                     <span className="text-xs font-sans text-off-white/60">AI Recommendation:</span>
                   </div>
                   <p className="text-sm font-sans text-off-white/70 mt-1">
-                    "Add a booking widget to capture 15% more leads from mobile visitors."
+                    "Your contact form hasn't been updated in 30 days. A quick refresh could increase conversions by 18%."
                   </p>
                 </div>
               </div>
