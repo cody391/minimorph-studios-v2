@@ -50,6 +50,7 @@ import {
   Radio,
   Headphones,
   Package,
+  Tag,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -218,6 +219,7 @@ function AdminLayoutContent({
       label: "PRODUCTS & SETTINGS",
       items: [
         { icon: Package, label: "Products", path: "/admin/products" },
+        { icon: Tag, label: "Coupons", path: "/admin/coupons" },
         { icon: Brain, label: "Lead Gen Engine", path: "/admin/lead-gen" },
         { icon: Activity, label: "Analytics", path: "/admin/analytics" },
       ],

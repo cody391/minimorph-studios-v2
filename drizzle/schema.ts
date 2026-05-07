@@ -1797,3 +1797,24 @@ export const leadCosts = mysqlTable("lead_costs", {
 });
 export type LeadCost = typeof leadCosts.$inferSelect;
 export type InsertLeadCost = typeof leadCosts.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   COUPONS — Admin-created discount codes
+   ═══════════════════════════════════════════════════════ */
+export const coupons = mysqlTable("coupons", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 64 }).notNull().unique(),
+  description: varchar("description", { length: 255 }),
+  discountType: mysqlEnum("discountType", ["percent", "free"]).notNull(),
+  discountValue: int("discountValue"), // 1-99 for percent, null for free
+  maxUses: int("maxUses"), // null = unlimited
+  usedCount: int("usedCount").default(0).notNull(),
+  expiresAt: timestamp("expiresAt"),
+  stripePromotionCodeId: varchar("stripePromotionCodeId", { length: 128 }),
+  stripeCouponId: varchar("stripeCouponId", { length: 128 }),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("cp_createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("cp_updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Coupon = typeof coupons.$inferSelect;
+export type InsertCoupon = typeof coupons.$inferInsert;

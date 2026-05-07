@@ -250,6 +250,22 @@ export async function repairSchema(): Promise<void> {
     await safe("CREATE INDEX `idx_lead_costs_month` ON `lead_costs`(`month`)");
     await safe("CREATE INDEX `idx_lead_costs_costType` ON `lead_costs`(`costType`)");
 
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`coupons\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY,
+      \`code\` varchar(64) NOT NULL UNIQUE,
+      \`description\` varchar(255) DEFAULT NULL,
+      \`discountType\` enum('percent','free') NOT NULL,
+      \`discountValue\` int DEFAULT NULL,
+      \`maxUses\` int DEFAULT NULL,
+      \`usedCount\` int NOT NULL DEFAULT 0,
+      \`expiresAt\` timestamp NULL DEFAULT NULL,
+      \`stripePromotionCodeId\` varchar(128) DEFAULT NULL,
+      \`stripeCouponId\` varchar(128) DEFAULT NULL,
+      \`active\` tinyint(1) NOT NULL DEFAULT 1,
+      \`cp_createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`cp_updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`);
+
     // ── Columns from 0047 ─────────────────────────────────────────────
     await safe("ALTER TABLE `leads` ADD COLUMN `totalCostCents` int NOT NULL DEFAULT 0");
     await safe("ALTER TABLE `leads` ADD COLUMN `totalRevenueCents` int NOT NULL DEFAULT 0");

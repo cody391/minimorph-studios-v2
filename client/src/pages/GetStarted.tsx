@@ -115,6 +115,7 @@ export default function GetStarted() {
   const [uploadingFor, setUploadingFor] = useState<UploadRequest | null>(null);
   const [uploading, setUploading] = useState(false);
   const [addonsInSummary, setAddonsInSummary] = useState<AddonAccepted[]>([]);
+  const [couponCode, setCouponCode] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSentInit = useRef(false);
@@ -642,11 +643,16 @@ export default function GetStarted() {
               <PaymentSummaryCard
                 data={paymentReady}
                 loading={checkoutLoading}
+                couponCode={couponCode}
+                onCouponChange={setCouponCode}
                 onPay={async () => {
                   if (!projectId) { toast.error("Project not found. Please try again."); return; }
                   setCheckoutLoading(true);
                   try {
-                    const result = await createCheckoutMutation.mutateAsync({ projectId });
+                    const result = await createCheckoutMutation.mutateAsync({
+                      projectId,
+                      couponCode: couponCode.trim() || undefined,
+                    });
                     window.location.href = result.checkoutUrl;
                   } catch (err) {
                     toast.error(err instanceof Error ? err.message : "Checkout failed");
@@ -769,15 +775,26 @@ export default function GetStarted() {
 function PaymentSummaryCard({
   data,
   loading,
+  couponCode,
+  onCouponChange,
   onPay,
 }: {
   data: PaymentReadyData;
   loading: boolean;
+  couponCode: string;
+  onCouponChange: (v: string) => void;
   onPay: () => void;
 }) {
   const tier = data.packageTier ? capitalize(data.packageTier) : "Your";
   const total = data.monthlyTotal ?? 0;
   const addons = data.addons ?? [];
+
+  const validateCoupon = trpc.onboarding.validateCoupon.useQuery(
+    { code: couponCode.trim().toUpperCase() },
+    { enabled: couponCode.trim().length >= 2, retry: false }
+  );
+  const couponValid = validateCoupon.data?.valid;
+  const couponError = validateCoupon.error?.message;
 
   return (
     <div className="mx-2 my-3">
@@ -809,6 +826,26 @@ function PaymentSummaryCard({
             <span className="text-sm font-semibold text-white">Total</span>
             <span className="text-sm font-bold text-[#4a9eff]">${total > 0 ? total.toFixed(0) : "—"}/mo</span>
           </div>
+        </div>
+
+        {/* Coupon code input */}
+        <div className="mb-4">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={couponCode}
+              onChange={e => onCouponChange(e.target.value.toUpperCase())}
+              placeholder="Coupon code (optional)"
+              className="flex-1 bg-[#0d0d1a] border border-[#2a2a40] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 font-mono focus:outline-none focus:border-[#4a9eff]/50"
+            />
+          </div>
+          {couponCode.trim().length >= 2 && (
+            <p className={`text-xs mt-1.5 ${couponValid ? "text-green-400" : couponError ? "text-red-400" : "text-gray-500"}`}>
+              {validateCoupon.isLoading ? "Checking..." : couponValid
+                ? `✓ ${validateCoupon.data?.description || (validateCoupon.data?.discountType === "free" ? "Free site applied!" : `${validateCoupon.data?.discountValue}% off applied`)}`
+                : couponError || ""}
+            </p>
+          )}
         </div>
 
         <button

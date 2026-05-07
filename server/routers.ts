@@ -2067,6 +2067,31 @@ const ordersRouter = router({
    ONBOARDING ROUTER
    ═══════════════════════════════════════════════════════ */
 const onboardingRouter = router({
+  // Public: validate a coupon code before checkout
+  validateCoupon: publicProcedure
+    .input(z.object({ code: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const { coupons } = await import("../drizzle/schema");
+      const { eq: eqFn, and: andFn } = await import("drizzle-orm");
+      const rows = await database.select().from(coupons)
+        .where(andFn(eqFn(coupons.code, input.code.toUpperCase()), eqFn(coupons.active, true as any)))
+        .limit(1);
+      if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Invalid or expired coupon code" });
+      const coupon = rows[0];
+      if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new TRPCError({ code: "BAD_REQUEST", message: "This coupon has expired" });
+      if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) throw new TRPCError({ code: "BAD_REQUEST", message: "This coupon has reached its usage limit" });
+      return {
+        valid: true,
+        code: coupon.code,
+        description: coupon.description,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        stripePromotionCodeId: coupon.stripePromotionCodeId,
+      };
+    }),
+
   // Public: create a new onboarding project (from guided buying wizard)
   create: publicProcedure
     .input(
@@ -2684,7 +2709,7 @@ const onboardingRouter = router({
   // Protected: create Stripe checkout after Elena finishes (new payment-last flow)
   // Customer pays after talking to Elena — addons are included in the session
   createCheckoutAfterElena: protectedProcedure
-    .input(z.object({ projectId: z.number() }))
+    .input(z.object({ projectId: z.number(), couponCode: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
       const project = await db.getOnboardingProjectById(input.projectId);
@@ -2770,18 +2795,44 @@ const onboardingRouter = router({
         };
       }
 
-      const session = await stripe.checkout.sessions.create({
+      // Resolve coupon to Stripe promotion code id
+      let stripePromoCodeId: string | undefined;
+      if (input.couponCode) {
+        const couponDb = await getDb();
+        if (couponDb) {
+          const { coupons: couponsTable } = await import("../drizzle/schema");
+          const { and: andFn2, eq: eqFn2 } = await import("drizzle-orm");
+          const couponRows = await couponDb.select().from(couponsTable)
+            .where(andFn2(eqFn2(couponsTable.code, input.couponCode.toUpperCase()), eqFn2(couponsTable.active, true as any)))
+            .limit(1);
+          if (couponRows.length && couponRows[0].stripePromotionCodeId) {
+            stripePromoCodeId = couponRows[0].stripePromotionCodeId;
+            await couponDb.update(couponsTable)
+              .set({ usedCount: (couponRows[0].usedCount ?? 0) + 1 })
+              .where(eqFn2(couponsTable.id, couponRows[0].id));
+          }
+        }
+      }
+
+      const sessionParams: Record<string, unknown> = {
         mode: "subscription",
         customer_email: project.contactEmail || undefined,
-        allow_promotion_codes: true,
         subscription_data: { metadata: sessionMeta },
         metadata: sessionMeta,
-        line_items: lineItems as any,
+        line_items: lineItems,
         success_url: `${origin}/portal?payment=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: isRepClosed
           ? `${origin}/portal?payment=cancelled`
           : `${origin}/get-started?cancelled=true`,
-      });
+      };
+
+      if (stripePromoCodeId) {
+        sessionParams.discounts = [{ promotion_code: stripePromoCodeId }];
+      } else {
+        sessionParams.allow_promotion_codes = true;
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams as any);
 
       if (!session.url) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create checkout session" });
 
@@ -4613,6 +4664,126 @@ const adminRouter = router({
     .mutation(async () => {
       const { syncAllProductsToStripe } = await import("./services/stripePriceSync");
       return await syncAllProductsToStripe();
+    }),
+
+  // ── Coupon management ──────────────────────────────────────────────
+  listCoupons: adminProcedure
+    .query(async () => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const { coupons } = await import("../drizzle/schema");
+      const { desc: descFn } = await import("drizzle-orm");
+      return database.select().from(coupons).orderBy(descFn(coupons.createdAt));
+    }),
+
+  createCoupon: adminProcedure
+    .input(z.object({
+      code: z.string().min(2).max(64).toUpperCase(),
+      description: z.string().max(255).optional(),
+      discountType: z.enum(["percent", "free"]),
+      discountValue: z.number().int().min(1).max(99).optional(),
+      maxUses: z.number().int().min(1).optional(),
+      expiresAt: z.string().optional(), // ISO date string
+    }))
+    .mutation(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      const Stripe = (await import("stripe")).default;
+      const stripeKey = ENV.stripeSecretKey;
+      if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
+      const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
+
+      // Create Stripe coupon
+      const stripeCouponParams: Record<string, unknown> = {
+        name: input.description || input.code,
+        currency: "usd",
+        duration: "forever",
+      };
+      if (input.discountType === "free") {
+        stripeCouponParams.percent_off = 100;
+      } else {
+        stripeCouponParams.percent_off = input.discountValue;
+      }
+      if (input.maxUses) stripeCouponParams.max_redemptions = input.maxUses;
+      if (input.expiresAt) stripeCouponParams.redeem_by = Math.floor(new Date(input.expiresAt).getTime() / 1000);
+
+      const stripeCoupon = await stripe.coupons.create(stripeCouponParams as any);
+
+      // Create Stripe promotion code
+      const promoCodeParams: Record<string, unknown> = {
+        coupon: stripeCoupon.id,
+        code: input.code,
+      };
+      if (input.maxUses) promoCodeParams.max_redemptions = input.maxUses;
+      if (input.expiresAt) promoCodeParams.expires_at = Math.floor(new Date(input.expiresAt).getTime() / 1000);
+
+      const stripePromo = await stripe.promotionCodes.create(promoCodeParams as any);
+
+      const { coupons } = await import("../drizzle/schema");
+      await database.insert(coupons).values({
+        code: input.code,
+        description: input.description || null,
+        discountType: input.discountType,
+        discountValue: input.discountType === "free" ? null : (input.discountValue ?? null),
+        maxUses: input.maxUses ?? null,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        stripeCouponId: stripeCoupon.id,
+        stripePromotionCodeId: stripePromo.id,
+        active: true,
+      });
+
+      return { success: true, code: input.code };
+    }),
+
+  toggleCoupon: adminProcedure
+    .input(z.object({ id: z.number(), active: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const { coupons } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+
+      // Sync active state with Stripe
+      const rows = await database.select().from(coupons).where(eqFn(coupons.id, input.id)).limit(1);
+      if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Coupon not found" });
+
+      if (rows[0].stripePromotionCodeId) {
+        const Stripe = (await import("stripe")).default;
+        const stripeKey = ENV.stripeSecretKey;
+        if (stripeKey) {
+          const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
+          await stripe.promotionCodes.update(rows[0].stripePromotionCodeId, { active: input.active });
+        }
+      }
+
+      await database.update(coupons).set({ active: input.active }).where(eqFn(coupons.id, input.id));
+      return { success: true };
+    }),
+
+  deleteCoupon: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const { coupons } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+
+      const rows = await database.select().from(coupons).where(eqFn(coupons.id, input.id)).limit(1);
+      if (!rows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Coupon not found" });
+
+      // Deactivate Stripe promo code (can't delete, only deactivate)
+      if (rows[0].stripePromotionCodeId) {
+        const Stripe = (await import("stripe")).default;
+        const stripeKey = ENV.stripeSecretKey;
+        if (stripeKey) {
+          const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
+          await stripe.promotionCodes.update(rows[0].stripePromotionCodeId, { active: false }).catch(() => {});
+        }
+      }
+
+      await database.delete(coupons).where(eqFn(coupons.id, input.id));
+      return { success: true };
     }),
 });
 
