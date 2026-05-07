@@ -329,9 +329,9 @@ export default function BecomeRep() {
       <div className="max-w-4xl mx-auto px-4 -mt-6">
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: DollarSign, label: "10% Commission", desc: "On every sale you close" },
+            { icon: DollarSign, label: "10–15% Commission", desc: "Starts at 10%, grows to 15%" },
             { icon: Users, label: "AI-Sourced Leads", desc: "Warm prospects ready to buy" },
-            { icon: TrendingUp, label: "Recurring Revenue", desc: "Earn on renewals too" },
+            { icon: TrendingUp, label: "Double on Self-Sourced", desc: "Find your own leads? Rate doubles" },
             { icon: Zap, label: "We Handle Delivery", desc: "You sell, we build" },
           ].map((b, i) => (
             <Card key={i} className="border-border/50 bg-charcoal shadow-sm">
@@ -753,6 +753,12 @@ export default function BecomeRep() {
                   <p className="text-[10px] text-soft-gray/60 font-sans mt-2">
                     Based on 10% base commission (Bronze). Platinum tier reps earn 15%, increasing these figures by 50%. No cap on earnings.
                   </p>
+                  <div className="mt-3 pt-3 border-t border-electric/10 bg-electric/5 rounded-lg p-2.5">
+                    <p className="text-[11px] text-electric/80 font-sans font-medium">💡 Self-Sourced Bonus</p>
+                    <p className="text-[10px] text-soft-gray/70 font-sans mt-0.5">
+                      Find your own leads outside the platform? Your commission rate doubles. 5 self-sourced Growth deals at Bronze = $4,248/mo instead of $2,124/mo.
+                    </p>
+                  </div>
                 </div>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => setStep(2)} className="flex-1 rounded-full border-border text-off-white">

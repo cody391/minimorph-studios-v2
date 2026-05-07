@@ -8,7 +8,7 @@ import { Star, Quote, TrendingUp, Users, Clock } from "lucide-react";
 const caseStudies = [
   {
     quote:
-      "I built our old site on Wix at 2am after a YouTube tutorial. It showed. The Elena chat took 20 minutes to nail our whole vibe — colors, competitors, everything. MiniMorph had a draft in two days. Three times the bookings in month one. I should've done this years ago.",
+      "Before MiniMorph, we were invisible online. Now our number comes up first when anyone Googles 'auto detailing' in our area. That didn't happen overnight — but it happened. Worth every dollar.",
     name: "Sarah M.",
     role: "Owner, Lakeshore Auto Detailing",
     industry: "Auto Detailing",
@@ -18,7 +18,7 @@ const caseStudies = [
   },
   {
     quote:
-      "Elena asked what we hated about other restaurant websites. I said 'PDF menus and stock photos of food that isn't ours.' She noted it, and the site they built looks nothing like every other place on the block. Our menu page gets more views than the homepage. 2,400 visitors last month.",
+      "Elena asked us things our last web designer never thought to ask — our most popular dish, what regulars order, what feeling we wanted people to have before they walked in. The site reflects who we actually are.",
     name: "Marcus & Lisa G.",
     role: "Owners, G&L Chillidog",
     industry: "Restaurant",
@@ -28,10 +28,10 @@ const caseStudies = [
   },
   {
     quote:
-      "I pour concrete. I don't do websites. The portal makes it so I barely have to think about it — I log in when I need something changed and it's done in 48 hours. Last month the AI flagged that I needed a project gallery before I even asked. Already got two leads from it.",
+      "I sent the site link to three general contractors I'd been trying to work with for two years. Two of them called me back within a week.",
     name: "James R.",
     role: "Owner, Shoreline Concrete & Masonry",
-    industry: "Contractor",
+    industry: "Concrete & Masonry",
     stars: 5,
     metric: { icon: Clock, label: "Avg. change turnaround", value: "48 hrs" },
     package: "Pro",

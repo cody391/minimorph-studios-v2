@@ -57,7 +57,7 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-lg lg:text-xl text-off-white/60 font-sans leading-relaxed mb-10 max-w-lg"
             >
-              Most agencies vanish after launch day. We build your site and stick around every month — real reports, real support, AI-powered recommendations that actually improve over time.
+              Most agencies disappear after launch. We don't. Every plan includes a dedicated rep, AI-assisted build, monthly reports, and support that actually responds — starting at $195/mo.
             </motion.p>
 
             <motion.div
@@ -137,7 +137,7 @@ export default function Hero() {
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.9, delay: 0.3 }}
+            transition={{ duration: 0.7, delay: 0.3 }}
             className="hidden lg:block"
           >
             <div className="glass-card p-6 glow-electric">
@@ -188,7 +188,7 @@ export default function Hero() {
                     <span className="text-xs font-sans text-off-white/60">AI Recommendation:</span>
                   </div>
                   <p className="text-sm font-sans text-off-white/70 mt-1">
-                    "Your contact form hasn't been updated in 30 days. A quick refresh could increase conversions by 18%."
+                    "Your contact form is your top lead source. Adding a booking widget could convert 23% more mobile visitors into customers."
                   </p>
                 </div>
               </div>

@@ -115,7 +115,7 @@ export default function Terms() {
               For questions about these Terms of Service, contact us at:<br />
               <strong>MiniMorph Studios</strong><br />
               Muskegon, Michigan<br />
-              Email: legal@minimorphstudios.com
+              Email: legal@minimorphstudios.net
             </p>
           </section>
         </div>

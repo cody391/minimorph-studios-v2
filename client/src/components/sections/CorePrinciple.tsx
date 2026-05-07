@@ -31,16 +31,16 @@ const integrationTiers = [
     headerBg: "bg-violet/10",
     headerText: "text-violet",
     items: [
-      { icon: Bot, label: "AI chat widget" },
-      { icon: BarChart3, label: "Google Analytics" },
-      { icon: Search, label: "Search Console setup" },
-      { icon: Bell, label: "SMS lead alerts" },
-      { icon: Star, label: "Google Reviews widget" },
-      { icon: Calendar, label: "Booking integration" },
-      { icon: Globe, label: "Extra service pages" },
-      { icon: Image, label: "Monthly photo updates" },
-      { icon: Smartphone, label: "Meta / TikTok pixel" },
-      { icon: Mail, label: "Newsletter capture" },
+      { icon: Bot, label: "AI Chat Bot", price: "$79/mo" },
+      { icon: Star, label: "Google Reviews Widget", price: "$49/mo" },
+      { icon: Calendar, label: "Booking Integration", price: "$49/mo" },
+      { icon: Mail, label: "Lead Capture Form", price: "$29/mo" },
+      { icon: Bell, label: "SMS Lead Alerts", price: "$29/mo" },
+      { icon: Search, label: "SEO Autopilot", price: "$99/mo" },
+      { icon: ShoppingCart, label: "E-Commerce Starter", price: "$149/mo" },
+      { icon: BarChart3, label: "Google Analytics", price: "Included" },
+      { icon: Smartphone, label: "Meta / TikTok Pixel", price: "Included" },
+      { icon: Image, label: "Monthly Photo Updates", price: "Ask your rep" },
     ],
   },
   {
@@ -116,9 +116,18 @@ export default function CorePrinciple() {
               </div>
               <div className="p-4 space-y-2">
                 {tier.items.map((item) => (
-                  <div key={item.label} className="flex items-center gap-2.5 p-2 rounded-lg bg-off-white/3">
-                    <item.icon size={15} className={tier.headerText + "/60"} />
-                    <span className="text-sm font-sans text-off-white/60">{item.label}</span>
+                  <div key={item.label} className="flex items-center justify-between gap-2.5 p-2 rounded-lg bg-off-white/3">
+                    <div className="flex items-center gap-2.5">
+                      <item.icon size={15} className={tier.headerText + "/60"} />
+                      <span className="text-sm font-sans text-off-white/60">{item.label}</span>
+                    </div>
+                    {"price" in item && item.price && (
+                      <span className={`text-[11px] font-sans font-medium whitespace-nowrap ${
+                        item.price === "Included" ? "text-electric/60" : item.price === "Ask your rep" ? "text-off-white/30" : tier.headerText
+                      }`}>
+                        {item.price}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -41,14 +41,14 @@ const pillars = [
   {
     icon: TrendingUp,
     title: "Improve",
-    description: "Our AI spots what you'd miss — slow pages, dead links, missed keywords. We fix them before you even notice.",
+    description: "Our AI monitors your site and delivers specific recommendations through your portal — slow pages, missed keywords, conversion opportunities. We action them monthly before you even notice.",
     color: "text-gold",
     bg: "bg-gold/10 border-gold/20",
   },
   {
     icon: BarChart3,
     title: "Report",
-    description: "Monthly reports you'll actually read. Traffic, leads, what's working, what's not. In plain English.",
+    description: "Monthly reports you'll actually read — real analytics, lead counts, top pages, what's working and what isn't. In plain English, not a dashboard only a developer could understand.",
     color: "text-electric",
     bg: "bg-electric/10 border-electric/20",
   },

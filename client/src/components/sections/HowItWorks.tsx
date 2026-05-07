@@ -29,9 +29,9 @@ const steps = [
   {
     icon: PenTool,
     number: "03",
-    title: "We Build the First Draft",
-    description: "Our template engine and AI copy tools generate a real, fully customized site from Elena's brief — your brand, your content, your competitors' weaknesses. First draft lands in your portal 48–72 hours after your Elena session.",
-    aside: "You'll see it in your portal",
+    title: "We Build It",
+    description: "We combine professionally designed industry templates with AI that writes copy specific to your business — your services, your story, your voice. The result looks custom because the content is custom.",
+    aside: "First draft in 48–72 hours",
   },
   {
     icon: MessageSquare,

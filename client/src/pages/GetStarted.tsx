@@ -676,7 +676,17 @@ Domain: ${pkg.tier === "starter" ? "$15/year" : "Free first year, then $15/yr"} 
               <div>
                 <p className="text-sm font-medium text-off-white font-sans">Secure Checkout</p>
                 <p className="text-xs text-soft-gray font-sans mt-1">
-                  After clicking "Proceed to Payment", you'll be redirected to Stripe's secure checkout page. Your payment information is never stored on our servers. A MiniMorph representative will contact you within 24 hours to kick off your project.
+                  After clicking "Proceed to Payment", you'll be redirected to Stripe's secure checkout page. Your payment information is never stored on our servers.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-violet/5 rounded-xl p-4 flex items-start gap-3 border border-violet/15">
+              <Sparkles className="h-5 w-5 text-violet/70 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-off-white font-sans">What happens after payment?</p>
+                <p className="text-xs text-soft-gray font-sans mt-1">
+                  You'll receive a portal login email within minutes. Log in and meet Elena — our AI onboarding agent will walk you through everything we need to build your site. First draft arrives in 48–72 hours after your Elena session.
                 </p>
               </div>
             </div>

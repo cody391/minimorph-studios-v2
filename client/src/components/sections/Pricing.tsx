@@ -306,8 +306,16 @@ export default function Pricing() {
           </motion.div>
         )}
 
+        {/* Ecommerce callout */}
+        <div className="max-w-2xl mx-auto mt-10 p-4 rounded-xl border border-gold/20 bg-gold/5 text-center">
+          <p className="text-sm font-sans text-off-white/60">
+            <span className="text-gold font-medium">Building an online store?</span>{" "}
+            Our Enterprise plan covers ecommerce, or ask your rep about a custom Commerce package tailored to your product count and needs.
+          </p>
+        </div>
+
         {/* Legal disclaimers */}
-        <div className="max-w-3xl mx-auto mt-12 text-center space-y-2">
+        <div className="max-w-3xl mx-auto mt-8 text-center space-y-2">
           <p className="text-xs text-off-white/25 font-sans">
             All prices are in USD. Monthly fees are billed on a 12-month agreement. Prices may change with 30 days notice.
           </p>

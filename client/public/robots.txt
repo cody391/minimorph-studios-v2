@@ -1,4 +1,16 @@
 User-agent: *
 Allow: /
+Disallow: /portal
+Disallow: /portal/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /rep
+Disallow: /rep/
+Disallow: /onboarding
+Disallow: /onboarding/
+Disallow: /login
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /dev-access
 
 Sitemap: https://www.minimorphstudios.net/sitemap.xml

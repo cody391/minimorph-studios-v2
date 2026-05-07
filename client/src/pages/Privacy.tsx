@@ -98,7 +98,7 @@ export default function Privacy() {
               please contact us at:<br />
               <strong>MiniMorph Studios</strong><br />
               Muskegon, Michigan<br />
-              Email: privacy@minimorphstudios.com
+              Email: privacy@minimorphstudios.net
             </p>
           </section>
         </div>
