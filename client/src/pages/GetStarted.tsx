@@ -90,6 +90,7 @@ function generateTempPassword(): string {
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════ */
 type Stage = "capture" | "creating" | "chat";
+type CaptureSubState = "email" | "password";
 
 export default function GetStarted() {
   const [, setLocation] = useLocation();
@@ -99,6 +100,11 @@ export default function GetStarted() {
   const [email, setEmail] = useState("");
   const [projectId, setProjectId] = useState<number | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+
+  // Email-capture sub-states
+  const [captureSubState, setCaptureSubState] = useState<CaptureSubState>("email");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   // Chat state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -116,6 +122,7 @@ export default function GetStarted() {
 
   // tRPC mutations
   const registerMutation = trpc.localAuth.register.useMutation();
+  const loginMutation = trpc.localAuth.login.useMutation();
   const createProjectMutation = trpc.onboarding.createSelfServiceProject.useMutation();
   const chatMutation = trpc.ai.onboardingChat.useMutation();
   const saveProgressMutation = trpc.onboarding.saveProgress.useMutation();
@@ -269,37 +276,61 @@ export default function GetStarted() {
     setTempPassword(pw);
 
     try {
-      // Create account (or fail gracefully if email exists)
-      try {
-        await registerMutation.mutateAsync({
-          email: email.trim(),
-          password: pw,
-          name: email.split("@")[0],
-        });
-      } catch (regErr: any) {
-        if (regErr.message?.includes("already registered") || regErr.message?.includes("already exists")) {
-          toast.error(
-            "You already have an account. Log in first, then come back here.",
-            { duration: 6000, action: { label: "Log in", onClick: () => setLocation("/login?returnTo=/get-started") } }
-          );
-          setStage("capture");
-          return;
-        }
-        throw regErr;
-      }
-
-      // Create the self-service project (now logged in)
+      await registerMutation.mutateAsync({
+        email: email.trim(),
+        password: pw,
+        name: email.split("@")[0],
+      });
+      // New account created — go straight to Elena
       const { projectId: newId } = await createProjectMutation.mutateAsync();
       setProjectId(newId);
       setStage("chat");
-
-      toast.success(`Account created! Save your temp password: ${pw}`, {
+      toast.success(`Account created! Save your password: ${pw}`, {
         duration: 12000,
         description: "You can change it in your portal settings.",
       });
     } catch (err: any) {
+      const isConflict =
+        err?.data?.code === "CONFLICT" ||
+        err?.message?.includes("already exists") ||
+        err?.message?.includes("already registered");
+
+      if (isConflict) {
+        // Existing account — switch to inline password form
+        setStage("capture");
+        setCaptureSubState("password");
+        setPassword("");
+        setLoginError("");
+        return;
+      }
       toast.error(err.message || "Something went wrong. Please try again.");
       setStage("capture");
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password.trim()) return;
+    setLoginError("");
+    setStage("creating");
+
+    try {
+      await loginMutation.mutateAsync({ email: email.trim(), password });
+      // Authenticated — create a fresh project and start Elena
+      const { projectId: newId } = await createProjectMutation.mutateAsync();
+      setProjectId(newId);
+      setStage("chat");
+    } catch (err: any) {
+      setStage("capture");
+      const isAuthError =
+        err?.data?.code === "UNAUTHORIZED" ||
+        err?.message?.toLowerCase().includes("invalid") ||
+        err?.message?.toLowerCase().includes("password");
+      if (isAuthError) {
+        setLoginError("Wrong password. Please try again.");
+      } else {
+        toast.error(err.message || "Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -340,33 +371,80 @@ export default function GetStarted() {
           {/* Headline */}
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-serif text-white mb-3 leading-tight">
-              Let's build your website.
+              {captureSubState === "password" ? "Welcome back." : "Let's build your website."}
             </h1>
             <p className="text-gray-400 font-sans text-base leading-relaxed">
-              Tell Elena what you're looking for. She'll walk you through everything — plan, pricing, and your site brief — then you pay only when you're ready.
+              {captureSubState === "password"
+                ? `Enter your password for ${email} to start a new project.`
+                : "Tell Elena what you're looking for. She'll walk you through everything — plan, pricing, and your site brief — then you pay only when you're ready."}
             </p>
           </div>
 
-          {/* Email form */}
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <Input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              required
-              className="h-12 bg-[#13131f] border-[#2a2a40] text-white placeholder-gray-500 text-base focus:border-[#4a9eff]/60 rounded-xl"
-              autoFocus
-            />
-            <Button
-              type="submit"
-              disabled={!email.trim()}
-              className="w-full h-12 bg-[#4a9eff] hover:bg-[#3a8eef] text-white font-semibold text-base rounded-xl flex items-center justify-center gap-2"
-            >
-              Start Talking to Elena
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </form>
+          {/* Email form (sub-state A) */}
+          {captureSubState === "email" && (
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <Input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                required
+                className="h-12 bg-[#13131f] border-[#2a2a40] text-white placeholder-gray-500 text-base focus:border-[#4a9eff]/60 rounded-xl"
+                autoFocus
+              />
+              <Button
+                type="submit"
+                disabled={!email.trim()}
+                className="w-full h-12 bg-[#4a9eff] hover:bg-[#3a8eef] text-white font-semibold text-base rounded-xl flex items-center justify-center gap-2"
+              >
+                Start Talking to Elena
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </form>
+          )}
+
+          {/* Password form (sub-state B — existing account) */}
+          {captureSubState === "password" && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              {loginError && (
+                <p className="text-sm text-red-400 text-center bg-red-500/10 border border-red-500/20 rounded-xl py-2 px-3">
+                  {loginError}
+                </p>
+              )}
+              <Input
+                type="password"
+                value={password}
+                onChange={e => { setPassword(e.target.value); setLoginError(""); }}
+                placeholder="Your password"
+                required
+                className="h-12 bg-[#13131f] border-[#2a2a40] text-white placeholder-gray-500 text-base focus:border-[#4a9eff]/60 rounded-xl"
+                autoFocus
+              />
+              <Button
+                type="submit"
+                disabled={!password.trim()}
+                className="w-full h-12 bg-[#4a9eff] hover:bg-[#3a8eef] text-white font-semibold text-base rounded-xl flex items-center justify-center gap-2"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+              <div className="flex items-center justify-between text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setCaptureSubState("email"); setPassword(""); setLoginError(""); }}
+                  className="text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  ← Change email
+                </button>
+                <span className="text-gray-600">
+                  Forgot password?{" "}
+                  <a href="mailto:hello@minimorphstudios.net" className="text-[#4a9eff] hover:underline">
+                    Contact us
+                  </a>
+                </span>
+              </div>
+            </form>
+          )}
 
           {/* Trust line */}
           <p className="text-center text-xs text-gray-600 mt-4">
@@ -374,15 +452,20 @@ export default function GetStarted() {
           </p>
 
           {/* Already logged in? */}
-          {user && (
+          {user && captureSubState === "email" && (
             <p className="text-center text-sm text-gray-500 mt-3">
               Logged in as <span className="text-gray-300">{user.email}</span>.{" "}
               <button
                 onClick={async () => {
                   setStage("creating");
-                  const { projectId: newId } = await createProjectMutation.mutateAsync();
-                  setProjectId(newId);
-                  setStage("chat");
+                  try {
+                    const { projectId: newId } = await createProjectMutation.mutateAsync();
+                    setProjectId(newId);
+                    setStage("chat");
+                  } catch (err: any) {
+                    toast.error(err.message || "Something went wrong.");
+                    setStage("capture");
+                  }
                 }}
                 className="text-[#4a9eff] hover:underline"
               >
@@ -391,7 +474,7 @@ export default function GetStarted() {
             </p>
           )}
 
-          {!user && (
+          {!user && captureSubState === "email" && (
             <p className="text-center text-xs text-gray-600 mt-2">
               Already have an account?{" "}
               <Link href="/login?returnTo=/get-started" className="text-[#4a9eff] hover:underline">
