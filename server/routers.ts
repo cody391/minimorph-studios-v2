@@ -3078,27 +3078,66 @@ function cleanHtml(html: string): string {
     .slice(0, 6000);
 }
 
-async function scrapeWebsite(url: string): Promise<string> {
+async function scrapeWebsite(url: string, crawl = false): Promise<string> {
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;
   const noWwwUrl = fullUrl.replace("://www.", "://");
   const wwwUrl = fullUrl.includes("://www.") ? fullUrl : fullUrl.replace("://", "://www.");
+  const candidates = [noWwwUrl, wwwUrl, fullUrl].filter((u, i, arr) => arr.indexOf(u) === i);
   const firecrawlKey = ENV.firecrawlApiKey || process.env.FIRECRAWL_API_KEY || "";
 
-  console.log(`[Scraper] Starting scrape: ${fullUrl}`);
+  console.log(`[Scraper] Starting ${crawl ? "crawl" : "scrape"}: ${fullUrl}`);
 
-  // Firecrawl — try no-www, www, and original in order (deduped)
+  // ── Firecrawl crawl (first-time, multi-page) ────────────────────────────
+  if (firecrawlKey && crawl) {
+    for (const attemptUrl of candidates) {
+      try {
+        const crawlRes = await fetch("https://api.firecrawl.dev/v1/crawl", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ url: attemptUrl, limit: 10, scrapeOptions: { formats: ["markdown"], onlyMainContent: true } }),
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!crawlRes.ok) continue;
+        const crawlData = await crawlRes.json();
+        const crawlId = crawlData.id;
+        if (!crawlId) continue;
+        console.log(`[Scraper] Crawl started id=${crawlId} for ${attemptUrl}`);
+
+        for (let poll = 0; poll < 6; poll++) {
+          await new Promise(r => setTimeout(r, 5000));
+          const statusRes = await fetch(`https://api.firecrawl.dev/v1/crawl/${crawlId}`, {
+            headers: { "Authorization": `Bearer ${firecrawlKey}` },
+            signal: AbortSignal.timeout(10000),
+          });
+          const statusData = await statusRes.json();
+          console.log(`[Scraper] Crawl poll ${poll + 1}/6: ${statusData.status}`);
+          if (statusData.status === "completed") {
+            const pages: any[] = statusData.data || [];
+            const combined = pages
+              .map((p: any) => `\n\n=== ${p.metadata?.sourceURL || ""} ===\n${p.markdown || ""}`)
+              .join("\n")
+              .slice(0, 12000);
+            if (combined.length > 100) {
+              console.log(`[Scraper] Crawl SUCCESS: ${pages.length} pages (${combined.length} chars)`);
+              return combined;
+            }
+            break;
+          }
+        }
+        console.log(`[Scraper] Crawl incomplete, falling back to single-page`);
+      } catch (e: any) {
+        console.log(`[Scraper] Crawl exception on ${attemptUrl}: ${e.message}`);
+      }
+    }
+  }
+
+  // ── Firecrawl single-page scrape ────────────────────────────────────────
   if (firecrawlKey) {
-    const candidates = [noWwwUrl, wwwUrl, fullUrl].filter(
-      (u, i, arr) => arr.indexOf(u) === i
-    );
     for (const attemptUrl of candidates) {
       try {
         const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${firecrawlKey}`,
-            "Content-Type": "application/json",
-          },
+          headers: { "Authorization": `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
           body: JSON.stringify({ url: attemptUrl, formats: ["markdown"], onlyMainContent: true }),
           signal: AbortSignal.timeout(15000),
         });
@@ -3123,14 +3162,13 @@ async function scrapeWebsite(url: string): Promise<string> {
     console.log(`[Scraper] Firecrawl key missing — skipping to direct fetch`);
   }
 
-  // Direct fetch fallback — try multiple User-Agents and www/non-www variants
-  const attempts = [
+  // ── Direct fetch fallback ───────────────────────────────────────────────
+  const directAttempts = [
     { ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", url: fullUrl },
     { ua: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)", url: fullUrl },
     { ua: "Mozilla/5.0 (compatible; Googlebot/2.1)", url: fullUrl.includes("www.") ? fullUrl.replace("www.", "") : fullUrl.replace("://", "://www.") },
   ];
-
-  for (const attempt of attempts) {
+  for (const attempt of directAttempts) {
     try {
       const res = await fetch(attempt.url, {
         headers: { "User-Agent": attempt.ua, "Accept": "text/html,application/xhtml+xml", "Accept-Language": "en-US,en;q=0.5" },
@@ -3268,11 +3306,15 @@ Always end with a helpful question or a specific suggestion.`;
       console.log(`[Chat] Message received: "${input.message.slice(0, 80)}"`);
       const urlsToScrape = extractUrls(recentHistory);
       console.log(`[Chat] URLs detected: ${JSON.stringify(urlsToScrape)}`);
+      // Crawl full site (multi-page) the first time a URL appears; single-page for subsequent refs
+      const isFirstScrape = !(input.history || []).some(
+        (m: any) => m.content?.includes("[WEBSITE CONTENT RETRIEVED]")
+      );
       let scrapedSitesContext = "";
       if (urlsToScrape.length > 0) {
         const scraped = await Promise.all(
-          urlsToScrape.map(async (url) => {
-            const text = await scrapeWebsite(url);
+          urlsToScrape.slice(0, 2).map(async (url, idx) => {
+            const text = await scrapeWebsite(url, isFirstScrape && idx === 0);
             return text ? `[${url}]\n${text}` : null;
           })
         );

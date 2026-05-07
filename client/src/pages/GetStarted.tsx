@@ -8,7 +8,7 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Loader2, Send, Upload, CheckCircle2, ArrowRight,
-  Sparkles, CreditCard, Lock, Globe,
+  Sparkles, CreditCard, Lock, Globe, Paperclip,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 
@@ -284,6 +284,34 @@ export default function GetStarted() {
         toast.success(`${req.label} uploaded!`);
         setUploadingFor(null);
         sendMessage(`I've just uploaded the ${req.label}: ${file.name}`);
+      } catch {
+        toast.error("Upload failed. Please try again.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [projectId, uploadAssetMutation, sendMessage]
+  );
+
+  const handleFreeUpload = useCallback(
+    async (file: File) => {
+      if (!projectId) { toast.error("No project found."); return; }
+      if (file.size > 10 * 1024 * 1024) { toast.error("File too large. Max 10MB."); return; }
+      setUploading(true);
+      try {
+        const buffer = await file.arrayBuffer();
+        const base64 = btoa(
+          new Uint8Array(buffer).reduce((d, b) => d + String.fromCharCode(b), "")
+        );
+        await uploadAssetMutation.mutateAsync({
+          projectId,
+          fileName: file.name,
+          fileBase64: base64,
+          mimeType: file.type,
+          category: "logo" as any,
+        });
+        toast.success(`${file.name} uploaded!`);
+        sendMessage(`I've uploaded a file: ${file.name}`);
       } catch {
         toast.error("Upload failed. Please try again.");
       } finally {
@@ -741,6 +769,16 @@ export default function GetStarted() {
                 rows={1}
                 disabled={isLoading}
               />
+              <label className={`flex items-center justify-center min-h-[44px] px-3 rounded-xl border border-[#2a2a40] bg-[#13131f] cursor-pointer hover:border-[#4a9eff]/40 transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin text-[#4a9eff]" /> : <Paperclip className="w-4 h-4 text-gray-500 hover:text-gray-300" />}
+                <input
+                  type="file"
+                  className="hidden"
+                  disabled={uploading || isLoading}
+                  accept="image/*,.pdf,.svg,.ai,.eps,.doc,.docx,.txt"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleFreeUpload(f); e.target.value = ""; }}
+                />
+              </label>
               <Button
                 onClick={() => { if (input.trim() && !isLoading) sendMessage(input.trim()); }}
                 disabled={!input.trim() || isLoading}
