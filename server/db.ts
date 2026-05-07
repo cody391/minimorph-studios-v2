@@ -387,49 +387,45 @@ export async function repairSchema(): Promise<void> {
       console.log(`[SchemaRepair] Purge check skipped: ${e.message.substring(0, 80)}`);
     }
 
-    // ── Clear all non-admin test accounts ─────────────────────────────
+    // ── Restore rep user accounts deleted by the v2 cleanup ─────────────
+    // The v2 cleanup accidentally deleted rep user accounts (role='user').
+    // Find reps whose userId no longer exists in users and recreate them.
     try {
       const [flagRows] = await conn.execute<any[]>(
-        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'clear_chelsea_session_v2' LIMIT 1"
+        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'restore_rep_users_v1' LIMIT 1"
       );
       if (!(flagRows as any[])[0]) {
-        const [userRows] = await conn.execute<any[]>(
-          "SELECT id, email FROM `users` WHERE role = 'user' AND email != 'cody@wmrum.com'"
+        const [orphanedReps] = await conn.execute<any[]>(
+          "SELECT r.id AS repId, r.userId, r.email, r.fullName FROM `reps` r LEFT JOIN `users` u ON r.userId = u.id WHERE u.id IS NULL"
         );
-        console.log("[SchemaRepair] Non-admin users found:", JSON.stringify(userRows));
+        console.log("[SchemaRepair] Orphaned reps (missing user accounts):", JSON.stringify(orphanedReps));
 
-        for (const user of userRows as any[]) {
-          const userId = user.id;
-          const [projects] = await conn.execute<any[]>(
-            "SELECT id FROM `onboarding_projects` WHERE userId = ?",
-            [userId]
+        const bcrypt = await import("bcryptjs");
+        const tempPassword = "MiniMorph2026!";
+        const hashed = await bcrypt.hash(tempPassword, 10);
+
+        for (const rep of orphanedReps as any[]) {
+          // Create user account
+          const [insertResult] = await conn.execute<any>(
+            "INSERT INTO `users` (email, password, role, createdAt, updatedAt) VALUES (?, ?, 'user', NOW(), NOW())",
+            [rep.email, hashed]
           );
-          const projectIds = (projects as any[]).map((p: any) => p.id);
-          if (projectIds.length > 0) {
-            const ph = projectIds.map(() => "?").join(",");
-            await conn.execute(
-              `DELETE FROM \`ai_chat_logs\` WHERE projectId IN (${ph})`,
-              projectIds
-            );
-            await conn.execute(
-              `DELETE FROM \`onboarding_projects\` WHERE id IN (${ph})`,
-              projectIds
-            );
-          }
+          const newUserId = insertResult.insertId;
+          // Re-link rep record
           await conn.execute(
-            "DELETE FROM `users` WHERE id = ?",
-            [userId]
+            "UPDATE `reps` SET userId = ? WHERE id = ?",
+            [newUserId, rep.repId]
           );
-          console.log(`[SchemaRepair] Deleted account: ${user.email}`);
+          console.log(`[SchemaRepair] Restored rep account: ${rep.email} (new userId=${newUserId}, rep=${rep.fullName}) — temp password: ${tempPassword}`);
         }
 
         await conn.execute(
-          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('clear_chelsea_session_v2', 'true', 'Clear all non-admin test accounts')"
+          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('restore_rep_users_v1', 'true', 'Restore rep user accounts deleted by test cleanup')"
         );
-        console.log("[SchemaRepair] Test account cleanup complete");
+        console.log("[SchemaRepair] Rep account restoration complete");
       }
     } catch (e: any) {
-      console.log(`[SchemaRepair] Test account clear skipped: ${e.message.substring(0, 80)}`);
+      console.log(`[SchemaRepair] Rep restore skipped: ${e.message.substring(0, 80)}`);
     }
 
     console.log("[SchemaRepair] Schema repair complete");
