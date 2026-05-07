@@ -1,81 +1,60 @@
 /*
- * Integrations & Add-Ons — the only section left after trimming
- * the redundant "What's Included" checklist (already visible in pricing cards).
- * Three tiers with personality.
+ * Add-Ons — DB-driven grid with filter tabs. Replaces static integration tiers.
  */
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-  Globe, MapPin, Link2, Search, Bot, BarChart3,
-  Bell, Star, Calendar, FileText, Image, Smartphone, Mail,
-  ShoppingCart, Package, Languages, Code, CreditCard, Cog,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
 
-const integrationTiers = [
-  {
-    title: "Comes Standard",
-    description: "Every plan. No asterisks.",
-    color: "border-electric/20",
-    headerBg: "bg-electric/10",
-    headerText: "text-electric",
-    items: [
-      { icon: FileText, label: "Contact / quote form" },
-      { icon: MapPin, label: "Google Maps embed" },
-      { icon: Link2, label: "Social media links" },
-      { icon: Search, label: "Basic SEO structure" },
-    ],
-  },
-  {
-    title: "Popular Add-Ons",
-    description: "The stuff that turns a website into a sales tool.",
-    color: "border-violet/20",
-    headerBg: "bg-violet/10",
-    headerText: "text-violet",
-    items: [
-      { icon: Bot, label: "AI Chat Bot", price: "$79/mo" },
-      { icon: Star, label: "Google Reviews Widget", price: "$49/mo" },
-      { icon: Calendar, label: "Booking Integration", price: "$49/mo" },
-      { icon: Mail, label: "Lead Capture Form", price: "$29/mo" },
-      { icon: Bell, label: "SMS Lead Alerts", price: "$29/mo" },
-      { icon: Search, label: "SEO Autopilot", price: "$99/mo" },
-      { icon: ShoppingCart, label: "E-Commerce Starter", price: "$149/mo" },
-      { icon: BarChart3, label: "Google Analytics", price: "Included" },
-      { icon: Smartphone, label: "Meta / TikTok Pixel", price: "Included" },
-      { icon: Image, label: "Monthly Photo Updates", price: "Ask your rep" },
-    ],
-  },
-  {
-    title: "Custom Quote",
-    description: "Big builds. We'll scope it together.",
-    color: "border-gold/20",
-    headerBg: "bg-gold/10",
-    headerText: "text-gold",
-    items: [
-      { icon: ShoppingCart, label: "Ecommerce store" },
-      { icon: Package, label: "Shopify / WooCommerce" },
-      { icon: Package, label: "Product migration" },
-      { icon: Package, label: "100+ product catalogs" },
-      { icon: Languages, label: "Multilingual website" },
-      { icon: Code, label: "Custom API integration" },
-      { icon: CreditCard, label: "Complex booking + payments" },
-      { icon: CreditCard, label: "Toast / Square ordering" },
-      { icon: Cog, label: "CRM / Zapier automation" },
-    ],
-  },
+type FilterKey = "all" | "marketing" | "functionality" | "design";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "marketing", label: "Marketing" },
+  { key: "functionality", label: "Functionality" },
+  { key: "design", label: "Design" },
 ];
 
+const FILTER_KEYS: Record<FilterKey, string[]> = {
+  all: [],
+  marketing: ["seo_autopilot", "sms_alerts", "competitor_monitoring", "email_marketing_setup", "social_feed_embed"],
+  functionality: ["booking_widget", "ai_chatbot", "review_collector", "lead_capture_bot", "event_calendar", "menu_price_list", "live_chat", "online_store"],
+  design: ["logo_design", "brand_style_guide", "ai_photography", "video_background", "extra_pages", "copywriting"],
+};
+
 export default function CorePrinciple() {
+  const [, setLocation] = useLocation();
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const { data: catalog } = trpc.products.catalog.useQuery();
+
+  const allItems = useMemo(() => {
+    const addons = (catalog?.paidAddons as any[]) ?? [];
+    const oneTime = (catalog?.oneTimeItems as any[]) ?? [];
+    return [...addons, ...oneTime];
+  }, [catalog]);
+
+  const visibleItems = useMemo(() => {
+    if (filter === "all") return allItems;
+    const keys = FILTER_KEYS[filter];
+    return allItems.filter((p: any) => keys.includes(p.productKey));
+  }, [allItems, filter]);
+
   return (
-    <section id="integrations" className="py-20 lg:py-28 bg-charcoal relative overflow-hidden">
+    <section id="addons" className="py-20 lg:py-28 bg-charcoal relative overflow-hidden">
       <div className="absolute inset-0 noise-texture opacity-30" />
       <div className="container relative z-10">
-        <div className="max-w-3xl mx-auto text-center mb-16">
+
+        {/* Header */}
+        <div className="max-w-3xl mx-auto text-center mb-12">
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="text-sm font-sans font-medium text-electric uppercase tracking-widest mb-4 block"
           >
-            Integrations & Add-Ons
+            Add-Ons
           </motion.span>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -84,8 +63,8 @@ export default function CorePrinciple() {
             transition={{ delay: 0.1 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-serif text-off-white leading-tight mb-6"
           >
-            Your site grows{" "}
-            <span className="text-gradient-electric">when you do.</span>
+            Add exactly what{" "}
+            <span className="text-gradient-electric">your business needs.</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -94,56 +73,120 @@ export default function CorePrinciple() {
             transition={{ delay: 0.2 }}
             className="text-lg text-off-white/50 font-sans leading-relaxed"
           >
-            Start with what you need. Add features when they make sense — not because
-            we upsold you during a sales call. Tell us what you want during onboarding
-            and we'll recommend what actually fits your business.
+            Every add-on is optional. Pick what fits, skip what doesn't.
+            Elena will recommend the right ones for your specific business during onboarding.
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {integrationTiers.map((tier, idx) => (
-            <motion.div
-              key={tier.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.1 }}
-              className={`glass-card ${tier.color} overflow-hidden`}
+        {/* Filter Tabs */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.25 }}
+          className="flex justify-center gap-2 mb-10 flex-wrap"
+        >
+          {FILTERS.map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-5 py-2 rounded-full text-sm font-sans font-medium transition-all duration-200 ${
+                filter === f.key
+                  ? "bg-electric text-midnight"
+                  : "bg-off-white/5 text-off-white/50 hover:text-off-white hover:bg-off-white/10 border border-off-white/10"
+              }`}
             >
-              <div className={`p-4 ${tier.headerBg}`}>
-                <h3 className={`text-lg font-serif ${tier.headerText}`}>{tier.title}</h3>
-                <p className="text-xs font-sans text-off-white/40 mt-1">{tier.description}</p>
-              </div>
-              <div className="p-4 space-y-2">
-                {tier.items.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between gap-2.5 p-2 rounded-lg bg-off-white/3">
-                    <div className="flex items-center gap-2.5">
-                      <item.icon size={15} className={tier.headerText + "/60"} />
-                      <span className="text-sm font-sans text-off-white/60">{item.label}</span>
-                    </div>
-                    {"price" in item && item.price && (
-                      <span className={`text-[11px] font-sans font-medium whitespace-nowrap ${
-                        item.price === "Included" ? "text-electric/60" : item.price === "Ask your rep" ? "text-off-white/30" : tier.headerText
-                      }`}>
-                        {item.price}
-                      </span>
+              {f.label}
+            </button>
+          ))}
+        </motion.div>
+
+        {/* Addon Grid */}
+        {visibleItems.length === 0 ? (
+          <div className="text-center py-20 text-off-white/30 font-sans text-sm">
+            Loading add-ons…
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 max-w-6xl mx-auto">
+            {visibleItems.map((addon: any, idx: number) => {
+              const basePrice = parseFloat(addon.basePrice);
+              const isOneTime = addon.category === "one_time";
+              const priceLabel = isOneTime
+                ? `$${basePrice.toFixed(0)} one-time`
+                : `$${basePrice.toFixed(0)}/mo`;
+
+              return (
+                <motion.div
+                  key={addon.productKey}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: Math.min(idx * 0.04, 0.4) }}
+                  className="flex flex-col rounded-xl border border-off-white/10 bg-off-white/3 p-5 hover:border-electric/30 hover:bg-electric/5 transition-all duration-300 group"
+                >
+                  {/* Badge */}
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-off-white/30 mb-3 block">
+                    {isOneTime ? "One-time" : "Monthly"}
+                  </span>
+
+                  {/* Name */}
+                  <h3 className="text-base font-semibold text-off-white mb-1 font-sans">
+                    {addon.name}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-sm text-off-white/60 mb-4 leading-relaxed font-sans flex-1">
+                    {addon.description}
+                  </p>
+
+                  {/* How it works */}
+                  {addon.howItWorks && (
+                    <p className="text-xs text-off-white/35 mb-4 leading-relaxed border-t border-off-white/8 pt-3 font-sans">
+                      {addon.howItWorks}
+                    </p>
+                  )}
+
+                  {/* Price + ROI */}
+                  <div className="mt-auto">
+                    <p className="text-lg font-serif text-electric">
+                      {isOneTime
+                        ? <>${basePrice.toFixed(0)} <span className="text-sm text-off-white/40 font-sans">one-time</span></>
+                        : <>${basePrice.toFixed(0)} <span className="text-sm text-off-white/40 font-sans">/mo</span></>
+                      }
+                    </p>
+                    {addon.roiExample && (
+                      <p className="text-[11px] text-off-white/35 mt-1.5 leading-snug font-sans">
+                        {addon.roiExample.length > 90
+                          ? addon.roiExample.slice(0, 90) + "…"
+                          : addon.roiExample}
+                      </p>
                     )}
                   </div>
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="text-center mt-10 text-xs font-sans text-off-white/25 max-w-md mx-auto"
+          transition={{ delay: 0.3 }}
+          className="text-center mt-14"
         >
-          Not sure what you need? Our onboarding AI will ask the right questions and recommend features based on your industry and goals.
-        </motion.p>
+          <p className="text-off-white/40 font-sans text-sm mb-4 max-w-md mx-auto">
+            Not sure which add-ons fit your business? Elena will recommend the right ones based on what you actually need.
+          </p>
+          <Button
+            className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold px-8 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300"
+            onClick={() => setLocation("/get-started")}
+          >
+            Talk to Elena
+            <ArrowRight size={14} className="ml-1.5" />
+          </Button>
+        </motion.div>
       </div>
     </section>
   );

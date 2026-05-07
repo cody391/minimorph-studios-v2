@@ -12,6 +12,7 @@ const navLinks = [
   { label: "Services", href: "#services" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "Showroom", href: "#showroom" },
+  { label: "Add-Ons", href: "#addons" },
   { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
   { label: "Careers", href: "/careers", isRoute: true },

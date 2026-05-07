@@ -50,6 +50,22 @@ const faqs = [
     q: "What happens when my 12-month agreement ends?",
     a: "After your 12 months, you can cancel with 30 days' written notice — no penalty, no runaround. Early cancellation requires payment of remaining months in the agreement. Your content and domain are always yours to take with you.",
   },
+  {
+    q: "What add-ons do you offer?",
+    a: "We have 15+ optional add-ons — from booking widgets and AI chatbots to review collectors, event calendars, live chat, and email marketing. Elena recommends the right ones for your specific business during onboarding. You only pay for what you actually add.",
+  },
+  {
+    q: "Do I have to pick add-ons upfront?",
+    a: "No. You can add them anytime through your customer portal — before launch, after launch, whenever you're ready. Elena will walk you through the options that make sense for your business type. There's no pressure to decide on day one.",
+  },
+  {
+    q: "What's included in every plan?",
+    a: "Every plan includes SSL certificate, enterprise hosting on Cloudflare CDN, mobile-responsive design, Google Analytics setup, SEO foundation (meta tags, sitemap, schema markup), monthly performance reports, up to 3 revision rounds before launch, and ongoing monthly change requests. No setup fee on any plan.",
+  },
+  {
+    q: "Can I cancel my add-ons?",
+    a: "Monthly add-ons can be cancelled with 30 days notice after your first 3 months. One-time add-ons (like logo design or copywriting) are non-refundable once work has started. Your core plan runs on a 12-month agreement.",
+  },
 ];
 
 export default function FAQ() {

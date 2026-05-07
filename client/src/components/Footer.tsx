@@ -20,6 +20,7 @@ const footerLinks = [
     links: [
       { label: "Website Design", href: "#services" },
       { label: "Showroom", href: "#showroom" },
+      { label: "Add-Ons", href: "#addons" },
       { label: "Pricing", href: "#pricing" },
       { label: "Free Audit", href: "/free-audit", isRoute: true },
     ],

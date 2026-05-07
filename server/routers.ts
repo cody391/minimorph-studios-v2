@@ -4506,6 +4506,19 @@ const productsRouter = router({
     return db.listProductCatalog(true);
   }),
 
+  catalog: publicProcedure.query(async () => {
+    const items = await db.listProductCatalog(true);
+    const SHOP_KEYS = ["shop_starter", "shop_growth", "shop_premium"];
+    const HIDDEN_ONE_TIME = ["extra_revision_block", "setup_fee"];
+    return {
+      packages: items.filter((p: any) => p.category === "package" && !SHOP_KEYS.includes(p.productKey)),
+      shopPackages: items.filter((p: any) => p.category === "package" && SHOP_KEYS.includes(p.productKey)),
+      freeFeatures: items.filter((p: any) => p.isFree),
+      paidAddons: items.filter((p: any) => !p.isFree && p.category === "addon"),
+      oneTimeItems: items.filter((p: any) => !p.isFree && p.category === "one_time" && !HIDDEN_ONE_TIME.includes(p.productKey)),
+    };
+  }),
+
   listAll: adminProcedure.query(async () => {
     return db.listProductCatalog(false);
   }),

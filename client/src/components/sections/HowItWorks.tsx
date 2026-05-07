@@ -23,8 +23,8 @@ const steps = [
     icon: ClipboardList,
     number: "02",
     title: "Elena Gathers Everything",
-    description: "Our AI onboarding agent Elena collects your brand details, competitors, styles you love, and goals through a natural conversation — then hands off a complete creative brief to our team.",
-    aside: "AI chat + portal onboarding",
+    description: "Elena learns your business, recommends the right plan and add-ons, and collects everything needed to build your site — colors, content, competitors, goals. She'll even pull up your existing site and competitors in real time.",
+    aside: "15–20 minutes, fully guided",
   },
   {
     icon: PenTool,
@@ -51,7 +51,7 @@ const steps = [
     icon: BarChart3,
     number: "06",
     title: "Monthly Care Begins",
-    description: "This is where most agencies ghost you. Not us. Monthly reports, AI recommendations, support tickets, and actual humans who respond.",
+    description: "Monthly performance reports, change requests handled in 48 hours, and AI recommendations for what to improve next. This is where most agencies disappear. We don't.",
     aside: "Every month, for real",
   },
 ];
