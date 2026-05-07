@@ -414,6 +414,27 @@ export async function repairSchema(): Promise<void> {
       console.log(`[SchemaRepair] Orphaned rep cleanup skipped: ${e.message.substring(0, 80)}`);
     }
 
+    // ── One-time admin password reset ─────────────────────────────────────
+    try {
+      const [flagRows] = await conn.execute<any[]>(
+        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'reset_admin_pw_v1' LIMIT 1"
+      );
+      if (!(flagRows as any[])[0]) {
+        const newPassword = "MiniMorph2026!";
+        const hash = await bcrypt.hash(newPassword, 10);
+        await conn.execute(
+          "UPDATE `users` SET passwordHash = ? WHERE email = 'cody@wmrum.com'",
+          [hash]
+        );
+        await conn.execute(
+          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('reset_admin_pw_v1', 'true', 'One-time admin password reset')"
+        );
+        console.log("[SchemaRepair] Admin password reset to MiniMorph2026!");
+      }
+    } catch (e: any) {
+      console.log(`[SchemaRepair] Password reset skipped: ${e.message.substring(0, 80)}`);
+    }
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);
