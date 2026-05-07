@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSINESS_NAME | Luxury Hair Salon</title>
+<meta name="description" content="META_DESCRIPTION">
+<!-- IF_PREMIUM_PLUS_START -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"HairSalon","name":"BUSINESS_NAME","telephone":"PHONE","email":"EMAIL","address":"ADDRESS","url":"APP_URL_PLACEHOLDER","openingHours":"HOURS","priceRange":"$$$"}
+</script>
+<!-- IF_PREMIUM_PLUS_END -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --secondary: SECONDARY_COLOR;
+  --bg: #fafaf8;
+  --surface: #f2efea;
+  --dark: #0f0d0b;
+  --text: #1a1714;
+  --muted: rgba(26,23,20,0.5);
+  --border: rgba(26,23,20,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; line-height: 1.7; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5rem 5%;
+  background: rgba(250,250,248,0.97); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-left { display: flex; gap: 2.5rem; list-style: none; }
+.nav-logo {
+  position: absolute; left: 50%; transform: translateX(-50%);
+  font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400;
+  letter-spacing: 0.04em; color: var(--dark); white-space: nowrap;
+}
+.nav-right { display: flex; gap: 2.5rem; list-style: none; }
+.nav-left a, .nav-right a { font-size: 0.775rem; letter-spacing: 0.08em; font-weight: 400; color: var(--muted); transition: color 0.2s; }
+.nav-left a:hover, .nav-right a:hover { color: var(--text); }
+
+.hero { display: flex; min-height: 100vh; padding-top: 5rem; }
+.hero-image { width: 60%; overflow: hidden; flex-shrink: 0; }
+.hero-image img { width: 100%; height: 100%; object-fit: cover; }
+.hero-content { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 6rem 7%; }
+.hero-eyebrow { font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.75rem; }
+.hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 4vw, 4rem); font-weight: 300; font-style: italic; line-height: 1.1; color: var(--dark); margin-bottom: 1.5rem; }
+.hero-sub { font-size: 0.9375rem; font-weight: 300; color: var(--muted); max-width: 320px; margin-bottom: 3rem; line-height: 1.8; }
+.hero-book {
+  font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500;
+  color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 2px;
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+.hero-book:hover { color: var(--primary); border-color: var(--primary); }
+
+.section-eyebrow { font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem; }
+
+.services-section { padding: 8rem 5%; }
+.services-header { max-width: 1200px; margin: 0 auto 3rem; }
+.services-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 300; font-style: italic; color: var(--dark); margin-bottom: 0.5rem; }
+.services-list { max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--border); }
+.service-row {
+  display: grid; grid-template-columns: 1fr auto;
+  align-items: center; padding: 1.875rem 0;
+  border-bottom: 1px solid var(--border);
+  position: relative; transition: padding-left 0.3s;
+}
+.service-row::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--primary); transform: scaleY(0); transform-origin: top; transition: transform 0.3s;
+}
+.service-row:hover { padding-left: 1rem; }
+.service-row:hover::before { transform: scaleY(1); }
+.service-row-name { font-family: 'Cormorant Garamond', serif; font-size: 1.625rem; font-style: italic; color: var(--dark); margin-bottom: 0.3rem; }
+.service-row-desc { font-size: 0.825rem; font-weight: 300; color: var(--muted); }
+.service-row-price { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--text); text-align: right; flex-shrink: 0; }
+
+.gallery-section { padding: 0 5% 8rem; }
+.gallery-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; }
+.gallery-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-style: italic; color: var(--dark); }
+.gallery-link { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; color: var(--primary); border-bottom: 1px solid var(--primary); padding-bottom: 2px; }
+.gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.gallery-item { overflow: hidden; aspect-ratio: 3/4; }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+.gallery-item:hover img { transform: scale(1.05); }
+
+.team-section { padding: 8rem 5%; background: var(--surface); }
+.team-inner { max-width: 1200px; margin: 0 auto; }
+.team-member { display: grid; grid-template-columns: 1fr 2fr; gap: 5rem; align-items: start; padding: 4rem 0; border-bottom: 1px solid var(--border); }
+.team-member:first-of-type { padding-top: 3rem; }
+.team-photo img { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+.team-name { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-style: italic; color: var(--dark); margin-bottom: 0.5rem; }
+.team-title { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--primary); font-weight: 500; margin-bottom: 1.25rem; }
+.team-bio { font-size: 0.9rem; font-weight: 300; color: var(--muted); line-height: 1.85; margin-bottom: 1.5rem; }
+.team-book-link { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; color: var(--dark); border-bottom: 1px solid var(--dark); padding-bottom: 2px; display: inline-block; transition: color 0.2s; }
+.team-book-link:hover { color: var(--primary); border-color: var(--primary); }
+
+.booking-cta { padding: 10rem 5%; text-align: center; }
+.booking-cta h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 300; font-style: italic; color: var(--dark); margin-bottom: 1.5rem; }
+.booking-cta p { font-size: 1rem; font-weight: 300; color: var(--muted); max-width: 400px; margin: 0 auto 3rem; }
+.booking-cta-link { font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; color: var(--dark); border-bottom: 1px solid var(--dark); padding-bottom: 2px; display: inline-block; transition: color 0.2s; }
+.booking-cta-link:hover { color: var(--primary); border-color: var(--primary); }
+.booking-phone { display: block; font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; color: var(--primary); margin-top: 1.5rem; }
+
+footer { background: var(--surface); padding: 5rem 5% 2rem; border-top: 1px solid var(--border); }
+.footer-inner { max-width: 1200px; margin: 0 auto; text-align: center; }
+.footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--dark); margin-bottom: 1.5rem; }
+.footer-links { display: flex; justify-content: center; gap: 2.5rem; list-style: none; flex-wrap: wrap; margin-bottom: 3rem; }
+.footer-links a { font-size: 0.775rem; color: var(--muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-bottom { border-top: 1px solid var(--border); padding-top: 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.footer-copy { font-size: 0.775rem; color: var(--muted); }
+.footer-mini { font-size: 0.7rem; color: var(--muted); }
+.footer-mini a { color: var(--primary); }
+
+[data-animate] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s, transform 0.7s; }
+[data-animate].visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  nav { justify-content: space-between; }
+  .nav-logo { position: static; transform: none; }
+  .nav-right { display: none; }
+  .hero { flex-direction: column; }
+  .hero-image { width: 100%; height: 70vw; }
+  .gallery-grid { grid-template-columns: 1fr 1fr; }
+  .team-member { grid-template-columns: 1fr; gap: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="mm-banner" style="background:#0a0a12;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.72rem;position:sticky;top:0;z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)">
+  MiniMorph Studios Demo — BUSINESS_NAME |
+  <a href="https://www.minimorphstudios.net/get-started" style="color:#3b82f6;font-weight:600;margin-left:6px">Build Your Site →</a>
+</div>
+
+<nav>
+  <ul class="nav-left">
+    <li><a href="services.html">Services</a></li>
+    <li><a href="gallery.html">Gallery</a></li>
+  </ul>
+  <div class="nav-logo">BUSINESS_NAME</div>
+  <ul class="nav-right">
+    <li><a href="team.html">Team</a></li>
+    <li><a href="contact.html">Book</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <div class="hero-image">
+    <img src="HERO_IMAGE" alt="BUSINESS_NAME — HEADLINE">
+  </div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">SERVICE_AREA · Est. YEARS_IN_BUSINESS</div>
+    <h1>HEADLINE</h1>
+    <p class="hero-sub">SUBHEADLINE</p>
+    <a href="contact.html" class="hero-book">Schedule a Consultation —&nbsp;→</a>
+  </div>
+</section>
+
+<section class="services-section">
+  <div class="services-header" data-animate>
+    <div class="section-eyebrow">Our Services</div>
+    <div class="services-title">What We Offer</div>
+  </div>
+  <div class="services-list">
+    <div class="service-row" data-animate>
+      <div><div class="service-row-name">Balayage &amp; Color</div><div class="service-row-desc">Hand-painted color from our senior colorists. Correction and transformation welcome.</div></div>
+      <div class="service-row-price">From $185</div>
+    </div>
+    <div class="service-row" data-animate>
+      <div><div class="service-row-name">Hair Extensions</div><div class="service-row-desc">Certified Great Lengths extensions. The only certified studio in SERVICE_AREA.</div></div>
+      <div class="service-row-price">From $800</div>
+    </div>
+    <div class="service-row" data-animate>
+      <div><div class="service-row-name">Brazilian Blowout</div><div class="service-row-desc">Smoothing treatment that lasts 10–12 weeks. Frizz-free, manageable, lustrous.</div></div>
+      <div class="service-row-price">$250</div>
+    </div>
+    <div class="service-row" data-animate>
+      <div><div class="service-row-name">Precision Cut &amp; Style</div><div class="service-row-desc">Tailored to your face shape, lifestyle, and texture. Nothing generic ever leaves our chair.</div></div>
+      <div class="service-row-price">From $75</div>
+    </div>
+    <div class="service-row" data-animate>
+      <div><div class="service-row-name">Bridal &amp; Special Occasion</div><div class="service-row-desc">Full bridal packages including trial run, day-of styling, and bridesmaid coordination.</div></div>
+      <div class="service-row-price">From $300</div>
+    </div>
+  </div>
+</section>
+
+<!-- IF_GROWTH_PLUS_START -->
+<section class="gallery-section">
+  <div class="gallery-header">
+    <div class="gallery-title">Results Gallery</div>
+    <a href="gallery.html" class="gallery-link">Full Gallery →</a>
+  </div>
+  <div class="gallery-grid">
+    <div class="gallery-item"><img src="GALLERY_IMAGE_1" alt="Hair result 1"></div>
+    <div class="gallery-item"><img src="GALLERY_IMAGE_2" alt="Hair result 2"></div>
+    <div class="gallery-item"><img src="GALLERY_IMAGE_3" alt="Hair result 3"></div>
+    <div class="gallery-item"><img src="ABOUT_IMAGE" alt="Hair result 4"></div>
+  </div>
+</section>
+
+<section class="team-section">
+  <div class="team-inner">
+    <div class="section-eyebrow" data-animate>Our Stylists</div>
+    <div class="team-member" data-animate>
+      <div class="team-photo"><img src="ABOUT_IMAGE" alt="OWNER_NAME"></div>
+      <div>
+        <div class="team-name">OWNER_NAME</div>
+        <div class="team-title">Master Colorist &amp; Owner</div>
+        <div class="team-bio">ABOUT_STORY</div>
+        <a href="contact.html?stylist=owner" class="team-book-link">Book with OWNER_NAME →</a>
+      </div>
+    </div>
+    <div class="team-member" data-animate>
+      <div class="team-photo"><img src="GALLERY_IMAGE_2" alt="Senior Stylist"></div>
+      <div>
+        <div class="team-name">Senior Stylist</div>
+        <div class="team-title">Extensions Specialist</div>
+        <div class="team-bio">One of the few Great Lengths certified technicians in the region. Specializes in tape-in, keratin bond, and invisible bead extensions that move and feel like your own hair.</div>
+        <a href="contact.html?stylist=extensions" class="team-book-link">Book an Extensions Consultation →</a>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- IF_GROWTH_PLUS_END -->
+
+<section class="booking-cta">
+  <div data-animate>
+    <div class="section-eyebrow">Begin Your Transformation</div>
+    <h2>Ready When You Are</h2>
+    <p>Schedule a consultation and let us understand exactly what you are looking for before we start.</p>
+    <a href="contact.html" class="booking-cta-link">Schedule a Consultation →</a>
+    <a href="tel:PHONE" class="booking-phone">PHONE</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">BUSINESS_NAME</div>
+    <ul class="footer-links">
+      <li><a href="services.html">Services</a></li>
+      <li><a href="gallery.html">Gallery</a></li>
+      <li><a href="team.html">Our Team</a></li>
+      <li><a href="contact.html">Book</a></li>
+      <li><span style="color:var(--muted)">ADDRESS</span></li>
+      <li><span style="color:var(--muted)">HOURS</span></li>
+    </ul>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved.</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
+</script>
+</body>
+</html>

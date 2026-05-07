@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSINESS_NAME | Design-Build Contractor</title>
+<meta name="description" content="META_DESCRIPTION">
+<!-- IF_PREMIUM_PLUS_START -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"GeneralContractor","name":"BUSINESS_NAME","telephone":"PHONE","email":"EMAIL","address":"ADDRESS","url":"APP_URL_PLACEHOLDER","areaServed":"SERVICE_AREA","description":"META_DESCRIPTION"}
+</script>
+<!-- IF_PREMIUM_PLUS_END -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --secondary: SECONDARY_COLOR;
+  --bg: #fafaf8;
+  --surface: #f0ede8;
+  --dark: #1a1814;
+  --text: #2a2520;
+  --muted: rgba(42,37,32,0.55);
+  --border: rgba(42,37,32,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5rem 5%;
+  background: rgba(250,250,248,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.375rem; font-weight: 600; color: var(--dark); }
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a { font-size: 0.8125rem; letter-spacing: 0.06em; font-weight: 500; color: var(--muted); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-phone { font-size: 0.8125rem; font-weight: 600; color: var(--primary); }
+
+.hero { display: flex; min-height: 100vh; padding-top: 5rem; }
+.hero-image { width: 55%; position: relative; overflow: hidden; flex-shrink: 0; }
+.hero-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-content { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 5rem 8% 5rem 7%; }
+.hero-eyebrow { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.75rem; }
+.hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 4vw, 4rem); font-weight: 400; font-style: italic; line-height: 1.1; color: var(--dark); margin-bottom: 1.5rem; }
+.hero-sub { font-size: 1rem; color: var(--muted); max-width: 380px; margin-bottom: 3rem; line-height: 1.75; }
+.hero-actions { display: flex; flex-direction: column; gap: 1.25rem; align-items: flex-start; }
+.btn-dark { background: var(--dark); color: #fff; padding: 1rem 2rem; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.06em; display: inline-block; transition: background 0.2s; }
+.btn-dark:hover { background: var(--primary); }
+.link-phone { font-size: 0.875rem; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; }
+.link-phone:hover { color: var(--primary); border-color: var(--primary); }
+
+.services { padding: 8rem 5%; max-width: 1200px; margin: 0 auto; }
+.section-eyebrow { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 3rem; }
+.services-list { border-top: 1px solid var(--border); }
+.service-item {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2rem;
+  padding: 2.25rem 0; border-bottom: 1px solid var(--border);
+  position: relative; cursor: default; transition: padding-left 0.3s;
+}
+.service-item::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+  background: var(--primary); transform: scaleY(0); transform-origin: top; transition: transform 0.3s;
+}
+.service-item:hover { padding-left: 1.25rem; }
+.service-item:hover::before { transform: scaleY(1); }
+.service-name { font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; font-style: italic; color: var(--dark); margin-bottom: 0.4rem; }
+.service-desc { font-size: 0.875rem; color: var(--muted); max-width: 520px; }
+.service-arrow { font-size: 1.25rem; color: var(--border); transition: color 0.2s, transform 0.2s; }
+.service-item:hover .service-arrow { color: var(--primary); transform: translateX(4px); }
+
+.gallery-wrap { padding: 0 5% 8rem; }
+.gallery-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; }
+.gallery-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-style: italic; color: var(--dark); }
+.gallery-link { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: var(--primary); border-bottom: 1px solid var(--primary); padding-bottom: 2px; }
+.gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.gallery-item { overflow: hidden; height: 320px; }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+.gallery-item:hover img { transform: scale(1.04); }
+
+.about { padding: 8rem 5%; background: var(--surface); }
+.about-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 7rem; align-items: center; }
+.about-content h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 3vw, 3rem); font-weight: 400; font-style: italic; line-height: 1.15; margin-bottom: 1.75rem; color: var(--dark); }
+.about-content p { font-size: 0.9375rem; color: var(--muted); line-height: 1.85; margin-bottom: 1.25rem; }
+.about-link { display: inline-block; margin-top: 1.5rem; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--dark); border-bottom: 1px solid var(--dark); padding-bottom: 2px; transition: color 0.2s; }
+.about-link:hover { color: var(--primary); border-color: var(--primary); }
+.about-image img { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+
+.testimonial { padding: 8rem 5%; text-align: center; }
+.testimonial-inner { max-width: 720px; margin: 0 auto; }
+.testimonial-stars { color: var(--primary); font-size: 1rem; letter-spacing: 0.2em; margin-bottom: 1.5rem; }
+.testimonial-mark { font-family: 'Cormorant Garamond', serif; font-size: 6rem; line-height: 0.5; color: var(--primary); opacity: 0.15; margin-bottom: 1rem; }
+.testimonial-quote { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.25rem, 2.5vw, 1.875rem); font-style: italic; color: var(--dark); line-height: 1.55; margin-bottom: 2rem; }
+.testimonial-author { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+.testimonial-context { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+.testimonial-dots { display: flex; gap: 0.5rem; justify-content: center; margin-top: 2rem; }
+.testimonial-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+.testimonial-dot.active { background: var(--primary); }
+
+.faq { padding: 8rem 5%; background: var(--surface); max-width: 1200px; margin: 0 auto; }
+.faq-list { margin-top: 3rem; border-top: 1px solid var(--border); }
+.faq-item { padding: 1.75rem 0; border-bottom: 1px solid var(--border); }
+.faq-q { font-size: 1rem; font-weight: 600; color: var(--dark); margin-bottom: 0.75rem; }
+.faq-a { font-size: 0.9rem; color: var(--muted); line-height: 1.75; }
+
+.contact { padding: 8rem 5%; }
+.contact-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 7rem; }
+.contact-info h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 400; font-style: italic; color: var(--dark); line-height: 1.1; margin-bottom: 1.5rem; }
+.contact-info p { font-size: 0.9375rem; color: var(--muted); line-height: 1.8; margin-bottom: 2rem; }
+.contact-phone { display: block; font-family: 'Cormorant Garamond', serif; font-size: 2.25rem; font-weight: 600; color: var(--primary); margin-bottom: 0.5rem; }
+.contact-email { font-size: 0.9rem; color: var(--muted); display: block; margin-bottom: 2rem; }
+.contact-details { font-size: 0.875rem; color: var(--muted); line-height: 2; }
+.contact-form { display: flex; flex-direction: column; gap: 1.75rem; }
+.form-group { position: relative; }
+.form-input {
+  background: transparent; border: none; border-bottom: 1px solid var(--border);
+  padding: 0.875rem 0; width: 100%; font-family: 'Inter', sans-serif;
+  font-size: 0.9375rem; color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.form-input:focus { border-bottom-color: var(--primary); }
+.form-input::placeholder { color: var(--muted); }
+.form-textarea { resize: none; min-height: 120px; }
+.form-submit { background: var(--dark); color: #fff; padding: 1.125rem 2.5rem; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.08em; border: none; cursor: pointer; transition: background 0.2s; align-self: flex-start; }
+.form-submit:hover { background: var(--primary); }
+
+footer { background: var(--surface); padding: 5rem 5% 2rem; border-top: 1px solid var(--border); }
+.footer-inner { max-width: 1200px; margin: 0 auto; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 4rem; }
+.footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 600; color: var(--dark); margin-bottom: 1rem; }
+.footer-tagline { font-size: 0.875rem; color: var(--muted); line-height: 1.7; max-width: 240px; }
+.footer-col-title { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem; font-weight: 600; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+.footer-links a { font-size: 0.875rem; color: var(--muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-contact-item { font-size: 0.875rem; color: var(--muted); display: block; margin-bottom: 0.75rem; }
+.footer-bottom { border-top: 1px solid var(--border); padding-top: 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.footer-copy { font-size: 0.775rem; color: var(--muted); }
+.footer-mini { font-size: 0.7rem; color: var(--muted); }
+.footer-mini a { color: var(--primary); }
+
+[data-animate] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s, transform 0.7s; }
+[data-animate].visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .hero { flex-direction: column; }
+  .hero-image { width: 100%; height: 55vw; position: relative; }
+  .hero-image img { position: absolute; }
+  .nav-links { display: none; }
+  .about-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .gallery-grid { grid-template-columns: 1fr 1fr; }
+  .contact-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="mm-banner" style="background:#0a0a12;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.72rem;position:sticky;top:0;z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)">
+  MiniMorph Studios Demo — BUSINESS_NAME |
+  <a href="https://www.minimorphstudios.net/get-started" style="color:#3b82f6;font-weight:600;margin-left:6px">Build Your Site →</a>
+</div>
+
+<nav>
+  <div class="nav-logo">BUSINESS_NAME</div>
+  <ul class="nav-links">
+    <li><a href="services.html">Services</a></li>
+    <li><a href="gallery.html">Our Work</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <a href="tel:PHONE" class="nav-phone">PHONE</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-image">
+    <img src="HERO_IMAGE" alt="BUSINESS_NAME — HEADLINE">
+  </div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">SERVICE_AREA · Est. YEARS_IN_BUSINESS</div>
+    <h1>HEADLINE</h1>
+    <p class="hero-sub">SUBHEADLINE</p>
+    <div class="hero-actions">
+      <a href="contact.html" class="btn-dark">Schedule a Consultation</a>
+      <a href="tel:PHONE" class="link-phone">PHONE</a>
+    </div>
+  </div>
+</section>
+
+<section class="services">
+  <div class="section-eyebrow">What We Do</div>
+  <div class="services-list">
+    <div class="service-item" data-animate>
+      <div>
+        <div class="service-name">Kitchen &amp; Bath Renovation</div>
+        <div class="service-desc">SERVICE_1_DESC</div>
+      </div>
+      <div class="service-arrow">→</div>
+    </div>
+    <div class="service-item" data-animate>
+      <div>
+        <div class="service-name">Home Additions</div>
+        <div class="service-desc">SERVICE_2_DESC</div>
+      </div>
+      <div class="service-arrow">→</div>
+    </div>
+    <div class="service-item" data-animate>
+      <div>
+        <div class="service-name">Full-Home Remodeling</div>
+        <div class="service-desc">SERVICE_3_DESC</div>
+      </div>
+      <div class="service-arrow">→</div>
+    </div>
+    <div class="service-item" data-animate>
+      <div>
+        <div class="service-name">Outdoor Living Spaces</div>
+        <div class="service-desc">Custom decks, screened porches, and outdoor kitchens designed to extend your home naturally into the landscape.</div>
+      </div>
+      <div class="service-arrow">→</div>
+    </div>
+    <div class="service-item" data-animate>
+      <div>
+        <div class="service-name">Basement &amp; ADU Finishing</div>
+        <div class="service-desc">Turn underused space into refined living area. In-law suites, home offices, and rental units finished to our exacting standard.</div>
+      </div>
+      <div class="service-arrow">→</div>
+    </div>
+  </div>
+</section>
+
+<!-- IF_GROWTH_PLUS_START -->
+<section class="gallery-wrap">
+  <div class="gallery-top">
+    <div class="gallery-title">Recent Projects</div>
+    <a href="gallery.html" class="gallery-link">View All Work →</a>
+  </div>
+  <div class="gallery-grid">
+    <div class="gallery-item"><img src="GALLERY_IMAGE_1" alt="Project 1"></div>
+    <div class="gallery-item"><img src="GALLERY_IMAGE_2" alt="Project 2"></div>
+    <div class="gallery-item"><img src="GALLERY_IMAGE_3" alt="Project 3"></div>
+  </div>
+</section>
+
+<section class="about">
+  <div class="about-inner">
+    <div class="about-content" data-animate>
+      <div class="section-eyebrow">Our Story</div>
+      <h2>Craft Without Compromise</h2>
+      <p>ABOUT_STORY</p>
+      <p>Every project we take carries our name. That means we select our subcontractors as carefully as we select our materials — and we stand behind every phase of the build with a full workmanship warranty.</p>
+      <a href="about.html" class="about-link">More About Us →</a>
+    </div>
+    <div class="about-image" data-animate>
+      <img src="ABOUT_IMAGE" alt="OWNER_NAME — BUSINESS_NAME">
+    </div>
+  </div>
+</section>
+
+<section class="testimonial">
+  <div class="testimonial-inner" data-animate>
+    <div class="testimonial-stars">★★★★★</div>
+    <div class="testimonial-mark">❝</div>
+    <div class="testimonial-quote">TESTIMONIAL_1</div>
+    <div class="testimonial-author">TESTIMONIAL_1_NAME</div>
+    <div class="testimonial-context">TESTIMONIAL_1_CONTEXT</div>
+    <div class="testimonial-dots">
+      <div class="testimonial-dot active"></div>
+      <div class="testimonial-dot"></div>
+      <div class="testimonial-dot"></div>
+    </div>
+  </div>
+</section>
+<!-- IF_GROWTH_PLUS_END -->
+
+<!-- IF_PREMIUM_PLUS_START -->
+<section style="padding:8rem 5%;background:var(--surface);">
+  <div style="max-width:800px;margin:0 auto;">
+    <div class="section-eyebrow" style="margin-bottom:3rem;">Common Questions</div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">FAQ_1_Q</div>
+        <div class="faq-a">FAQ_1_A</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do you handle permits and inspections?</div>
+        <div class="faq-a">Yes. We manage every permit, coordinate all inspections, and ensure the project meets or exceeds local building codes. You never have to track down a permit yourself.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How long does a typical project take?</div>
+        <div class="faq-a">Kitchen remodels typically run 6–10 weeks. Full additions are 12–20 weeks depending on scope. We provide a written schedule before we start and communicate any changes immediately.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do you offer a warranty?</div>
+        <div class="faq-a">All our work carries a 3-year workmanship warranty. Manufacturer warranties on materials are passed through to you in full.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What is your service area?</div>
+        <div class="faq-a">We serve SERVICE_AREA and surrounding communities. Contact us if you are outside this area — we occasionally take select projects further afield for the right client.</div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- IF_PREMIUM_PLUS_END -->
+
+<section class="contact" id="contact">
+  <div class="contact-inner">
+    <div class="contact-info" data-animate>
+      <div class="section-eyebrow">Get In Touch</div>
+      <h2>Let's Talk About Your Project</h2>
+      <p>Tell us what you are envisioning. We will come out, assess the space, and give you an honest proposal — no pressure, no obligation.</p>
+      <a href="tel:PHONE" class="contact-phone">PHONE</a>
+      <a href="mailto:EMAIL" class="contact-email">EMAIL</a>
+      <div class="contact-details">SERVICE_AREA<br>HOURS<br>License #LICENSE_NUMBER</div>
+    </div>
+    <form class="contact-form" id="contact-form" data-animate>
+      <input class="form-input" name="name" type="text" placeholder="Your Name" required>
+      <input class="form-input" name="email" type="email" placeholder="Email Address" required>
+      <input class="form-input" name="phone" type="tel" placeholder="Phone Number">
+      <textarea class="form-input form-textarea" name="message" placeholder="Describe your project..." required></textarea>
+      <button class="form-submit" type="submit">Send Message</button>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <div class="footer-tagline">Premium design-build construction serving SERVICE_AREA. Licensed, insured, built on craft.</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Services</div>
+        <ul class="footer-links">
+          <li><a href="services.html#kitchen">Kitchen &amp; Bath</a></li>
+          <li><a href="services.html#additions">Additions</a></li>
+          <li><a href="services.html#remodel">Full Remodels</a></li>
+          <li><a href="services.html#outdoor">Outdoor Living</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="gallery.html">Our Work</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+        <a href="mailto:EMAIL" class="footer-contact-item">EMAIL</a>
+        <span class="footer-contact-item">SERVICE_AREA</span>
+        <span class="footer-contact-item" style="font-size:0.8rem;opacity:0.7">HOURS</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved. License #LICENSE_NUMBER</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  var form = document.getElementById('contact-form');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = form.querySelector('button[type=submit]');
+    var fd = new FormData(form);
+    btn.textContent = 'Sending...'; btn.disabled = true;
+    fetch('APP_URL_PLACEHOLDER/api/contact-submit', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name: fd.get('name'), email: fd.get('email'), phone: fd.get('phone'), message: fd.get('message'), businessName: 'BUSINESS_NAME' })
+    }).then(function(r){ return r.json(); }).then(function(res) {
+      if (res.success) { form.innerHTML = '<div style="padding:3rem;text-align:center;"><p style="font-size:1.25rem;color:var(--dark);margin-bottom:0.5rem;">Message received.</p><p style="color:var(--muted)">We will be in touch shortly.</p></div>'; }
+    }).catch(function() { btn.textContent = 'Send Message'; btn.disabled = false; });
+  });
+})();
+var obs = new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
+</script>
+</body>
+</html>

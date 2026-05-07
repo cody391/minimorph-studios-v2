@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSINESS_NAME | Hair Salon</title>
+<meta name="description" content="META_DESCRIPTION">
+<!-- IF_PREMIUM_PLUS_START -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"HairSalon","name":"BUSINESS_NAME","telephone":"PHONE","email":"EMAIL","address":"ADDRESS","url":"APP_URL_PLACEHOLDER","openingHours":"HOURS","priceRange":"$$"}
+</script>
+<!-- IF_PREMIUM_PLUS_END -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --bg: #fdf9f4;
+  --surface: #f5ede2;
+  --text: #2a1f1a;
+  --muted: rgba(42,31,26,0.55);
+  --border: rgba(42,31,26,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Lato', sans-serif; line-height: 1.7; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 5%;
+  background: rgba(253,249,244,0.97); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-family: 'Playfair Display', serif; font-size: 1.375rem; font-weight: 700; color: var(--text); }
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a { font-size: 0.875rem; font-weight: 400; color: var(--muted); transition: color 0.2s; }
+.nav-links a:hover { color: var(--primary); }
+.nav-cta { background: var(--primary); color: #fff; padding: 0.625rem 1.5rem; border-radius: 50px; font-size: 0.825rem; font-weight: 700; transition: opacity 0.2s; }
+.nav-cta:hover { opacity: 0.85; }
+
+.book-sticky {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 900;
+  background: var(--primary); color: #fff;
+  padding: 0.875rem 1.75rem; border-radius: 50px;
+  font-size: 0.875rem; font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.book-sticky:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.25); }
+
+.hero { position: relative; min-height: 92vh; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; padding-top: 5rem; }
+.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.hero-overlay { position: absolute; inset: 0; z-index: 1; background: linear-gradient(135deg, rgba(253,249,244,0.7) 0%, rgba(42,31,26,0.3) 100%); }
+.hero-content { position: relative; z-index: 2; padding: 2rem 5%; }
+.hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.5rem, 7vw, 5.5rem); font-weight: 700; color: var(--text); line-height: 1.05; margin-bottom: 1.25rem; }
+.hero-sub { font-size: 1.1rem; font-weight: 300; color: var(--muted); max-width: 460px; margin: 0 auto 2rem; }
+.hero-cta { background: var(--primary); color: #fff; padding: 1.125rem 2.5rem; border-radius: 50px; font-size: 1rem; font-weight: 700; display: inline-block; transition: opacity 0.2s; margin-bottom: 1rem; }
+.hero-cta:hover { opacity: 0.85; }
+.hero-phone { display: block; font-size: 0.95rem; color: var(--text); font-weight: 400; }
+.hero-phone a { color: var(--primary); font-weight: 700; }
+
+.section-eyebrow { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--primary); font-weight: 700; margin-bottom: 0.75rem; }
+.section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.875rem, 4vw, 3rem); font-weight: 700; color: var(--text); line-height: 1.1; }
+
+.services-section { padding: 8rem 5%; background: var(--surface); }
+.services-inner { max-width: 1200px; margin: 0 auto; }
+.services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; }
+.service-card { background: var(--bg); padding: 2rem; border-radius: 12px; }
+.service-card-name { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+.service-card-desc { font-size: 0.875rem; font-weight: 300; color: var(--muted); line-height: 1.7; margin-bottom: 1rem; }
+.service-card-price { font-size: 1rem; font-weight: 700; color: var(--primary); }
+
+.gallery-section { padding: 8rem 5%; }
+.gallery-inner { max-width: 1200px; margin: 0 auto; }
+.gallery-title-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2rem; }
+.gallery-label { font-family: 'Playfair Display', serif; font-size: 1.375rem; font-weight: 700; }
+.gallery-link { font-size: 0.8rem; font-weight: 700; color: var(--primary); }
+.ba-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.ba-pair { }
+.ba-images { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 0.75rem; }
+.ba-images img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+.ba-labels { display: grid; grid-template-columns: 1fr 1fr; }
+.ba-label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.ba-label:last-child { text-align: right; color: var(--primary); }
+
+.owner-section { padding: 8rem 5%; background: var(--surface); }
+.owner-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 7rem; align-items: center; }
+.owner-image img { width: 100%; border-radius: 16px; aspect-ratio: 4/5; object-fit: cover; }
+.owner-content h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.875rem, 3.5vw, 2.5rem); font-weight: 700; margin-bottom: 1.5rem; }
+.owner-content p { font-size: 0.9375rem; font-weight: 300; color: var(--muted); line-height: 1.85; margin-bottom: 1.25rem; }
+.owner-book-wrap { margin-top: 2rem; }
+.owner-book { background: var(--primary); color: #fff; padding: 0.875rem 2rem; border-radius: 50px; font-size: 0.875rem; font-weight: 700; display: inline-block; transition: opacity 0.2s; }
+.owner-book:hover { opacity: 0.85; }
+
+.reviews-section { padding: 8rem 5%; }
+.reviews-inner { max-width: 1200px; margin: 0 auto; }
+.reviews-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 3rem; }
+.review-card { background: var(--surface); padding: 2rem; border-radius: 12px; }
+.review-stars { color: var(--primary); font-size: 0.9rem; letter-spacing: 0.15em; margin-bottom: 0.75rem; }
+.review-text { font-size: 0.9375rem; font-style: italic; color: var(--text); line-height: 1.75; margin-bottom: 1rem; font-weight: 300; }
+.review-author { font-size: 0.8rem; font-weight: 700; }
+.review-source { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+
+.book-section { padding: 8rem 5%; background: var(--surface); }
+.book-inner { max-width: 700px; margin: 0 auto; }
+.book-inner h2 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; margin-bottom: 1rem; }
+.book-inner p { font-size: 0.9375rem; color: var(--muted); line-height: 1.8; margin-bottom: 2.5rem; font-weight: 300; }
+.book-form { display: flex; flex-direction: column; gap: 1rem; }
+.form-input { background: var(--bg); border: 1px solid var(--border); padding: 1rem 1.25rem; font-family: 'Lato', sans-serif; font-size: 0.9rem; color: var(--text); outline: none; border-radius: 8px; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--primary); }
+.form-input::placeholder { color: var(--muted); }
+.form-textarea { resize: none; min-height: 100px; }
+.form-submit { background: var(--primary); color: #fff; padding: 1rem; border: none; border-radius: 50px; cursor: pointer; font-size: 0.9rem; font-weight: 700; transition: opacity 0.2s; }
+.form-submit:hover { opacity: 0.85; }
+.book-phone { text-align: center; margin-top: 1.25rem; font-size: 0.875rem; color: var(--muted); }
+.book-phone a { color: var(--primary); font-weight: 700; }
+
+footer { background: var(--text); color: var(--bg); padding: 5rem 5% 2rem; }
+.footer-inner { max-width: 1200px; margin: 0 auto; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+.footer-brand { font-family: 'Playfair Display', serif; font-size: 1.375rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; }
+.footer-tagline { font-size: 0.875rem; color: rgba(253,249,244,0.6); line-height: 1.7; max-width: 240px; font-weight: 300; }
+.footer-col-title { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(253,249,244,0.4); margin-bottom: 1.25rem; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+.footer-links a { font-size: 0.875rem; color: rgba(253,249,244,0.6); transition: color 0.2s; }
+.footer-links a:hover { color: var(--primary); }
+.footer-hours { font-size: 0.9rem; color: rgba(253,249,244,0.6); line-height: 2; font-weight: 300; }
+.footer-bottom { border-top: 1px solid rgba(253,249,244,0.1); padding-top: 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.footer-copy { font-size: 0.775rem; color: rgba(253,249,244,0.3); }
+.footer-mini { font-size: 0.7rem; color: rgba(253,249,244,0.25); }
+.footer-mini a { color: var(--primary); }
+
+[data-animate] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s, transform 0.7s; }
+[data-animate].visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .services-grid { grid-template-columns: 1fr 1fr; }
+  .ba-grid { grid-template-columns: 1fr; }
+  .owner-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .reviews-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="mm-banner" style="background:#0a0a12;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.72rem;position:sticky;top:0;z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)">
+  MiniMorph Studios Demo — BUSINESS_NAME |
+  <a href="https://www.minimorphstudios.net/get-started" style="color:#3b82f6;font-weight:600;margin-left:6px">Build Your Site →</a>
+</div>
+
+<nav>
+  <div class="nav-logo">BUSINESS_NAME</div>
+  <ul class="nav-links">
+    <li><a href="services.html">Services</a></li>
+    <li><a href="gallery.html">Gallery</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <a href="#book" class="nav-cta">Book Now</a>
+</nav>
+
+<a href="#book" class="book-sticky">Book Now →</a>
+
+<section class="hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME salon" class="hero-bg">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1>HEADLINE</h1>
+    <p class="hero-sub">SUBHEADLINE</p>
+    <a href="#book" class="hero-cta">Book Your Appointment</a>
+    <div class="hero-phone">Call us: <a href="tel:PHONE">PHONE</a></div>
+  </div>
+</section>
+
+<section class="services-section">
+  <div class="services-inner">
+    <div data-animate>
+      <div class="section-eyebrow">Services &amp; Pricing</div>
+      <div class="section-title">What We Do</div>
+    </div>
+    <div class="services-grid">
+      <div class="service-card" data-animate>
+        <div class="service-card-name">Color &amp; Highlights</div>
+        <div class="service-card-desc">Full color, balayage, highlights, and color correction from our certified colorists.</div>
+        <div class="service-card-price">From $85</div>
+      </div>
+      <div class="service-card" data-animate>
+        <div class="service-card-name">Cut &amp; Style</div>
+        <div class="service-card-desc">Precision haircuts and blowouts tailored to your face shape and lifestyle.</div>
+        <div class="service-card-price">From $45</div>
+      </div>
+      <div class="service-card" data-animate>
+        <div class="service-card-name">Treatments</div>
+        <div class="service-card-desc">Deep conditioning, keratin treatments, scalp therapy, and Brazilian blowout.</div>
+        <div class="service-card-price">From $75</div>
+      </div>
+      <div class="service-card" data-animate>
+        <div class="service-card-name">Extensions</div>
+        <div class="service-card-desc">Tape-in, clip-in, and weft extensions. Consultation included with every service.</div>
+        <div class="service-card-price">From $200</div>
+      </div>
+      <div class="service-card" data-animate>
+        <div class="service-card-name">Bridal</div>
+        <div class="service-card-desc">Trial runs, day-of styling, bridesmaid packages. Book early — dates fill fast.</div>
+        <div class="service-card-price">From $150</div>
+      </div>
+      <div class="service-card" data-animate>
+        <div class="service-card-name">Kids &amp; Family</div>
+        <div class="service-card-desc">Relaxed, unhurried cuts for kids 12 and under. We make it comfortable.</div>
+        <div class="service-card-price">From $25</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IF_GROWTH_PLUS_START -->
+<section class="gallery-section">
+  <div class="gallery-inner">
+    <div class="gallery-title-row" data-animate>
+      <div class="gallery-label">Before &amp; After</div>
+      <a href="gallery.html" class="gallery-link">Full Gallery →</a>
+    </div>
+    <div class="ba-grid">
+      <div class="ba-pair" data-animate>
+        <div class="ba-images">
+          <img src="GALLERY_IMAGE_1" alt="Before">
+          <img src="GALLERY_IMAGE_2" alt="After">
+        </div>
+        <div class="ba-labels"><span class="ba-label">Before</span><span class="ba-label">After →</span></div>
+      </div>
+      <div class="ba-pair" data-animate>
+        <div class="ba-images">
+          <img src="GALLERY_IMAGE_2" alt="Before">
+          <img src="GALLERY_IMAGE_3" alt="After">
+        </div>
+        <div class="ba-labels"><span class="ba-label">Before</span><span class="ba-label">After →</span></div>
+      </div>
+      <div class="ba-pair" data-animate>
+        <div class="ba-images">
+          <img src="GALLERY_IMAGE_3" alt="Before">
+          <img src="ABOUT_IMAGE" alt="After">
+        </div>
+        <div class="ba-labels"><span class="ba-label">Before</span><span class="ba-label">After →</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="owner-section">
+  <div class="owner-inner">
+    <div class="owner-image" data-animate>
+      <img src="ABOUT_IMAGE" alt="OWNER_NAME">
+    </div>
+    <div class="owner-content" data-animate>
+      <div class="section-eyebrow">Meet Your Stylist</div>
+      <h2>Hi, I'm OWNER_NAME</h2>
+      <p>ABOUT_STORY</p>
+      <p>I opened BUSINESS_NAME in SERVICE_AREA because I wanted a salon where everyone feels comfortable — not just people who already know what they want. Whether this is your first balayage or your hundredth cut, I will take care of you.</p>
+      <div class="owner-book-wrap">
+        <a href="#book" class="owner-book">Book an Appointment →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="reviews-section">
+  <div class="reviews-inner">
+    <div data-animate>
+      <div class="section-eyebrow">What Clients Say</div>
+      <div class="section-title">Real Reviews</div>
+    </div>
+    <div class="reviews-grid">
+      <div class="review-card" data-animate>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">TESTIMONIAL_1</div>
+        <div class="review-author">TESTIMONIAL_1_NAME</div>
+        <div class="review-source">TESTIMONIAL_1_CONTEXT · via Google</div>
+      </div>
+      <div class="review-card" data-animate>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">I have been going here for two years and I will not go anywhere else. OWNER_NAME actually listens to what you want and executes it perfectly every single time.</div>
+        <div class="review-author">Jessica M.</div>
+        <div class="review-source">SERVICE_AREA · via Google</div>
+      </div>
+      <div class="review-card" data-animate>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">Asked for something I was not sure about and OWNER_NAME talked me through the whole process before touching my hair. Came out better than I imagined.</div>
+        <div class="review-author">Rachel T.</div>
+        <div class="review-source">SERVICE_AREA · via Yelp</div>
+      </div>
+      <div class="review-card" data-animate>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">Brought my daughter for her first real haircut. The team was so patient and made the whole experience really sweet. We will be back for sure.</div>
+        <div class="review-author">Lisa K.</div>
+        <div class="review-source">SERVICE_AREA · via Google</div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- IF_GROWTH_PLUS_END -->
+
+<section class="book-section" id="book">
+  <div class="book-inner" data-animate>
+    <div class="section-eyebrow">Appointments</div>
+    <h2>Book Your Visit</h2>
+    <p>Fill out the form and we will reach out to confirm your appointment within a few hours. For same-day appointments, please call us directly.</p>
+    <form class="book-form" id="contact-form">
+      <input class="form-input" name="name" type="text" placeholder="Your Name" required>
+      <input class="form-input" name="email" type="email" placeholder="Email Address" required>
+      <input class="form-input" name="phone" type="tel" placeholder="Phone Number">
+      <select class="form-input" name="service">
+        <option value="">What service are you interested in?</option>
+        <option>Cut &amp; Style</option><option>Color</option><option>Balayage</option>
+        <option>Extensions</option><option>Treatment</option><option>Bridal</option><option>Other</option>
+      </select>
+      <textarea class="form-input form-textarea" name="message" placeholder="Any notes or preferences..."></textarea>
+      <button class="form-submit" type="submit">Request Appointment</button>
+    </form>
+    <div class="book-phone">Or call us to book same-day: <a href="tel:PHONE">PHONE</a></div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <div class="footer-tagline">Your neighborhood salon in SERVICE_AREA. Where everyone feels welcome.</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Services</div>
+        <ul class="footer-links">
+          <li><a href="services.html">All Services</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="#book">Book Online</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Hours &amp; Location</div>
+        <div class="footer-hours">
+          HOURS<br>
+          <a href="tel:PHONE" style="color:var(--primary)">PHONE</a><br>
+          <span style="opacity:0.6;font-size:0.8rem">ADDRESS</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved.</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form=document.getElementById('contact-form');
+  if(!form) return;
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var btn=form.querySelector('button');
+    var fd=new FormData(form);
+    btn.textContent='Sending...'; btn.disabled=true;
+    fetch('APP_URL_PLACEHOLDER/api/contact-submit',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone'),message:'Appointment request for: '+fd.get('service')+'. Notes: '+fd.get('message'),businessName:'BUSINESS_NAME'})
+    }).then(function(r){return r.json();}).then(function(res){
+      if(res.success){form.innerHTML='<p style="text-align:center;font-family:Playfair Display,serif;font-size:1.25rem;padding:2rem;color:var(--text)">Thank you! We\'ll confirm your appointment within a few hours.</p>';}
+    }).catch(function(){btn.textContent='Request Appointment';btn.disabled=false;});
+  });
+})();
+var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
+</script>
+</body>
+</html>

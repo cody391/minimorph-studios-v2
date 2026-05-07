@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUSINESS_NAME</title>
+  <meta name="description" content="META_DESCRIPTION" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: PRIMARY_COLOR;
+      --secondary: SECONDARY_COLOR;
+      --bg: #ffffff;
+      --surface: #f9f9f9;
+      --text: #111111;
+      --muted: #888888;
+      --border: #e8e8e8;
+      --serif: 'Cormorant Garamond', serif;
+      --sans: 'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── ANNOUNCEMENT BAR ── */
+    .announce-bar {
+      background: var(--text);
+      color: #fff;
+      text-align: center;
+      padding: 0.6rem 1rem;
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      font-weight: 400;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      height: 64px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+    }
+
+    .nav-links-left,
+    .nav-links-right {
+      display: flex;
+      gap: 2rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      font-weight: 400;
+    }
+
+    .nav-links-right { justify-content: flex-end; }
+
+    .nav-links-left a,
+    .nav-links-right a {
+      color: var(--text);
+      transition: color 0.2s;
+    }
+
+    .nav-links-left a:hover,
+    .nav-links-right a:hover { color: var(--primary); }
+
+    .nav-logo {
+      text-align: center;
+      font-family: var(--serif);
+      font-size: 1.375rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 85vh;
+    }
+
+    .hero-image {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-image img {
+      transition: transform 0.8s ease;
+    }
+
+    .hero-image:hover img { transform: scale(1.03); }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 4rem 5rem;
+      background: var(--bg);
+    }
+
+    .hero-eyebrow {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      font-weight: 400;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-headline {
+      font-family: var(--serif);
+      font-size: clamp(2.5rem, 4vw, 4rem);
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-headline em {
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    .hero-sub {
+      font-size: 0.925rem;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+      max-width: 340px;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      background: var(--text);
+      color: #fff;
+      padding: 0.875rem 2rem;
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      font-weight: 400;
+      transition: background 0.25s;
+    }
+
+    .btn-primary:hover { background: var(--primary); }
+
+    .btn-text {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.2s;
+    }
+
+    .btn-text:hover { color: var(--text); }
+
+    /* ── SECTION WRAPPER ── */
+    .section { padding: 6rem 2rem; }
+    .container { max-width: 1280px; margin: 0 auto; }
+
+    .section-label {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      font-weight: 400;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(1.875rem, 3vw, 2.875rem);
+      font-weight: 300;
+      line-height: 1.25;
+    }
+
+    /* ── PRODUCT GRID ── */
+    .products { background: var(--bg); }
+
+    .products-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+    }
+
+    .products-header .view-all {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    .products-header .view-all:hover { color: var(--text); }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .product-card {
+      cursor: pointer;
+    }
+
+    .product-img-wrap {
+      position: relative;
+      aspect-ratio: 3/4;
+      overflow: hidden;
+      background: var(--surface);
+      margin-bottom: 1rem;
+    }
+
+    .product-img-wrap img {
+      transition: transform 0.5s ease;
+    }
+
+    .product-card:hover .product-img-wrap img {
+      transform: scale(1.05);
+    }
+
+    .product-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .product-card:hover .product-overlay { opacity: 1; }
+
+    .product-overlay-btn {
+      background: #fff;
+      color: var(--text);
+      padding: 0.75rem 1.5rem;
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      font-weight: 400;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .product-overlay-btn:hover { background: var(--primary); color: #fff; }
+
+    .product-name {
+      font-family: var(--serif);
+      font-size: 1.0625rem;
+      font-weight: 400;
+      margin-bottom: 0.25rem;
+    }
+
+    .product-price {
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    /* ── BRAND MANIFESTO ── */
+    .manifesto {
+      background: var(--text);
+      color: #fff;
+      text-align: center;
+    }
+
+    .manifesto-inner {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .manifesto-eyebrow {
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 2rem;
+    }
+
+    .manifesto-text {
+      font-family: var(--serif);
+      font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+      font-weight: 300;
+      line-height: 1.5;
+      font-style: italic;
+      margin-bottom: 2rem;
+    }
+
+    .manifesto-tagline {
+      font-size: 0.8rem;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.6);
+      font-weight: 400;
+    }
+
+    /* ── CATEGORIES ── */
+    .categories { background: var(--surface); }
+
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .category-card {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 4/5;
+      cursor: pointer;
+    }
+
+    .category-card img {
+      transition: transform 0.6s ease;
+    }
+
+    .category-card:hover img { transform: scale(1.05); }
+
+    .category-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 2rem;
+    }
+
+    .category-name {
+      font-family: var(--serif);
+      font-size: 1.75rem;
+      font-weight: 300;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .category-link {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.75);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.2s;
+    }
+
+    .category-card:hover .category-link { color: #fff; }
+
+    <!-- IF_GROWTH_PLUS_START -->
+    /* ── INSTAGRAM GRID ── */
+    .instagram { background: var(--bg); }
+
+    .instagram-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .instagram-handle {
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .instagram-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+
+    .instagram-item {
+      aspect-ratio: 1;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--surface);
+    }
+
+    .instagram-item img {
+      transition: transform 0.4s ease, opacity 0.3s;
+    }
+
+    .instagram-item:hover img {
+      transform: scale(1.06);
+      opacity: 0.85;
+    }
+    <!-- IF_GROWTH_PLUS_END -->
+
+    /* ── NEWSLETTER ── */
+    .newsletter {
+      background: var(--surface);
+      text-align: center;
+    }
+
+    .newsletter-inner { max-width: 520px; margin: 0 auto; }
+
+    .newsletter-title {
+      font-family: var(--serif);
+      font-size: clamp(1.625rem, 2.5vw, 2.25rem);
+      font-weight: 300;
+      line-height: 1.3;
+      margin-bottom: 0.75rem;
+    }
+
+    .newsletter-sub {
+      font-size: 0.875rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    .newsletter-form {
+      display: flex;
+      gap: 0;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    .newsletter-input {
+      flex: 1;
+      padding: 0.875rem 1.25rem;
+      border: 1px solid var(--border);
+      border-right: none;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      background: #fff;
+      outline: none;
+      color: var(--text);
+    }
+
+    .newsletter-input::placeholder { color: var(--muted); }
+
+    .newsletter-input:focus { border-color: var(--text); }
+
+    .newsletter-submit {
+      padding: 0.875rem 1.5rem;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      font-weight: 400;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .newsletter-submit:hover { background: var(--primary); }
+
+    .newsletter-note {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 3rem 2rem;
+    }
+
+    .footer-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .footer-logo {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      font-weight: 400;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .footer-links a {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    .footer-copy {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    /* ── ANIMATIONS ── */
+    [data-animate] {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    [data-animate].visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    [data-animate-delay="1"] { transition-delay: 0.1s; }
+    [data-animate-delay="2"] { transition-delay: 0.2s; }
+    [data-animate-delay="3"] { transition-delay: 0.3s; }
+    [data-animate-delay="4"] { transition-delay: 0.4s; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .product-grid { grid-template-columns: repeat(2, 1fr); }
+      .categories-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-image { height: 55vw; }
+      .hero-content { padding: 3rem 1.5rem; }
+      .hero-headline { font-size: 2.25rem; }
+      .nav-links-left { display: none; }
+      .nav-links-right { display: none; }
+      .product-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+      .categories-grid { grid-template-columns: 1fr; }
+      <!-- IF_GROWTH_PLUS_START -->
+      .instagram-grid { grid-template-columns: repeat(3, 1fr); }
+      <!-- IF_GROWTH_PLUS_END -->
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Announcement bar -->
+  <div class="announce-bar">
+    Free shipping on orders over $75 · New arrivals every week
+  </div>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-inner">
+      <div class="nav-links-left">
+        <a href="#products">Shop</a>
+        <a href="#categories">Collections</a>
+        <a href="#manifesto">Our Story</a>
+      </div>
+      <div class="nav-logo">BUSINESS_NAME</div>
+      <div class="nav-links-right">
+        <a href="tel:PHONE">Contact</a>
+        <a href="mailto:EMAIL">Email</a>
+        <a href="#newsletter">Newsletter</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-image">
+      <img src="HERO_IMAGE" alt="BUSINESS_NAME" />
+    </div>
+    <div class="hero-content">
+      <p class="hero-eyebrow" data-animate>NEW COLLECTION · TAGLINE</p>
+      <h1 class="hero-headline" data-animate data-animate-delay="1">
+        HEADLINE
+      </h1>
+      <p class="hero-sub" data-animate data-animate-delay="2">SUBHEADLINE</p>
+      <div class="hero-cta-group" data-animate data-animate-delay="3">
+        <a href="#products" class="btn-primary">Shop Now</a>
+        <a href="#manifesto" class="btn-text">Our Story</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Grid -->
+  <section class="section products" id="products">
+    <div class="container">
+      <div class="products-header" data-animate>
+        <div>
+          <p class="section-label">FEATURED PIECES</p>
+          <h2 class="section-title">Curated for <em>You</em></h2>
+        </div>
+        <a href="#products" class="view-all">View all →</a>
+      </div>
+      <div class="product-grid">
+        <div class="product-card" data-animate data-animate-delay="1">
+          <div class="product-img-wrap">
+            <img src="GALLERY_IMAGE_1" alt="SERVICE_1_DESC" loading="lazy" />
+            <div class="product-overlay">
+              <button class="product-overlay-btn">SHOP NOW</button>
+            </div>
+          </div>
+          <p class="product-name">SERVICE_1_DESC</p>
+          <p class="product-price">From $—</p>
+        </div>
+        <div class="product-card" data-animate data-animate-delay="2">
+          <div class="product-img-wrap">
+            <img src="GALLERY_IMAGE_2" alt="SERVICE_2_DESC" loading="lazy" />
+            <div class="product-overlay">
+              <button class="product-overlay-btn">SHOP NOW</button>
+            </div>
+          </div>
+          <p class="product-name">SERVICE_2_DESC</p>
+          <p class="product-price">From $—</p>
+        </div>
+        <div class="product-card" data-animate data-animate-delay="3">
+          <div class="product-img-wrap">
+            <img src="GALLERY_IMAGE_3" alt="SERVICE_3_DESC" loading="lazy" />
+            <div class="product-overlay">
+              <button class="product-overlay-btn">SHOP NOW</button>
+            </div>
+          </div>
+          <p class="product-name">SERVICE_3_DESC</p>
+          <p class="product-price">From $—</p>
+        </div>
+        <div class="product-card" data-animate data-animate-delay="4">
+          <div class="product-img-wrap">
+            <img src="ABOUT_IMAGE" alt="New Arrivals" loading="lazy" />
+            <div class="product-overlay">
+              <button class="product-overlay-btn">SHOP NOW</button>
+            </div>
+          </div>
+          <p class="product-name">New Arrivals</p>
+          <p class="product-price">From $—</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Brand Manifesto -->
+  <section class="section manifesto" id="manifesto">
+    <div class="manifesto-inner">
+      <p class="manifesto-eyebrow" data-animate>OUR PHILOSOPHY</p>
+      <p class="manifesto-text" data-animate data-animate-delay="1">
+        "ABOUT_STORY"
+      </p>
+      <p class="manifesto-tagline" data-animate data-animate-delay="2">— OWNER_NAME · Founder, BUSINESS_NAME</p>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="section categories" id="categories">
+    <div class="container">
+      <div data-animate>
+        <p class="section-label">BROWSE BY COLLECTION</p>
+        <h2 class="section-title">Find Your <em>Style</em></h2>
+      </div>
+      <div class="categories-grid">
+        <div class="category-card" data-animate data-animate-delay="1">
+          <img src="GALLERY_IMAGE_1" alt="New Arrivals" loading="lazy" />
+          <div class="category-overlay">
+            <p class="category-name">New Arrivals</p>
+            <a href="#products" class="category-link">Shop Now →</a>
+          </div>
+        </div>
+        <div class="category-card" data-animate data-animate-delay="2">
+          <img src="GALLERY_IMAGE_2" alt="Best Sellers" loading="lazy" />
+          <div class="category-overlay">
+            <p class="category-name">Best Sellers</p>
+            <a href="#products" class="category-link">Shop Now →</a>
+          </div>
+        </div>
+        <div class="category-card" data-animate data-animate-delay="3">
+          <img src="GALLERY_IMAGE_3" alt="Gift Ideas" loading="lazy" />
+          <div class="category-overlay">
+            <p class="category-name">Gift Ideas</p>
+            <a href="#products" class="category-link">Shop Now →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IF_GROWTH_PLUS_START -->
+  <!-- Instagram Grid -->
+  <section class="section instagram">
+    <div class="container">
+      <div class="instagram-header" data-animate>
+        <div>
+          <p class="section-label">FOLLOW ALONG</p>
+          <h2 class="section-title">@BUSINESS_NAME</h2>
+        </div>
+        <a href="https://instagram.com" class="instagram-handle" target="_blank" rel="noopener">Follow on Instagram →</a>
+      </div>
+      <div class="instagram-grid">
+        <div class="instagram-item"><img src="GALLERY_IMAGE_1" alt="" loading="lazy" /></div>
+        <div class="instagram-item"><img src="GALLERY_IMAGE_2" alt="" loading="lazy" /></div>
+        <div class="instagram-item"><img src="GALLERY_IMAGE_3" alt="" loading="lazy" /></div>
+        <div class="instagram-item"><img src="HERO_IMAGE" alt="" loading="lazy" /></div>
+        <div class="instagram-item"><img src="ABOUT_IMAGE" alt="" loading="lazy" /></div>
+        <div class="instagram-item"><img src="GALLERY_IMAGE_1" alt="" loading="lazy" /></div>
+      </div>
+    </div>
+  </section>
+  <!-- IF_GROWTH_PLUS_END -->
+
+  <!-- Newsletter -->
+  <section class="section newsletter" id="newsletter">
+    <div class="newsletter-inner">
+      <p class="section-label" data-animate>STAY IN THE LOOP</p>
+      <h2 class="newsletter-title" data-animate data-animate-delay="1">
+        First access to new arrivals &amp; <em>exclusive offers</em>
+      </h2>
+      <p class="newsletter-sub" data-animate data-animate-delay="2">
+        Join the BUSINESS_NAME community. No spam, ever.
+      </p>
+      <form class="newsletter-form" data-animate data-animate-delay="3" onsubmit="return false;">
+        <input class="newsletter-input" type="email" placeholder="Your email address" />
+        <button class="newsletter-submit" type="submit">SUBSCRIBE</button>
+      </form>
+      <p class="newsletter-note">By subscribing you agree to our privacy policy.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">BUSINESS_NAME</div>
+      <nav class="footer-links">
+        <a href="#products">Shop</a>
+        <a href="#categories">Collections</a>
+        <a href="#manifesto">About</a>
+        <a href="tel:PHONE">PHONE</a>
+        <a href="mailto:EMAIL">EMAIL</a>
+        <a href="APP_URL_PLACEHOLDER">Book Online</a>
+      </nav>
+      <p class="footer-copy">© 2025 BUSINESS_NAME · ADDRESS · SERVICE_AREA · PACKAGE_TIER Plan</p>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>

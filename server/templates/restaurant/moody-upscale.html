@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSINESS_NAME | Fine Dining</title>
+<meta name="description" content="META_DESCRIPTION">
+<!-- IF_PREMIUM_PLUS_START -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Restaurant","name":"BUSINESS_NAME","telephone":"PHONE","email":"EMAIL","address":"ADDRESS","url":"APP_URL_PLACEHOLDER","servesCuisine":"Contemporary","priceRange":"$$$","openingHours":"HOURS"}
+</script>
+<!-- IF_PREMIUM_PLUS_END -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --accent: #c9a96e;
+  --bg: #0c0a08;
+  --surface: #161210;
+  --text: #f0ebe4;
+  --muted: rgba(240,235,228,0.5);
+  --border: rgba(240,235,228,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; line-height: 1.7; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5rem 5%;
+  background: rgba(12,10,8,0.9); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; letter-spacing: 0.04em; color: var(--accent); }
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a { font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 400; color: var(--muted); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-reserve { border: 1px solid var(--accent); color: var(--accent); padding: 0.625rem 1.5rem; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; transition: background 0.2s, color 0.2s; }
+.nav-reserve:hover { background: var(--accent); color: var(--bg); }
+
+.hero {
+  position: relative; min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; overflow: hidden;
+}
+.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.hero-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(to top, rgba(12,10,8,0.9) 0%, rgba(12,10,8,0.4) 50%, rgba(12,10,8,0.2) 100%);
+}
+.hero-content { position: relative; z-index: 2; padding: 2rem 5%; }
+.hero-eyebrow { font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.5rem; }
+.hero h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(3rem, 7vw, 7rem);
+  font-weight: 300; font-style: italic; line-height: 1.0;
+  color: var(--text); margin-bottom: 1.5rem;
+}
+.hero-sub { font-size: 1rem; font-weight: 300; color: var(--muted); max-width: 480px; margin: 0 auto 1.75rem; }
+.hero-hours {
+  display: inline-block; border: 1px solid rgba(201,169,110,0.3);
+  padding: 0.625rem 1.5rem; font-size: 0.75rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 2rem;
+}
+.hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn-accent { background: var(--accent); color: var(--bg); padding: 1rem 2.25rem; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; transition: opacity 0.2s; display: inline-block; }
+.btn-accent:hover { opacity: 0.85; }
+.btn-ghost-accent { border: 1px solid rgba(201,169,110,0.4); color: var(--accent); padding: 1rem 2.25rem; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; transition: border-color 0.2s; display: inline-block; }
+.btn-ghost-accent:hover { border-color: var(--accent); }
+
+.section-label { font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.25rem; }
+.section-title-serif { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 300; font-style: italic; color: var(--text); line-height: 1.1; }
+
+.featured-dishes { padding: 8rem 5%; }
+.featured-dishes-inner { max-width: 1200px; margin: 0 auto; }
+.dishes-header { margin-bottom: 4rem; }
+.dishes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.dish-card { }
+.dish-image { overflow: hidden; aspect-ratio: 4/3; margin-bottom: 1.25rem; }
+.dish-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s; }
+.dish-card:hover .dish-image img { transform: scale(1.06); }
+.dish-name { font-family: 'Cormorant Garamond', serif; font-size: 1.375rem; font-style: italic; color: var(--text); margin-bottom: 0.5rem; }
+.dish-desc { font-size: 0.875rem; color: var(--muted); font-weight: 300; line-height: 1.65; margin-bottom: 0.75rem; }
+.dish-price { font-size: 0.9rem; color: var(--accent); font-weight: 400; }
+
+.story { padding: 8rem 5%; background: var(--surface); }
+.story-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 7rem; align-items: center; }
+.story-image img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
+.story-content h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 300; font-style: italic; color: var(--text); line-height: 1.1; margin-bottom: 1.75rem; }
+.story-content p { font-size: 0.9375rem; font-weight: 300; color: var(--muted); line-height: 1.85; margin-bottom: 1.25rem; }
+.story-pull { font-family: 'Cormorant Garamond', serif; font-size: 1.375rem; font-style: italic; color: var(--accent); line-height: 1.5; padding: 1.5rem 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 2rem 0; }
+
+.menu-preview { padding: 8rem 5%; }
+.menu-preview-inner { max-width: 1000px; margin: 0 auto; }
+.menu-categories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4rem; margin-top: 4rem; }
+.menu-cat-title { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-style: italic; color: var(--accent); margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+.menu-item { padding: 0.875rem 0; border-bottom: 1px solid rgba(240,235,228,0.05); }
+.menu-item-row { display: flex; justify-content: space-between; gap: 1rem; }
+.menu-item-name { font-size: 0.9rem; color: var(--text); font-weight: 400; }
+.menu-item-price { font-size: 0.9rem; color: var(--accent); flex-shrink: 0; }
+.menu-item-desc { font-size: 0.775rem; color: var(--muted); font-weight: 300; margin-top: 0.25rem; line-height: 1.5; }
+.menu-cat-link { display: block; margin-top: 1.25rem; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+
+.reservations { padding: 8rem 5%; background: var(--surface); }
+.reservations-inner { max-width: 600px; margin: 0 auto; text-align: center; }
+.reservations-inner h2 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 300; font-style: italic; color: var(--text); margin-bottom: 1rem; }
+.reservations-inner p { font-size: 0.9375rem; font-weight: 300; color: var(--muted); margin-bottom: 2.5rem; }
+.res-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; }
+.res-form .full { grid-column: 1 / -1; }
+.res-input {
+  background: transparent; border: 1px solid var(--border);
+  padding: 0.875rem 1rem; width: 100%; font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem; color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.res-input:focus { border-color: var(--accent); }
+.res-input::placeholder { color: var(--muted); }
+.res-submit { grid-column: 1 / -1; background: var(--accent); color: var(--bg); padding: 1.125rem; font-size: 0.8rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; border: none; cursor: pointer; transition: opacity 0.2s; width: 100%; margin-top: 0.5rem; }
+.res-submit:hover { opacity: 0.85; }
+.res-phone { text-align: center; margin-top: 1.25rem; font-size: 0.875rem; color: var(--muted); }
+.res-phone a { color: var(--accent); }
+
+footer { background: var(--bg); padding: 5rem 5% 2rem; border-top: 1px solid var(--border); }
+.footer-inner { max-width: 1200px; margin: 0 auto; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
+.footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.375rem; color: var(--accent); margin-bottom: 1rem; }
+.footer-tagline { font-size: 0.875rem; font-weight: 300; color: var(--muted); line-height: 1.7; max-width: 240px; }
+.footer-col-title { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(240,235,228,0.3); margin-bottom: 1.25rem; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+.footer-links a { font-size: 0.875rem; font-weight: 300; color: var(--muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--accent); }
+.footer-bottom { border-top: 1px solid var(--border); padding-top: 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.footer-copy { font-size: 0.775rem; color: rgba(240,235,228,0.25); }
+.footer-mini { font-size: 0.7rem; color: rgba(240,235,228,0.2); }
+.footer-mini a { color: var(--accent); opacity: 0.6; }
+
+[data-animate] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s, transform 0.7s; }
+[data-animate].visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .dishes-grid { grid-template-columns: 1fr; }
+  .story-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .menu-categories { grid-template-columns: 1fr; gap: 3rem; }
+  .res-form { grid-template-columns: 1fr; }
+  .res-form .full { grid-column: 1; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="mm-banner" style="background:#0a0a12;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.72rem;position:sticky;top:0;z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)">
+  MiniMorph Studios Demo — BUSINESS_NAME |
+  <a href="https://www.minimorphstudios.net/get-started" style="color:#3b82f6;font-weight:600;margin-left:6px">Build Your Site →</a>
+</div>
+
+<nav>
+  <div class="nav-logo">BUSINESS_NAME</div>
+  <ul class="nav-links">
+    <li><a href="menu.html">Menu</a></li>
+    <li><a href="about.html">Our Story</a></li>
+    <li><a href="reservations.html">Reservations</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <a href="reservations.html" class="nav-reserve">Reserve</a>
+</nav>
+
+<section class="hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME dining experience" class="hero-bg">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">SERVICE_AREA · Fine Dining</div>
+    <h1>HEADLINE</h1>
+    <p class="hero-sub">SUBHEADLINE</p>
+    <div class="hero-hours">Open Tue–Sun · 5pm–10pm · HOURS</div>
+    <div class="hero-actions">
+      <a href="reservations.html" class="btn-accent">Reserve a Table</a>
+      <a href="menu.html" class="btn-ghost-accent">View Menu</a>
+    </div>
+  </div>
+</section>
+
+<!-- IF_GROWTH_PLUS_START -->
+<section class="featured-dishes">
+  <div class="featured-dishes-inner">
+    <div class="dishes-header" data-animate>
+      <div class="section-label">From the Kitchen</div>
+      <div class="section-title-serif">Signature Dishes</div>
+    </div>
+    <div class="dishes-grid">
+      <div class="dish-card" data-animate>
+        <div class="dish-image"><img src="GALLERY_IMAGE_1" alt="Featured dish"></div>
+        <div class="dish-name">48-Hour Short Rib</div>
+        <div class="dish-desc">Slow-braised with celery root purée, natural jus, and crispy shallots. The dish that defines our kitchen.</div>
+        <div class="dish-price">$46</div>
+      </div>
+      <div class="dish-card" data-animate>
+        <div class="dish-image"><img src="GALLERY_IMAGE_2" alt="Featured dish"></div>
+        <div class="dish-name">Lake Trout</div>
+        <div class="dish-desc">Brown butter, capers, charred lemon. Sourced daily from local waters when available.</div>
+        <div class="dish-price">$38</div>
+      </div>
+      <div class="dish-card" data-animate>
+        <div class="dish-image"><img src="GALLERY_IMAGE_3" alt="Featured dish"></div>
+        <div class="dish-name">Roasted Half Chicken</div>
+        <div class="dish-desc">Farm-raised, wood-fired, served with seasonal vegetables and herbed jus.</div>
+        <div class="dish-price">$34</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="story">
+  <div class="story-inner">
+    <div class="story-image" data-animate>
+      <img src="ABOUT_IMAGE" alt="OWNER_NAME — BUSINESS_NAME">
+    </div>
+    <div class="story-content" data-animate>
+      <div class="section-label">Our Story</div>
+      <h2>The People Behind Every Plate</h2>
+      <p>OWNER_NAME has been cooking for eighteen years, and BUSINESS_NAME is the distillation of every kitchen, every farm, every meal that shaped that career.</p>
+      <div class="story-pull">"Everything on this menu is something I would serve at my own table. That is the only standard I know."</div>
+      <p>ABOUT_STORY</p>
+    </div>
+  </div>
+</section>
+<!-- IF_GROWTH_PLUS_END -->
+
+<section class="menu-preview" id="menu">
+  <div class="menu-preview-inner">
+    <div data-animate style="text-align:center;margin-bottom:1rem;">
+      <div class="section-label">The Menu</div>
+      <div class="section-title-serif">Seasonal Selections</div>
+    </div>
+    <div class="menu-categories">
+      <div data-animate>
+        <div class="menu-cat-title">Starters</div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">Wood-Fired Oysters</span><span class="menu-item-price">$18</span></div>
+          <div class="menu-item-desc">Lemon butter, smoked paprika</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">Heirloom Tomato Salad</span><span class="menu-item-price">$16</span></div>
+          <div class="menu-item-desc">Local burrata, aged balsamic</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">Bone Marrow</span><span class="menu-item-price">$22</span></div>
+          <div class="menu-item-desc">Grilled sourdough, herb chimichurri</div>
+        </div>
+        <a href="menu.html" class="menu-cat-link">Full Menu →</a>
+      </div>
+      <div data-animate>
+        <div class="menu-cat-title">Mains</div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">48-Hour Short Rib</span><span class="menu-item-price">$46</span></div>
+          <div class="menu-item-desc">Celery root purée, natural jus</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">Lake Trout</span><span class="menu-item-price">$38</span></div>
+          <div class="menu-item-desc">Brown butter, capers, charred lemon</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">Roasted Half Chicken</span><span class="menu-item-price">$34</span></div>
+          <div class="menu-item-desc">Farm vegetables, herbed jus</div>
+        </div>
+        <a href="menu.html" class="menu-cat-link">Full Menu →</a>
+      </div>
+      <div data-animate>
+        <div class="menu-cat-title">Desserts</div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">Warm Chocolate Torte</span><span class="menu-item-price">$14</span></div>
+          <div class="menu-item-desc">Vanilla ice cream, sea salt</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">Seasonal Fruit Crisp</span><span class="menu-item-price">$12</span></div>
+          <div class="menu-item-desc">House granola, whipped cream</div>
+        </div>
+        <div class="menu-item">
+          <div class="menu-item-row"><span class="menu-item-name">Selection of Cheeses</span><span class="menu-item-price">$18</span></div>
+          <div class="menu-item-desc">Seasonal accompaniments</div>
+        </div>
+        <a href="menu.html" class="menu-cat-link">Full Menu →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="reservations" id="reservations">
+  <div class="reservations-inner" data-animate>
+    <div class="section-label">Reservations</div>
+    <h2>Reserve Your Table</h2>
+    <p>We hold tables for up to 15 minutes. For parties of 8 or more, please call us directly.</p>
+    <form class="res-form" id="res-form">
+      <input class="res-input" type="date" name="date" required>
+      <select class="res-input" name="time">
+        <option value="">Select Time</option>
+        <option>5:00 PM</option><option>5:30 PM</option><option>6:00 PM</option>
+        <option>6:30 PM</option><option>7:00 PM</option><option>7:30 PM</option>
+        <option>8:00 PM</option><option>8:30 PM</option><option>9:00 PM</option>
+      </select>
+      <select class="res-input" name="party">
+        <option value="">Party Size</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option>
+        <option>5</option><option>6</option><option>7–8</option>
+      </select>
+      <select class="res-input" name="occasion">
+        <option value="">Occasion (optional)</option>
+        <option>Anniversary</option><option>Birthday</option><option>Business Dinner</option><option>Date Night</option>
+      </select>
+      <input class="res-input full" name="name" type="text" placeholder="Your Name" required>
+      <input class="res-input full" name="email" type="email" placeholder="Email Address" required>
+      <button class="res-submit" type="submit">Reserve Your Table</button>
+    </form>
+    <div class="res-phone">Or call us: <a href="tel:PHONE">PHONE</a></div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <div class="footer-tagline">Fine dining in SERVICE_AREA. Seasonal menu. Local farms. Reservations recommended.</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Dining</div>
+        <ul class="footer-links">
+          <li><a href="menu.html">Menu</a></li>
+          <li><a href="reservations.html">Reservations</a></li>
+          <li><a href="private-dining.html">Private Dining</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Visit</div>
+        <ul class="footer-links">
+          <li><a href="about.html">Our Story</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><span style="color:var(--muted)">ADDRESS</span></li>
+          <li><span style="color:var(--muted)">HOURS</span></li>
+          <li><a href="tel:PHONE">PHONE</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved.</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form=document.getElementById('res-form');
+  if(!form) return;
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var btn=form.querySelector('button');
+    var fd=new FormData(form);
+    btn.textContent='Sending...'; btn.disabled=true;
+    fetch('APP_URL_PLACEHOLDER/api/contact-submit',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:fd.get('name'),email:fd.get('email'),message:'Reservation request: '+fd.get('date')+' at '+fd.get('time')+', party of '+fd.get('party'),businessName:'BUSINESS_NAME'})
+    }).then(function(r){return r.json();}).then(function(res){
+      if(res.success){form.innerHTML='<p style="text-align:center;font-family:Cormorant Garamond,serif;font-size:1.5rem;font-style:italic;color:var(--accent);padding:2rem 0;">Your table request has been received. We will confirm within 24 hours.</p>';}
+    }).catch(function(){btn.textContent='Reserve Your Table';btn.disabled=false;});
+  });
+})();
+var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
+</script>
+</body>
+</html>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSINESS_NAME | Specialty Coffee Roaster</title>
+<meta name="description" content="META_DESCRIPTION">
+<!-- IF_PREMIUM_PLUS_START -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CafeOrCoffeeShop","name":"BUSINESS_NAME","telephone":"PHONE","email":"EMAIL","address":"ADDRESS","url":"APP_URL_PLACEHOLDER","openingHours":"HOURS"}
+</script>
+<!-- IF_PREMIUM_PLUS_END -->
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --accent: #c8965a;
+  --bg: #0e0b08;
+  --surface: #1a1510;
+  --text: #f0e8d8;
+  --muted: rgba(240,232,216,0.5);
+  --border: rgba(240,232,216,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; line-height: 1.7; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 5%;
+  background: rgba(14,11,8,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a { font-size: 0.775rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; color: var(--muted); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-cta { border: 1px solid var(--accent); color: var(--accent); padding: 0.625rem 1.5rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; transition: background 0.2s, color 0.2s; }
+.nav-cta:hover { background: var(--accent); color: var(--bg); }
+
+.hero { position: relative; min-height: 100vh; display: flex; align-items: center; overflow: hidden; }
+.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.hero-overlay { position: absolute; inset: 0; z-index: 1; background: linear-gradient(to right, rgba(14,11,8,0.95) 40%, rgba(14,11,8,0.5) 100%); }
+.hero-content { position: relative; z-index: 2; padding: 6rem 5%; max-width: 640px; }
+.hero-eyebrow { font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.25rem; font-weight: 600; }
+.hero h1 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(3rem, 7vw, 6.5rem); font-weight: 900; text-transform: uppercase; line-height: 0.9; letter-spacing: -0.01em; margin-bottom: 1.25rem; }
+.hero-tagline { font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 500; margin-bottom: 1.75rem; border-left: 2px solid var(--accent); padding-left: 1rem; }
+.hero-sub { font-size: 1rem; font-weight: 300; color: var(--muted); max-width: 440px; margin-bottom: 2.5rem; line-height: 1.75; }
+.hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+.btn-accent { background: var(--accent); color: var(--bg); padding: 1rem 2rem; font-family: 'Barlow Condensed', sans-serif; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; transition: opacity 0.2s; display: inline-block; }
+.btn-accent:hover { opacity: 0.85; }
+.btn-ghost { border: 1px solid rgba(240,232,216,0.2); color: var(--text); padding: 1rem 2rem; font-size: 0.875rem; display: inline-block; transition: border-color 0.2s; }
+.btn-ghost:hover { border-color: rgba(240,232,216,0.6); }
+
+.section-label { font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 0.75rem; }
+.section-title { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 900; text-transform: uppercase; line-height: 0.95; }
+
+.coffees-section { padding: 8rem 5%; background: var(--surface); }
+.coffees-inner { max-width: 1200px; margin: 0 auto; }
+.coffees-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3.5rem; }
+.coffee-card { background: var(--bg); padding: 2rem; border: 1px solid var(--border); position: relative; transition: border-color 0.3s; }
+.coffee-card:hover { border-color: var(--accent); }
+.coffee-origin { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.25rem; }
+.coffee-region { font-size: 0.75rem; color: var(--accent); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem; }
+.coffee-meta { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+.coffee-meta-item { font-size: 0.75rem; color: var(--muted); }
+.coffee-meta-item strong { display: block; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(240,232,216,0.35); margin-bottom: 0.2rem; }
+.coffee-notes { font-size: 0.825rem; font-weight: 300; color: var(--muted); font-style: italic; margin-bottom: 1.25rem; line-height: 1.6; }
+.coffee-price { font-family: 'Barlow Condensed', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--accent); margin-bottom: 1rem; }
+.coffee-cta { display: block; text-align: center; border: 1px solid var(--border); color: var(--muted); padding: 0.625rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; transition: border-color 0.2s, color 0.2s; }
+.coffee-cta:hover { border-color: var(--accent); color: var(--accent); }
+
+.roast-section { padding: 8rem 5%; }
+.roast-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 7rem; align-items: center; }
+.roast-image img { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+.roast-content h2 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 900; text-transform: uppercase; line-height: 0.95; margin-bottom: 1.5rem; }
+.roast-content p { font-size: 0.9375rem; font-weight: 300; color: var(--muted); line-height: 1.85; margin-bottom: 1.25rem; }
+.roast-pull { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--accent); line-height: 1.1; text-transform: uppercase; padding: 1.5rem; border-left: 3px solid var(--accent); margin: 2rem 0; }
+
+.brew-guides { padding: 8rem 5%; background: var(--surface); }
+.brew-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3.5rem; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.brew-card { text-align: center; padding: 2.5rem; border: 1px solid var(--border); transition: border-color 0.3s; }
+.brew-card:hover { border-color: var(--accent); }
+.brew-icon { font-size: 2.5rem; margin-bottom: 1.25rem; }
+.brew-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1.375rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.75rem; }
+.brew-desc { font-size: 0.875rem; font-weight: 300; color: var(--muted); line-height: 1.7; margin-bottom: 1.25rem; }
+.brew-link { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 600; border-bottom: 1px solid var(--accent); padding-bottom: 2px; display: inline-block; }
+
+.menu-section { padding: 8rem 5%; }
+.menu-inner { max-width: 700px; margin: 0 auto; }
+.menu-list { margin-top: 3rem; }
+.menu-item { display: flex; justify-content: space-between; gap: 2rem; align-items: baseline; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+.menu-item-name { font-size: 0.9375rem; color: var(--text); font-weight: 400; }
+.menu-item-desc { font-size: 0.8rem; font-weight: 300; color: var(--muted); margin-top: 0.2rem; }
+.menu-item-price { font-size: 0.9rem; color: var(--accent); flex-shrink: 0; font-weight: 500; }
+.menu-full-link { display: block; margin-top: 1.5rem; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+
+.location-section { padding: 8rem 5%; background: var(--surface); }
+.location-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 7rem; }
+.location-info h2 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; text-transform: uppercase; line-height: 0.95; margin-bottom: 1.5rem; }
+.location-phone { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 2rem; font-weight: 900; color: var(--accent); margin-bottom: 0.5rem; }
+.location-details { font-size: 0.9rem; color: var(--muted); line-height: 2.2; font-weight: 300; }
+.location-form { display: flex; flex-direction: column; gap: 1rem; }
+.form-input { background: var(--bg); border: 1px solid var(--border); padding: 1rem 1.25rem; font-family: 'Barlow', sans-serif; font-size: 0.9rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--muted); }
+.form-textarea { resize: none; min-height: 120px; }
+.form-submit { background: var(--accent); color: var(--bg); padding: 1rem; font-family: 'Barlow Condensed', sans-serif; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border: none; cursor: pointer; transition: opacity 0.2s; }
+.form-submit:hover { opacity: 0.85; }
+
+footer { background: #080603; padding: 5rem 5% 2rem; border-top: 1px solid var(--border); }
+.footer-inner { max-width: 1200px; margin: 0 auto; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 4rem; }
+.footer-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 900; text-transform: uppercase; color: var(--accent); letter-spacing: 0.06em; margin-bottom: 1rem; }
+.footer-tagline { font-size: 0.875rem; font-weight: 300; color: var(--muted); line-height: 1.7; max-width: 240px; }
+.footer-col-title { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(240,232,216,0.3); margin-bottom: 1.25rem; font-weight: 600; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+.footer-links a { font-size: 0.875rem; font-weight: 300; color: var(--muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--accent); }
+.footer-bottom { border-top: 1px solid var(--border); padding-top: 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.footer-copy { font-size: 0.775rem; color: rgba(240,232,216,0.2); }
+.footer-mini { font-size: 0.7rem; color: rgba(240,232,216,0.2); }
+.footer-mini a { color: var(--accent); opacity: 0.7; }
+
+[data-animate] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s, transform 0.7s; }
+[data-animate].visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .coffees-grid { grid-template-columns: 1fr; }
+  .roast-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .brew-grid { grid-template-columns: 1fr; }
+  .location-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="mm-banner" style="background:#0a0a12;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.72rem;position:sticky;top:0;z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)">
+  MiniMorph Studios Demo — BUSINESS_NAME |
+  <a href="https://www.minimorphstudios.net/get-started" style="color:#3b82f6;font-weight:600;margin-left:6px">Build Your Site →</a>
+</div>
+
+<nav>
+  <div class="nav-logo">BUSINESS_NAME</div>
+  <ul class="nav-links">
+    <li><a href="shop.html">Shop</a></li>
+    <li><a href="subscriptions.html">Subscribe</a></li>
+    <li><a href="our-story.html">Our Story</a></li>
+    <li><a href="contact.html">Visit Us</a></li>
+  </ul>
+  <a href="shop.html" class="nav-cta">Shop Now</a>
+</nav>
+
+<section class="hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME roastery" class="hero-bg">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">SERVICE_AREA · Est. YEARS_IN_BUSINESS</div>
+    <h1>HEADLINE</h1>
+    <div class="hero-tagline">Single origin. Honestly roasted.</div>
+    <p class="hero-sub">SUBHEADLINE</p>
+    <div class="hero-actions">
+      <a href="shop.html" class="btn-accent">Shop Our Coffees</a>
+      <a href="contact.html" class="btn-ghost">Visit Us</a>
+    </div>
+  </div>
+</section>
+
+<section class="coffees-section">
+  <div class="coffees-inner">
+    <div data-animate>
+      <div class="section-label">Current Offerings</div>
+      <div class="section-title">On the Roaster Now</div>
+    </div>
+    <div class="coffees-grid">
+      <div class="coffee-card" data-animate>
+        <div class="coffee-origin">Ethiopia Yirgacheffe</div>
+        <div class="coffee-region">Gedeo Zone, Ethiopia</div>
+        <div class="coffee-meta">
+          <div class="coffee-meta-item"><strong>Process</strong>Natural</div>
+          <div class="coffee-meta-item"><strong>Roast</strong>Light</div>
+        </div>
+        <div class="coffee-notes">Blueberry, jasmine, dark chocolate. Bright acidity. Clean finish.</div>
+        <div class="coffee-price">$22 / 12oz</div>
+        <a href="shop.html#ethiopia" class="coffee-cta">Order Now →</a>
+      </div>
+      <div class="coffee-card" data-animate>
+        <div class="coffee-origin">Colombia El Paraiso</div>
+        <div class="coffee-region">Huila, Colombia</div>
+        <div class="coffee-meta">
+          <div class="coffee-meta-item"><strong>Process</strong>Washed</div>
+          <div class="coffee-meta-item"><strong>Roast</strong>Medium</div>
+        </div>
+        <div class="coffee-notes">Red apple, caramel, hazelnut. Balanced and approachable. Our top seller.</div>
+        <div class="coffee-price">$20 / 12oz</div>
+        <a href="shop.html#colombia" class="coffee-cta">Order Now →</a>
+      </div>
+      <div class="coffee-card" data-animate>
+        <div class="coffee-origin">Sumatra Mandheling</div>
+        <div class="coffee-region">North Sumatra</div>
+        <div class="coffee-meta">
+          <div class="coffee-meta-item"><strong>Process</strong>Wet-Hulled</div>
+          <div class="coffee-meta-item"><strong>Roast</strong>Dark</div>
+        </div>
+        <div class="coffee-notes">Dark chocolate, cedar, earth. Full body. The bold choice.</div>
+        <div class="coffee-price">$19 / 12oz</div>
+        <a href="shop.html#sumatra" class="coffee-cta">Order Now →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IF_GROWTH_PLUS_START -->
+<section class="roast-section">
+  <div class="roast-inner">
+    <div class="roast-image" data-animate>
+      <img src="ABOUT_IMAGE" alt="OWNER_NAME — BUSINESS_NAME roaster">
+    </div>
+    <div class="roast-content" data-animate>
+      <div class="section-label">The Roast</div>
+      <h2>Every Bag Roasted to Order</h2>
+      <div class="roast-pull">"We visited every farm we source from. That is not a line — it is how we decide what goes in the bag."</div>
+      <p>ABOUT_STORY</p>
+      <p>OWNER_NAME started BUSINESS_NAME after spending three years visiting farms across Ethiopia, Colombia, and Guatemala. Every single-origin offering we carry is one we can trace to a specific lot, a specific harvest, and a specific relationship with the people who grew it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="brew-guides">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div data-animate>
+      <div class="section-label">Brew Better</div>
+      <div class="section-title">Brew Guides</div>
+    </div>
+    <div class="brew-grid">
+      <div class="brew-card" data-animate>
+        <div class="brew-icon">☕</div>
+        <div class="brew-name">Pour Over</div>
+        <div class="brew-desc">The clearest way to taste everything in the cup. Perfect for light and medium roasts.</div>
+        <a href="brewing-guides.html#pour-over" class="brew-link">Full Guide →</a>
+      </div>
+      <div class="brew-card" data-animate>
+        <div class="brew-icon">🫖</div>
+        <div class="brew-name">French Press</div>
+        <div class="brew-desc">Full immersion. Rich body. Forgiving and consistent. Great for darker roasts.</div>
+        <a href="brewing-guides.html#french-press" class="brew-link">Full Guide →</a>
+      </div>
+      <div class="brew-card" data-animate>
+        <div class="brew-icon">⚡</div>
+        <div class="brew-name">Espresso</div>
+        <div class="brew-desc">Pressure brewing at its finest. Requires precision. Worth every dial-in.</div>
+        <a href="brewing-guides.html#espresso" class="brew-link">Full Guide →</a>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- IF_GROWTH_PLUS_END -->
+
+<section class="menu-section" id="menu">
+  <div class="menu-inner" data-animate>
+    <div class="section-label">Cafe Menu</div>
+    <div class="section-title">Espresso &amp; Drinks</div>
+    <div class="menu-list">
+      <div class="menu-item"><div><div class="menu-item-name">Espresso</div><div class="menu-item-desc">Double shot, single origin</div></div><div class="menu-item-price">$3.50</div></div>
+      <div class="menu-item"><div><div class="menu-item-name">Cappuccino</div><div class="menu-item-desc">Double espresso, steamed milk, microfoam</div></div><div class="menu-item-price">$5</div></div>
+      <div class="menu-item"><div><div class="menu-item-name">Filter Coffee</div><div class="menu-item-desc">Rotating single origin, pour over</div></div><div class="menu-item-price">$4</div></div>
+      <div class="menu-item"><div><div class="menu-item-name">Cold Brew</div><div class="menu-item-desc">24-hour steep, over ice</div></div><div class="menu-item-price">$5.50</div></div>
+      <div class="menu-item"><div><div class="menu-item-name">Flat White</div><div class="menu-item-desc">Ristretto, micro-foam, no froth</div></div><div class="menu-item-price">$5</div></div>
+    </div>
+    <a href="menu.html" class="menu-full-link">Full Menu Including Food →</a>
+  </div>
+</section>
+
+<section class="location-section" id="visit">
+  <div class="location-inner">
+    <div class="location-info" data-animate>
+      <div class="section-label">Find Us</div>
+      <h2>Come Visit the Roastery</h2>
+      <a href="tel:PHONE" class="location-phone">PHONE</a>
+      <div class="location-details">
+        ADDRESS<br>
+        HOURS<br>
+        <a href="mailto:EMAIL" style="color:var(--accent)">EMAIL</a><br>
+        <a href="wholesale.html" style="color:var(--muted);font-size:0.85rem">Wholesale inquiries →</a>
+      </div>
+    </div>
+    <form class="location-form" id="contact-form" data-animate>
+      <input class="form-input" name="name" type="text" placeholder="Your Name" required>
+      <input class="form-input" name="email" type="email" placeholder="Email Address" required>
+      <textarea class="form-input form-textarea" name="message" placeholder="Wholesale inquiry, subscription question, or just want to say hi..."></textarea>
+      <button class="form-submit" type="submit">Send Message →</button>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <div class="footer-tagline">Direct-trade specialty coffee roasted in SERVICE_AREA. Shipped within 48 hours of roast.</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Shop</div>
+        <ul class="footer-links">
+          <li><a href="shop.html">All Coffees</a></li>
+          <li><a href="subscriptions.html">Subscriptions</a></li>
+          <li><a href="wholesale.html">Wholesale</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Learn</div>
+        <ul class="footer-links">
+          <li><a href="our-story.html">Our Story</a></li>
+          <li><a href="brewing-guides.html">Brew Guides</a></li>
+          <li><a href="blog.html">Coffee Journal</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Visit</div>
+        <ul class="footer-links">
+          <li><a href="tel:PHONE">PHONE</a></li>
+          <li><span style="color:var(--muted)">ADDRESS</span></li>
+          <li><span style="color:var(--muted);font-size:0.8rem">HOURS</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved.</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form=document.getElementById('contact-form');
+  if(!form) return;
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var btn=form.querySelector('button');
+    var fd=new FormData(form);
+    btn.textContent='Sending...'; btn.disabled=true;
+    fetch('APP_URL_PLACEHOLDER/api/contact-submit',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:fd.get('name'),email:fd.get('email'),message:fd.get('message'),businessName:'BUSINESS_NAME'})
+    }).then(function(r){return r.json();}).then(function(res){
+      if(res.success){form.innerHTML='<p style="text-align:center;font-family:Barlow Condensed,sans-serif;font-size:1.25rem;font-weight:800;text-transform:uppercase;color:var(--accent);padding:2rem 0;">MESSAGE SENT. TALK SOON.</p>';}
+    }).catch(function(){btn.textContent='Send Message →';btn.disabled=false;});
+  });
+})();
+var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
+</script>
+</body>
+</html>

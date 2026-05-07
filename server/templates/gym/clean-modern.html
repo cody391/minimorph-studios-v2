@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSINESS_NAME | Yoga &amp; Wellness Studio</title>
+<meta name="description" content="META_DESCRIPTION">
+<!-- IF_PREMIUM_PLUS_START -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ExerciseGym","name":"BUSINESS_NAME","telephone":"PHONE","email":"EMAIL","address":"ADDRESS","url":"APP_URL_PLACEHOLDER","openingHours":"HOURS"}
+</script>
+<!-- IF_PREMIUM_PLUS_END -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --bg: #ffffff;
+  --surface: #f8f7f5;
+  --text: #1a1a1a;
+  --muted: rgba(26,26,26,0.5);
+  --border: rgba(26,26,26,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.7; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 5%;
+  background: rgba(255,255,255,0.97); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-size: 1.125rem; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--muted); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-cta { background: var(--primary); color: #fff; padding: 0.625rem 1.5rem; border-radius: 100px; font-size: 0.825rem; font-weight: 600; transition: opacity 0.2s; }
+.nav-cta:hover { opacity: 0.85; }
+
+.hero {
+  position: relative; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; overflow: hidden; padding-top: 5rem;
+}
+.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.hero-overlay { position: absolute; inset: 0; z-index: 1; background: rgba(255,255,255,0.6); }
+.hero-content { position: relative; z-index: 2; padding: 3rem 5%; max-width: 700px; }
+.hero-eyebrow { font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; color: var(--primary); margin-bottom: 1.5rem; }
+.hero h1 { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 700; line-height: 1.05; color: var(--text); margin-bottom: 1.25rem; letter-spacing: -0.02em; }
+.hero-sub { font-size: 1.125rem; font-weight: 300; color: var(--muted); max-width: 460px; margin: 0 auto 2.5rem; line-height: 1.7; }
+.hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn-primary { background: var(--primary); color: #fff; padding: 0.875rem 2rem; border-radius: 100px; font-size: 0.9rem; font-weight: 600; display: inline-block; transition: opacity 0.2s; }
+.btn-primary:hover { opacity: 0.85; }
+.btn-outline { border: 1px solid var(--border); color: var(--text); padding: 0.875rem 2rem; border-radius: 100px; font-size: 0.9rem; font-weight: 500; display: inline-block; transition: border-color 0.2s; }
+.btn-outline:hover { border-color: var(--text); }
+
+.section-eyebrow { font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--primary); font-weight: 600; margin-bottom: 0.75rem; }
+.section-title { font-size: clamp(1.875rem, 4vw, 3rem); font-weight: 700; color: var(--text); line-height: 1.05; letter-spacing: -0.02em; }
+
+.classes-section { padding: 8rem 5%; }
+.classes-header { max-width: 1200px; margin: 0 auto 3rem; }
+.classes-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.class-card { background: var(--surface); padding: 1.75rem; border-radius: 16px; position: relative; transition: box-shadow 0.3s; cursor: default; }
+.class-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+.class-name { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text); }
+.class-instructor { font-size: 0.825rem; color: var(--muted); margin-bottom: 0.75rem; }
+.class-meta { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.class-pill { font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.75rem; border-radius: 100px; }
+.pill-time { background: rgba(26,26,26,0.06); color: var(--muted); }
+.pill-duration { background: rgba(26,26,26,0.06); color: var(--muted); }
+.pill-beginner { background: rgba(0,150,100,0.08); color: rgb(0,120,80); }
+.pill-all { background: rgba(80,80,200,0.08); color: rgb(60,60,180); }
+.pill-advanced { background: rgba(200,80,80,0.08); color: rgb(180,50,50); }
+.class-book { display: none; position: absolute; bottom: 1.75rem; right: 1.75rem; background: var(--primary); color: #fff; font-size: 0.75rem; font-weight: 600; padding: 0.4rem 1rem; border-radius: 100px; }
+.class-card:hover .class-book { display: block; }
+
+.about-section { padding: 8rem 5%; background: var(--surface); }
+.about-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 7rem; align-items: center; }
+.about-images { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.about-images img:first-child { border-radius: 16px; aspect-ratio: 3/4; object-fit: cover; }
+.about-images img:last-child { border-radius: 16px; aspect-ratio: 3/4; object-fit: cover; margin-top: 2rem; }
+.about-content h2 { font-size: clamp(1.875rem, 3vw, 2.75rem); font-weight: 700; line-height: 1.1; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
+.about-content p { font-size: 0.9375rem; color: var(--muted); line-height: 1.85; margin-bottom: 1.25rem; font-weight: 300; }
+
+.schedule-section { padding: 8rem 5%; overflow-x: auto; }
+.schedule-inner { max-width: 1200px; margin: 0 auto; }
+.schedule-table { width: 100%; border-collapse: collapse; margin-top: 3rem; min-width: 700px; }
+.schedule-table th { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--muted); padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+.schedule-table td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; vertical-align: top; }
+.schedule-class { color: var(--primary); font-weight: 600; display: block; font-size: 0.875rem; }
+.schedule-instructor { color: var(--muted); font-size: 0.775rem; }
+
+.pricing-section { padding: 8rem 5%; background: var(--surface); }
+.pricing-inner { max-width: 900px; margin: 0 auto; }
+.pricing-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3rem; }
+.price-card { background: var(--bg); padding: 2rem; border-radius: 16px; border: 1px solid var(--border); transition: border-color 0.3s; }
+.price-card:hover { border-color: var(--primary); }
+.price-name { font-size: 0.875rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+.price-amount { font-size: 2.5rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; line-height: 1; }
+.price-per { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.25rem; }
+.price-features { list-style: none; display: flex; flex-direction: column; gap: 0.625rem; margin-bottom: 1.75rem; }
+.price-features li { font-size: 0.85rem; color: var(--muted); padding-left: 1.25rem; position: relative; }
+.price-features li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); font-weight: 700; }
+.price-cta { display: block; text-align: center; background: var(--primary); color: #fff; padding: 0.75rem; border-radius: 100px; font-size: 0.825rem; font-weight: 600; transition: opacity 0.2s; }
+.price-cta:hover { opacity: 0.85; }
+
+.contact-section { padding: 8rem 5%; }
+.contact-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 7rem; }
+.contact-info h2 { font-size: clamp(2rem, 3.5vw, 2.75rem); font-weight: 700; line-height: 1.05; margin-bottom: 1.5rem; letter-spacing: -0.02em; }
+.contact-info p { font-size: 0.9375rem; color: var(--muted); line-height: 1.8; margin-bottom: 2rem; font-weight: 300; }
+.contact-phone { display: block; font-size: 1.875rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem; }
+.contact-details { font-size: 0.875rem; color: var(--muted); line-height: 2; }
+.contact-form { display: flex; flex-direction: column; gap: 1rem; }
+.form-input { background: var(--surface); border: 1px solid var(--border); padding: 0.875rem 1.25rem; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--text); outline: none; border-radius: 12px; transition: border-color 0.2s; }
+.form-input:focus { border-color: var(--primary); }
+.form-input::placeholder { color: var(--muted); }
+.form-textarea { resize: none; min-height: 120px; }
+.form-submit { background: var(--primary); color: #fff; padding: 1rem; border: none; border-radius: 100px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: opacity 0.2s; }
+.form-submit:hover { opacity: 0.85; }
+
+footer { background: var(--surface); padding: 5rem 5% 2rem; border-top: 1px solid var(--border); }
+.footer-inner { max-width: 1200px; margin: 0 auto; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 4rem; }
+.footer-brand { font-size: 1.125rem; font-weight: 700; color: var(--text); margin-bottom: 0.75rem; }
+.footer-tagline { font-size: 0.875rem; color: var(--muted); line-height: 1.7; max-width: 240px; font-weight: 300; }
+.footer-col-title { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem; font-weight: 600; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+.footer-links a { font-size: 0.875rem; color: var(--muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-bottom { border-top: 1px solid var(--border); padding-top: 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.footer-copy { font-size: 0.775rem; color: var(--muted); }
+.footer-mini { font-size: 0.7rem; color: var(--muted); }
+.footer-mini a { color: var(--primary); }
+
+[data-animate] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s, transform 0.7s; }
+[data-animate].visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .classes-grid { grid-template-columns: 1fr 1fr; }
+  .about-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .about-images { grid-template-columns: 1fr; }
+  .pricing-options { grid-template-columns: 1fr; }
+  .contact-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="mm-banner" style="background:#0a0a12;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.72rem;position:sticky;top:0;z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)">
+  MiniMorph Studios Demo — BUSINESS_NAME |
+  <a href="https://www.minimorphstudios.net/get-started" style="color:#3b82f6;font-weight:600;margin-left:6px">Build Your Site →</a>
+</div>
+
+<nav>
+  <div class="nav-logo">BUSINESS_NAME</div>
+  <ul class="nav-links">
+    <li><a href="classes.html">Classes</a></li>
+    <li><a href="schedule.html">Schedule</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <a href="free-trial.html" class="nav-cta">Try a Class Free</a>
+</nav>
+
+<section class="hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME studio" class="hero-bg">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">SERVICE_AREA · Est. YEARS_IN_BUSINESS</div>
+    <h1>HEADLINE</h1>
+    <p class="hero-sub">SUBHEADLINE</p>
+    <div class="hero-actions">
+      <a href="free-trial.html" class="btn-primary">Try a Class Free</a>
+      <a href="schedule.html" class="btn-outline">View Schedule</a>
+    </div>
+  </div>
+</section>
+
+<section class="classes-section">
+  <div class="classes-header" data-animate>
+    <div class="section-eyebrow">What We Offer</div>
+    <div class="section-title">Find Your Practice</div>
+  </div>
+  <div class="classes-grid">
+    <div class="class-card" data-animate>
+      <div class="class-name">Morning Flow</div>
+      <div class="class-instructor">with OWNER_NAME</div>
+      <div class="class-meta"><span class="class-pill pill-time">7:00 AM</span><span class="class-pill pill-duration">60 min</span><span class="class-pill pill-all">All Levels</span></div>
+      <a href="classes.html#morning-flow" class="class-book">Book →</a>
+    </div>
+    <div class="class-card" data-animate>
+      <div class="class-name">Power Vinyasa</div>
+      <div class="class-instructor">with Coach Alex</div>
+      <div class="class-meta"><span class="class-pill pill-time">12:00 PM</span><span class="class-pill pill-duration">60 min</span><span class="class-pill pill-advanced">Intermediate</span></div>
+      <a href="classes.html#power-vinyasa" class="class-book">Book →</a>
+    </div>
+    <div class="class-card" data-animate>
+      <div class="class-name">Restorative</div>
+      <div class="class-instructor">with Coach Jordan</div>
+      <div class="class-meta"><span class="class-pill pill-time">6:00 PM</span><span class="class-pill pill-duration">75 min</span><span class="class-pill pill-beginner">Beginner-Friendly</span></div>
+      <a href="classes.html#restorative" class="class-book">Book →</a>
+    </div>
+    <div class="class-card" data-animate>
+      <div class="class-name">Core &amp; Strength</div>
+      <div class="class-instructor">with Coach Sam</div>
+      <div class="class-meta"><span class="class-pill pill-time">8:30 AM</span><span class="class-pill pill-duration">45 min</span><span class="class-pill pill-all">All Levels</span></div>
+      <a href="classes.html#core" class="class-book">Book →</a>
+    </div>
+    <div class="class-card" data-animate>
+      <div class="class-name">Meditation</div>
+      <div class="class-instructor">with OWNER_NAME</div>
+      <div class="class-meta"><span class="class-pill pill-time">6:30 AM</span><span class="class-pill pill-duration">30 min</span><span class="class-pill pill-beginner">Beginner-Friendly</span></div>
+      <a href="classes.html#meditation" class="class-book">Book →</a>
+    </div>
+    <div class="class-card" data-animate>
+      <div class="class-name">Hot Yoga</div>
+      <div class="class-instructor">with Coach Alex</div>
+      <div class="class-meta"><span class="class-pill pill-time">5:30 PM</span><span class="class-pill pill-duration">60 min</span><span class="class-pill pill-advanced">Intermediate</span></div>
+      <a href="classes.html#hot-yoga" class="class-book">Book →</a>
+    </div>
+  </div>
+</section>
+
+<!-- IF_GROWTH_PLUS_START -->
+<section class="about-section">
+  <div class="about-inner">
+    <div class="about-images" data-animate>
+      <img src="GALLERY_IMAGE_1" alt="Studio community">
+      <img src="GALLERY_IMAGE_2" alt="Studio class">
+    </div>
+    <div class="about-content" data-animate>
+      <div class="section-eyebrow">Our Community</div>
+      <h2>A practice for every body.</h2>
+      <p>ABOUT_STORY</p>
+      <p>OWNER_NAME opened BUSINESS_NAME in SERVICE_AREA YEARS_IN_BUSINESS years ago with a simple conviction: every person deserves a place to move, breathe, and belong. We have built a community around that conviction.</p>
+      <p>No intimidation. No perfection expected. Just a welcoming space where you can show up as you are and leave feeling better than when you arrived.</p>
+      <a href="about.html" style="display:inline-block;margin-top:1.5rem;font-size:0.8rem;font-weight:600;color:var(--primary);border-bottom:1px solid var(--primary);padding-bottom:2px;">Meet Our Team →</a>
+    </div>
+  </div>
+</section>
+
+<section class="schedule-section">
+  <div class="schedule-inner">
+    <div data-animate>
+      <div class="section-eyebrow">Weekly Schedule</div>
+      <div class="section-title">Class Schedule</div>
+    </div>
+    <table class="schedule-table">
+      <thead>
+        <tr>
+          <th>Time</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>6:30 AM</td>
+          <td><span class="schedule-class">Meditation</span><span class="schedule-instructor">OWNER_NAME</span></td>
+          <td>—</td>
+          <td><span class="schedule-class">Meditation</span><span class="schedule-instructor">OWNER_NAME</span></td>
+          <td>—</td>
+          <td><span class="schedule-class">Meditation</span><span class="schedule-instructor">OWNER_NAME</span></td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>7:00 AM</td>
+          <td><span class="schedule-class">Morning Flow</span><span class="schedule-instructor">OWNER_NAME</span></td>
+          <td><span class="schedule-class">Morning Flow</span><span class="schedule-instructor">Coach Alex</span></td>
+          <td><span class="schedule-class">Morning Flow</span><span class="schedule-instructor">OWNER_NAME</span></td>
+          <td><span class="schedule-class">Morning Flow</span><span class="schedule-instructor">Coach Jordan</span></td>
+          <td><span class="schedule-class">Morning Flow</span><span class="schedule-instructor">OWNER_NAME</span></td>
+          <td><span class="schedule-class">Community Class</span><span class="schedule-instructor">All Coaches</span></td>
+        </tr>
+        <tr>
+          <td>12:00 PM</td>
+          <td><span class="schedule-class">Power Vinyasa</span><span class="schedule-instructor">Coach Alex</span></td>
+          <td>—</td>
+          <td><span class="schedule-class">Power Vinyasa</span><span class="schedule-instructor">Coach Alex</span></td>
+          <td>—</td>
+          <td><span class="schedule-class">Core &amp; Strength</span><span class="schedule-instructor">Coach Sam</span></td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>5:30 PM</td>
+          <td>—</td>
+          <td><span class="schedule-class">Hot Yoga</span><span class="schedule-instructor">Coach Alex</span></td>
+          <td>—</td>
+          <td><span class="schedule-class">Hot Yoga</span><span class="schedule-instructor">Coach Alex</span></td>
+          <td>—</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>6:00 PM</td>
+          <td><span class="schedule-class">Restorative</span><span class="schedule-instructor">Coach Jordan</span></td>
+          <td>—</td>
+          <td><span class="schedule-class">Restorative</span><span class="schedule-instructor">Coach Jordan</span></td>
+          <td><span class="schedule-class">Restorative</span><span class="schedule-instructor">OWNER_NAME</span></td>
+          <td>—</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<!-- IF_GROWTH_PLUS_END -->
+
+<section class="pricing-section" id="pricing">
+  <div class="pricing-inner">
+    <div data-animate>
+      <div class="section-eyebrow">Membership</div>
+      <div class="section-title">Simple, Honest Pricing</div>
+    </div>
+    <div class="pricing-options">
+      <div class="price-card" data-animate>
+        <div class="price-name">Monthly</div>
+        <div class="price-amount">$89</div>
+        <div class="price-per">/month · cancel anytime</div>
+        <ul class="price-features"><li>Unlimited classes</li><li>App booking</li><li>Community events</li></ul>
+        <a href="free-trial.html" class="price-cta">Start Free Trial</a>
+      </div>
+      <div class="price-card" data-animate>
+        <div class="price-name">Class Pack</div>
+        <div class="price-amount">$150</div>
+        <div class="price-per">10 classes · no expiry</div>
+        <ul class="price-features"><li>10 class credits</li><li>Use at your pace</li><li>Perfect for beginners</li></ul>
+        <a href="contact.html" class="price-cta">Buy Pack</a>
+      </div>
+      <div class="price-card" data-animate>
+        <div class="price-name">Drop-In</div>
+        <div class="price-amount">$22</div>
+        <div class="price-per">/single class</div>
+        <ul class="price-features"><li>No commitment</li><li>Any class, any time</li><li>First class free</li></ul>
+        <a href="free-trial.html" class="price-cta">First Class Free</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="contact-section" id="contact">
+  <div class="contact-inner">
+    <div class="contact-info" data-animate>
+      <div class="section-eyebrow">Get In Touch</div>
+      <h2>Come Find Your Practice</h2>
+      <p>We would love to answer your questions, help you choose the right class, or get you set up for a free trial week. Just reach out.</p>
+      <a href="tel:PHONE" class="contact-phone">PHONE</a>
+      <div class="contact-details">ADDRESS<br>HOURS</div>
+    </div>
+    <form class="contact-form" id="contact-form" data-animate>
+      <input class="form-input" name="name" type="text" placeholder="Your Name" required>
+      <input class="form-input" name="email" type="email" placeholder="Email Address" required>
+      <input class="form-input" name="phone" type="tel" placeholder="Phone (optional)">
+      <textarea class="form-input form-textarea" name="message" placeholder="Tell us what you're looking for..."></textarea>
+      <button class="form-submit" type="submit">Send Message</button>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <div class="footer-tagline">Yoga and wellness studio in SERVICE_AREA. A practice for every body. YEARS_IN_BUSINESS years of community.</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Classes</div>
+        <ul class="footer-links">
+          <li><a href="classes.html">All Classes</a></li>
+          <li><a href="schedule.html">Schedule</a></li>
+          <li><a href="free-trial.html">Free Trial</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Studio</div>
+        <ul class="footer-links">
+          <li><a href="about.html">About</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Visit</div>
+        <ul class="footer-links">
+          <li><a href="tel:PHONE">PHONE</a></li>
+          <li><span style="color:var(--muted)">ADDRESS</span></li>
+          <li><span style="color:var(--muted);font-size:0.8rem">HOURS</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved.</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form=document.getElementById('contact-form');
+  if(!form) return;
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var btn=form.querySelector('button');
+    var fd=new FormData(form);
+    btn.textContent='Sending...'; btn.disabled=true;
+    fetch('APP_URL_PLACEHOLDER/api/contact-submit',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone'),message:fd.get('message'),businessName:'BUSINESS_NAME'})
+    }).then(function(r){return r.json();}).then(function(res){
+      if(res.success){form.innerHTML='<p style="text-align:center;padding:2rem;font-size:1rem;color:var(--text)">Thank you. We\'ll be in touch within 24 hours.</p>';}
+    }).catch(function(){btn.textContent='Send Message';btn.disabled=false;});
+  });
+})();
+var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
+</script>
+</body>
+</html>

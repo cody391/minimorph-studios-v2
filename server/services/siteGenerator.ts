@@ -792,6 +792,62 @@ ${assetSummary}`;
 
     const pages: Record<string, string> = {};
 
+    // ── Template engine path (useTemplates = true) ───────────────────────────
+    const useTemplates = true;
+    let pagesFromTemplate = false;
+
+    if (useTemplates) {
+      try {
+        const { generateSiteFromTemplate } = await import("./templateEngine");
+        const servicesOffered = Array.isArray(q.servicesOffered)
+          ? (q.servicesOffered as string[])
+          : [websiteType];
+
+        const testimonials = Array.isArray(q.testimonials)
+          ? (q.testimonials as Array<{ quote: string; name: string; context: string }>)
+          : [];
+
+        const brief = {
+          businessName: project.businessName,
+          businessType: websiteType,
+          brandTone: brandTone,
+          packageTier: project.packageTier,
+          primaryColor,
+          secondaryColor,
+          phone,
+          email,
+          address,
+          hours,
+          serviceArea: address || (q.serviceArea as string) || "",
+          yearsInBusiness,
+          ownerName,
+          licenseNumber,
+          uniqueDifferentiator,
+          servicesOffered,
+          targetCustomer: targetCustomerDescription,
+          testimonials,
+          competitiveIntel: competitiveIntel ?? undefined,
+          imageDirection,
+          appUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+          subNiche,
+        };
+
+        await db.updateOnboardingProject(projectId, {
+          generationLog: "Generating site from template...",
+        });
+
+        const templatePages = await generateSiteFromTemplate(brief);
+        Object.assign(pages, templatePages);
+        pagesFromTemplate = true;
+
+        console.log(`[SiteGen] Template engine produced ${Object.keys(templatePages).length} page(s) for ${project.businessName}`);
+      } catch (templateErr: any) {
+        console.error("[SiteGen] Template engine failed, falling back to LLM:", templateErr.message);
+        pagesFromTemplate = false;
+      }
+    }
+
+    if (!pagesFromTemplate) {
     for (let pi = 0; pi < pageList.length; pi++) {
       const pageName = pageList[pi];
       const pageLabel =
@@ -886,6 +942,7 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
 
       pages[pageName] = html;
     }
+    } // end !pagesFromTemplate LLM block
 
     if (Object.keys(pages).length === 0) {
       throw new Error("No pages were generated");
@@ -915,11 +972,14 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
       generationLog: "Injecting images...",
     });
     for (const pageName of Object.keys(pages)) {
-      try {
-        // Primary: replace HERO_IMAGE / GALLERY_IMAGE_1 / etc. tokens (Fix 4: imageDirection wired)
-        pages[pageName] = await injectImages(pages[pageName], websiteType, primaryColor, customerPhotoUrl, subNiche, imageDirection);
-      } catch {
-        // Best-effort — never block delivery
+      if (!pagesFromTemplate) {
+        try {
+          // Primary: replace HERO_IMAGE / GALLERY_IMAGE_1 / etc. tokens (Fix 4: imageDirection wired)
+          // Skipped for template engine path — templateEngine already resolved image tokens
+          pages[pageName] = await injectImages(pages[pageName], websiteType, primaryColor, customerPhotoUrl, subNiche, imageDirection);
+        } catch {
+          // Best-effort — never block delivery
+        }
       }
       try {
         // Fallback: replace any remaining <!-- REPLACE WITH: --> comments

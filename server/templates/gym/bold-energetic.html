@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSINESS_NAME | Fitness Studio</title>
+<meta name="description" content="META_DESCRIPTION">
+<!-- IF_PREMIUM_PLUS_START -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ExerciseGym","name":"BUSINESS_NAME","telephone":"PHONE","email":"EMAIL","address":"ADDRESS","url":"APP_URL_PLACEHOLDER","openingHours":"HOURS"}
+</script>
+<!-- IF_PREMIUM_PLUS_END -->
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --bg: #080808;
+  --surface: #111111;
+  --text: #ffffff;
+  --muted: rgba(255,255,255,0.55);
+  --border: rgba(255,255,255,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; line-height: 1.7; overflow-x: hidden; }
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 5%;
+  background: rgba(8,8,8,0.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; color: var(--primary); }
+.nav-links { display: flex; gap: 2.5rem; list-style: none; }
+.nav-links a { font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; color: var(--muted); transition: color 0.2s; }
+.nav-links a:hover { color: var(--text); }
+.nav-cta { background: var(--primary); color: #fff; padding: 0.75rem 1.5rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; transition: opacity 0.2s; }
+.nav-cta:hover { opacity: 0.85; }
+
+.hero {
+  min-height: 100vh; display: flex; padding-top: 5rem; position: relative; overflow: hidden;
+}
+.hero-left {
+  width: 55%; display: flex; flex-direction: column; justify-content: center;
+  padding: 4rem 5% 4rem 5%;
+  background: var(--bg); z-index: 1;
+}
+.hero-stat-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 0.5rem; }
+.hero-big-stat { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(4rem, 9vw, 8rem); font-weight: 900; color: var(--primary); line-height: 0.9; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+.hero-stat-desc { font-size: 1rem; color: var(--muted); margin-bottom: 2.5rem; font-weight: 400; }
+.hero h1 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(2rem, 5vw, 4rem); font-weight: 900; text-transform: uppercase; line-height: 0.95; letter-spacing: -0.01em; margin-bottom: 1rem; }
+.hero-sub { font-size: 1rem; color: var(--muted); max-width: 420px; margin-bottom: 2.5rem; line-height: 1.65; }
+.hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+.btn-primary { background: var(--primary); color: #fff; padding: 1rem 2rem; font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; display: inline-block; transition: opacity 0.2s; }
+.btn-primary:hover { opacity: 0.85; }
+.btn-ghost { border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 1rem 2rem; font-size: 0.875rem; display: inline-block; transition: border-color 0.2s; }
+.btn-ghost:hover { border-color: rgba(255,255,255,0.6); }
+
+.hero-right {
+  flex: 1; overflow: hidden; position: relative;
+  clip-path: polygon(12% 0, 100% 0, 100% 100%, 0% 100%);
+}
+.hero-right img { width: 100%; height: 100%; object-fit: cover; }
+
+.programs-section { padding: 6rem 0 6rem 5%; overflow: hidden; }
+.programs-header { margin-bottom: 3rem; padding-right: 5%; }
+.section-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--primary); font-weight: 600; margin-bottom: 0.75rem; }
+.section-title { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 900; text-transform: uppercase; line-height: 0.95; }
+.programs-scroll { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; scrollbar-width: none; }
+.programs-scroll::-webkit-scrollbar { display: none; }
+.program-card { min-width: 280px; background: var(--surface); padding: 2rem; border-top: 3px solid var(--primary); flex-shrink: 0; }
+.program-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1.375rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+.program-intensity { display: flex; gap: 4px; margin-bottom: 1rem; }
+.intensity-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); }
+.intensity-dot.off { background: var(--border); }
+.program-schedule { font-size: 0.775rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.program-duration { font-size: 0.775rem; color: var(--muted); margin-bottom: 1.5rem; }
+.program-cta { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--primary); border-bottom: 1px solid var(--primary); padding-bottom: 2px; display: inline-block; }
+
+.results-section { padding: 8rem 5%; background: var(--surface); text-align: center; }
+.results-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4rem; margin-top: 4rem; }
+.result-item { }
+.result-num { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(4rem, 8vw, 7rem); font-weight: 900; color: var(--primary); line-height: 0.9; letter-spacing: -0.02em; }
+.result-label { font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-top: 0.75rem; font-weight: 600; }
+
+.trainers-section { padding: 8rem 5%; }
+.trainers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 4rem; }
+.trainer-card { position: relative; overflow: hidden; }
+.trainer-photo { aspect-ratio: 3/4; overflow: hidden; }
+.trainer-photo img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%); transition: filter 0.4s; }
+.trainer-card:hover .trainer-photo img { filter: grayscale(0%); }
+.trainer-info { padding: 1.25rem 0; }
+.trainer-name { font-family: 'Barlow Condensed', sans-serif; font-size: 1.375rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.trainer-specialty { background: var(--primary); color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.25rem 0.75rem; display: inline-block; margin: 0.5rem 0; }
+.trainer-credential { font-size: 0.8rem; color: var(--muted); }
+
+.pricing-section { padding: 8rem 5%; background: var(--surface); }
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 4rem; }
+.pricing-card { padding: 2.5rem; border: 1px solid var(--border); position: relative; transition: border-color 0.3s; }
+.pricing-card.featured { border-color: var(--primary); }
+.pricing-card.featured::before { content: 'MOST POPULAR'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; padding: 0.25rem 1rem; white-space: nowrap; }
+.pricing-tier { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); font-weight: 600; margin-bottom: 0.75rem; }
+.pricing-price { font-family: 'Barlow Condensed', sans-serif; font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 0.25rem; }
+.pricing-per { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.75rem; }
+.pricing-features { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; }
+.pricing-features li { font-size: 0.875rem; color: var(--muted); padding-left: 1.25rem; position: relative; }
+.pricing-features li::before { content: '✓'; position: absolute; left: 0; color: var(--primary); font-weight: 700; }
+.pricing-cta { display: block; text-align: center; background: var(--primary); color: #fff; padding: 1rem; font-family: 'Barlow Condensed', sans-serif; font-size: 0.875rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; transition: opacity 0.2s; }
+.pricing-cta:hover { opacity: 0.85; }
+
+.trial-section { padding: 8rem 5%; }
+.trial-inner { max-width: 700px; margin: 0 auto; text-align: center; }
+.trial-inner h2 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(3rem, 7vw, 6rem); font-weight: 900; text-transform: uppercase; line-height: 0.9; letter-spacing: -0.01em; margin-bottom: 1rem; color: var(--primary); }
+.trial-inner p { font-size: 1rem; color: var(--muted); margin-bottom: 2.5rem; }
+.trial-form { display: flex; flex-direction: column; gap: 1rem; text-align: left; }
+.trial-input { background: var(--surface); border: 1px solid var(--border); padding: 1rem 1.25rem; font-family: 'Barlow', sans-serif; font-size: 0.9rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+.trial-input:focus { border-color: var(--primary); }
+.trial-input::placeholder { color: var(--muted); }
+.trial-submit { background: #fff; color: var(--bg); padding: 1.25rem; font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; border: none; cursor: pointer; transition: background 0.2s; }
+.trial-submit:hover { background: var(--primary); color: #fff; }
+
+footer { background: #040404; padding: 5rem 5% 2rem; border-top: 1px solid var(--border); }
+.footer-inner { max-width: 1200px; margin: 0 auto; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; margin-bottom: 4rem; }
+.footer-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 900; text-transform: uppercase; color: var(--primary); letter-spacing: 0.06em; margin-bottom: 1rem; }
+.footer-tagline { font-size: 0.875rem; color: var(--muted); line-height: 1.7; max-width: 240px; }
+.footer-col-title { font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 1.25rem; font-weight: 600; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+.footer-links a { font-size: 0.875rem; color: var(--muted); transition: color 0.2s; }
+.footer-links a:hover { color: var(--text); }
+.footer-bottom { border-top: 1px solid var(--border); padding-top: 2rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.footer-copy { font-size: 0.775rem; color: rgba(255,255,255,0.2); }
+.footer-mini { font-size: 0.7rem; color: rgba(255,255,255,0.2); }
+.footer-mini a { color: var(--primary); opacity: 0.7; }
+
+[data-animate] { opacity: 0; transform: translateY(24px); transition: opacity 0.7s, transform 0.7s; }
+[data-animate].visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .hero { flex-direction: column; }
+  .hero-left { width: 100%; }
+  .hero-right { min-height: 60vw; clip-path: none; }
+  .nav-links { display: none; }
+  .results-grid { grid-template-columns: 1fr; gap: 3rem; }
+  .trainers-grid { grid-template-columns: 1fr 1fr; }
+  .pricing-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="mm-banner" style="background:#0a0a12;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.72rem;position:sticky;top:0;z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)">
+  MiniMorph Studios Demo — BUSINESS_NAME |
+  <a href="https://www.minimorphstudios.net/get-started" style="color:#3b82f6;font-weight:600;margin-left:6px">Build Your Site →</a>
+</div>
+
+<nav>
+  <div class="nav-logo">BUSINESS_NAME</div>
+  <ul class="nav-links">
+    <li><a href="classes.html">Programs</a></li>
+    <li><a href="trainers.html">Trainers</a></li>
+    <li><a href="memberships.html">Pricing</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <a href="free-trial.html" class="nav-cta">Free Trial</a>
+</nav>
+
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-stat-label">Join Over</div>
+    <div class="hero-big-stat">847+</div>
+    <div class="hero-stat-desc">Active Members in SERVICE_AREA</div>
+    <h1>HEADLINE</h1>
+    <p class="hero-sub">SUBHEADLINE</p>
+    <div class="hero-actions">
+      <a href="free-trial.html" class="btn-primary">Start Free Trial</a>
+      <a href="classes.html" class="btn-ghost">View Programs</a>
+    </div>
+  </div>
+  <div class="hero-right">
+    <img src="HERO_IMAGE" alt="BUSINESS_NAME members training">
+  </div>
+</section>
+
+<!-- IF_GROWTH_PLUS_START -->
+<section class="programs-section">
+  <div class="programs-header" data-animate>
+    <div class="section-label">Training Programs</div>
+    <div class="section-title">Find Your Program</div>
+  </div>
+  <div class="programs-scroll">
+    <div class="program-card">
+      <div class="program-name">GRIT30</div>
+      <div class="program-intensity"><span class="intensity-dot"></span><span class="intensity-dot"></span><span class="intensity-dot"></span><span class="intensity-dot"></span><span class="intensity-dot off"></span></div>
+      <div class="program-schedule">Daily · 6am / 12pm / 6pm</div>
+      <div class="program-duration">30 min · All levels · Burns 400-600 cal</div>
+      <a href="classes.html#grit30" class="program-cta">Learn More →</a>
+    </div>
+    <div class="program-card">
+      <div class="program-name">PowerLift</div>
+      <div class="program-intensity"><span class="intensity-dot"></span><span class="intensity-dot"></span><span class="intensity-dot"></span><span class="intensity-dot off"></span><span class="intensity-dot off"></span></div>
+      <div class="program-schedule">Mon / Wed / Fri</div>
+      <div class="program-duration">45 min · Functional strength · Progressive overload</div>
+      <a href="classes.html#powerlift" class="program-cta">Learn More →</a>
+    </div>
+    <div class="program-card">
+      <div class="program-name">Mobility Flow</div>
+      <div class="program-intensity"><span class="intensity-dot"></span><span class="intensity-dot off"></span><span class="intensity-dot off"></span><span class="intensity-dot off"></span><span class="intensity-dot off"></span></div>
+      <div class="program-schedule">Tue / Thu / Sat</div>
+      <div class="program-duration">45 min · Recovery · Prevents injury</div>
+      <a href="classes.html#mobility" class="program-cta">Learn More →</a>
+    </div>
+    <div class="program-card">
+      <div class="program-name">6-Week Challenge</div>
+      <div class="program-intensity"><span class="intensity-dot"></span><span class="intensity-dot"></span><span class="intensity-dot"></span><span class="intensity-dot"></span><span class="intensity-dot"></span></div>
+      <div class="program-schedule">Starts monthly</div>
+      <div class="program-duration">Full transformation · Nutrition included</div>
+      <a href="classes.html#challenge" class="program-cta">Learn More →</a>
+    </div>
+  </div>
+</section>
+
+<section class="results-section">
+  <div class="section-label" data-animate>Real Results</div>
+  <div class="section-title" style="font-family:Barlow Condensed,sans-serif;text-transform:uppercase;" data-animate>What Our Members Achieve</div>
+  <div class="results-grid">
+    <div class="result-item" data-animate>
+      <div class="result-num">18 LBS</div>
+      <div class="result-label">Average lost in first 90 days</div>
+    </div>
+    <div class="result-item" data-animate>
+      <div class="result-num">94%</div>
+      <div class="result-label">Member retention after month one</div>
+    </div>
+    <div class="result-item" data-animate>
+      <div class="result-num">500+</div>
+      <div class="result-label">Active members</div>
+    </div>
+  </div>
+</section>
+
+<section class="trainers-section">
+  <div class="section-label" data-animate>Our Coaches</div>
+  <div class="section-title" style="font-family:Barlow Condensed,sans-serif;text-transform:uppercase;" data-animate>Real Coaches. Every Class.</div>
+  <div class="trainers-grid">
+    <div class="trainer-card" data-animate>
+      <div class="trainer-photo"><img src="GALLERY_IMAGE_1" alt="Trainer"></div>
+      <div class="trainer-info">
+        <div class="trainer-name">OWNER_NAME</div>
+        <div class="trainer-specialty">Head Coach</div>
+        <div class="trainer-credential">CF-L2 · 10 years competitive athletics</div>
+      </div>
+    </div>
+    <div class="trainer-card" data-animate>
+      <div class="trainer-photo"><img src="GALLERY_IMAGE_2" alt="Trainer"></div>
+      <div class="trainer-info">
+        <div class="trainer-name">Coach Alex</div>
+        <div class="trainer-specialty">Strength Specialist</div>
+        <div class="trainer-credential">NSCA-CSCS · Former collegiate athlete</div>
+      </div>
+    </div>
+    <div class="trainer-card" data-animate>
+      <div class="trainer-photo"><img src="GALLERY_IMAGE_3" alt="Trainer"></div>
+      <div class="trainer-info">
+        <div class="trainer-name">Coach Jordan</div>
+        <div class="trainer-specialty">Mobility &amp; Recovery</div>
+        <div class="trainer-credential">NASM-CPT · RYT-200 · Injury prevention</div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- IF_GROWTH_PLUS_END -->
+
+<section class="pricing-section" id="pricing">
+  <div class="section-label" data-animate>Membership</div>
+  <div class="section-title" style="font-family:Barlow Condensed,sans-serif;text-transform:uppercase;" data-animate>Choose Your Plan</div>
+  <div class="pricing-grid">
+    <div class="pricing-card" data-animate>
+      <div class="pricing-tier">Foundation</div>
+      <div class="pricing-price">$89</div>
+      <div class="pricing-per">/month</div>
+      <ul class="pricing-features">
+        <li>8 classes per month</li>
+        <li>App access &amp; tracking</li>
+        <li>Community events</li>
+      </ul>
+      <a href="free-trial.html" class="pricing-cta">Get Started</a>
+    </div>
+    <div class="pricing-card featured" data-animate>
+      <div class="pricing-tier">Unlimited</div>
+      <div class="pricing-price">$129</div>
+      <div class="pricing-per">/month</div>
+      <ul class="pricing-features">
+        <li>Unlimited classes</li>
+        <li>Nutrition guide included</li>
+        <li>Priority booking</li>
+        <li>Monthly check-in</li>
+      </ul>
+      <a href="free-trial.html" class="pricing-cta">Get Started</a>
+    </div>
+    <div class="pricing-card" data-animate>
+      <div class="pricing-tier">Elite</div>
+      <div class="pricing-price">$199</div>
+      <div class="pricing-per">/month</div>
+      <ul class="pricing-features">
+        <li>Everything in Unlimited</li>
+        <li>2 personal training sessions</li>
+        <li>Custom meal plan</li>
+        <li>Direct coach access</li>
+      </ul>
+      <a href="free-trial.html" class="pricing-cta">Get Started</a>
+    </div>
+  </div>
+</section>
+
+<section class="trial-section" id="trial">
+  <div class="trial-inner" data-animate>
+    <div class="section-label">No Risk</div>
+    <h2>Start Your Free Week</h2>
+    <p>One week. Unlimited classes. Zero commitment. Come see what the difference feels like.</p>
+    <form class="trial-form" id="trial-form">
+      <input class="trial-input" name="name" type="text" placeholder="Your Name" required>
+      <input class="trial-input" name="email" type="email" placeholder="Email Address" required>
+      <input class="trial-input" name="phone" type="tel" placeholder="Phone Number" required>
+      <button class="trial-submit" type="submit">Claim Your Free Week →</button>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <div class="footer-tagline">High-intensity fitness in SERVICE_AREA. Real coaches. Real results. YEARS_IN_BUSINESS years and HOURS.</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Programs</div>
+        <ul class="footer-links">
+          <li><a href="classes.html">All Classes</a></li>
+          <li><a href="classes.html#grit30">GRIT30</a></li>
+          <li><a href="classes.html#powerlift">PowerLift</a></li>
+          <li><a href="classes.html#challenge">6-Week Challenge</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Studio</div>
+        <ul class="footer-links">
+          <li><a href="trainers.html">Our Coaches</a></li>
+          <li><a href="memberships.html">Pricing</a></li>
+          <li><a href="free-trial.html">Free Trial</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Visit</div>
+        <ul class="footer-links">
+          <li><a href="tel:PHONE">PHONE</a></li>
+          <li><a href="mailto:EMAIL">EMAIL</a></li>
+          <li><span style="color:var(--muted)">ADDRESS</span></li>
+          <li><span style="color:var(--muted);font-size:0.8rem">HOURS</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved.</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var form=document.getElementById('trial-form');
+  if(!form) return;
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var btn=form.querySelector('button');
+    var fd=new FormData(form);
+    btn.textContent='Sending...'; btn.disabled=true;
+    fetch('APP_URL_PLACEHOLDER/api/contact-submit',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone'),message:'Free trial request',businessName:'BUSINESS_NAME'})
+    }).then(function(r){return r.json();}).then(function(res){
+      if(res.success){form.innerHTML='<p style="text-align:center;font-family:Barlow Condensed,sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;color:var(--primary)">YOUR TRIAL IS CONFIRMED. WE\'LL TEXT YOU WITHIN 5 MINUTES.</p>';}
+    }).catch(function(){btn.textContent='Claim Your Free Week →';btn.disabled=false;});
+  });
+})();
+var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
+</script>
+</body>
+</html>

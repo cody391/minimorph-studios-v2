@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUSINESS_NAME</title>
+  <meta name="description" content="META_DESCRIPTION" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: PRIMARY_COLOR;
+      --secondary: SECONDARY_COLOR;
+      --bg: #faf4ec;
+      --surface: #fff8f0;
+      --dark: #2a1f14;
+      --text: #3a2e22;
+      --muted: #8c7a66;
+      --border: #e8ddd0;
+      --serif: 'Playfair Display', serif;
+      --sans: 'Lato', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.65;
+      font-weight: 300;
+    }
+
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── SEASONAL BANNER ── */
+    .seasonal-banner {
+      background: var(--primary);
+      color: #fff;
+      text-align: center;
+      padding: 0.65rem 1rem;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      font-weight: 400;
+    }
+
+    .seasonal-banner strong { font-weight: 700; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(250,244,236,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      font-size: 0.875rem;
+      font-weight: 400;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      padding: 0.625rem 1.5rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      transition: background 0.2s;
+    }
+
+    .nav-cta:hover { background: var(--dark); }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      height: 88vh;
+      min-height: 560px;
+      overflow: hidden;
+    }
+
+    .hero img {
+      position: absolute;
+      inset: 0;
+      transition: transform 8s ease;
+    }
+
+    .hero:hover img { transform: scale(1.04); }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        105deg,
+        rgba(42,31,20,0.72) 0%,
+        rgba(42,31,20,0.3) 55%,
+        transparent 100%
+      );
+    }
+
+    .hero-content {
+      position: absolute;
+      top: 50%;
+      left: 8%;
+      transform: translateY(-50%);
+      max-width: 560px;
+      color: #fff;
+    }
+
+    .hero-season {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+      padding: 0.35rem 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-headline {
+      font-family: var(--serif);
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero-sub {
+      font-size: 1.0625rem;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-white {
+      display: inline-block;
+      background: #fff;
+      color: var(--dark);
+      padding: 0.875rem 2rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn-white:hover { background: var(--primary); color: #fff; }
+
+    .btn-outline-white {
+      display: inline-block;
+      border: 1.5px solid rgba(255,255,255,0.7);
+      color: #fff;
+      padding: 0.875rem 2rem;
+      font-size: 0.875rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .btn-outline-white:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
+
+    /* ── SECTION ── */
+    .section { padding: 6rem 2rem; }
+    .container { max-width: 1280px; margin: 0 auto; }
+
+    .section-label {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      letter-spacing: 0.16em;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(1.875rem, 3vw, 2.875rem);
+      font-weight: 500;
+      line-height: 1.25;
+    }
+
+    /* ── FEATURED COLLECTION ── */
+    .collection { background: var(--surface); }
+
+    .collection-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 3rem;
+      align-items: center;
+      margin-top: 3rem;
+    }
+
+    .collection-main-img {
+      aspect-ratio: 4/5;
+      overflow: hidden;
+    }
+
+    .collection-main-img img { transition: transform 0.6s ease; }
+    .collection-main-img:hover img { transform: scale(1.03); }
+
+    .collection-items { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .collection-item {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 1.25rem;
+      align-items: center;
+      background: var(--bg);
+      padding: 1rem;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .collection-item:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .collection-item-img {
+      height: 80px;
+      overflow: hidden;
+    }
+
+    .collection-item-img img { transition: transform 0.4s; }
+    .collection-item:hover .collection-item-img img { transform: scale(1.08); }
+
+    .collection-item-name {
+      font-family: var(--serif);
+      font-size: 1.0625rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .collection-item-price {
+      font-size: 0.875rem;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* ── BRAND STORY ── */
+    .story { background: var(--bg); }
+
+    .story-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+
+    .story-image-wrap {
+      position: relative;
+    }
+
+    .story-img-main {
+      aspect-ratio: 4/5;
+      overflow: hidden;
+    }
+
+    .story-img-main img { transition: transform 0.6s ease; }
+    .story-img-main:hover img { transform: scale(1.03); }
+
+    .story-badge {
+      position: absolute;
+      bottom: -1.5rem;
+      right: -1.5rem;
+      background: var(--primary);
+      color: #fff;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .story-badge span {
+      font-family: var(--serif);
+      font-size: 1.75rem;
+      font-weight: 700;
+      display: block;
+      letter-spacing: 0;
+    }
+
+    .story-content { padding-left: 1rem; }
+
+    .story-text {
+      font-size: 1.0625rem;
+      line-height: 1.8;
+      color: var(--text);
+      margin: 1.5rem 0;
+    }
+
+    .story-pull {
+      border-left: 3px solid var(--primary);
+      padding-left: 1.5rem;
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      font-style: italic;
+      color: var(--text);
+      margin: 2rem 0;
+      line-height: 1.5;
+    }
+
+    .story-owner {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    /* ── GIFT IDEAS ── */
+    <!-- IF_GROWTH_PLUS_START -->
+    .gifts { background: var(--surface); }
+
+    .gifts-header { margin-bottom: 3rem; }
+
+    .gifts-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+
+    .gifts-tab {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: var(--sans);
+    }
+
+    .gifts-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .gifts-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+
+    .gift-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .gift-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+
+    .gift-card-img {
+      aspect-ratio: 1;
+      overflow: hidden;
+    }
+
+    .gift-card-img img { transition: transform 0.5s; }
+    .gift-card:hover .gift-card-img img { transform: scale(1.06); }
+
+    .gift-card-body { padding: 1rem; }
+
+    .gift-card-name {
+      font-family: var(--serif);
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .gift-card-price {
+      font-size: 0.875rem;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    <!-- IF_GROWTH_PLUS_END -->
+
+    <!-- IF_PREMIUM_PLUS_START -->
+    /* ── TESTIMONIALS ── */
+    .testimonials { background: var(--dark); color: #fff; }
+
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .testimonial-card {
+      background: rgba(255,255,255,0.06);
+      padding: 2rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .testimonial-stars {
+      color: var(--primary);
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+    }
+
+    .testimonial-quote {
+      font-family: var(--serif);
+      font-size: 1.0625rem;
+      font-style: italic;
+      line-height: 1.65;
+      margin-bottom: 1.25rem;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .testimonial-author { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+    <!-- IF_PREMIUM_PLUS_END -->
+
+    /* ── EMAIL SIGNUP ── */
+    .email-signup {
+      background: var(--primary);
+      color: #fff;
+      text-align: center;
+    }
+
+    .signup-inner { max-width: 540px; margin: 0 auto; }
+
+    .signup-title {
+      font-family: var(--serif);
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 0.75rem;
+    }
+
+    .signup-sub {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.82);
+      margin-bottom: 2rem;
+    }
+
+    .signup-form {
+      display: flex;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .signup-input {
+      flex: 1;
+      padding: 0.875rem 1.25rem;
+      border: none;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      font-family: var(--sans);
+      font-size: 0.9375rem;
+      outline: none;
+      border-bottom: 2px solid rgba(255,255,255,0.4);
+    }
+
+    .signup-input::placeholder { color: rgba(255,255,255,0.6); }
+    .signup-input:focus { border-bottom-color: #fff; }
+
+    .signup-btn {
+      background: var(--dark);
+      color: #fff;
+      border: none;
+      padding: 0 1.75rem;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .signup-btn:hover { background: #000; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--dark);
+      color: rgba(255,255,255,0.8);
+      padding: 4rem 2rem 2rem;
+    }
+
+    .footer-grid {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .footer-brand .footer-logo {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    .footer-tagline {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+    }
+
+    .footer-visit {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+    }
+
+    .footer-visit strong { color: rgba(255,255,255,0.8); display: block; margin-bottom: 0.25rem; }
+
+    .footer-col-title {
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 1.25rem;
+    }
+
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .footer-col ul a {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.65);
+      transition: color 0.2s;
+    }
+
+    .footer-col ul a:hover { color: #fff; }
+
+    .footer-bottom {
+      max-width: 1280px;
+      margin: 1.5rem auto 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.35);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* ── ANIMATIONS ── */
+    [data-animate] {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+
+    [data-animate].visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    [data-animate-delay="1"] { transition-delay: 0.1s; }
+    [data-animate-delay="2"] { transition-delay: 0.2s; }
+    [data-animate-delay="3"] { transition-delay: 0.3s; }
+    [data-animate-delay="4"] { transition-delay: 0.4s; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .collection-layout { grid-template-columns: 1fr; }
+      .collection-main-img { aspect-ratio: 16/9; }
+      <!-- IF_GROWTH_PLUS_START -->
+      .gifts-grid { grid-template-columns: repeat(2, 1fr); }
+      <!-- IF_GROWTH_PLUS_END -->
+      <!-- IF_PREMIUM_PLUS_START -->
+      .testimonials-grid { grid-template-columns: 1fr; }
+      <!-- IF_PREMIUM_PLUS_END -->
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .story-layout { grid-template-columns: 1fr; }
+      .story-badge { bottom: 1rem; right: 1rem; }
+      .nav-links { display: none; }
+      <!-- IF_GROWTH_PLUS_START -->
+      .gifts-grid { grid-template-columns: repeat(2, 1fr); }
+      <!-- IF_GROWTH_PLUS_END -->
+      .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Seasonal Banner -->
+  <div class="seasonal-banner">
+    <strong>Summer Sale — Up to 40% off!</strong> Limited time. Shop before it's gone.
+  </div>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-inner">
+      <div class="nav-logo">BUSINESS_NAME</div>
+      <div class="nav-links">
+        <a href="#collection">Shop</a>
+        <a href="#story">Our Story</a>
+        <!-- IF_GROWTH_PLUS_START -->
+        <a href="#gifts">Gift Ideas</a>
+        <!-- IF_GROWTH_PLUS_END -->
+        <a href="#email-signup">Newsletter</a>
+      </div>
+      <a href="APP_URL_PLACEHOLDER" class="nav-cta">Shop Now</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <img src="HERO_IMAGE" alt="BUSINESS_NAME — TAGLINE" />
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <span class="hero-season" data-animate>NEW ARRIVALS</span>
+      <h1 class="hero-headline" data-animate data-animate-delay="1">
+        HEADLINE
+      </h1>
+      <p class="hero-sub" data-animate data-animate-delay="2">SUBHEADLINE</p>
+      <div class="hero-ctas" data-animate data-animate-delay="3">
+        <a href="#collection" class="btn-white">Shop the Collection</a>
+        <a href="#story" class="btn-outline-white">Our Story</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Collection -->
+  <section class="section collection" id="collection">
+    <div class="container">
+      <div data-animate>
+        <p class="section-label">FEATURED THIS SEASON</p>
+        <h2 class="section-title">The Collection</h2>
+      </div>
+      <div class="collection-layout">
+        <div class="collection-main-img" data-animate>
+          <img src="HERO_IMAGE" alt="Featured Collection" loading="lazy" />
+        </div>
+        <div class="collection-items">
+          <div class="collection-item" data-animate data-animate-delay="1">
+            <div class="collection-item-img">
+              <img src="GALLERY_IMAGE_1" alt="SERVICE_1_DESC" loading="lazy" />
+            </div>
+            <div>
+              <p class="collection-item-name">SERVICE_1_DESC</p>
+              <p class="collection-item-price">Shop Now →</p>
+            </div>
+          </div>
+          <div class="collection-item" data-animate data-animate-delay="2">
+            <div class="collection-item-img">
+              <img src="GALLERY_IMAGE_2" alt="SERVICE_2_DESC" loading="lazy" />
+            </div>
+            <div>
+              <p class="collection-item-name">SERVICE_2_DESC</p>
+              <p class="collection-item-price">Shop Now →</p>
+            </div>
+          </div>
+          <div class="collection-item" data-animate data-animate-delay="3">
+            <div class="collection-item-img">
+              <img src="GALLERY_IMAGE_3" alt="SERVICE_3_DESC" loading="lazy" />
+            </div>
+            <div>
+              <p class="collection-item-name">SERVICE_3_DESC</p>
+              <p class="collection-item-price">Shop Now →</p>
+            </div>
+          </div>
+          <div class="collection-item" data-animate data-animate-delay="4">
+            <div class="collection-item-img">
+              <img src="ABOUT_IMAGE" alt="New Arrivals" loading="lazy" />
+            </div>
+            <div>
+              <p class="collection-item-name">New Arrivals</p>
+              <p class="collection-item-price">Shop Now →</p>
+            </div>
+          </div>
+          <div style="margin-top: 0.5rem;" data-animate>
+            <a href="APP_URL_PLACEHOLDER" class="nav-cta" style="display:inline-block;">View Full Collection →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Brand Story -->
+  <section class="section story" id="story">
+    <div class="container">
+      <div class="story-layout">
+        <div class="story-image-wrap" data-animate>
+          <div class="story-img-main">
+            <img src="TEAM_IMAGE_1" alt="OWNER_NAME — BUSINESS_NAME" loading="lazy" />
+          </div>
+          <div class="story-badge">
+            <span>YEARS_IN_BUSINESS</span>
+            YEARS IN YOUR COMMUNITY
+          </div>
+        </div>
+        <div class="story-content">
+          <p class="section-label" data-animate>OUR STORY</p>
+          <h2 class="section-title" data-animate data-animate-delay="1">
+            A shop built on <em>community</em>
+          </h2>
+          <p class="story-text" data-animate data-animate-delay="2">
+            ABOUT_STORY
+          </p>
+          <blockquote class="story-pull" data-animate data-animate-delay="3">
+            "TESTIMONIAL_1"
+          </blockquote>
+          <p class="story-owner" data-animate data-animate-delay="4">
+            — OWNER_NAME · Founder, BUSINESS_NAME · SERVICE_AREA
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IF_GROWTH_PLUS_START -->
+  <!-- Gift Ideas -->
+  <section class="section gifts" id="gifts">
+    <div class="container">
+      <div class="gifts-header" data-animate>
+        <p class="section-label">SOMETHING FOR EVERYONE</p>
+        <h2 class="section-title">Gift Ideas</h2>
+        <div class="gifts-tabs">
+          <button class="gifts-tab active">Under $50</button>
+          <button class="gifts-tab">Under $100</button>
+          <button class="gifts-tab">Splurge</button>
+        </div>
+      </div>
+      <div class="gifts-grid">
+        <div class="gift-card" data-animate data-animate-delay="1">
+          <div class="gift-card-img">
+            <img src="GALLERY_IMAGE_1" alt="SERVICE_1_DESC" loading="lazy" />
+          </div>
+          <div class="gift-card-body">
+            <p class="gift-card-name">SERVICE_1_DESC</p>
+            <p class="gift-card-price">From $—</p>
+          </div>
+        </div>
+        <div class="gift-card" data-animate data-animate-delay="2">
+          <div class="gift-card-img">
+            <img src="GALLERY_IMAGE_2" alt="SERVICE_2_DESC" loading="lazy" />
+          </div>
+          <div class="gift-card-body">
+            <p class="gift-card-name">SERVICE_2_DESC</p>
+            <p class="gift-card-price">From $—</p>
+          </div>
+        </div>
+        <div class="gift-card" data-animate data-animate-delay="3">
+          <div class="gift-card-img">
+            <img src="GALLERY_IMAGE_3" alt="SERVICE_3_DESC" loading="lazy" />
+          </div>
+          <div class="gift-card-body">
+            <p class="gift-card-name">SERVICE_3_DESC</p>
+            <p class="gift-card-price">From $—</p>
+          </div>
+        </div>
+        <div class="gift-card" data-animate data-animate-delay="4">
+          <div class="gift-card-img">
+            <img src="ABOUT_IMAGE" alt="Gift Sets" loading="lazy" />
+          </div>
+          <div class="gift-card-body">
+            <p class="gift-card-name">Curated Gift Sets</p>
+            <p class="gift-card-price">From $—</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- IF_GROWTH_PLUS_END -->
+
+  <!-- IF_PREMIUM_PLUS_START -->
+  <!-- Testimonials -->
+  <section class="section testimonials">
+    <div class="container">
+      <div data-animate>
+        <p class="section-label">WHAT CUSTOMERS SAY</p>
+        <h2 class="section-title" style="color:#fff;">Loved by the <em>community</em></h2>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card" data-animate data-animate-delay="1">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"TESTIMONIAL_1"</p>
+          <p class="testimonial-author">— TESTIMONIAL_1_NAME · TESTIMONIAL_1_CONTEXT</p>
+        </div>
+        <div class="testimonial-card" data-animate data-animate-delay="2">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"Every visit feels like coming home. The team here genuinely knows their customers."</p>
+          <p class="testimonial-author">— A loyal customer · SERVICE_AREA</p>
+        </div>
+        <div class="testimonial-card" data-animate data-animate-delay="3">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-quote">"Best boutique in the area by far. I tell everyone about BUSINESS_NAME."</p>
+          <p class="testimonial-author">— A happy shopper · SERVICE_AREA</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- IF_PREMIUM_PLUS_END -->
+
+  <!-- Email Signup -->
+  <section class="section email-signup" id="email-signup">
+    <div class="signup-inner">
+      <p class="section-label" style="color:rgba(255,255,255,0.6);" data-animate>JOIN THE FAMILY</p>
+      <h2 class="signup-title" data-animate data-animate-delay="1">
+        Get first access to new arrivals &amp; exclusive deals
+      </h2>
+      <p class="signup-sub" data-animate data-animate-delay="2">
+        New pieces drop weekly. Be the first to know.
+      </p>
+      <form class="signup-form" data-animate data-animate-delay="3" onsubmit="return false;">
+        <input class="signup-input" type="email" placeholder="your@email.com" />
+        <button class="signup-btn" type="submit">JOIN</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">BUSINESS_NAME</div>
+        <p class="footer-tagline">TAGLINE</p>
+        <div class="footer-visit">
+          <strong>Visit Us</strong>
+          ADDRESS<br />
+          SERVICE_AREA<br />
+          <br />
+          <strong>Hours</strong>
+          HOURS
+        </div>
+      </div>
+      <div class="footer-col">
+        <p class="footer-col-title">SHOP</p>
+        <ul>
+          <li><a href="#collection">New Arrivals</a></li>
+          <li><a href="#collection">Best Sellers</a></li>
+          <!-- IF_GROWTH_PLUS_START -->
+          <li><a href="#gifts">Gift Ideas</a></li>
+          <!-- IF_GROWTH_PLUS_END -->
+          <li><a href="APP_URL_PLACEHOLDER">All Products</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p class="footer-col-title">INFO</p>
+        <ul>
+          <li><a href="#story">Our Story</a></li>
+          <li><a href="mailto:EMAIL">EMAIL</a></li>
+          <li><a href="tel:PHONE">PHONE</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <p class="footer-col-title">CONNECT</p>
+        <ul>
+          <li><a href="https://instagram.com" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://facebook.com" target="_blank" rel="noopener">Facebook</a></li>
+          <li><a href="#email-signup">Newsletter</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 BUSINESS_NAME. All rights reserved.</span>
+      <span>PACKAGE_TIER Plan · Built with care in SERVICE_AREA</span>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+
+    // Gift idea tab switching
+    const tabs = document.querySelectorAll('.gifts-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

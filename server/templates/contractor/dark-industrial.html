@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSINESS_NAME | General Contractor</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --secondary: SECONDARY_COLOR;
+  --bg: #0d0d0d;
+  --surface: #1a1a1a;
+  --text: #f0f0f0;
+  --muted: rgba(240,240,240,0.5);
+  --border: rgba(240,240,240,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  line-height: 1.7;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 5%;
+  background: rgba(13,13,13,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.nav-links {
+  display: flex; gap: 2.5rem; list-style: none;
+}
+.nav-links a {
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  background: var(--primary);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+.nav-cta:hover { opacity: 0.85; }
+
+/* HERO */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 8rem;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.92) 0%,
+    rgba(0,0,0,0.5) 40%,
+    rgba(0,0,0,0.15) 100%
+  );
+  z-index: 1;
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  padding: 0 5%;
+  max-width: 900px;
+}
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.hero-eyebrow span {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--primary);
+  font-weight: 600;
+}
+.hero-eyebrow::after {
+  content: '';
+  display: block;
+  width: 3rem;
+  height: 1px;
+  background: var(--primary);
+  opacity: 0.5;
+}
+.hero h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(3.5rem, 8vw, 7.5rem);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  color: #fff;
+}
+.hero h1 em {
+  color: var(--primary);
+  font-style: normal;
+}
+.hero-sub {
+  font-size: 1.125rem;
+  color: rgba(255,255,255,0.7);
+  max-width: 500px;
+  margin-bottom: 2.5rem;
+  line-height: 1.65;
+  font-weight: 300;
+}
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  padding: 1rem 2rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: inline-block;
+  transition: background 0.2s;
+}
+.btn-ghost {
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  padding: 1rem 2rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: border-color 0.2s;
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,0.6); }
+
+/* TRUST BAR */
+.trust-bar {
+  background: var(--primary);
+  padding: 1.75rem 5%;
+}
+.trust-bar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+.trust-stat {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.trust-stat-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+.trust-stat-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.75);
+  font-weight: 600;
+}
+.trust-divider {
+  width: 1px;
+  height: 3rem;
+  background: rgba(255,255,255,0.2);
+}
+
+/* SERVICES */
+.services {
+  padding: 8rem 5%;
+  background: var(--bg);
+}
+.section-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.section-label::before {
+  content: '';
+  display: block;
+  width: 2rem;
+  height: 1px;
+  background: var(--primary);
+}
+.section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  max-width: 600px;
+  margin-bottom: 4rem;
+}
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.service-card {
+  padding: 2.5rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  transition: background 0.3s;
+}
+.service-card:hover {
+  background: var(--surface);
+}
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 0;
+  background: var(--primary);
+  transition: height 0.3s;
+}
+.service-card:hover::before { height: 100%; }
+.service-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.75rem;
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.25rem;
+  opacity: 0.8;
+}
+.service-card h3 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.75rem;
+}
+.service-card p {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* GALLERY */
+.gallery {
+  padding: 0 5% 8rem;
+}
+.gallery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+}
+.gallery-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: 350px 350px;
+  gap: 4px;
+}
+.gallery-item {
+  overflow: hidden;
+  position: relative;
+}
+.gallery-item:first-child {
+  grid-row: span 2;
+}
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.gallery-item:hover img {
+  transform: scale(1.04);
+}
+.gallery-item-label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  padding: 1.5rem 1rem 1rem;
+  transform: translateY(100%);
+  transition: transform 0.3s;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.gallery-item:hover .gallery-item-label {
+  transform: translateY(0);
+}
+
+/* ABOUT */
+.about {
+  padding: 8rem 5%;
+  background: var(--surface);
+}
+.about-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6rem;
+  align-items: center;
+}
+.about-image-wrap {
+  position: relative;
+}
+.about-image-wrap img {
+  width: 100%;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+}
+.about-stat-box {
+  position: absolute;
+  bottom: -2rem;
+  right: -2rem;
+  background: var(--primary);
+  padding: 2rem;
+  text-align: center;
+  min-width: 140px;
+}
+.about-stat-box .num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 3rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+}
+.about-stat-box .label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.8);
+  margin-top: 0.25rem;
+}
+.about-content h2 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.95;
+  margin-bottom: 1.5rem;
+}
+.about-content p {
+  color: var(--muted);
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.8;
+  font-weight: 300;
+}
+.about-credentials {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.credential {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.credential::before {
+  content: '✓';
+  color: var(--primary);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* TESTIMONIALS */
+.testimonials {
+  padding: 8rem 5%;
+  background: var(--bg);
+}
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 4rem;
+}
+.testimonial-card {
+  padding: 2.5rem;
+  border: 1px solid var(--border);
+  position: relative;
+  transition: border-color 0.3s;
+}
+.testimonial-card:hover {
+  border-color: var(--primary);
+}
+.testimonial-mark {
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--primary);
+  opacity: 0.2;
+  font-family: Georgia, serif;
+  margin-bottom: 1rem;
+}
+.testimonial-card p {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 1.5rem;
+}
+.testimonial-author {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.testimonial-context {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+.stars {
+  color: var(--primary);
+  font-size: 0.875rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+/* CONTACT */
+.contact {
+  padding: 8rem 5%;
+  background: var(--surface);
+}
+.contact-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6rem;
+}
+.contact-info h2 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.95;
+  margin-bottom: 1.5rem;
+}
+.contact-info p {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-bottom: 2rem;
+  font-weight: 300;
+}
+.contact-phone {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--primary);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.5rem;
+  transition: opacity 0.2s;
+}
+.contact-phone:hover { opacity: 0.8; }
+.contact-email {
+  color: var(--muted);
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 2rem;
+}
+.contact-details {
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 2;
+}
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.form-input {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 1rem 1.25rem;
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-family: 'Barlow', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.form-input:focus {
+  border-color: var(--primary);
+}
+.form-input::placeholder {
+  color: rgba(240,240,240,0.3);
+}
+.form-textarea {
+  resize: none;
+  min-height: 140px;
+}
+.form-submit {
+  background: var(--primary);
+  color: #fff;
+  padding: 1.125rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  width: 100%;
+}
+.form-submit:hover { opacity: 0.85; }
+
+/* FOOTER */
+footer {
+  background: #080808;
+  padding: 5rem 5% 2rem;
+  border-top: 1px solid var(--border);
+}
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 4rem;
+}
+.footer-brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+}
+.footer-tagline {
+  font-size: 0.875rem;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 240px;
+}
+.footer-col-title {
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(240,240,240,0.35);
+  margin-bottom: 1.25rem;
+  font-weight: 600;
+}
+.footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.footer-links a {
+  font-size: 0.875rem;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--text); }
+.footer-contact-item {
+  font-size: 0.875rem;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 0.75rem;
+  transition: color 0.2s;
+}
+.footer-contact-item:hover { color: var(--text); }
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  padding-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.footer-copy {
+  font-size: 0.775rem;
+  color: rgba(240,240,240,0.3);
+}
+.footer-mini {
+  font-size: 0.7rem;
+  color: rgba(240,240,240,0.25);
+}
+.footer-mini a { color: var(--primary); opacity: 0.7; }
+
+/* ANIMATIONS */
+[data-animate] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+[data-animate].visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* MOBILE */
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .hero h1 { font-size: clamp(2.75rem, 10vw, 4.5rem); }
+  .services-grid { grid-template-columns: 1fr; }
+  .gallery-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+  }
+  .gallery-item:first-child { grid-row: span 1; }
+  .about-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .about-stat-box { right: 0; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .contact-inner { grid-template-columns: 1fr; gap: 3rem; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .trust-bar-inner { justify-content: center; gap: 2rem; }
+  .trust-divider { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- MINIMORPH BANNER (showroom only - stripped on launch) -->
+<div id="mm-banner" style="background:#0a0a12;color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.72rem;position:sticky;top:0;z-index:9999;border-bottom:1px solid rgba(255,255,255,0.08)">
+  🏗️ MiniMorph Studios Demo — BUSINESS_NAME |
+  <a href="https://www.minimorphstudios.net/get-started" style="color:#3b82f6;font-weight:600;margin-left:6px">Build Your Site →</a>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">BUSINESS_NAME</div>
+  <ul class="nav-links">
+    <li><a href="services.html">Services</a></li>
+    <li><a href="gallery.html">Our Work</a></li>
+    <li><a href="about.html">About</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <a href="quote.html" class="nav-cta">Free Estimate</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME completed project" class="hero-bg">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span>SERVICE_AREA · Licensed &amp; Insured</span>
+    </div>
+    <h1>HEADLINE</h1>
+    <p class="hero-sub">SUBHEADLINE</p>
+    <div class="hero-actions">
+      <a href="quote.html" class="btn-primary">Get Free Estimate</a>
+      <a href="tel:PHONE" class="btn-ghost">
+        <span>📞</span> PHONE
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+  <div class="trust-bar-inner">
+    <div class="trust-stat">
+      <div>
+        <div class="trust-stat-num">YEARS_IN_BUSINESS+</div>
+        <div class="trust-stat-label">Years Experience</div>
+      </div>
+    </div>
+    <div class="trust-divider"></div>
+    <div class="trust-stat">
+      <div>
+        <div class="trust-stat-num">500+</div>
+        <div class="trust-stat-label">Projects Completed</div>
+      </div>
+    </div>
+    <div class="trust-divider"></div>
+    <div class="trust-stat">
+      <div>
+        <div class="trust-stat-num">4.9★</div>
+        <div class="trust-stat-label">Average Rating</div>
+      </div>
+    </div>
+    <div class="trust-divider"></div>
+    <div class="trust-stat">
+      <div>
+        <div class="trust-stat-num">LIC #LICENSE_NUMBER</div>
+        <div class="trust-stat-label">License Number</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section class="services">
+  <div class="section-label">What We Build</div>
+  <h2 class="section-title" data-animate>Expert Craft.<br>Every Project.</h2>
+  <div class="services-grid">
+    <div class="service-card" data-animate>
+      <div class="service-num">01</div>
+      <h3>Kitchen Remodeling</h3>
+      <p>Full kitchen transformations from layout redesign to final finish. Custom cabinetry, countertops, and appliance integration. We handle permits, demo, and every trade.</p>
+    </div>
+    <div class="service-card" data-animate>
+      <div class="service-num">02</div>
+      <h3>Bathroom Renovation</h3>
+      <p>Complete bathroom rebuilds. Custom tile work, walk-in showers, soaking tubs, and vanity installations. Waterproofing done right the first time.</p>
+    </div>
+    <div class="service-card" data-animate>
+      <div class="service-num">03</div>
+      <h3>Home Additions</h3>
+      <p>Room additions, second stories, and garage conversions. Structural engineering coordinated. Your home grows the right way.</p>
+    </div>
+    <div class="service-card" data-animate>
+      <div class="service-num">04</div>
+      <h3>Basement Finishing</h3>
+      <p>Transform unfinished basements into livable space. Egress windows, HVAC, electrical, and full finish work included.</p>
+    </div>
+    <div class="service-card" data-animate>
+      <div class="service-num">05</div>
+      <h3>Deck &amp; Outdoor</h3>
+      <p>Custom decks, screened porches, and outdoor living spaces. Premium materials. Built to handle the climate.</p>
+    </div>
+    <div class="service-card" data-animate>
+      <div class="service-num">06</div>
+      <h3>Whole Home Remodel</h3>
+      <p>Full-scale renovations for buyers and long-term owners. One crew. One point of contact. No subcontractor chaos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="gallery">
+  <div class="gallery-header">
+    <div>
+      <div class="section-label">Portfolio</div>
+      <h2 class="section-title" style="margin-bottom:0" data-animate>Recent Work</h2>
+    </div>
+    <a href="gallery.html" style="font-size:0.8rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:var(--primary)">View All Projects →</a>
+  </div>
+  <div class="gallery-grid">
+    <div class="gallery-item">
+      <img src="GALLERY_IMAGE_1" alt="Kitchen remodel">
+      <div class="gallery-item-label">Kitchen Renovation · Eden Prairie</div>
+    </div>
+    <div class="gallery-item">
+      <img src="GALLERY_IMAGE_2" alt="Bathroom renovation">
+      <div class="gallery-item-label">Master Bath · Edina</div>
+    </div>
+    <div class="gallery-item">
+      <img src="GALLERY_IMAGE_3" alt="Home addition">
+      <div class="gallery-item-label">Deck Addition · Minnetonka</div>
+    </div>
+    <div class="gallery-item">
+      <img src="ABOUT_IMAGE" alt="Project">
+      <div class="gallery-item-label">Basement Finish · Plymouth</div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about">
+  <div class="about-inner">
+    <div class="about-image-wrap" data-animate>
+      <img src="ABOUT_IMAGE" alt="OWNER_NAME — BUSINESS_NAME">
+      <div class="about-stat-box">
+        <div class="num">YEARS_IN_BUSINESS</div>
+        <div class="label">Years<br>Building</div>
+      </div>
+    </div>
+    <div class="about-content" data-animate>
+      <div class="section-label">Our Story</div>
+      <h2>Built on<br>Reputation</h2>
+      <p>OWNER_NAME started BUSINESS_NAME with one conviction: every homeowner deserves a contractor who shows up, communicates clearly, and delivers exactly what was promised. No surprises. No excuses.</p>
+      <p>Based in SERVICE_AREA, we have spent YEARS_IN_BUSINESS years building relationships as much as we build homes. Our repeat customer rate says more than any award could.</p>
+      <div class="about-credentials">
+        <div class="credential">Licensed &amp; Insured — License #LICENSE_NUMBER</div>
+        <div class="credential">Serving SERVICE_AREA and surrounding areas</div>
+        <div class="credential">All work fully permitted and inspected</div>
+        <div class="credential">3-year workmanship warranty on all projects</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="section-label">Social Proof</div>
+  <h2 class="section-title" data-animate>What Homeowners<br>Say About Us</h2>
+  <div class="testimonials-grid">
+    <div class="testimonial-card" data-animate>
+      <div class="stars">★★★★★</div>
+      <div class="testimonial-mark">❝</div>
+      <p>They showed us photos of every stage. We knew exactly what was happening every single day. The kitchen came out better than the rendering. I have already referred three neighbors.</p>
+      <div class="testimonial-author">Sarah M.</div>
+      <div class="testimonial-context">Homeowner — Eden Prairie, MN</div>
+    </div>
+    <div class="testimonial-card" data-animate>
+      <div class="stars">★★★★★</div>
+      <div class="testimonial-mark">❝</div>
+      <p>Finished on time. Finished on budget. Cleaned up every day. I have done four remodels over the years and this was the first crew I would actually hire again without hesitation.</p>
+      <div class="testimonial-author">James K.</div>
+      <div class="testimonial-context">Homeowner — Minnetonka, MN</div>
+    </div>
+    <div class="testimonial-card" data-animate>
+      <div class="stars">★★★★★</div>
+      <div class="testimonial-mark">❝</div>
+      <p>The master bath went from a 1990s disaster to something out of a magazine. What I appreciated most was how they handled the unexpected plumbing issue — honestly and fast.</p>
+      <div class="testimonial-author">Linda R.</div>
+      <div class="testimonial-context">Homeowner — Edina, MN</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact">
+  <div class="contact-inner">
+    <div class="contact-info" data-animate>
+      <div class="section-label">Get In Touch</div>
+      <h2>Ready to Start<br>Your Project?</h2>
+      <p>Tell us what you are thinking. We will come out, take a look, and give you a clear honest estimate. No pressure. No obligation.</p>
+      <a href="tel:PHONE" class="contact-phone">PHONE</a>
+      <a href="mailto:EMAIL" class="contact-email">EMAIL</a>
+      <div class="contact-details">
+        SERVICE_AREA<br>
+        HOURS<br>
+        License #LICENSE_NUMBER
+      </div>
+    </div>
+    <form class="contact-form" id="contact-form" data-animate>
+      <input class="form-input" name="name" type="text" placeholder="Your Name" required>
+      <input class="form-input" name="email" type="email" placeholder="Email Address" required>
+      <input class="form-input" name="phone" type="tel" placeholder="Phone Number">
+      <textarea class="form-input form-textarea" name="message" placeholder="Describe your project..." required></textarea>
+      <button class="form-submit" type="submit">Send Message →</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <div class="footer-tagline">Quality remodeling and construction serving SERVICE_AREA. Licensed, insured, and built on reputation.</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Services</div>
+        <ul class="footer-links">
+          <li><a href="services.html#kitchen">Kitchen Remodeling</a></li>
+          <li><a href="services.html#bathroom">Bathroom Renovation</a></li>
+          <li><a href="services.html#additions">Home Additions</a></li>
+          <li><a href="services.html#basement">Basement Finishing</a></li>
+          <li><a href="services.html#deck">Deck &amp; Outdoor</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="gallery.html">Our Work</a></li>
+          <li><a href="quote.html">Free Estimate</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+        <a href="mailto:EMAIL" class="footer-contact-item">EMAIL</a>
+        <span class="footer-contact-item" style="cursor:default">SERVICE_AREA</span>
+        <span class="footer-contact-item" style="cursor:default;font-size:0.8rem;opacity:0.6">HOURS</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved. License #LICENSE_NUMBER</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<!-- CONTACT FORM SUBMISSION -->
+<script>
+(function() {
+  var form = document.getElementById('contact-form');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = form.querySelector('button[type=submit]');
+    var fd = new FormData(form);
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+    fetch('https://www.minimorphstudios.net/api/contact-submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: fd.get('name'),
+        email: fd.get('email'),
+        phone: fd.get('phone'),
+        message: fd.get('message'),
+        businessName: 'BUSINESS_NAME'
+      })
+    }).then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        form.innerHTML = '<div style="text-align:center;padding:3rem;"><p style="font-family:Barlow Condensed,sans-serif;font-size:1.5rem;font-weight:800;text-transform:uppercase;margin-bottom:0.75rem;">Message Received</p><p style="color:rgba(240,240,240,0.5)">We will be in touch within 24 hours.</p></div>';
+      }
+    }).catch(function() {
+      btn.textContent = 'Send Message →';
+      btn.disabled = false;
+    });
+  });
+})();
+</script>
+
+<!-- SCROLL ANIMATIONS -->
+<script>
+var obs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('[data-animate]').forEach(function(el) {
+  obs.observe(el);
+});
+</script>
+
+</body>
+</html>
