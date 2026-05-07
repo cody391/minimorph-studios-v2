@@ -3267,7 +3267,9 @@ Always end with a helpful question or a specific suggestion.`;
         ...(input.history || []),
         { role: "user", content: input.message },
       ];
+      console.log(`[Chat] Message received: "${input.message.slice(0, 80)}"`);
       const urlsToScrape = extractUrls(recentHistory);
+      console.log(`[Chat] URLs detected: ${JSON.stringify(urlsToScrape)}`);
       let scrapedSitesContext = "";
       if (urlsToScrape.length > 0) {
         const scraped = await Promise.all(
