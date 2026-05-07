@@ -3101,18 +3101,22 @@ async function scrapeWebsite(url: string): Promise<string> {
       console.log(`[Scraper] Firecrawl status: ${fcRes.status}`);
       if (fcRes.ok) {
         const data = await fcRes.json();
-        console.log(`[Scraper] Firecrawl response keys: ${Object.keys(data).join(", ")}`);
-        const content: string = data?.data?.markdown || data?.markdown || "";
-        console.log(`[Scraper] Firecrawl content length: ${content.length}`);
-        if (content.length > 100) {
-          console.log(`[Scraper] Firecrawl ok: ${fullUrl} (${content.length} chars)`);
-          return content.slice(0, 8000);
+        console.log(`[Scraper] Firecrawl success: ${data.success}`);
+        console.log(`[Scraper] Firecrawl error: ${data.error || "none"}`);
+        console.log(`[Scraper] Firecrawl code: ${data.code || "none"}`);
+        if (data.success) {
+          const content: string = data?.data?.markdown || data?.markdown || "";
+          console.log(`[Scraper] Content length: ${content.length}`);
+          if (content.length > 100) {
+            console.log(`[Scraper] SUCCESS: ${fullUrl}`);
+            return content.slice(0, 8000);
+          }
         } else {
-          console.log(`[Scraper] Firecrawl returned short/empty content, falling back`);
+          console.log(`[Scraper] Firecrawl rejected: ${JSON.stringify(data)}`);
         }
       } else {
         const errText = await fcRes.text().catch(() => "");
-        console.log(`[Scraper] Firecrawl error body: ${errText.slice(0, 300)}`);
+        console.log(`[Scraper] Firecrawl HTTP error: ${fcRes.status} — ${errText.slice(0, 300)}`);
       }
     } catch (e: any) {
       console.log(`[Scraper] Firecrawl exception: ${e.message}`);
