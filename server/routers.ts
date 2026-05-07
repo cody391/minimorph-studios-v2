@@ -3080,46 +3080,44 @@ function cleanHtml(html: string): string {
 
 async function scrapeWebsite(url: string): Promise<string> {
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;
+  const noWwwUrl = fullUrl.replace("://www.", "://");
+  const wwwUrl = fullUrl.includes("://www.") ? fullUrl : fullUrl.replace("://", "://www.");
   const firecrawlKey = ENV.firecrawlApiKey || process.env.FIRECRAWL_API_KEY || "";
 
   console.log(`[Scraper] Starting scrape: ${fullUrl}`);
-  console.log(`[Scraper] Firecrawl key present: ${!!firecrawlKey} (length: ${firecrawlKey.length})`);
 
-  // Firecrawl — bypasses bot protection, returns clean markdown
+  // Firecrawl — try no-www, www, and original in order (deduped)
   if (firecrawlKey) {
-    try {
-      console.log(`[Scraper] Trying Firecrawl for: ${fullUrl}`);
-      const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${firecrawlKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: fullUrl, formats: ["markdown"], onlyMainContent: true }),
-        signal: AbortSignal.timeout(15000),
-      });
-      console.log(`[Scraper] Firecrawl status: ${fcRes.status}`);
-      if (fcRes.ok) {
-        const data = await fcRes.json();
-        console.log(`[Scraper] Firecrawl success: ${data.success}`);
-        console.log(`[Scraper] Firecrawl error: ${data.error || "none"}`);
-        console.log(`[Scraper] Firecrawl code: ${data.code || "none"}`);
-        if (data.success) {
-          const content: string = data?.data?.markdown || data?.markdown || "";
-          console.log(`[Scraper] Content length: ${content.length}`);
-          if (content.length > 100) {
-            console.log(`[Scraper] SUCCESS: ${fullUrl}`);
-            return content.slice(0, 8000);
+    const candidates = [noWwwUrl, wwwUrl, fullUrl].filter(
+      (u, i, arr) => arr.indexOf(u) === i
+    );
+    for (const attemptUrl of candidates) {
+      try {
+        const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${firecrawlKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url: attemptUrl, formats: ["markdown"], onlyMainContent: true }),
+          signal: AbortSignal.timeout(15000),
+        });
+        console.log(`[Scraper] Firecrawl ${attemptUrl}: ${fcRes.status}`);
+        if (fcRes.ok) {
+          const data = await fcRes.json();
+          if (data.success) {
+            const content: string = data?.data?.markdown || data?.markdown || "";
+            if (content.length > 100) {
+              console.log(`[Scraper] SUCCESS: ${attemptUrl} (${content.length} chars)`);
+              return content.slice(0, 8000);
+            }
+          } else {
+            console.log(`[Scraper] Firecrawl error: ${data.error}`);
           }
-        } else {
-          console.log(`[Scraper] Firecrawl rejected: ${JSON.stringify(data)}`);
         }
-      } else {
-        const errText = await fcRes.text().catch(() => "");
-        console.log(`[Scraper] Firecrawl HTTP error: ${fcRes.status} — ${errText.slice(0, 300)}`);
+      } catch (e: any) {
+        console.log(`[Scraper] Firecrawl exception on ${attemptUrl}: ${e.message}`);
       }
-    } catch (e: any) {
-      console.log(`[Scraper] Firecrawl exception: ${e.message}`);
     }
   } else {
     console.log(`[Scraper] Firecrawl key missing — skipping to direct fetch`);
