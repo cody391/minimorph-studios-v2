@@ -271,6 +271,9 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `lastSavedAt` timestamp NULL");
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `currentStep` int NOT NULL DEFAULT 1");
 
+    // ── From 0037: add enterprise to orders.packageTier enum ─────────────
+    await safe("ALTER TABLE `orders` MODIFY COLUMN `packageTier` enum('starter','growth','premium','enterprise') NOT NULL");
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);
