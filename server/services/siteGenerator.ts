@@ -1216,6 +1216,29 @@ ${Object.keys(pages)
       // S3 upload is non-critical
     }
 
+    // Auto-deploy if admin has enabled the setting (bypasses QA review step)
+    try {
+      const { getDb: getDbForSetting } = await import("../db");
+      const { systemSettings: settingsTable } = await import("../../drizzle/schema");
+      const { eq: eqSetting } = await import("drizzle-orm");
+      const dbForSetting = await getDbForSetting();
+      if (dbForSetting) {
+        const rows = await dbForSetting.select().from(settingsTable).where(eqSetting(settingsTable.settingKey, "auto_deploy_enabled"));
+        if (rows[0]?.settingValue === "true") {
+          const { deployToPages } = await import("./cloudflareDeployment");
+          deployToPages({
+            projectName: cfProjectName,
+            pages,
+          }).then(result => {
+            if (result.success) {
+              db.updateOnboardingProject(projectId, { stage: "launch", liveUrl: result.deploymentUrl, launchedAt: new Date() }).catch(() => {});
+              console.log(`[SiteGen] Auto-deployed project ${projectId} → ${result.deploymentUrl}`);
+            }
+          }).catch((e: any) => console.error("[SiteGen] Auto-deploy failed:", e.message));
+        }
+      }
+    } catch {}
+
     // Send preview ready email
     try {
       const { sendPreviewReadyEmail } = await import("./customerEmails");

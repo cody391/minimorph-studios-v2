@@ -222,7 +222,8 @@ export async function repairSchema(): Promise<void> {
       ('daily_email_cap','200','Maximum emails per rep per day'),
       ('daily_call_cap','100','Maximum calls per rep per day'),
       ('outreach_start_hour','8','Earliest hour for outreach (local time, 0-23)'),
-      ('outreach_end_hour','21','Latest hour for outreach (local time, 0-23)')`);
+      ('outreach_end_hour','21','Latest hour for outreach (local time, 0-23)'),
+      ('auto_deploy_enabled','false','Automatically deploy site to Cloudflare Pages after generation, bypassing admin QA review')`);
 
     // ── Columns from 0046 ─────────────────────────────────────────────
     await safe("ALTER TABLE `reps` ADD COLUMN `assignedPhoneNumber` varchar(32)");

@@ -800,6 +800,37 @@ export const repApplicationRouter = router({
       // The AI motivation review runs async and can flag issues later
       await db.updateRep(rep.id, { status: "training" });
       console.log(`[Auto-Onboard] Rep ${rep.id} auto-advanced to training status`);
+
+      // Send welcome email to the new rep
+      if (rep.email) {
+        const { sendEmail } = await import("./services/email");
+        sendEmail({
+          to: rep.email,
+          subject: "Welcome to MiniMorph Studios — You're In!",
+          html: `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#111122;font-family:Inter,Helvetica,Arial,sans-serif;">
+<div style="max-width:600px;margin:24px auto;background:#1c1c30;border-radius:8px;overflow:hidden;">
+  <div style="background:linear-gradient(135deg,#1c1c30,#222240);padding:28px 32px;border-bottom:1px solid #2d2d45;">
+    <h1 style="color:#eaeaf0;margin:0;font-size:22px;font-weight:700;">MiniMorph Studios</h1>
+  </div>
+  <div style="padding:32px;color:#eaeaf0;line-height:1.7;">
+    <h2 style="margin:0 0 16px;font-size:20px;">Welcome, ${rep.fullName}! 🎉</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Your application has been approved and you're now a MiniMorph Studios rep. Here's what to do next:</p>
+    <ol style="margin:0 0 24px;padding-left:20px;color:#c8c8d8;">
+      <li style="margin-bottom:8px;"><strong style="color:#eaeaf0;">Complete your training</strong> — log in and finish all academy modules to unlock your rep dashboard.</li>
+      <li style="margin-bottom:8px;"><strong style="color:#eaeaf0;">Set up your service area</strong> — tell us where you'll be selling so we can route leads to you.</li>
+      <li style="margin-bottom:8px;"><strong style="color:#eaeaf0;">Review the playbook</strong> — everything you need to close your first deal is in the academy.</li>
+    </ol>
+    <a href="${process.env.APP_URL || "https://minimorphstudios.net"}/rep" style="display:inline-block;background:#22c55e;color:#fff;padding:14px 28px;border-radius:999px;text-decoration:none;font-weight:600;font-size:15px;">Go to My Dashboard</a>
+  </div>
+  <div style="background:#151526;padding:20px 32px;border-top:1px solid #2d2d45;">
+    <p style="margin:0;font-size:12px;color:#7a7a90;">MiniMorph Studios — Beautiful websites for growing businesses</p>
+  </div>
+</div>
+</body></html>`,
+        }).catch((e: any) => console.error("[Auto-Onboard] Welcome email failed:", e.message));
+      }
+
       return { success: true };
     }),
   // Get my application

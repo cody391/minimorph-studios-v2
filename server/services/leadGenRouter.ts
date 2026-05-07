@@ -122,12 +122,25 @@ export async function autoFeedReps(): Promise<{
       )
       .limit(leadsNeeded);
 
+    // Look up rep phone once for SMS notifications
+    const repRows = await db.select().from(reps).where(eq(reps.id, rep.repId)).limit(1);
+    const repPhone = repRows[0]?.assignedPhoneNumber || repRows[0]?.phone;
+
     for (const lead of unassignedLeads) {
       await db.update(leads).set({
         assignedRepId: rep.repId,
         stage: "assigned",
       }).where(eq(leads.id, lead.id));
       leadsGenerated++;
+
+      // Notify rep via SMS (fire-and-forget)
+      if (repPhone) {
+        const { sendSms } = await import("./sms");
+        sendSms({
+          to: repPhone.startsWith("+") ? repPhone : `+1${repPhone}`,
+          body: `MiniMorph: New lead assigned — ${lead.businessName || "a new business"} (${lead.industry || "new opportunity"}). Log in to your dashboard to view details.`,
+        }).catch(() => {});
+      }
     }
 
     if (unassignedLeads.length >= leadsNeeded) {

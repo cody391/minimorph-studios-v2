@@ -740,6 +740,26 @@ const leadsRouter = router({
         website: lead.website,
       });
 
+      // 2a. Create portal user account so the customer can log in immediately
+      const crypto = await import("crypto");
+      const tempPassword = crypto.randomBytes(9).toString("base64url").slice(0, 12);
+      const bcryptLib = await import("bcryptjs");
+      const passwordHash = await bcryptLib.hash(tempPassword, 10);
+      const customerOpenId = `customer_${Buffer.from(lead.email).toString("base64url").slice(0, 20)}_${customer.id}`;
+      await db.upsertUser({
+        openId: customerOpenId,
+        email: lead.email,
+        name: lead.contactName,
+        passwordHash,
+        loginMethod: "email",
+        role: "user",
+        lastSignedIn: new Date(),
+      });
+      const portalUser = await db.getUserByEmail(lead.email);
+      if (portalUser) {
+        await db.updateCustomer(customer.id, { userId: portalUser.id });
+      }
+
       // 3. Create 12-month contract (with discounted price)
       const startDate = new Date();
       const endDate = new Date();
@@ -863,6 +883,7 @@ const leadsRouter = router({
           packageTier: input.packageTier as any,
           repName: rep.fullName,
           portalUrl,
+          tempPassword,
         });
       } catch (emailErr) {
         console.error("[closeDeal] Failed to send portal access email:", emailErr);

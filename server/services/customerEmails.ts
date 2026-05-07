@@ -455,7 +455,8 @@ export async function sendPaymentFailedEmail(params: {
 
 /* ═══════════════════════════════════════════════════════
    7. PAYMENT LINK EMAIL (Rep-Closed Deals)
-   Sent when a rep closes a deal and generates a Stripe checkout link
+   @deprecated — Portal-first flow: customers pay via Stripe checkout in the portal.
+   Kept for backward compatibility; do not call from new code.
    ═══════════════════════════════════════════════════════ */
 export async function sendPaymentLinkEmail(params: {
   to: string;
@@ -500,7 +501,8 @@ export async function sendPaymentLinkEmail(params: {
 
 /* ═══════════════════════════════════════════════════════
    7b. PAYMENT LINK REMINDER EMAIL
-   Sent when a pending_payment contract is older than 24h
+   @deprecated — Portal-first flow handles payment reminders via Stripe emails.
+   Kept for backward compatibility; do not call from new code.
    ═══════════════════════════════════════════════════════ */
 export async function sendPaymentLinkReminderEmail(params: {
   to: string;
@@ -1027,6 +1029,7 @@ export async function sendPortalAccessEmail(params: {
   packageTier: PackageKey;
   repName: string;
   portalUrl: string;
+  tempPassword?: string;
 }) {
   const pkg = PACKAGES[params.packageTier];
   const html = brandWrap(`
@@ -1045,6 +1048,13 @@ export async function sendPortalAccessEmail(params: {
     <p style="margin:0 0 20px;color:#c8c8d8;">
       Log in to your portal, answer a few questions about your business, and Elena will design your website brief. Once everything looks perfect, you'll complete payment and we'll start building.
     </p>
+    ${params.tempPassword ? `
+    <div style="margin:20px 0;padding:20px;background:#1a2a1a;border-radius:8px;border-left:4px solid #22c55e;">
+      <p style="margin:0 0 10px;font-size:15px;color:#eaeaf0;font-weight:600;">Your login credentials</p>
+      <p style="margin:0 4px;font-size:14px;color:#c8c8d8;">Email: <strong style="color:#eaeaf0;">${params.to}</strong></p>
+      <p style="margin:0 4px;font-size:14px;color:#c8c8d8;">Temporary password: <strong style="color:#eaeaf0;font-family:monospace;font-size:16px;letter-spacing:1px;">${params.tempPassword}</strong></p>
+      <p style="margin:10px 0 0;font-size:12px;color:#7a7a90;">You can change your password after logging in from your account settings.</p>
+    </div>` : ""}
     <div style="text-align:center;margin:24px 0;">
       <a href="${params.portalUrl}" style="display:inline-block;padding:14px 32px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;">
         Log In &amp; Meet Elena →

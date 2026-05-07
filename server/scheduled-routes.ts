@@ -844,6 +844,330 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     })
   );
 
+  // ─── Fix #7: Commission Payouts ─────────────────────────────────────────────
+  // Auto-pays approved commissions to reps via Stripe Connect.
+  // Run daily. Only pays commissions with status "approved" and stripeConnectAccountId set.
+  app.post("/api/scheduled/commission-payouts", (req, res) =>
+    runJob(req, res, "commission-payouts", async () => {
+      const database = await getDb();
+      if (!database) return { error: "DB unavailable" };
+      const { commissions: commissionsTable, reps: repsTable } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+
+      const approvedCommissions = await database.select({
+        id: commissionsTable.id,
+        repId: commissionsTable.repId,
+        amount: commissionsTable.amount,
+      })
+        .from(commissionsTable)
+        .where(eqFn(commissionsTable.status, "approved"))
+        .limit(50);
+
+      let paid = 0;
+      let skipped = 0;
+      const errors: string[] = [];
+
+      for (const commission of approvedCommissions) {
+        try {
+          const repRows = await database.select().from(repsTable).where(eqFn(repsTable.id, commission.repId)).limit(1);
+          const rep = repRows[0];
+          if (!rep?.stripeConnectAccountId || !rep.stripeConnectOnboarded) {
+            skipped++;
+            continue;
+          }
+          const StripeLib = (await import("stripe")).default;
+          const stripe = new StripeLib(ENV.stripeSecretKey!, { apiVersion: "2026-03-25.dahlia" as any });
+          const amountCents = Math.round(parseFloat(commission.amount || "0") * 100);
+          if (amountCents < 100) { skipped++; continue; }
+
+          await stripe.transfers.create({
+            amount: amountCents,
+            currency: "usd",
+            destination: rep.stripeConnectAccountId,
+            description: `MiniMorph commission payout #${commission.id}`,
+          });
+          await database.update(commissionsTable)
+            .set({ status: "paid", paidAt: new Date() })
+            .where(eqFn(commissionsTable.id, commission.id));
+          paid++;
+        } catch (err: any) {
+          errors.push(`Commission #${commission.id}: ${err.message}`);
+        }
+      }
+
+      return { checked: approvedCommissions.length, paid, skipped, errors };
+    })
+  );
+
+  // ─── Fix #8: Post-Launch Nurture ─────────────────────────────────────────────
+  // Sends day-1, day-7, and day-30 emails after a customer's site goes live.
+  app.post("/api/scheduled/post-launch-nurture", (req, res) =>
+    runJob(req, res, "post-launch-nurture", async () => {
+      const database = await getDb();
+      if (!database) return { error: "DB unavailable" };
+      const { onboardingProjects: projectsTable, nurtureLogs: nurtureTable } = await import("../drizzle/schema");
+      const { eq: eqFn, and: andFn, isNotNull: isNotNullFn } = await import("drizzle-orm");
+      const { sendEmail } = await import("./services/email");
+
+      const liveProjects = await database.select().from(projectsTable)
+        .where(andFn(inArray(projectsTable.stage, ["launch", "complete"]), isNotNullFn(projectsTable.launchedAt)));
+
+      const now = new Date();
+      let sent = 0;
+      const errors: string[] = [];
+      const MILESTONES = [1, 7, 30];
+
+      for (const project of liveProjects) {
+        if (!project.launchedAt || !project.contactEmail) continue;
+        const daysSinceLive = Math.floor((now.getTime() - new Date(project.launchedAt).getTime()) / 86400000);
+
+        for (const day of MILESTONES) {
+          if (daysSinceLive < day) continue;
+          const nurtureKey = `post_launch_day_${day}_${project.id}`;
+          const existing = await database.select().from(nurtureTable)
+            .where(andFn(eqFn(nurtureTable.customerId, project.customerId!), eqFn(nurtureTable.subject, nurtureKey)))
+            .limit(1);
+          if (existing.length > 0) continue;
+
+          const subjects: Record<number, string> = {
+            1: `Your site is live — here's what to do next`,
+            7: `One week live — how is your new website doing?`,
+            30: `30 days live — your website performance snapshot`,
+          };
+          const bodies: Record<number, string> = {
+            1: `<p>Congratulations! Your MiniMorph website is live. Here are 3 quick things to do today:</p><ol><li>Share your new website URL on social media</li><li>Add it to your Google Business Profile</li><li>Send it to your existing customers</li></ol><p>Log in to your <a href="${ENV.appUrl || "https://minimorphstudios.net"}/portal">customer portal</a> to track visitors and request changes.</p>`,
+            7: `<p>It's been one week since your site went live! Log in to your <a href="${ENV.appUrl || "https://minimorphstudios.net"}/portal">portal</a> to see your visitor stats and make any tweaks.</p><p>Remember: you have revision requests available — use them!</p>`,
+            30: `<p>Your website has been live for 30 days. Log in to your <a href="${ENV.appUrl || "https://minimorphstudios.net"}/portal">portal</a> to see your monthly performance report including traffic, leads captured, and more.</p>`,
+          };
+
+          try {
+            await sendEmail({
+              to: project.contactEmail,
+              subject: subjects[day],
+              html: `<!DOCTYPE html><html><body style="font-family:Inter,sans-serif;background:#111122;color:#eaeaf0;padding:24px;max-width:600px;margin:0 auto">${bodies[day]}<p style="color:#7a7a90;font-size:12px;margin-top:32px">MiniMorph Studios — Beautiful websites for growing businesses</p></body></html>`,
+            });
+            await database.insert(nurtureTable).values({
+              customerId: project.customerId!,
+              type: "check_in",
+              channel: "email",
+              subject: nurtureKey,
+              content: `Post-launch day ${day} email sent`,
+              status: "sent",
+              scheduledAt: now,
+              sentAt: now,
+            });
+            sent++;
+          } catch (err: any) {
+            errors.push(`Project #${project.id} day-${day}: ${err.message}`);
+          }
+        }
+      }
+
+      return { projectsChecked: liveProjects.length, sent, errors };
+    })
+  );
+
+  // ─── Fix #9: Win-Back Campaign ────────────────────────────────────────────────
+  // Emails churned customers at day 7, 30, and 60 after cancellation.
+  app.post("/api/scheduled/win-back", (req, res) =>
+    runJob(req, res, "win-back", async () => {
+      const database = await getDb();
+      if (!database) return { error: "DB unavailable" };
+      const { contracts: contractsTable, customers: customersTable, nurtureLogs: nurtureTable } = await import("../drizzle/schema");
+      const { eq: eqFn, inArray: inArrayFn, and: andFn } = await import("drizzle-orm");
+      const { sendEmail } = await import("./services/email");
+
+      const cancelledContracts = await database.select({
+        id: contractsTable.id,
+        customerId: contractsTable.customerId,
+        endDate: contractsTable.endDate,
+      })
+        .from(contractsTable)
+        .where(inArrayFn(contractsTable.status, ["cancelled", "expired"]));
+
+      const now = new Date();
+      let sent = 0;
+      const errors: string[] = [];
+      const WIN_BACK_DAYS = [7, 30, 60];
+
+      for (const contract of cancelledContracts) {
+        if (!contract.endDate || !contract.customerId) continue;
+        const daysSince = Math.floor((now.getTime() - new Date(contract.endDate).getTime()) / 86400000);
+
+        for (const day of WIN_BACK_DAYS) {
+          if (daysSince < day) continue;
+          const nurtureKey = `win_back_day_${day}_contract_${contract.id}`;
+
+          const existing = await database.select().from(nurtureTable)
+            .where(andFn(eqFn(nurtureTable.customerId, contract.customerId), eqFn(nurtureTable.subject, nurtureKey)))
+            .limit(1);
+          if (existing.length > 0) continue;
+
+          const customerRows = await database.select().from(customersTable).where(eqFn(customersTable.id, contract.customerId)).limit(1);
+          const customer = customerRows[0];
+          if (!customer?.email) continue;
+
+          const subjects: Record<number, string> = {
+            7: `We miss you — ready to get your website back?`,
+            30: `Your competitors are getting ahead — let's fix that`,
+            60: `Special offer: restart your MiniMorph website at a discount`,
+          };
+
+          try {
+            await sendEmail({
+              to: customer.email,
+              subject: subjects[day],
+              html: `<!DOCTYPE html><html><body style="font-family:Inter,sans-serif;background:#111122;color:#eaeaf0;padding:24px;max-width:600px;margin:0 auto"><h2 style="color:#4a9eff">${subjects[day]}</h2><p>Hi ${customer.contactName || "there"},</p><p>We noticed your MiniMorph website subscription ended. We'd love to have you back.</p>${day === 60 ? '<p><strong style="color:#22c55e">Special offer: get your first month back at 20% off.</strong> Reply to this email or visit our site to restart.</p>' : "<p>Your old site design is saved and can be reactivated in minutes. <a href='https://minimorphstudios.net'>Visit us to restart today.</a></p>"}<p style="color:#7a7a90;font-size:12px;margin-top:32px">MiniMorph Studios — You can unsubscribe from win-back emails by replying STOP.</p></body></html>`,
+            });
+            await database.insert(nurtureTable).values({
+              customerId: contract.customerId,
+              contractId: contract.id,
+              type: "renewal_outreach",
+              channel: "email",
+              subject: nurtureKey,
+              content: `Win-back day ${day} email sent`,
+              status: "sent",
+              scheduledAt: now,
+              sentAt: now,
+            });
+            sent++;
+          } catch (err: any) {
+            errors.push(`Contract #${contract.id} day-${day}: ${err.message}`);
+          }
+        }
+      }
+
+      return { cancelledChecked: cancelledContracts.length, sent, errors };
+    })
+  );
+
+  // ─── Fix #6: Seasonal Alerts ─────────────────────────────────────────────────
+  // Sends quarterly seasonal trend recommendations to live customers by industry.
+  app.post("/api/scheduled/seasonal-alerts", (req, res) =>
+    runJob(req, res, "seasonal-alerts", async () => {
+      const database = await getDb();
+      if (!database) return { error: "DB unavailable" };
+      const { nurtureLogs: nurtureTable, onboardingProjects: projectsTable } = await import("../drizzle/schema");
+      const { eq: eqFn, and: andFn } = await import("drizzle-orm");
+      const { sendEmail } = await import("./services/email");
+
+      const now = new Date();
+      const quarter = Math.floor(now.getMonth() / 3) + 1;
+      const year = now.getFullYear();
+      const seasonalKey = `seasonal_q${quarter}_${year}`;
+
+      const liveProjects = await database.select({
+        customerId: projectsTable.customerId,
+        businessName: projectsTable.businessName,
+        questionnaire: projectsTable.questionnaire,
+        contactEmail: projectsTable.contactEmail,
+        contactName: projectsTable.contactName,
+      }).from(projectsTable).where(inArray(projectsTable.stage, ["launch", "complete"]));
+
+      let sent = 0;
+      const errors: string[] = [];
+      const seasonNames = ["", "Q1 (Winter)", "Q2 (Spring)", "Q3 (Summer)", "Q4 (Fall)"];
+
+      for (const project of liveProjects) {
+        if (!project.customerId || !project.contactEmail) continue;
+        const nurtureKey = `${seasonalKey}_${project.customerId}`;
+        const existing = await database.select().from(nurtureTable)
+          .where(andFn(eqFn(nurtureTable.customerId, project.customerId), eqFn(nurtureTable.subject, nurtureKey)))
+          .limit(1);
+        if (existing.length > 0) continue;
+
+        const businessType = ((project.questionnaire as any)?.websiteType || "").toLowerCase();
+        const tips =
+          businessType.includes("restaurant") || businessType.includes("food")
+            ? ["Update your seasonal menu on your website", "Add holiday hours", "Feature seasonal specials on your homepage"]
+            : businessType.includes("contractor") || businessType.includes("plumb") || businessType.includes("hvac")
+            ? ["Feature seasonal services (AC tune-ups in summer, heating in fall)", "Update your availability calendar", "Promote weather-related offers"]
+            : ["Add a seasonal promotion to your homepage", "Update your photos to reflect the season", "Review your contact form — are you getting enough leads?"];
+
+        try {
+          await sendEmail({
+            to: project.contactEmail,
+            subject: `${seasonNames[quarter]} website tips for ${project.businessName}`,
+            html: `<!DOCTYPE html><html><body style="font-family:Inter,sans-serif;background:#111122;color:#eaeaf0;padding:24px;max-width:600px;margin:0 auto"><h2 style="color:#4a9eff">${seasonNames[quarter]} Website Tips</h2><p>Hi ${project.contactName || "there"},</p><p>Here are 3 things to update on your website this quarter:</p><ul>${tips.map((t: string) => `<li style="margin-bottom:8px">${t}</li>`).join("")}</ul><p><a href="${ENV.appUrl || "https://minimorphstudios.net"}/portal" style="color:#22c55e">Log in to request changes →</a></p><p style="color:#7a7a90;font-size:12px;margin-top:32px">MiniMorph Studios seasonal newsletter</p></body></html>`,
+          });
+          await database.insert(nurtureTable).values({
+            customerId: project.customerId,
+            type: "check_in",
+            channel: "email",
+            subject: nurtureKey,
+            content: `Seasonal Q${quarter} tips email sent`,
+            status: "sent",
+            scheduledAt: now,
+            sentAt: now,
+          });
+          sent++;
+        } catch (err: any) {
+          errors.push(`Customer #${project.customerId}: ${err.message}`);
+        }
+      }
+
+      return { liveCustomersChecked: liveProjects.length, sent, errors };
+    })
+  );
+
+  // ─── Fix #15: Upsell Alerts ───────────────────────────────────────────────────
+  // Targets live customers who haven't purchased add-ons — sends tailored upsell email.
+  app.post("/api/scheduled/upsell-alerts", (req, res) =>
+    runJob(req, res, "upsell-alerts", async () => {
+      const database = await getDb();
+      if (!database) return { error: "DB unavailable" };
+      const { onboardingProjects: projectsTable, nurtureLogs: nurtureTable } = await import("../drizzle/schema");
+      const { eq: eqFn, and: andFn } = await import("drizzle-orm");
+      const { sendEmail } = await import("./services/email");
+
+      const now = new Date();
+      const upsellCycleKey = `upsell_${now.getFullYear()}_${now.getMonth() + 1}`;
+
+      const liveProjects = await database.select().from(projectsTable)
+        .where(inArray(projectsTable.stage, ["launch", "complete"]));
+
+      let sent = 0;
+      const errors: string[] = [];
+
+      for (const project of liveProjects) {
+        if (!project.customerId || !project.contactEmail) continue;
+
+        const q = (project.questionnaire as any) || {};
+        const addons = Array.isArray(q.addonsSelected) ? q.addonsSelected : [];
+        if (addons.length > 0) continue;
+
+        const nurtureKey = `${upsellCycleKey}_${project.customerId}`;
+        const existing = await database.select().from(nurtureTable)
+          .where(andFn(eqFn(nurtureTable.customerId, project.customerId), eqFn(nurtureTable.subject, nurtureKey)))
+          .limit(1);
+        if (existing.length > 0) continue;
+
+        try {
+          await sendEmail({
+            to: project.contactEmail,
+            subject: `Supercharge your ${project.businessName} website`,
+            html: `<!DOCTYPE html><html><body style="font-family:Inter,sans-serif;background:#111122;color:#eaeaf0;padding:24px;max-width:600px;margin:0 auto"><h2 style="color:#4a9eff">Take your website to the next level</h2><p>Hi ${project.contactName || "there"},</p><p>Your website is live and looking great. Here are some powerful add-ons that can help you get more customers:</p><ul><li style="margin-bottom:12px"><strong>Review Widget</strong> — Display your Google reviews automatically. Builds trust instantly.</li><li style="margin-bottom:12px"><strong>Booking Widget</strong> — Let customers schedule appointments directly from your website.</li><li style="margin-bottom:12px"><strong>AI Chat Bot</strong> — Answer customer questions 24/7 without lifting a finger.</li><li style="margin-bottom:12px"><strong>Lead Capture Form</strong> — Capture visitor info even when you're busy.</li></ul><p><a href="${ENV.appUrl || "https://minimorphstudios.net"}/portal" style="display:inline-block;background:#22c55e;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font-weight:600;margin-top:8px">Explore Add-ons →</a></p><p style="color:#7a7a90;font-size:12px;margin-top:32px">MiniMorph Studios</p></body></html>`,
+          });
+          await database.insert(nurtureTable).values({
+            customerId: project.customerId,
+            type: "upsell_attempt",
+            channel: "email",
+            subject: nurtureKey,
+            content: "Upsell add-ons email sent",
+            status: "sent",
+            scheduledAt: now,
+            sentAt: now,
+          });
+          sent++;
+        } catch (err: any) {
+          errors.push(`Customer #${project.customerId}: ${err.message}`);
+        }
+      }
+
+      return { liveProjectsChecked: liveProjects.length, sent, errors };
+    })
+  );
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -854,5 +1178,5 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     });
   });
 
-  console.log("[Scheduled] Registered 17 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 22 scheduled job endpoints at /api/scheduled/*");
 }

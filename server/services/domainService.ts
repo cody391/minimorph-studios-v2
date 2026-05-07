@@ -59,8 +59,8 @@ export async function registerDomain(
   }
 ): Promise<{ success: boolean; error?: string }> {
   if (!ENV.namecheapApiKey) {
-    console.log(`[DomainService] Mock registration for ${domain}`);
-    return { success: true };
+    console.warn(`[DomainService] MOCK — namecheapApiKey not set. Domain "${domain}" was NOT actually registered. Set NAMECHEAP_API_KEY to enable real registration.`);
+    return { success: false, error: "Domain registration skipped — Namecheap API key not configured" };
   }
   try {
     const params = new URLSearchParams({

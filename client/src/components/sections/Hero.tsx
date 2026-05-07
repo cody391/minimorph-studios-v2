@@ -71,7 +71,7 @@ export default function Hero() {
                 className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-base px-8 py-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300 group"
                 onClick={() => setLocation("/get-started")}
               >
-                Start a Project
+                Get a Free Quote
                 <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button

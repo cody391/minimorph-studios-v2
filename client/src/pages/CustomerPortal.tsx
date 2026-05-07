@@ -10,7 +10,7 @@ import {
   FileText, BarChart3, HeadphonesIcon, ArrowLeft,
   Calendar, TrendingUp, Eye, Users as UsersIcon,
   Clock, CheckCircle, AlertCircle, Shield, Rocket,
-  Gift, Send, Mail, MessageSquare, Download,
+  Gift, Send, Mail, MessageSquare, Download, X,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -34,6 +34,9 @@ export default function CustomerPortal() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [chatMessages, setChatMessages] = useState<Array<{role: string; content: string}>>([]);
+  const [paymentBannerVisible, setPaymentBannerVisible] = useState(
+    () => new URLSearchParams(window.location.search).get("payment") === "success"
+  );
 
   // Look up the customer record linked to the logged-in user
   const { data: customer, isLoading: custLoading } = trpc.customers.me.useQuery(
@@ -158,6 +161,17 @@ export default function CustomerPortal() {
 
   return (
     <div className="min-h-screen bg-midnight">
+      {paymentBannerVisible && (
+        <div className="bg-emerald-600 text-white px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 flex-shrink-0" />
+            <span className="text-sm font-medium">Payment successful! Your site is being built — we'll notify you when it's ready for review.</span>
+          </div>
+          <button onClick={() => setPaymentBannerVisible(false)} className="flex-shrink-0 hover:opacity-70">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-charcoal text-off-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

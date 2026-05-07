@@ -15,16 +15,16 @@ const steps = [
   {
     icon: CreditCard,
     number: "01",
-    title: "Pick Your Plan",
-    description: "Four tiers. No hidden fees. Setup + monthly — that's it. You'll know the total before you type your card number.",
-    aside: "Takes about 3 minutes",
+    title: "Talk to a Rep",
+    description: "A MiniMorph rep walks you through the four tiers, answers every question, and locks in your price. No hidden fees. You'll know the total before you commit to anything.",
+    aside: "Real human, not a bot",
   },
   {
     icon: ClipboardList,
     number: "02",
-    title: "Tell Us Everything",
-    description: "Our onboarding wizard asks the right questions — your industry, competitors, sites you love, sites you hate. We even ask what you'd steal from your competitor's site if you could.",
-    aside: "Guided questionnaire + AI chat",
+    title: "Elena Gathers Everything",
+    description: "Our AI onboarding agent Elena collects your brand details, competitors, styles you love, and goals through a natural conversation — then hands off a complete creative brief to our team.",
+    aside: "AI chat + portal onboarding",
   },
   {
     icon: PenTool,
