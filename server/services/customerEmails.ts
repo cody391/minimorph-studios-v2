@@ -1014,3 +1014,51 @@ export async function sendSiteLiveEmail(params: {
     transactional: true,
   });
 }
+
+/* ═══════════════════════════════════════════════════════
+   Portal Access Email
+   Sent when a rep closes a deal — replaces old payment-first flow.
+   Customer clicks to log in and meet Elena.
+   ═══════════════════════════════════════════════════════ */
+export async function sendPortalAccessEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  packageTier: PackageKey;
+  repName: string;
+  portalUrl: string;
+}) {
+  const pkg = PACKAGES[params.packageTier];
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">You're booked — meet your design team</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      Exciting news — ${params.repName} just confirmed your <strong style="color:#eaeaf0;">${pkg.name}</strong> package
+      for ${params.businessName}. Your onboarding portal is ready and your design specialist Elena is waiting to get started.
+    </p>
+    <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
+      <p style="margin:0;font-size:14px;color:#c8c8d8;">
+        <strong style="color:#eaeaf0;">Package:</strong> ${pkg.name}<br/>
+        <strong style="color:#eaeaf0;">Includes:</strong> ${pkg.features.slice(0, 4).join(", ")}
+      </p>
+    </div>
+    <p style="margin:0 0 20px;color:#c8c8d8;">
+      Log in to your portal, answer a few questions about your business, and Elena will design your website brief. Once everything looks perfect, you'll complete payment and we'll start building.
+    </p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${params.portalUrl}" style="display:inline-block;padding:14px 32px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;">
+        Log In &amp; Meet Elena →
+      </a>
+    </div>
+    <p style="margin:0 0 16px;font-size:14px;color:#9898a8;">
+      The whole onboarding takes about 10 minutes. You can pause and come back anytime.
+    </p>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: `Your website build is booked — log in to get started`,
+    html,
+    transactional: true,
+  });
+}

@@ -852,84 +852,22 @@ const leadsRouter = router({
         content: `Rep ${rep.fullName} closed a ${input.packageTier} deal with ${lead.businessName} at $${finalMonthlyPrice}/mo.${discountNote}${selfSourcedNote}\nAnnual value: $${annualValue.toFixed(2)}\nCommission: $${commissionAmount} (${(rate * 100).toFixed(0)}% at ${tierKey} tier) — pending payment confirmation\nPayment link sent to customer. Contract activates upon payment.\nOnboarding project auto-created.`,
       });
 
-      // 11. Generate Stripe payment link for the customer
-      let paymentUrl: string | null = null;
+      // 11. Send portal access email — customer logs in to meet Elena, pays after
       try {
-        const Stripe = (await import("stripe")).default;
-        const { PACKAGES } = await import("../shared/pricing");
-        const stripeKey = ENV.stripeSecretKey;
-        if (stripeKey) {
-          const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
-          const pkg = PACKAGES[input.packageTier as keyof typeof PACKAGES];
-          const origin = ctx.req.headers.origin || ctx.req.headers.referer || ENV.appUrl || "https://minimorphstudios.com";
-          const session = await stripe.checkout.sessions.create({
-            mode: "subscription",
-            customer_email: lead.email,
-            client_reference_id: String(customer.id),
-            allow_promotion_codes: true,
-            subscription_data: {
-              metadata: {
-                user_id: "",
-                package_tier: input.packageTier,
-                business_name: lead.businessName,
-                contract_id: String(contract.id),
-                lead_id: String(lead.id),
-                rep_id: String(rep.id),
-                customer_id: String(customer.id),
-                rep_closed: "true",
-              },
-            },
-            metadata: {
-              user_id: "",
-              customer_email: lead.email,
-              customer_name: lead.contactName,
-              package_tier: input.packageTier,
-              business_name: lead.businessName,
-              contract_id: String(contract.id),
-              lead_id: String(lead.id),
-              rep_id: String(rep.id),
-              customer_id: String(customer.id),
-              rep_closed: "true",
-            },
-            line_items: [
-              {
-                price_data: {
-                  currency: "usd",
-                  product_data: {
-                    name: `${pkg.name} Package`,
-                    description: pkg.description,
-                  },
-                  unit_amount: Math.round(discountedPrice * 100),
-                  recurring: { interval: "month" },
-                },
-                quantity: 1,
-              },
-            ],
-            success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin}/get-started?cancelled=true`,
-          });
-          paymentUrl = session.url;
-          // Send payment link email to customer
-          if (paymentUrl) {
-            try {
-              const { sendPaymentLinkEmail } = await import("./services/customerEmails");
-              await sendPaymentLinkEmail({
-                to: lead.email,
-                customerName: lead.contactName,
-                businessName: lead.businessName,
-                packageTier: input.packageTier as any,
-                paymentUrl,
-                repName: rep.fullName,
-              });
-            } catch (emailErr) {
-              console.error("[closeDeal] Failed to send payment link email:", emailErr);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("[closeDeal] Failed to create Stripe checkout:", err);
-        // Non-fatal — deal is still closed, payment link can be sent manually
+        const { sendPortalAccessEmail } = await import("./services/customerEmails");
+        const portalUrl = `${ENV.appUrl || "https://minimorphstudios.net"}/portal`;
+        await sendPortalAccessEmail({
+          to: lead.email,
+          customerName: lead.contactName,
+          businessName: lead.businessName,
+          packageTier: input.packageTier as any,
+          repName: rep.fullName,
+          portalUrl,
+        });
+      } catch (emailErr) {
+        console.error("[closeDeal] Failed to send portal access email:", emailErr);
       }
+
       return {
         success: true,
         customerId: customer.id,
@@ -937,7 +875,7 @@ const leadsRouter = router({
         commissionId: commission.id,
         commissionAmount,
         annualValue,
-        paymentUrl,
+        paymentUrl: null,
         paymentStatus: "pending_payment",
       };
     }),
@@ -2677,6 +2615,99 @@ const onboardingRouter = router({
       return { success: true };
     }),
 
+  // Protected: create Stripe checkout after Elena finishes (new payment-last flow)
+  // Customer pays after talking to Elena — addons are included in the session
+  createCheckoutAfterElena: protectedProcedure
+    .input(z.object({ projectId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+      const Stripe = (await import("stripe")).default;
+      const stripeKey = ENV.stripeSecretKey;
+      if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
+      const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
+
+      const q = (project.questionnaire || {}) as Record<string, unknown>;
+      const packageTier = (q.packageTier as string || project.packageTier || "starter").toLowerCase();
+      const { PACKAGES } = await import("../shared/pricing");
+      const pkg = PACKAGES[packageTier as keyof typeof PACKAGES] ?? PACKAGES.starter;
+      const monthlyPrice = pkg.monthlyPrice;
+
+      // Base line item
+      const lineItems: Array<{
+        price_data: { currency: string; product_data: { name: string; description?: string }; unit_amount: number; recurring: { interval: string } };
+        quantity: number;
+      }> = [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: { name: `${pkg.name} Package`, description: pkg.description },
+            unit_amount: Math.round(monthlyPrice * 100),
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        },
+      ];
+
+      // Addon line items (from Elena's pitch — addonsSelected array in questionnaire)
+      const addonsSelected = (q.addonsSelected as Array<{ product: string; price?: string; label?: string }> | undefined) ?? [];
+      for (const addon of addonsSelected) {
+        const addonPrice = parseFloat(addon.price || "0");
+        if (addonPrice > 0) {
+          lineItems.push({
+            price_data: {
+              currency: "usd",
+              product_data: { name: addon.label || addon.product },
+              unit_amount: Math.round(addonPrice * 100),
+              recurring: { interval: "month" },
+            },
+            quantity: 1,
+          });
+        }
+      }
+
+      const origin = ctx.req.headers.origin || ENV.appUrl || "https://minimorphstudios.net";
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer_email: project.contactEmail || undefined,
+        allow_promotion_codes: true,
+        subscription_data: {
+          metadata: {
+            project_id: String(project.id),
+            contract_id: String(project.contractId || ""),
+            customer_id: String(project.customerId),
+            package_tier: packageTier,
+            business_name: project.businessName || "",
+            rep_closed: "true",
+          },
+        },
+        metadata: {
+          project_id: String(project.id),
+          contract_id: String(project.contractId || ""),
+          customer_id: String(project.customerId),
+          customer_email: project.contactEmail || "",
+          customer_name: project.contactName || "",
+          package_tier: packageTier,
+          business_name: project.businessName || "",
+          rep_closed: "true",
+        },
+        line_items: lineItems as any,
+        success_url: `${origin}/portal?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/portal?payment=cancelled`,
+      });
+
+      if (!session.url) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create checkout session" });
+
+      // Persist checkout session id so webhook can find the project
+      await db.updateOnboardingProject(project.id, {
+        generationLog: `Awaiting payment: Stripe session ${session.id}`,
+      });
+
+      return { checkoutUrl: session.url, sessionId: session.id };
+    }),
+
   // Admin: list all onboarding projects
   list: adminProcedure
     .input(z.object({ stage: z.string().optional() }).optional())
@@ -3167,6 +3198,15 @@ For restaurants: cuisine, locations, hours, menu (online ordering? reservations?
 For contractors: trade, license number, need a quote form, before/after gallery, emergency services.
 For ecommerce: product count, categories, shipping, existing platform.
 
+PHASE 4.5 — ECOMMERCE PRODUCT COLLECTION (only if websiteType is ecommerce/shop/goods/maker/artisan/boutique)
+Collect details for up to 6 featured products that will display in the product grid:
+- Ask: "Let's build out your product showcase. Walk me through your top 5 or 6 products — just the name and a one-line description. These become the clickable cards visitors see first."
+- For each: product name, short description, rough price range if they're showing pricing, and whether they have photos
+- Ask: "Do you have photos of your products, or would you like us to source editorial-quality images that match your aesthetic?"
+- Ask: "How do you currently handle orders — do you want an inquiry form, a link to your Etsy/Shopify, or a 'contact for pricing' model?"
+- Ask: "Any custom order services? That's often the most profitable thing to feature on the homepage."
+Store each product as a service (SERVICE_1_DESC through SERVICE_6_DESC) in the questionnaire.
+
 Also collect in Phase 4 (naturally woven into conversation):
 - Social handles: "Are you on any social platforms? Instagram, TikTok, Facebook — even if you don't post much, we'll link them in the footer."
 - Testimonials: "Do you have any customer reviews or testimonials you love? Even one or two quotes with a first name and what they said — the more specific the better."
@@ -3222,6 +3262,8 @@ Then ask: "Does this match your vision? Anything I'm missing?"
 Once they confirm, naturally mention the contract: "One last thing before we hand this off to the team — like all our clients, you'll be on a 12-month agreement at $[total]/mo. This covers everything: design, build, hosting, SSL, domain management, and ongoing support. No surprise fees ever. You'll receive the agreement digitally before anything kicks off — want me to send that over for your review?"
 
 Once confirmed, FIRST output BOTH tags (no text before them):
+Once confirmed, FIRST output ALL THREE tags in this exact order (no text before them), then deliver the closing message:
+<payment_ready>{"packageTier":"starter|growth|premium|enterprise","monthlyTotal":"total including addons as number","addons":[{"product":"name","price":49}]}</payment_ready>
 <questionnaire_data>{
   "websiteType": "service_business|restaurant|contractor|ecommerce|other",
   "businessName": "...",
@@ -3301,7 +3343,7 @@ Use this naturally when relevant: "One thing I love about working with [Business
 - Never promise timelines shorter than 2 business days
 - Never discuss competitor agency pricing
 - Never reveal internal processes, rep commissions, or system details
-- <questionnaire_data> only appears ONCE in Phase 8, never earlier
+- <payment_ready>, <questionnaire_data>, and <addons_selected> appear ONCE in Phase 8, never earlier, always in that order
 - <upload_request> tags appear during Phase 7 asset collection
 - <addon_accepted> appears immediately when a customer agrees to an add-on
 
@@ -3365,6 +3407,15 @@ ${integrationSection}${scrapedSection}`;
         }
       }
 
+      // Extract payment_ready signal
+      let paymentReady: Record<string, unknown> | null = null;
+      const paymentReadyMatch = aiResponse.match(/<payment_ready>([\s\S]*?)<\/payment_ready>/);
+      if (paymentReadyMatch) {
+        try {
+          paymentReady = JSON.parse(paymentReadyMatch[1].trim());
+        } catch {}
+      }
+
       // Extract add-ons selected
       let addonsSelected = null;
       const addonsMatch = aiResponse.match(/<addons_selected>([\s\S]*?)<\/addons_selected>/);
@@ -3375,6 +3426,7 @@ ${integrationSection}${scrapedSection}`;
       }
 
       const cleanedResponse = aiResponse
+        .replace(/<payment_ready>[\s\S]*?<\/payment_ready>/g, "")
         .replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/g, "")
         .replace(/<addons_selected>[\s\S]*?<\/addons_selected>/g, "")
         .trim();
@@ -3383,6 +3435,7 @@ ${integrationSection}${scrapedSection}`;
       if (input.projectId) {
         const historyEntry = (text: string) =>
           text
+            .replace(/<payment_ready>[\s\S]*?<\/payment_ready>/g, "")
             .replace(/<upload_request\b[^>]*\/>/g, "")
             .replace(/<addon_accepted\b[^>]*\/>/g, "")
             .replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/g, "")
@@ -3428,6 +3481,7 @@ ${integrationSection}${scrapedSection}`;
         response: cleanedResponse,
         extractedData,
         addonsSelected,
+        paymentReady,
       };
     }),
 

@@ -346,6 +346,35 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       }
     }
   }
+
+  // ── 10. Trigger site generation for projects with Elena data ──────────
+  // When the payment-last flow is used, the onboarding project already
+  // has questionnaire data from Elena. Start generation immediately.
+  if (session.metadata?.project_id) {
+    const projectId = parseInt(session.metadata.project_id);
+    if (!isNaN(projectId)) {
+      try {
+        const project = await db.getOnboardingProjectById(projectId);
+        const q = project?.questionnaire as Record<string, unknown> | null;
+        if (project && q && q.businessName && q.businessType && project.generationStatus !== "generating" && project.generationStatus !== "complete") {
+          // Mark as queued and fire generation
+          await db.updateOnboardingProject(projectId, {
+            stage: "assets_upload",
+            generationStatus: "generating",
+            generationLog: "Payment confirmed — building your site...",
+          });
+          // Fire-and-forget generation
+          const { generateSiteForProject } = await import("./services/siteGenerator");
+          generateSiteForProject(projectId).catch(err =>
+            console.error(`[Stripe] Generation failed for project ${projectId}:`, err)
+          );
+          console.log(`[Stripe] Site generation queued for project ${projectId} after payment`);
+        }
+      } catch (genErr) {
+        console.error(`[Stripe] Failed to trigger generation for project ${projectId}:`, genErr);
+      }
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════

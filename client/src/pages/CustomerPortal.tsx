@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +16,7 @@ import { useLocation } from "wouter";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { AIChatBox } from "@/components/AIChatBox";
-import { Bot, Loader2, Sparkles, Globe, ExternalLink, RefreshCw } from "lucide-react";
+import { Bot, Loader2, Sparkles, Globe, ExternalLink, RefreshCw, Copy } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
@@ -651,16 +651,23 @@ function OnboardingProjectTab({
 
   // Final approval pending
   if (project.stage === "final_approval") {
+    const domainName = (project.questionnaire as any)?.domainName as string | undefined;
     return (
-      <Card className="border-border/50">
-        <CardContent className="py-10 text-center space-y-4">
-          <CheckCircle className="h-12 w-12 text-electric mx-auto" />
-          <h3 className="text-lg font-serif text-off-white">Approved — Going Live Soon</h3>
-          <p className="text-sm text-soft-gray max-w-md mx-auto">
-            Your site has been approved. Our team is handling DNS setup and final checks. You'll receive an email when it's live.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card className="border-border/50">
+          <CardContent className="py-10 text-center space-y-4">
+            <CheckCircle className="h-12 w-12 text-electric mx-auto" />
+            <h3 className="text-lg font-serif text-off-white">Approved — Going Live Soon</h3>
+            <p className="text-sm text-soft-gray max-w-md mx-auto">
+              Your site has been approved. Our team is handling DNS setup and final checks. You'll receive an email when it's live.
+            </p>
+          </CardContent>
+        </Card>
+
+        {domainName && (
+          <DnsInstructionsCard domain={domainName} />
+        )}
+      </div>
     );
   }
 
@@ -952,6 +959,90 @@ function OnboardingProjectTab({
 /* ═══════════════════════════════════════════════════════
    INSIGHTS TAB — Monthly competitive intelligence report
    ═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   DNS INSTRUCTIONS CARD
+   Shown in final_approval stage when customer has a domain
+   ═══════════════════════════════════════════════════════ */
+function DnsInstructionsCard({ domain }: { domain: string }) {
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  const ns1 = "vera.ns.cloudflare.com";
+  const ns2 = "wade.ns.cloudflare.com";
+
+  return (
+    <Card className="border-electric/20 bg-electric/5">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+          <Globe className="h-4 w-4 text-electric" />
+          Connect Your Domain — {domain}
+        </CardTitle>
+        <CardDescription className="text-xs text-soft-gray font-sans">
+          Update your nameservers at your domain registrar to point {domain} to your new site.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {/* Status badge */}
+        <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-full px-3 py-1">
+          <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+          <span className="text-xs text-yellow-300 font-sans">Awaiting DNS propagation — up to 48 hours</span>
+        </div>
+
+        {/* Nameserver boxes */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-soft-gray font-sans uppercase tracking-wide">Your new nameservers</p>
+          {[ns1, ns2].map((ns, i) => (
+            <div key={i} className="flex items-center justify-between gap-3 bg-midnight-dark/40 border border-border/30 rounded-lg px-4 py-3">
+              <code className="text-sm text-electric font-mono">{ns}</code>
+              <button
+                onClick={() => copyToClipboard(ns, `ns${i}`)}
+                className="flex items-center gap-1.5 text-xs text-soft-gray hover:text-off-white transition-colors shrink-0"
+              >
+                {copied === `ns${i}` ? (
+                  <><CheckCircle className="h-3 w-3 text-green-400" /><span className="text-green-400">Copied!</span></>
+                ) : (
+                  <><Copy className="h-3 w-3" />Copy</>
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Step-by-step */}
+        <div className="space-y-3">
+          <p className="text-xs font-medium text-soft-gray font-sans uppercase tracking-wide">How to update nameservers</p>
+          <ol className="space-y-2">
+            {[
+              `Log in to wherever you purchased ${domain} (GoDaddy, Namecheap, Google Domains, etc.)`,
+              "Find DNS Settings, Nameservers, or Domain Management",
+              "Select Custom Nameservers and delete the existing ones",
+              "Add both nameservers above and save",
+              "Changes take 24–48 hours to propagate worldwide",
+            ].map((step, i) => (
+              <li key={i} className="flex items-start gap-3 text-xs text-soft-gray font-sans">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-electric/20 text-electric text-[10px] font-bold flex items-center justify-center mt-0.5">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <p className="text-xs text-soft-gray/60 font-sans">
+          We'll send you an email the moment your domain is fully connected. Questions? Reach out via the Support tab.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 function InsightsTab({ project }: { project: any }) {
   const [requested, setRequested] = useState(false);
   const requestAnalysis = trpc.onboarding.requestCompetitiveAnalysis.useMutation({

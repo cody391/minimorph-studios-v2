@@ -379,4 +379,58 @@ export const showroomSites: ShowroomSite[] = [
       cta: "Shop Coffee",
     },
   },
+  {
+    slug: "thornwood-goods",
+    subdomain: "thornwood",
+    liveUrl: "https://thornwood.minimorphstudios.net",
+    name: "Thornwood Goods",
+    tagline: "Handcrafted goods for the well-lived life.",
+    industry: "E-Commerce / Artisan Goods",
+    location: "Asheville, NC",
+    tier: "Growth",
+    tierPrice: "$295/mo",
+    price: 295,
+    resultStat: "+220% inquiry volume in first 60 days",
+    showcasedAddOns: ["Instagram", "Email", "Lead Capture", "Reviews"],
+    heroImage: "",
+    heroGradient: "linear-gradient(135deg, #1a1208 0%, #0e0a04 100%)",
+    palette: {
+      bg: "#1a1208",
+      accent: "#b87a3c",
+      text: "#f5efe6",
+      muted: "#9a8a78",
+      card: "#231a0c",
+      border: "#352818",
+    },
+    font: { heading: "'Cormorant Garamond', serif", body: "'Inter', sans-serif" },
+    addOns: ["Instagram Feed", "Email Newsletter", "Inquiry Form"],
+    features: [
+      "Full catalog + product detail pages",
+      "Brand story and maker profile",
+      "Instagram grid integration",
+      "Newsletter signup with welcome sequence",
+      "Inquiry form for custom orders",
+      "Monthly performance report",
+    ],
+    personality:
+      "Warm and editorial — the ecommerce template in action. Cormorant Garamond headlines, amber tones, and product photography-forward layouts. This is for the maker who sells on Etsy but deserves their own home. Clean grid, hover-reveal inquiry buttons, and a brand story section that turns browsers into buyers.",
+    ownerQuote:
+      "I'd been on Etsy for six years. Having my own site finally feels like the business I always meant to run.",
+    ownerName: "Jess M.",
+    sections: {
+      hero: {
+        headline: "Handcrafted Goods for the Well-Lived Life.",
+        sub: "Small-batch ceramics, woodwork, and leather goods. Made in western North Carolina, shipped nationwide.",
+      },
+      about:
+        "Thornwood Goods is a one-woman studio run by Jess Marchand out of a converted barn in the Blue Ridge foothills. Every piece is made by hand, in small batches, using materials sourced within 200 miles when possible. Jess has been selling her work at regional craft fairs since 2017. The studio isn't big. The waiting list sometimes is.",
+      services: [
+        { name: "Ceramic Goods", desc: "Mugs, bowls, bud vases, and soap dishes. Each one slightly different because that's the whole point." },
+        { name: "Leather Accessories", desc: "Card holders, key fobs, and journal covers. Vegetable-tanned and built to patina beautifully." },
+        { name: "Woodwork", desc: "Cutting boards, serving platters, and small shelves. Live-edge when the grain calls for it." },
+        { name: "Custom Orders", desc: "Personalization, bulk orders for weddings and events, and one-of-a-kind commissions. 6–8 week lead time." },
+      ],
+      cta: "Browse the Collection",
+    },
+  },
 ];

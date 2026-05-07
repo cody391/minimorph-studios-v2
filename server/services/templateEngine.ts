@@ -89,6 +89,15 @@ export function selectTemplate(businessType: string, brandTone: string): string 
       : "boutique/warm-lifestyle.html";
   }
 
+  if (
+    type === "ecommerce" || type === "e-commerce" || type === "online store" ||
+    type === "online shop" || type === "handmade" || type === "craft" ||
+    type === "maker" || type === "artisan shop" || type === "vintage" ||
+    type === "goods" || type === "marketplace"
+  ) {
+    return "ecommerce/catalog.html";
+  }
+
   // No hand-crafted template — signal the caller to generate a custom one
   return null;
 }
@@ -141,6 +150,7 @@ const INDUSTRY_PAGES: Record<string, string[]> = {
   salon:       ["services", "gallery", "about"],
   coffee:      ["menu", "about"],
   boutique:    ["contact"],
+  ecommerce:   ["product", "about", "contact"],
   service:     ["services", "quote", "about"],
   // Custom-generated templates get a minimal page set using shared fallbacks
   custom:      ["contact"],
@@ -173,6 +183,7 @@ const PAGE_LABELS: Record<string, string> = {
   menu:         "Menu",
   reservations: "Reservations",
   classes:      "Classes",
+  product:      "Shop",
   privacy:      "Privacy",
 };
 
@@ -183,6 +194,7 @@ const INDUSTRY_CTA: Record<string, { href: string; text: string }> = {
   salon:      { href: "contact.html",      text: "Book Now" },
   coffee:     { href: "menu.html",         text: "View Menu" },
   boutique:   { href: "contact.html",      text: "Shop Now" },
+  ecommerce:  { href: "product.html",      text: "Shop Now" },
   service:    { href: "quote.html",        text: "Get a Quote" },
   custom:     { href: "contact.html",      text: "Contact Us" },
 };
@@ -212,6 +224,9 @@ const IMAGE_TOKEN_MAP: Array<[string, string, string | number]> = [
   ["GALLERY_IMAGE_1", "gallery", 1],
   ["GALLERY_IMAGE_2", "gallery", 2],
   ["GALLERY_IMAGE_3", "gallery", 3],
+  ["GALLERY_IMAGE_4", "gallery", 4],
+  ["GALLERY_IMAGE_5", "gallery", 5],
+  ["GALLERY_IMAGE_6", "gallery", 6],
   ["ABOUT_IMAGE",     "about",   "about"],
   ["TEAM_IMAGE_1",    "team",    1],
 ] as const;
@@ -536,6 +551,9 @@ export async function injectContentIntoTemplate(
     SERVICE_1_DESC:      brief.servicesOffered[0] ?? "",
     SERVICE_2_DESC:      brief.servicesOffered[1] ?? "",
     SERVICE_3_DESC:      brief.servicesOffered[2] ?? "",
+    SERVICE_4_DESC:      brief.servicesOffered[3] ?? brief.servicesOffered[0] ?? "",
+    SERVICE_5_DESC:      brief.servicesOffered[4] ?? brief.servicesOffered[1] ?? "",
+    SERVICE_6_DESC:      brief.servicesOffered[5] ?? brief.servicesOffered[2] ?? "",
     NAV_LINKS:           navLinks,
     NAV_CTA_HREF:        navCtaHref,
     NAV_CTA_TEXT:        navCtaText,

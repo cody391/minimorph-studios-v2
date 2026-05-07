@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUSINESS_NAME</title>
+  <meta name="description" content="META_DESCRIPTION" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: PRIMARY_COLOR;
+      --secondary: SECONDARY_COLOR;
+      --bg: #ffffff;
+      --surface: #f7f6f4;
+      --text: #1a1a1a;
+      --muted: #888888;
+      --border: #e5e3df;
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'Inter', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.6; font-weight: 300; }
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── ANNOUNCEMENT BAR ── */
+    .announce-bar {
+      background: var(--text);
+      color: rgba(255,255,255,0.9);
+      text-align: center;
+      padding: 0.55rem 1rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      font-weight: 400;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: rgba(255,255,255,0.97);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      height: 64px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+    }
+
+    .nav-links.right { justify-content: flex-end; }
+
+    .nav-links a {
+      color: var(--muted);
+      transition: color 0.2s;
+      font-weight: 400;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-logo {
+      text-align: center;
+      font-family: var(--serif);
+      font-size: 1.375rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 82vh;
+    }
+
+    .hero-image {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-image img { transition: transform 0.8s ease; }
+    .hero-image:hover img { transform: scale(1.03); }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 4rem 5rem;
+      background: var(--bg);
+    }
+
+    .hero-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      font-weight: 400;
+    }
+
+    .hero-headline {
+      font-family: var(--serif);
+      font-size: clamp(2.5rem, 4vw, 4rem);
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-headline em { font-style: italic; }
+
+    .hero-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 2.5rem;
+      max-width: 360px;
+      line-height: 1.75;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      background: var(--text);
+      color: #fff;
+      padding: 0.9rem 2.25rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      font-weight: 400;
+      transition: background 0.25s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary:hover { background: var(--primary); }
+
+    .btn-outline {
+      display: inline-block;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.9rem 2rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      font-weight: 400;
+      transition: border-color 0.2s, color 0.2s;
+      cursor: pointer;
+    }
+
+    .btn-outline:hover { border-color: var(--text); color: var(--text); }
+
+    /* ── CATEGORY STRIP ── */
+    .category-strip { background: var(--surface); padding: 3rem 2rem; }
+
+    .category-strip-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      gap: 1.5rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .category-strip-inner::-webkit-scrollbar { display: none; }
+
+    .category-pill {
+      flex-shrink: 0;
+      padding: 0.6rem 1.5rem;
+      border: 1px solid var(--border);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      background: var(--bg);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .category-pill:hover,
+    .category-pill.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+    /* ── SECTION UTILITIES ── */
+    .section { padding: 6rem 2rem; }
+    .container { max-width: 1320px; margin: 0 auto; }
+
+    .section-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      font-weight: 400;
+    }
+
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(1.875rem, 3vw, 2.75rem);
+      font-weight: 300;
+      line-height: 1.25;
+    }
+
+    /* ── PRODUCT GRID ── */
+    .products { background: var(--bg); }
+
+    .products-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+    }
+
+    .products-header .view-all {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      transition: color 0.2s;
+    }
+
+    .products-header .view-all:hover { color: var(--text); }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .product-card { cursor: pointer; }
+
+    .product-img-wrap {
+      position: relative;
+      aspect-ratio: 3/4;
+      overflow: hidden;
+      background: var(--surface);
+      margin-bottom: 1rem;
+    }
+
+    .product-img-wrap img { transition: transform 0.5s ease; }
+    .product-card:hover .product-img-wrap img { transform: scale(1.06); }
+
+    .product-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .product-card:hover .product-overlay { opacity: 1; }
+
+    .product-overlay-btn {
+      background: #fff;
+      color: var(--text);
+      padding: 0.75rem 1.5rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .product-overlay-btn:hover { background: var(--primary); color: #fff; }
+
+    .product-name {
+      font-family: var(--serif);
+      font-size: 1.0625rem;
+      font-weight: 400;
+      margin-bottom: 0.25rem;
+    }
+
+    .product-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    /* ── FEATURED BANNER ── */
+    .featured-banner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 560px;
+    }
+
+    .featured-banner-image { overflow: hidden; }
+    .featured-banner-image img { transition: transform 0.8s ease; }
+    .featured-banner:hover .featured-banner-image img { transform: scale(1.03); }
+
+    .featured-banner-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem 5rem;
+      background: var(--surface);
+    }
+
+    .featured-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .featured-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 3.5vw, 3.25rem);
+      font-weight: 300;
+      line-height: 1.2;
+      margin-bottom: 1.25rem;
+    }
+
+    .featured-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 380px;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── BRAND STORY ── */
+    .brand-story {
+      background: var(--text);
+      color: #fff;
+    }
+
+    .brand-story-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: center;
+    }
+
+    .brand-story-image {
+      aspect-ratio: 4/5;
+      overflow: hidden;
+    }
+
+    .brand-story-content { padding: 2rem 0; }
+
+    .brand-story-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 1.25rem;
+    }
+
+    .brand-story-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 300;
+      line-height: 1.25;
+      margin-bottom: 1.5rem;
+    }
+
+    .brand-story-title em { font-style: italic; }
+
+    .brand-story-body {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.8;
+      margin-bottom: 2.5rem;
+    }
+
+    .btn-light {
+      display: inline-block;
+      border: 1px solid rgba(255,255,255,0.4);
+      color: #fff;
+      padding: 0.9rem 2rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      transition: all 0.25s;
+    }
+
+    .btn-light:hover { background: #fff; color: var(--text); border-color: #fff; }
+
+    <!-- IF_PREMIUM_PLUS_START -->
+    /* ── TESTIMONIALS ── */
+    .testimonials { background: var(--surface); }
+
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3.5rem;
+    }
+
+    .testimonial-card {
+      background: var(--bg);
+      padding: 2.5rem;
+      position: relative;
+    }
+
+    .testimonial-stars {
+      color: var(--primary);
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      margin-bottom: 1.25rem;
+    }
+
+    .testimonial-quote {
+      font-family: var(--serif);
+      font-size: 1.0625rem;
+      font-weight: 300;
+      line-height: 1.65;
+      font-style: italic;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+
+    .testimonial-name {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .testimonial-context {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+    <!-- IF_PREMIUM_PLUS_END -->
+
+    <!-- IF_GROWTH_PLUS_START -->
+    /* ── INSTAGRAM GRID ── */
+    .instagram { background: var(--bg); }
+
+    .instagram-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .instagram-handle {
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .instagram-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+
+    .instagram-item {
+      aspect-ratio: 1;
+      overflow: hidden;
+      background: var(--surface);
+      cursor: pointer;
+    }
+
+    .instagram-item img { transition: transform 0.4s ease, opacity 0.3s; }
+    .instagram-item:hover img { transform: scale(1.06); opacity: 0.85; }
+    <!-- IF_GROWTH_PLUS_END -->
+
+    /* ── ORDER CTA ── */
+    .order-cta {
+      background: var(--primary);
+      color: #fff;
+      text-align: center;
+    }
+
+    .order-cta-inner { max-width: 720px; margin: 0 auto; }
+
+    .order-cta-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 1.25rem;
+    }
+
+    .order-cta-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-weight: 300;
+      line-height: 1.25;
+      margin-bottom: 1rem;
+    }
+
+    .order-cta-sub {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 2.5rem;
+    }
+
+    .btn-white {
+      display: inline-block;
+      background: #fff;
+      color: var(--primary);
+      padding: 1rem 2.5rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+
+    .btn-white:hover { opacity: 0.9; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--text);
+      color: rgba(255,255,255,0.6);
+      padding: 5rem 2rem 2rem;
+    }
+
+    .footer-grid {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .footer-brand-name {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .footer-tagline {
+      font-size: 0.85rem;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .footer-col-title {
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 1.25rem;
+      font-weight: 400;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+
+    .footer-links a {
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.55);
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: #fff; }
+
+    .footer-contact-item {
+      font-size: 0.875rem;
+      line-height: 1.6;
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-bottom {
+      max-width: 1320px;
+      margin: 2rem auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.25);
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* ── ANIMATIONS ── */
+    [data-animate] { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    [data-animate].visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .hero, .featured-banner, .brand-story-inner { grid-template-columns: 1fr; }
+      .hero-image, .featured-banner-image { min-height: 50vw; }
+      .hero-content, .featured-banner-content { padding: 3rem 2rem; }
+      .brand-story-content { padding: 3rem 2rem; }
+      .product-grid { grid-template-columns: repeat(2, 1fr); }
+      .testimonials-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .nav-links { display: none; }
+      .instagram-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 480px) {
+      .product-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+      .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .instagram-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ANNOUNCEMENT BAR -->
+  <div class="announce-bar">Free shipping on orders over $75 &nbsp;·&nbsp; SERVICE_AREA's Premier Shop &nbsp;·&nbsp; Call PHONE</div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <ul class="nav-links">NAV_LINKS</ul>
+      <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+      <ul class="nav-links right">
+        <li><a href="NAV_CTA_HREF">NAV_CTA_TEXT</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-image">
+        <img src="HERO_IMAGE" alt="BUSINESS_NAME hero" loading="eager" fetchpriority="high" />
+      </div>
+      <div class="hero-content">
+        <p class="hero-eyebrow">NEW COLLECTION — SERVICE_AREA</p>
+        <h1 class="hero-headline">HEADLINE</h1>
+        <p class="hero-sub">SUBHEADLINE</p>
+        <div class="hero-cta-group">
+          <a href="NAV_CTA_HREF" class="btn-primary">SHOP NOW</a>
+          <a href="about.html" class="btn-outline">OUR STORY</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATEGORY STRIP -->
+    <div class="category-strip">
+      <div class="category-strip-inner">
+        <div class="category-pill active">All Products</div>
+        <div class="category-pill">SERVICE_1_DESC</div>
+        <div class="category-pill">SERVICE_2_DESC</div>
+        <div class="category-pill">SERVICE_3_DESC</div>
+        <div class="category-pill">SERVICE_4_DESC</div>
+        <div class="category-pill">New Arrivals</div>
+        <div class="category-pill">Bestsellers</div>
+      </div>
+    </div>
+
+    <!-- PRODUCT GRID -->
+    <section class="section products" data-animate>
+      <div class="container">
+        <div class="products-header">
+          <div>
+            <p class="section-label">OUR COLLECTION</p>
+            <h2 class="section-title">Shop Everything</h2>
+          </div>
+          <a href="NAV_CTA_HREF" class="view-all">View all →</a>
+        </div>
+        <div class="product-grid">
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="GALLERY_IMAGE_1" alt="SERVICE_1_DESC" loading="lazy" />
+              <div class="product-overlay">
+                <button class="product-overlay-btn" onclick="window.location.href='product.html'">INQUIRE →</button>
+              </div>
+            </div>
+            <p class="product-name">SERVICE_1_DESC</p>
+            <p class="product-meta">Contact for pricing</p>
+          </div>
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="GALLERY_IMAGE_2" alt="SERVICE_2_DESC" loading="lazy" />
+              <div class="product-overlay">
+                <button class="product-overlay-btn" onclick="window.location.href='product.html'">INQUIRE →</button>
+              </div>
+            </div>
+            <p class="product-name">SERVICE_2_DESC</p>
+            <p class="product-meta">Contact for pricing</p>
+          </div>
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="GALLERY_IMAGE_3" alt="SERVICE_3_DESC" loading="lazy" />
+              <div class="product-overlay">
+                <button class="product-overlay-btn" onclick="window.location.href='product.html'">INQUIRE →</button>
+              </div>
+            </div>
+            <p class="product-name">SERVICE_3_DESC</p>
+            <p class="product-meta">Contact for pricing</p>
+          </div>
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="GALLERY_IMAGE_4" alt="SERVICE_4_DESC" loading="lazy" />
+              <div class="product-overlay">
+                <button class="product-overlay-btn" onclick="window.location.href='product.html'">INQUIRE →</button>
+              </div>
+            </div>
+            <p class="product-name">SERVICE_4_DESC</p>
+            <p class="product-meta">Contact for pricing</p>
+          </div>
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="GALLERY_IMAGE_5" alt="SERVICE_5_DESC" loading="lazy" />
+              <div class="product-overlay">
+                <button class="product-overlay-btn" onclick="window.location.href='product.html'">INQUIRE →</button>
+              </div>
+            </div>
+            <p class="product-name">SERVICE_5_DESC</p>
+            <p class="product-meta">Contact for pricing</p>
+          </div>
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="GALLERY_IMAGE_6" alt="SERVICE_6_DESC" loading="lazy" />
+              <div class="product-overlay">
+                <button class="product-overlay-btn" onclick="window.location.href='product.html'">INQUIRE →</button>
+              </div>
+            </div>
+            <p class="product-name">SERVICE_6_DESC</p>
+            <p class="product-meta">Contact for pricing</p>
+          </div>
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="ABOUT_IMAGE" alt="Signature Collection" loading="lazy" />
+              <div class="product-overlay">
+                <button class="product-overlay-btn" onclick="window.location.href='product.html'">INQUIRE →</button>
+              </div>
+            </div>
+            <p class="product-name">Signature Collection</p>
+            <p class="product-meta">Ask for details</p>
+          </div>
+          <div class="product-card">
+            <div class="product-img-wrap">
+              <img src="GALLERY_IMAGE_1" alt="Custom Order" loading="lazy" />
+              <div class="product-overlay">
+                <button class="product-overlay-btn" onclick="window.location.href='contact.html'">INQUIRE →</button>
+              </div>
+            </div>
+            <p class="product-name">Custom Orders</p>
+            <p class="product-meta">Made to order</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURED ITEM BANNER -->
+    <section class="featured-banner" data-animate>
+      <div class="featured-banner-content">
+        <p class="featured-eyebrow">FEATURED ITEM</p>
+        <h2 class="featured-title">SERVICE_1_DESC</h2>
+        <p class="featured-desc">SUBHEADLINE</p>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <a href="product.html" class="btn-primary">LEARN MORE</a>
+          <a href="contact.html" class="btn-outline">CONTACT US</a>
+        </div>
+      </div>
+      <div class="featured-banner-image">
+        <img src="GALLERY_IMAGE_2" alt="SERVICE_1_DESC" loading="lazy" />
+      </div>
+    </section>
+
+    <!-- BRAND STORY -->
+    <section class="section brand-story" data-animate>
+      <div class="brand-story-inner">
+        <div class="brand-story-image">
+          <img src="ABOUT_IMAGE" alt="OWNER_NAME" loading="lazy" />
+        </div>
+        <div class="brand-story-content">
+          <p class="brand-story-eyebrow">OUR STORY</p>
+          <h2 class="brand-story-title">Crafted with <em>intention</em></h2>
+          <div class="brand-story-body">ABOUT_STORY</div>
+          <a href="about.html" class="btn-light">MEET OWNER_NAME →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- IF_PREMIUM_PLUS_START -->
+    <!-- TESTIMONIALS -->
+    <section class="section testimonials" data-animate>
+      <div class="container">
+        <p class="section-label">WHAT THEY SAY</p>
+        <h2 class="section-title">Customer Stories</h2>
+        <div class="testimonials-grid">
+          <div class="testimonial-card">
+            <p class="testimonial-stars">★★★★★</p>
+            <p class="testimonial-quote">"TESTIMONIAL_1"</p>
+            <p class="testimonial-name">TESTIMONIAL_1_NAME</p>
+            <p class="testimonial-context">TESTIMONIAL_1_CONTEXT</p>
+          </div>
+          <div class="testimonial-card">
+            <p class="testimonial-stars">★★★★★</p>
+            <p class="testimonial-quote">"The quality is unmatched. I've been a loyal customer for years and every piece exceeds expectations. This is what craftsmanship looks like."</p>
+            <p class="testimonial-name">Sarah M.</p>
+            <p class="testimonial-context">Repeat Customer · SERVICE_AREA</p>
+          </div>
+          <div class="testimonial-card">
+            <p class="testimonial-stars">★★★★★</p>
+            <p class="testimonial-quote">"Absolutely love everything I've ordered. The care that goes into every detail is evident the moment you open the package."</p>
+            <p class="testimonial-name">James K.</p>
+            <p class="testimonial-context">Verified Purchase</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- IF_PREMIUM_PLUS_END -->
+
+    <!-- IF_GROWTH_PLUS_START -->
+    <!-- INSTAGRAM GRID -->
+    <section class="section instagram" data-animate>
+      <div class="container">
+        <div class="instagram-header">
+          <div>
+            <p class="section-label">FOLLOW US</p>
+            <h2 class="section-title">@BUSINESS_NAME</h2>
+          </div>
+          <a href="#" style="font-size:0.72rem;letter-spacing:0.1em;color:var(--muted);text-decoration:underline;text-underline-offset:4px">Follow on Instagram</a>
+        </div>
+        <div class="instagram-grid">
+          <div class="instagram-item"><img src="GALLERY_IMAGE_1" alt="Instagram" loading="lazy" /></div>
+          <div class="instagram-item"><img src="GALLERY_IMAGE_2" alt="Instagram" loading="lazy" /></div>
+          <div class="instagram-item"><img src="GALLERY_IMAGE_3" alt="Instagram" loading="lazy" /></div>
+          <div class="instagram-item"><img src="GALLERY_IMAGE_4" alt="Instagram" loading="lazy" /></div>
+          <div class="instagram-item"><img src="GALLERY_IMAGE_5" alt="Instagram" loading="lazy" /></div>
+          <div class="instagram-item"><img src="GALLERY_IMAGE_6" alt="Instagram" loading="lazy" /></div>
+        </div>
+      </div>
+    </section>
+    <!-- IF_GROWTH_PLUS_END -->
+
+    <!-- ORDER CTA -->
+    <section class="section order-cta" data-animate>
+      <div class="order-cta-inner">
+        <p class="order-cta-eyebrow">READY TO ORDER</p>
+        <h2 class="order-cta-title">Something special waiting for you</h2>
+        <p class="order-cta-sub">Browse our collection or reach out for a custom order. We're happy to work with you.</p>
+        <a href="contact.html" class="btn-white">GET IN TOUCH →</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <p class="footer-brand-name">BUSINESS_NAME</p>
+        <p class="footer-tagline">TAGLINE</p>
+        <p style="font-size:0.875rem;line-height:1.6">PHONE<br>EMAIL<br>ADDRESS</p>
+      </div>
+      <div>
+        <p class="footer-col-title">SHOP</p>
+        <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+      </div>
+      <div>
+        <p class="footer-col-title">INFORMATION</p>
+        <ul class="footer-links">
+          <li><a href="about.html">Our Story</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+          <li><a href="privacy.html">Privacy Policy</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-col-title">HOURS &amp; LOCATION</p>
+        <p class="footer-contact-item">HOURS</p>
+        <p class="footer-contact-item">SERVICE_AREA</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 BUSINESS_NAME. All rights reserved.</span>
+      <span>PACKAGE_TIER Plan · Built by MiniMorph Studios</span>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll animations
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')),
+      { threshold: 0.1 }
+    );
+    document.querySelectorAll('[data-animate]').forEach(el => obs.observe(el));
+
+    // Category pills
+    document.querySelectorAll('.category-pill').forEach(pill => {
+      pill.addEventListener('click', function() {
+        document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

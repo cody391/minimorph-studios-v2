@@ -18,6 +18,8 @@ import {
   FileText,
   Image as ImageIcon,
   Globe,
+  CreditCard,
+  Lock,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Streamdown } from "streamdown";
@@ -53,6 +55,12 @@ type SummaryData = {
   addons?: AddonAccepted[];
   assetsRequested?: UploadRequest[];
   questionnaire?: Record<string, unknown>;
+};
+
+type PaymentReadyData = {
+  packageTier?: string;
+  monthlyTotal?: number;
+  addons?: Array<{ product: string; price: number }>;
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -94,6 +102,7 @@ function parseAddonsAccepted(text: string): AddonAccepted[] {
 
 function stripXmlTags(text: string): string {
   return text
+    .replace(/<payment_ready>[\s\S]*?<\/payment_ready>/g, "")
     .replace(/<upload_request\b[^>]*\/>/g, "")
     .replace(/<addon_accepted\b[^>]*\/>/g, "")
     .replace(/<questionnaire_data>[\s\S]*?<\/questionnaire_data>/g, "")
@@ -152,12 +161,17 @@ export default function Onboarding() {
   const hasSentInit = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const [paymentReady, setPaymentReady] = useState<PaymentReadyData | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
   const myProjectQuery = trpc.onboarding.myCurrentProject.useQuery(undefined, {
     enabled: !!user,
   });
 
   const chatMutation = trpc.ai.onboardingChat.useMutation();
   const saveQuestionnaireMutation = trpc.onboarding.saveQuestionnaire.useMutation();
+  const saveProgressMutation = trpc.onboarding.saveProgress.useMutation();
+  const createCheckoutMutation = trpc.onboarding.createCheckoutAfterElena.useMutation();
   const uploadAssetMutation = trpc.onboarding.uploadAsset.useMutation();
 
   // Load saved conversation on mount — runs once when project query settles
@@ -229,7 +243,7 @@ export default function Onboarding() {
 
       // Build message for API — init sends a specific trigger
       const apiMessage = isInit
-        ? `Hello! My name is ${user?.name || "there"}. I just completed my purchase and I'm ready to start my website project.`
+        ? `Hello! My name is ${user?.name || "there"}. I'm ready to start my website project.`
         : text;
 
       try {
@@ -260,6 +274,20 @@ export default function Onboarding() {
         // Dismiss welcome-back banner after customer sends first message
         setIsResumed(false);
 
+        // Handle payment_ready — save questionnaire data but defer generation until after payment
+        if (result.paymentReady) {
+          setPaymentReady(result.paymentReady as PaymentReadyData);
+          // Save questionnaire data so webhook can trigger generation after payment
+          if (projectId && result.extractedData) {
+            try {
+              await saveProgressMutation.mutateAsync({
+                projectId,
+                partialQuestionnaire: result.extractedData as Record<string, unknown>,
+              });
+            } catch { /* best-effort */ }
+          }
+        }
+
         // Update live summary from extractedData
         if (result.extractedData) {
           const d = result.extractedData as Record<string, unknown>;
@@ -273,16 +301,16 @@ export default function Onboarding() {
             questionnaire: d,
           }));
 
-          // Fire saveQuestionnaire when we get final questionnaire data
-          if (projectId) {
+          // Only trigger immediate generation for self-service (no paymentReady signal)
+          if (!result.paymentReady && projectId) {
             try {
               await saveQuestionnaireMutation.mutateAsync({
                 projectId,
                 questionnaire: d,
               });
             } catch { /* best-effort */ }
+            setCompleted(true);
           }
-          setCompleted(true);
         }
 
         // Update add-ons in summary
@@ -595,6 +623,26 @@ export default function Onboarding() {
               </div>
             )}
 
+            {/* Payment Summary Card — shown after Elena fires <payment_ready> */}
+            {paymentReady && !completed && (
+              <PaymentSummaryCard
+                data={paymentReady}
+                loading={checkoutLoading}
+                onPay={async () => {
+                  if (!projectId) { toast.error("Project not found. Please try again."); return; }
+                  setCheckoutLoading(true);
+                  try {
+                    const result = await createCheckoutMutation.mutateAsync({ projectId });
+                    window.location.href = result.checkoutUrl;
+                  } catch (err) {
+                    const msg = err instanceof Error ? err.message : "Checkout failed";
+                    toast.error(msg);
+                    setCheckoutLoading(false);
+                  }
+                }}
+              />
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -832,4 +880,75 @@ function SummaryField({
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PAYMENT SUMMARY CARD
+   Shown after Elena fires <payment_ready>
+   ═══════════════════════════════════════════════════════ */
+function PaymentSummaryCard({
+  data,
+  loading,
+  onPay,
+}: {
+  data: PaymentReadyData;
+  loading: boolean;
+  onPay: () => void;
+}) {
+  const tier = data.packageTier ? capitalize(data.packageTier) : "Your";
+  const total = data.monthlyTotal ?? 0;
+  const addons = data.addons ?? [];
+
+  return (
+    <div className="mx-2 my-3">
+      <div className="bg-gradient-to-br from-[#1a2a3a] to-[#13131f] border border-[#4a9eff]/30 rounded-2xl p-5 shadow-xl">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-full bg-[#4a9eff]/15 flex items-center justify-center">
+            <CreditCard className="w-4 h-4 text-[#4a9eff]" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-white">Ready to start your website</p>
+            <p className="text-xs text-gray-400">Complete payment to begin your build</p>
+          </div>
+        </div>
+
+        <div className="bg-[#0d0d1a] rounded-xl p-4 mb-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-300">{tier} Package</span>
+            <span className="text-white font-medium">
+              ${total > 0 ? (total - addons.reduce((s, a) => s + a.price, 0)).toFixed(0) : "—"}/mo
+            </span>
+          </div>
+          {addons.map((a, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <span className="text-gray-400">{a.product}</span>
+              <span className="text-gray-300">+${a.price}/mo</span>
+            </div>
+          ))}
+          <div className="border-t border-[#2a2a40] pt-2 flex justify-between">
+            <span className="text-sm font-semibold text-white">Total</span>
+            <span className="text-sm font-bold text-[#4a9eff]">${total > 0 ? total.toFixed(0) : "—"}/mo</span>
+          </div>
+        </div>
+
+        <button
+          onClick={onPay}
+          disabled={loading}
+          className="w-full bg-[#4a9eff] hover:bg-[#3a8eef] disabled:opacity-60 text-white font-semibold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <>
+              <Lock className="w-4 h-4" />
+              Start My Website →
+            </>
+          )}
+        </button>
+        <p className="text-center text-xs text-gray-500 mt-2">
+          Secure payment via Stripe · Cancel anytime with 30-day notice
+        </p>
+      </div>
+    </div>
+  );
 }
