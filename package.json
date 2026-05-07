@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
-    "generate:showroom": "railway run tsx server/scripts/generateShowroomSites.ts"
+    "generate:showroom": "railway run tsx server/scripts/generateShowroomSites.ts",
+    "cron": "npx tsx cron.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
