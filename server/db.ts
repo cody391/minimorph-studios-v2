@@ -275,16 +275,34 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `userId` int NULL");
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `source` varchar(50) NULL DEFAULT 'rep_closed'");
 
+    // ── Missing onboarding_projects columns (added to schema but never migrated) ──
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `domainName` varchar(255) NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `domainRegistered` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `hostingSetup` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `sslSetup` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `generationStatus` enum('idle','generating','complete','failed') NULL DEFAULT 'idle'");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `generationLog` text NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `generatedSiteHtml` longtext NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `generatedSiteUrl` varchar(512) NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `cloudflareProjectName` varchar(200) NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `lastChangeRequest` text NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `changeHistory` json NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `lastCompetitiveReport` text NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `lastCompetitiveReportDate` timestamp NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `previewReadyAt` timestamp NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `approvedAt` timestamp NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `revisionsRemaining` int NULL DEFAULT 3");
+
     // ── Remove enterprise from packageTier enums across all tables ────────
     await safe("ALTER TABLE `orders` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
     await safe("ALTER TABLE `contracts` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
     await safe("ALTER TABLE `onboarding_projects` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
 
-    // ── One-time customer data purge ──────────────────────────────────────
-    // Gated by a system_settings flag so it only runs once.
+    // ── One-time customer data purge (v2 — re-runs to catch accounts created during broken period) ──
+    // Flag key bumped to _v2 so it re-runs even if _v1 flag exists.
     try {
       const [flagRows] = await conn.execute<any[]>(
-        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'customer_purge_2026_05' LIMIT 1"
+        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'customer_purge_2026_05_v2' LIMIT 1"
       );
       if (!(flagRows as any[])[0]) {
         console.log("[SchemaRepair] Running one-time customer data purge...");
@@ -345,7 +363,7 @@ export async function repairSchema(): Promise<void> {
         }
         // Mark purge as done so it never runs again
         await conn.execute(
-          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('customer_purge_2026_05', 'true', 'One-time customer data purge — May 2026')"
+          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('customer_purge_2026_05_v2', 'true', 'One-time customer data purge — May 2026 v2')"
         );
         console.log("[SchemaRepair] Customer data purge complete.");
       }
