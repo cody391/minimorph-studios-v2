@@ -387,45 +387,31 @@ export async function repairSchema(): Promise<void> {
       console.log(`[SchemaRepair] Purge check skipped: ${e.message.substring(0, 80)}`);
     }
 
-    // ── Restore rep user accounts deleted by the v2 cleanup ─────────────
-    // The v2 cleanup accidentally deleted rep user accounts (role='user').
-    // Find reps whose userId no longer exists in users and recreate them.
+    // ── Clean up orphaned test rep records left by v2 account purge ──────
+    // The v2 purge deleted test user accounts. The reps linked to those
+    // accounts (Chelsea McKinley, Cody test reps) are now orphaned. Delete them.
     try {
       const [flagRows] = await conn.execute<any[]>(
-        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'restore_rep_users_v1' LIMIT 1"
+        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'cleanup_orphaned_test_reps_v1' LIMIT 1"
       );
       if (!(flagRows as any[])[0]) {
         const [orphanedReps] = await conn.execute<any[]>(
-          "SELECT r.id AS repId, r.userId, r.email, r.fullName FROM `reps` r LEFT JOIN `users` u ON r.userId = u.id WHERE u.id IS NULL"
+          "SELECT r.id AS repId, r.email, r.fullName FROM `reps` r LEFT JOIN `users` u ON r.userId = u.id WHERE u.id IS NULL"
         );
-        console.log("[SchemaRepair] Orphaned reps (missing user accounts):", JSON.stringify(orphanedReps));
-
-        const bcrypt = await import("bcryptjs");
-        const tempPassword = "MiniMorph2026!";
-        const hashed = await bcrypt.hash(tempPassword, 10);
+        console.log("[SchemaRepair] Orphaned test reps to remove:", JSON.stringify(orphanedReps));
 
         for (const rep of orphanedReps as any[]) {
-          // Create user account
-          const [insertResult] = await conn.execute<any>(
-            "INSERT INTO `users` (email, password, role, createdAt, updatedAt) VALUES (?, ?, 'user', NOW(), NOW())",
-            [rep.email, hashed]
-          );
-          const newUserId = insertResult.insertId;
-          // Re-link rep record
-          await conn.execute(
-            "UPDATE `reps` SET userId = ? WHERE id = ?",
-            [newUserId, rep.repId]
-          );
-          console.log(`[SchemaRepair] Restored rep account: ${rep.email} (new userId=${newUserId}, rep=${rep.fullName}) — temp password: ${tempPassword}`);
+          await conn.execute("DELETE FROM `reps` WHERE id = ?", [rep.repId]);
+          console.log(`[SchemaRepair] Removed orphaned rep record: ${rep.fullName} (${rep.email})`);
         }
 
         await conn.execute(
-          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('restore_rep_users_v1', 'true', 'Restore rep user accounts deleted by test cleanup')"
+          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('cleanup_orphaned_test_reps_v1', 'true', 'Delete orphaned test rep records after user purge')"
         );
-        console.log("[SchemaRepair] Rep account restoration complete");
+        console.log("[SchemaRepair] Orphaned rep cleanup complete");
       }
     } catch (e: any) {
-      console.log(`[SchemaRepair] Rep restore skipped: ${e.message.substring(0, 80)}`);
+      console.log(`[SchemaRepair] Orphaned rep cleanup skipped: ${e.message.substring(0, 80)}`);
     }
 
     console.log("[SchemaRepair] Schema repair complete");
