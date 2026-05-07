@@ -144,6 +144,9 @@ export const customers = mysqlTable("customers", {
   totalLifetimeCostCents: int("totalLifetimeCostCents").default(0).notNull(),
   totalLifetimeRevenueCents: int("totalLifetimeRevenueCents").default(0).notNull(),
   lastEconomicsUpdate: timestamp("lastEconomicsUpdate"),
+  nurtureMonth: int("nurtureMonth").default(0).notNull(),
+  lastNurtureEmailAt: timestamp("lastNurtureEmailAt"),
+  nurtureAddonsSent: json("nurtureAddonsSent"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -1072,3 +1072,158 @@ export async function sendPortalAccessEmail(params: {
     transactional: true,
   });
 }
+
+/* ═══════════════════════════════════════════════════════
+   MONTHLY NURTURE EMAILS
+   Personalized monthly emails with addon recommendations
+   by business type, featuring ROI math. Tracks which
+   addons have been pitched to avoid repetition.
+   ═══════════════════════════════════════════════════════ */
+
+const BUSINESS_ADDON_MAP: Record<string, string[]> = {
+  restaurant: ["review_collector", "ai_chatbot", "booking_widget", "menu_price_list", "event_calendar", "email_marketing_setup", "seo_autopilot", "social_feed_embed", "competitor_monitoring", "sms_alerts"],
+  bar: ["event_calendar", "review_collector", "social_feed_embed", "menu_price_list", "email_marketing_setup", "seo_autopilot", "ai_chatbot", "booking_widget", "competitor_monitoring", "sms_alerts"],
+  cafe: ["review_collector", "social_feed_embed", "menu_price_list", "email_marketing_setup", "seo_autopilot", "event_calendar", "ai_chatbot", "booking_widget", "competitor_monitoring", "sms_alerts"],
+  coffee: ["review_collector", "social_feed_embed", "menu_price_list", "email_marketing_setup", "event_calendar", "online_store", "seo_autopilot", "ai_chatbot", "competitor_monitoring", "ai_photography"],
+  contractor: ["sms_alerts", "review_collector", "booking_widget", "seo_autopilot", "lead_capture_bot", "competitor_monitoring", "ai_chatbot", "email_marketing_setup", "social_feed_embed", "online_store"],
+  plumber: ["sms_alerts", "review_collector", "booking_widget", "seo_autopilot", "lead_capture_bot", "competitor_monitoring", "ai_chatbot", "email_marketing_setup", "social_feed_embed", "online_store"],
+  electrician: ["sms_alerts", "review_collector", "booking_widget", "seo_autopilot", "lead_capture_bot", "competitor_monitoring", "ai_chatbot", "email_marketing_setup", "social_feed_embed", "online_store"],
+  roofer: ["sms_alerts", "review_collector", "booking_widget", "seo_autopilot", "lead_capture_bot", "competitor_monitoring", "ai_chatbot", "email_marketing_setup", "social_feed_embed", "online_store"],
+  landscaper: ["sms_alerts", "review_collector", "booking_widget", "seo_autopilot", "lead_capture_bot", "competitor_monitoring", "ai_chatbot", "email_marketing_setup", "social_feed_embed", "online_store"],
+  gym: ["event_calendar", "booking_widget", "email_marketing_setup", "online_store", "ai_chatbot", "review_collector", "lead_capture_bot", "seo_autopilot", "social_feed_embed", "competitor_monitoring"],
+  fitness: ["booking_widget", "event_calendar", "email_marketing_setup", "review_collector", "ai_chatbot", "online_store", "lead_capture_bot", "seo_autopilot", "social_feed_embed", "competitor_monitoring"],
+  salon: ["booking_widget", "review_collector", "social_feed_embed", "email_marketing_setup", "ai_photography", "menu_price_list", "ai_chatbot", "seo_autopilot", "lead_capture_bot", "competitor_monitoring"],
+  spa: ["booking_widget", "review_collector", "social_feed_embed", "email_marketing_setup", "ai_photography", "menu_price_list", "ai_chatbot", "seo_autopilot", "lead_capture_bot", "competitor_monitoring"],
+  lawyer: ["booking_widget", "ai_chatbot", "review_collector", "lead_capture_bot", "sms_alerts", "seo_autopilot", "competitor_monitoring", "email_marketing_setup", "social_feed_embed", "priority_support"],
+  medical: ["booking_widget", "ai_chatbot", "review_collector", "lead_capture_bot", "sms_alerts", "seo_autopilot", "email_marketing_setup", "competitor_monitoring", "social_feed_embed", "priority_support"],
+  dental: ["booking_widget", "review_collector", "ai_chatbot", "lead_capture_bot", "sms_alerts", "seo_autopilot", "email_marketing_setup", "competitor_monitoring", "social_feed_embed", "priority_support"],
+  realEstate: ["lead_capture_bot", "sms_alerts", "ai_chatbot", "email_marketing_setup", "booking_widget", "competitor_monitoring", "seo_autopilot", "social_feed_embed", "review_collector", "video_background"],
+  ecommerce: ["online_store", "lead_capture_bot", "seo_autopilot", "ai_chatbot", "email_marketing_setup", "social_feed_embed", "review_collector", "competitor_monitoring", "ai_photography", "sms_alerts"],
+  retail: ["online_store", "email_marketing_setup", "lead_capture_bot", "social_feed_embed", "review_collector", "ai_chatbot", "seo_autopilot", "competitor_monitoring", "ai_photography", "sms_alerts"],
+  distillery: ["event_calendar", "online_store", "social_feed_embed", "review_collector", "email_marketing_setup", "seo_autopilot", "video_background", "brand_style_guide", "ai_photography", "competitor_monitoring"],
+  brewery: ["event_calendar", "online_store", "social_feed_embed", "review_collector", "email_marketing_setup", "seo_autopilot", "menu_price_list", "ai_photography", "competitor_monitoring", "brand_style_guide"],
+  winery: ["event_calendar", "email_marketing_setup", "online_store", "social_feed_embed", "review_collector", "seo_autopilot", "ai_photography", "booking_widget", "competitor_monitoring", "brand_style_guide"],
+  photographer: ["booking_widget", "social_feed_embed", "ai_photography", "lead_capture_bot", "email_marketing_setup", "seo_autopilot", "review_collector", "competitor_monitoring", "brand_style_guide", "video_background"],
+  default: ["review_collector", "seo_autopilot", "sms_alerts", "booking_widget", "ai_chatbot", "email_marketing_setup", "lead_capture_bot", "social_feed_embed", "competitor_monitoring", "online_store"],
+};
+
+function getAddonQueueForBusiness(businessType: string): string[] {
+  const normalized = businessType.toLowerCase().trim();
+  if (BUSINESS_ADDON_MAP[normalized]) return BUSINESS_ADDON_MAP[normalized];
+  for (const [key, addons] of Object.entries(BUSINESS_ADDON_MAP)) {
+    if (key === "default") continue;
+    if (normalized.includes(key) || key.includes(normalized)) return addons;
+  }
+  return BUSINESS_ADDON_MAP.default;
+}
+
+async function getAddonDetails(addonKey: string): Promise<any | null> {
+  try {
+    const { listProductCatalog } = await import("../db");
+    const items = await listProductCatalog(true);
+    return items.find((p: any) => p.productKey === addonKey) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getNextAddonForNurture(customer: {
+  businessName?: string | null;
+  industry?: string | null;
+  nurtureAddonsSent?: any;
+  activeAddons?: string[];
+}): Promise<any | null> {
+  const businessType = customer.industry || customer.businessName || "default";
+  const activeAddons: string[] = customer.activeAddons ?? [];
+  const raw = customer.nurtureAddonsSent;
+  const sentAddons: string[] = Array.isArray(raw) ? raw : (typeof raw === "string" ? JSON.parse(raw) : []);
+  const queue = getAddonQueueForBusiness(businessType);
+  for (const addonKey of queue) {
+    if (!activeAddons.includes(addonKey) && !sentAddons.includes(addonKey)) {
+      return await getAddonDetails(addonKey);
+    }
+  }
+  return null;
+}
+
+export async function sendMonthlyNurtureEmail(customer: {
+  id: number;
+  email: string;
+  contactName: string;
+  businessName: string;
+  nurtureMonth?: number | null;
+  nurtureAddonsSent?: any;
+  industry?: string | null;
+  activeAddons?: string[];
+}): Promise<{ sent: boolean; addonKey?: string }> {
+  try {
+    const addon = await getNextAddonForNurture(customer);
+    const month = (customer.nurtureMonth ?? 0) + 1;
+    const firstName = (customer.contactName || "").split(" ")[0] || "there";
+    const businessName = customer.businessName || "your business";
+
+    const subject = addon
+      ? `Month ${month} — ${businessName} performance report + one idea`
+      : `Month ${month} — ${businessName} performance report`;
+
+    let addonHtml = "";
+    if (addon) {
+      const basePrice = parseFloat(addon.basePrice);
+      const priceLabel = addon.category === "one_time" ? `$${basePrice} one-time` : `$${basePrice}/mo`;
+      addonHtml = `
+        <div style="background:#1a2a1a;border-left:4px solid #22c55e;padding:20px 24px;margin:28px 0;border-radius:0 8px 8px 0;">
+          <p style="color:#86efac;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 10px;">
+            One idea for ${businessName}
+          </p>
+          <h3 style="color:#eaeaf0;font-size:19px;font-weight:700;margin:0 0 10px;">${addon.name}</h3>
+          <p style="color:#c8c8d8;font-size:14px;line-height:1.65;margin:0 0 12px;">
+            ${addon.longDescription || addon.description || ""}
+          </p>
+          ${addon.howItWorks ? `<p style="color:#9898a8;font-size:13px;line-height:1.6;margin:0 0 12px;"><strong style="color:#c8c8d8;">How it works:</strong> ${addon.howItWorks}</p>` : ""}
+          ${addon.roiExample ? `<p style="color:#9898a8;font-size:13px;line-height:1.6;margin:0 0 16px;"><strong style="color:#c8c8d8;">The math:</strong> ${addon.roiExample}</p>` : ""}
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <span style="color:#eaeaf0;font-size:15px;font-weight:700;">${priceLabel}</span>
+            <a href="https://www.minimorphstudios.net/portal" style="color:#4a9eff;font-size:14px;font-weight:600;text-decoration:none;">Add to my plan →</a>
+          </div>
+        </div>`;
+    }
+
+    const html = brandWrap(`
+      <p style="color:#c8c8d8;font-size:16px;margin:0 0 20px;">Hey ${firstName},</p>
+      <p style="color:#c8c8d8;font-size:15px;line-height:1.65;margin:0 0 20px;">
+        Month ${month} is in the books for ${businessName}. Your full performance report is waiting in your portal — traffic, rankings, leads captured, and what moved this month.
+      </p>
+      <div style="text-align:left;margin:0 0 24px;">
+        <a href="https://www.minimorphstudios.net/portal" style="display:inline-block;background:#4a9eff;color:#111122;font-size:14px;font-weight:700;padding:13px 26px;border-radius:8px;text-decoration:none;">
+          View My Report →
+        </a>
+      </div>
+      ${addonHtml}
+      <div style="background:#1c1c30;border:1px solid #2d2d45;padding:20px 24px;border-radius:8px;margin:28px 0 20px;">
+        <p style="color:#7a7a90;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px;">Your plan includes every month</p>
+        <ul style="margin:0;padding-left:20px;color:#9898a8;font-size:13px;line-height:2.1;">
+          <li>Monthly performance report</li>
+          <li>Change requests (48-hr turnaround)</li>
+          <li>Security monitoring + daily backups</li>
+          <li>Hosting + SSL (zero action needed)</li>
+          <li>AI recommendations in your portal</li>
+        </ul>
+      </div>
+      <p style="color:#7a7a90;font-size:13px;line-height:1.6;margin:20px 0 0;border-top:1px solid #2d2d45;padding-top:20px;">
+        Questions? Reply to this email or open a support ticket in your portal. We're here.
+      </p>
+    `);
+
+    await sendEmail({
+      to: customer.email,
+      subject,
+      html,
+    });
+
+    console.log(`[Nurture] Sent month ${month} email to ${customer.email}${addon ? ` featuring ${addon.name}` : ""}`);
+    return { sent: true, addonKey: addon?.productKey };
+  } catch (err: any) {
+    console.error("[Nurture] Failed to send to", customer.email, ":", err.message);
+    return { sent: false };
+  }
+}

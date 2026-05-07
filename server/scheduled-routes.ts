@@ -1168,6 +1168,104 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     })
   );
 
+  // ─── Monthly Nurture Emails ───────────────────────────────────────────────────
+  // Sends personalized monthly email to every active customer due for one.
+  // Features next-in-queue addon recommendation based on business type.
+  app.post("/api/scheduled/monthly-nurture", (req, res) =>
+    runJob(req, res, "monthly-nurture", async () => {
+      const database = await getDb();
+      if (!database) return { error: "DB unavailable" };
+
+      const { customers: customersTable, onboardingProjects: projectsTable, nurtureLogs: nurtureTable } = await import("../drizzle/schema");
+      const { isNull, lt, or: orFn, eq: eqFn, and: andFn } = await import("drizzle-orm");
+      const { sendMonthlyNurtureEmail } = await import("./services/customerEmails");
+
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 28);
+
+      const activeCustomers = await database
+        .select()
+        .from(customersTable)
+        .where(
+          andFn(
+            eqFn(customersTable.status, "active"),
+            orFn(
+              isNull(customersTable.lastNurtureEmailAt),
+              lt(customersTable.lastNurtureEmailAt, cutoff)
+            )
+          )
+        );
+
+      console.log(`[Nurture] Found ${activeCustomers.length} customers due for nurture`);
+      let sent = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const customer of activeCustomers) {
+        try {
+          const projects = await database
+            .select()
+            .from(projectsTable)
+            .where(eqFn(projectsTable.customerId, customer.id))
+            .limit(1);
+
+          const q = (projects[0]?.questionnaire as any) ?? {};
+
+          const enriched = {
+            ...customer,
+            industry: customer.industry || q.businessType || q.industry || null,
+            activeAddons: Array.isArray(q.addonsSelected)
+              ? q.addonsSelected.map((a: any) => a.product || a)
+              : [],
+          };
+
+          const result = await sendMonthlyNurtureEmail(enriched);
+
+          if (result.sent) {
+            sent++;
+            const prevSent: string[] = Array.isArray(customer.nurtureAddonsSent)
+              ? (customer.nurtureAddonsSent as string[])
+              : typeof customer.nurtureAddonsSent === "string"
+              ? JSON.parse(customer.nurtureAddonsSent)
+              : [];
+            const updatedSent = result.addonKey ? [...prevSent, result.addonKey] : prevSent;
+
+            await database
+              .update(customersTable)
+              .set({
+                nurtureMonth: (customer.nurtureMonth ?? 0) + 1,
+                lastNurtureEmailAt: new Date(),
+                nurtureAddonsSent: JSON.stringify(updatedSent),
+              })
+              .where(eqFn(customersTable.id, customer.id));
+
+            await database.insert(nurtureTable).values({
+              customerId: customer.id,
+              type: "check_in",
+              channel: "email",
+              subject: `monthly_nurture_month_${(customer.nurtureMonth ?? 0) + 1}`,
+              content: result.addonKey ? `Featured addon: ${result.addonKey}` : "No addon — all pitched",
+              status: "sent",
+              scheduledAt: new Date(),
+              sentAt: new Date(),
+            });
+          } else {
+            failed++;
+          }
+
+          // 1 email/second rate limit
+          await new Promise(r => setTimeout(r, 1000));
+        } catch (err: any) {
+          failed++;
+          errors.push(`Customer #${customer.id}: ${err.message}`);
+        }
+      }
+
+      console.log(`[Nurture] Complete. Sent: ${sent}, Failed: ${failed}`);
+      return { ok: true, sent, failed, total: activeCustomers.length, errors };
+    })
+  );
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -1178,5 +1276,5 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     });
   });
 
-  console.log("[Scheduled] Registered 22 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 23 scheduled job endpoints at /api/scheduled/*");
 }

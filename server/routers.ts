@@ -4708,6 +4708,49 @@ const repAvailabilityRouter = router({
    ADMIN ROUTER — Centralized admin-only operations
    ═══════════════════════════════════════════════════════ */
 const adminRouter = router({
+  // Nurture: Preview what the next monthly nurture email would feature for a customer
+  previewNurtureEmail: adminProcedure
+    .input(z.object({ customerId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const { customers: cTable, onboardingProjects: pTable } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const [customer] = await database.select().from(cTable).where(eqFn(cTable.id, input.customerId)).limit(1);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+      const projects = await database.select().from(pTable).where(eqFn(pTable.customerId, customer.id)).limit(1);
+      const q = (projects[0]?.questionnaire as any) ?? {};
+      const enriched = {
+        ...customer,
+        industry: customer.industry || q.businessType || q.industry || null,
+        activeAddons: Array.isArray(q.addonsSelected) ? q.addonsSelected.map((a: any) => a.product || a) : [],
+      };
+      const { getNextAddonForNurture } = await import("./services/customerEmails");
+      const nextAddon = await getNextAddonForNurture(enriched);
+      const month = (customer.nurtureMonth ?? 0) + 1;
+      return {
+        customer: {
+          id: customer.id,
+          name: customer.contactName,
+          email: customer.email,
+          businessName: customer.businessName,
+          nurtureMonth: customer.nurtureMonth,
+          lastNurtureEmailAt: customer.lastNurtureEmailAt,
+          businessType: enriched.industry || enriched.businessName || "default",
+        },
+        nextAddon: nextAddon ? {
+          key: nextAddon.productKey,
+          name: nextAddon.name,
+          price: nextAddon.basePrice,
+          description: nextAddon.description,
+          roiExample: nextAddon.roiExample,
+        } : null,
+        emailSubject: nextAddon
+          ? `Month ${month} — ${customer.businessName} performance report + one idea`
+          : `Month ${month} — ${customer.businessName} performance report`,
+      };
+    }),
+
   // Part 1: Provision a Twilio phone number for a rep
   provisionRepPhone: adminProcedure
     .input(z.object({ repId: z.number(), phoneNumber: z.string().optional() }))
