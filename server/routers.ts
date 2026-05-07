@@ -3058,30 +3058,45 @@ function cleanHtml(html: string): string {
 
 async function scrapeWebsite(url: string): Promise<string> {
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;
+  const firecrawlKey = ENV.firecrawlApiKey || process.env.FIRECRAWL_API_KEY || "";
+
+  console.log(`[Scraper] Starting scrape: ${fullUrl}`);
+  console.log(`[Scraper] Firecrawl key present: ${!!firecrawlKey} (length: ${firecrawlKey.length})`);
 
   // Firecrawl — bypasses bot protection, returns clean markdown
-  if (ENV.firecrawlApiKey) {
+  if (firecrawlKey) {
     try {
+      console.log(`[Scraper] Trying Firecrawl for: ${fullUrl}`);
       const fcRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${ENV.firecrawlApiKey}`,
+          "Authorization": `Bearer ${firecrawlKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ url: fullUrl, formats: ["markdown"], onlyMainContent: true }),
         signal: AbortSignal.timeout(15000),
       });
+      console.log(`[Scraper] Firecrawl status: ${fcRes.status}`);
       if (fcRes.ok) {
         const data = await fcRes.json();
+        console.log(`[Scraper] Firecrawl response keys: ${Object.keys(data).join(", ")}`);
         const content: string = data?.data?.markdown || data?.markdown || "";
+        console.log(`[Scraper] Firecrawl content length: ${content.length}`);
         if (content.length > 100) {
           console.log(`[Scraper] Firecrawl ok: ${fullUrl} (${content.length} chars)`);
           return content.slice(0, 8000);
+        } else {
+          console.log(`[Scraper] Firecrawl returned short/empty content, falling back`);
         }
+      } else {
+        const errText = await fcRes.text().catch(() => "");
+        console.log(`[Scraper] Firecrawl error body: ${errText.slice(0, 300)}`);
       }
     } catch (e: any) {
-      console.log(`[Scraper] Firecrawl failed for ${fullUrl}: ${e.message}`);
+      console.log(`[Scraper] Firecrawl exception: ${e.message}`);
     }
+  } else {
+    console.log(`[Scraper] Firecrawl key missing — skipping to direct fetch`);
   }
 
   // Direct fetch fallback — try multiple User-Agents and www/non-www variants
