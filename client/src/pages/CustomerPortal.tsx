@@ -34,6 +34,7 @@ export default function CustomerPortal() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [chatMessages, setChatMessages] = useState<Array<{role: string; content: string}>>([]);
+  const [chatHistoryLoaded, setChatHistoryLoaded] = useState(false);
   const [paymentBannerVisible, setPaymentBannerVisible] = useState(
     () => new URLSearchParams(window.location.search).get("payment") === "success"
   );
@@ -43,6 +44,18 @@ export default function CustomerPortal() {
     undefined,
     { enabled: isAuthenticated }
   );
+
+  // Load persisted portal chat history from DB on mount
+  const { data: chatHistory } = trpc.ai.history.useQuery(
+    { context: "portal", customerId: customer?.id },
+    { enabled: !!customer?.id && !chatHistoryLoaded }
+  );
+  useEffect(() => {
+    if (chatHistory && chatHistory.length > 0 && !chatHistoryLoaded) {
+      setChatMessages(chatHistory.filter(m => m.role !== "system").map(m => ({ role: m.role, content: m.content })));
+      setChatHistoryLoaded(true);
+    }
+  }, [chatHistory, chatHistoryLoaded]);
 
   const portalChat = trpc.ai.portalChat.useMutation();
 

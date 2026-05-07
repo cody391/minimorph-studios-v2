@@ -309,6 +309,68 @@ const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string }> = [
     },
     cloudflareProject: "mm-showroom-ember-oak-coffee",
   },
+
+  {
+    brief: {
+      businessName: "Thornwood Goods",
+      businessType: "ecommerce",
+      brandTone: "warm artisan editorial",
+      packageTier: "growth",
+      primaryColor: "#b87a3c",
+      secondaryColor: "#1a1208",
+      phone: "(828) 555-0173",
+      email: "hello@thornwoodgoods.com",
+      address: "44 Lexington Ave, Asheville NC 28801",
+      hours: "Thu–Sun 11am–6pm · Online 24/7",
+      serviceArea: "Asheville NC & Nationwide Shipping",
+      yearsInBusiness: "7",
+      ownerName: "Jess Marchand",
+      licenseNumber: "",
+      uniqueDifferentiator:
+        "Every piece is handmade to order in a converted barn studio — no inventory, no middlemen, no identical copies of anything we make",
+      servicesOffered: [
+        "Ceramic Goods",
+        "Leather Accessories",
+        "Woodwork & Serving Boards",
+        "Custom Orders",
+        "Wedding & Event Gifts",
+        "Studio Visits by Appointment",
+      ],
+      targetCustomer:
+        "Gift buyers, interior design enthusiasts, and people who want things made by actual human hands",
+      testimonials: [
+        {
+          quote: "I bought a mug six years ago. It is still the first one I reach for every morning.",
+          name: "Claire B.",
+          context: "Customer — Asheville NC",
+        },
+        {
+          quote: "Ordered a custom cutting board for our wedding. Jess made it exactly right. Worth every penny.",
+          name: "Marcus & Dana L.",
+          context: "Bride & Groom — Charlotte NC",
+        },
+        {
+          quote: "The leather card holder has more character after two years than it did on day one. That is what good materials do.",
+          name: "James O.",
+          context: "Customer — Brooklyn NY",
+        },
+      ],
+      appUrl: "https://www.minimorphstudios.net",
+      subNiche: "artisan shop",
+      socialHandles: {
+        instagram: "@thornwoodgoods",
+      },
+      blogTopics: [
+        "How to care for vegetable-tanned leather",
+        "What makes a cutting board food-safe",
+        "The story behind our clay source in western NC",
+      ],
+      specialRequests:
+        "Showcase the handmade process — photos of the studio, works in progress, and finished pieces. Inquiry form is primary CTA, not a cart.",
+      pricingDisplay: "contact_for_pricing",
+    },
+    cloudflareProject: "mm-showroom-thornwood-goods",
+  },
 ];
 
 // ── Result types ──────────────────────────────────────────────────────────────

@@ -64,7 +64,33 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+function validateEnv(): void {
+  const required: Record<string, string> = {
+    DATABASE_URL: process.env.DATABASE_URL ?? "",
+    JWT_SECRET: process.env.JWT_SECRET ?? "",
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? "",
+  };
+  const optional: Record<string, string> = {
+    RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
+    TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID ?? "",
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",
+  };
+
+  const missing = Object.entries(required).filter(([, v]) => !v).map(([k]) => k);
+  if (missing.length > 0) {
+    console.error(`[Startup] FATAL — missing required env vars: ${missing.join(", ")}. Server cannot start safely.`);
+    process.exit(1);
+  }
+
+  const missingOptional = Object.entries(optional).filter(([, v]) => !v).map(([k]) => k);
+  if (missingOptional.length > 0) {
+    console.warn(`[Startup] WARNING — missing optional env vars: ${missingOptional.join(", ")}. Some features will be disabled.`);
+  }
+}
+
 async function startServer() {
+  validateEnv();
+
   // Run DB migrations before accepting any traffic
   await runMigrations();
 

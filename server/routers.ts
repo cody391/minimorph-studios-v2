@@ -1285,6 +1285,11 @@ const contractsRouter = router({
       const pkg = PACKAGES[contract.packageTier as keyof typeof PACKAGES];
       if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid package tier" });
 
+      // Look up selfSourced flag from existing commission so webhook has full traceability
+      const existingCommissions = await db.getActiveCommissionsByContract(contract.id);
+      const initialCommission = existingCommissions.find((c: any) => c.type === "initial_sale");
+      const isSelfSourced = initialCommission?.selfSourced ?? false;
+
       const origin = ctx.req.headers.origin || ctx.req.headers.referer || "https://minimorphstudios.net";
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -1301,6 +1306,7 @@ const contractsRouter = router({
             rep_id: String(repId),
             customer_id: String(customer.id),
             rep_closed: "true",
+            self_sourced: isSelfSourced ? "true" : "false",
           },
         },
         metadata: {
@@ -1314,6 +1320,7 @@ const contractsRouter = router({
           rep_id: String(repId),
           customer_id: String(customer.id),
           rep_closed: "true",
+          self_sourced: isSelfSourced ? "true" : "false",
         },
         line_items: (() => {
           const priceId = getStripePriceId(contract.packageTier);
@@ -2689,6 +2696,14 @@ const onboardingRouter = router({
         }
       }
 
+      // Look up selfSourced flag from commission so webhook has full traceability
+      let elenaCheckoutSelfSourced = false;
+      if (project.contractId) {
+        const elenaCommissions = await db.getActiveCommissionsByContract(project.contractId);
+        const elenaInitialCommission = elenaCommissions.find((c: any) => c.type === "initial_sale");
+        elenaCheckoutSelfSourced = elenaInitialCommission?.selfSourced ?? false;
+      }
+
       const origin = ctx.req.headers.origin || ENV.appUrl || "https://minimorphstudios.net";
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -2702,6 +2717,7 @@ const onboardingRouter = router({
             package_tier: packageTier,
             business_name: project.businessName || "",
             rep_closed: "true",
+            self_sourced: elenaCheckoutSelfSourced ? "true" : "false",
           },
         },
         metadata: {
@@ -2713,6 +2729,7 @@ const onboardingRouter = router({
           package_tier: packageTier,
           business_name: project.businessName || "",
           rep_closed: "true",
+          self_sourced: elenaCheckoutSelfSourced ? "true" : "false",
         },
         line_items: lineItems as any,
         success_url: `${origin}/portal?payment=success&session_id={CHECKOUT_SESSION_ID}`,

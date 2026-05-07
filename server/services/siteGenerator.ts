@@ -1229,12 +1229,24 @@ ${Object.keys(pages)
           deployToPages({
             projectName: cfProjectName,
             pages,
-          }).then(result => {
+          }).then(async result => {
             if (result.success) {
               db.updateOnboardingProject(projectId, { stage: "launch", liveUrl: result.deploymentUrl, launchedAt: new Date() }).catch(() => {});
               console.log(`[SiteGen] Auto-deployed project ${projectId} → ${result.deploymentUrl}`);
+            } else {
+              console.error(`[SiteGen] Auto-deploy returned failure for project ${projectId}`);
+              try {
+                const { notifyOwner: notifyAutoDeployFail } = await import("../_core/notification");
+                await notifyAutoDeployFail({ title: "Auto-deploy failed", content: `Project ${projectId} (${cfProjectName}) failed to deploy to Cloudflare Pages after site generation. Check logs and deploy manually from the admin panel.` });
+              } catch {}
             }
-          }).catch((e: any) => console.error("[SiteGen] Auto-deploy failed:", e.message));
+          }).catch(async (e: any) => {
+            console.error("[SiteGen] Auto-deploy failed:", e.message);
+            try {
+              const { notifyOwner: notifyAutoDeployErr } = await import("../_core/notification");
+              await notifyAutoDeployErr({ title: "Auto-deploy error", content: `Project ${projectId} (${cfProjectName}) threw an error during Cloudflare Pages deployment: ${e.message}` });
+            } catch {}
+          });
         }
       }
     } catch {}
