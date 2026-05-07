@@ -38,7 +38,7 @@ const steps = [
     number: "04",
     title: "You Tear It Apart",
     description: "Request changes. Be picky. That's what this step is for. We revise until you're genuinely happy — not just 'fine with it.'",
-    aside: "Unlimited revision rounds",
+    aside: "Up to 3 revision rounds",
   },
   {
     icon: Rocket,

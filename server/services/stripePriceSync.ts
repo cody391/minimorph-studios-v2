@@ -3,7 +3,7 @@ import { ENV } from "../_core/env";
 
 function getStripe(): Stripe | null {
   if (!ENV.stripeSecretKey) return null;
-  return new Stripe(ENV.stripeSecretKey, { apiVersion: "2025-04-30.basil" as any });
+  return new Stripe(ENV.stripeSecretKey, { apiVersion: "2026-03-25.dahlia" as any });
 }
 
 export async function syncProductToStripe(product: {

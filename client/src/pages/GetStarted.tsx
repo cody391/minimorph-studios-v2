@@ -587,7 +587,7 @@ export default function GetStarted() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-base font-serif text-off-white">{pkg.name}</p>
-                          <p className="text-xs text-soft-gray font-sans">{pkg.pages} pages • 12-month contract</p>
+                          <p className="text-xs text-soft-gray font-sans">{pkg.pages === 999 ? "Full site + custom features" : `${pkg.pages} pages`} • 12-month contract</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-serif text-off-white">${pkg.price}<span className="text-sm text-soft-gray">/mo</span></p>

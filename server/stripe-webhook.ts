@@ -13,7 +13,7 @@ import { PACKAGES, type PackageKey } from "../shared/pricing";
 function getStripe(): Stripe | null {
   const key = ENV.stripeSecretKey;
   if (!key) return null;
-  return new Stripe(key, { apiVersion: "2025-04-30.basil" as any });
+  return new Stripe(key, { apiVersion: "2026-03-25.dahlia" as any });
 }
 
 export function registerStripeWebhook(app: Express) {

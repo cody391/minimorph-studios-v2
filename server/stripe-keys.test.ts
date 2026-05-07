@@ -19,7 +19,7 @@ describe("Custom Stripe Keys Validation", () => {
 
   it("should be able to list customers with the custom secret key", async () => {
     const stripe = new Stripe(process.env.CUSTOM_STRIPE_SECRET_KEY!, {
-      apiVersion: "2025-04-30.basil" as any,
+      apiVersion: "2026-03-25.dahlia" as any,
     });
     const customers = await stripe.customers.list({ limit: 1 });
     expect(customers).toBeDefined();
@@ -28,7 +28,7 @@ describe("Custom Stripe Keys Validation", () => {
 
   it("should be able to list Connect accounts (Connect enabled)", async () => {
     const stripe = new Stripe(process.env.CUSTOM_STRIPE_SECRET_KEY!, {
-      apiVersion: "2025-04-30.basil" as any,
+      apiVersion: "2026-03-25.dahlia" as any,
     });
     const accounts = await stripe.accounts.list({ limit: 1 });
     expect(accounts).toBeDefined();

@@ -1281,7 +1281,7 @@ const contractsRouter = router({
       const stripeKey = ENV.stripeSecretKey;
       if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
 
-      const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
+      const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
       const pkg = PACKAGES[contract.packageTier as keyof typeof PACKAGES];
       if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid package tier" });
 
@@ -1956,7 +1956,7 @@ const ordersRouter = router({
       const stripeKey = ENV.stripeSecretKey;
       if (!stripeKey) throw new Error("Stripe not configured");
 
-      const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
+      const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
       const pkg = getPackage(input.packageTier);
       if (!pkg) throw new Error("Invalid package tier");
 
@@ -2655,7 +2655,7 @@ const onboardingRouter = router({
       const Stripe = (await import("stripe")).default;
       const stripeKey = ENV.stripeSecretKey;
       if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
-      const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as any });
+      const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
 
       const q = (project.questionnaire || {}) as Record<string, unknown>;
       const packageTier = (q.packageTier as string || project.packageTier || "starter").toLowerCase();
