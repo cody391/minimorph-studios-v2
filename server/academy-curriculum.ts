@@ -1263,9 +1263,9 @@ When they mention something emotional, simply say "Tell me more about that." It'
   {
     id: "objection-handling",
     title: "Objection Handling Mastery",
-    description: "Turn every 'no' into a 'tell me more.' Master the art of handling price, timing, competitor, and trust objections.",
+    description: "Turn every 'no' into a 'tell me more.' Master the art of handling the 6 most common objections: price, timing, competitor, trust, the internal builder, and the 12-month contract.",
     icon: "Shield",
-    estimatedMinutes: 55,
+    estimatedMinutes: 65,
     lessons: [
       {
         title: "The Objection Handling Framework — LAER",
@@ -1300,8 +1300,8 @@ If someone isn't interested, they don't object — they just say "no thanks" and
         ]
       },
       {
-        title: "The Big 4 Objections & How to Crush Them",
-        content: `## Every Objection Falls Into 4 Categories
+        title: "The Big 6 Objections & How to Handle Every One",
+        content: `## Every Objection Falls Into 6 Categories
 
 ### 1. PRICE: "It's too expensive"
 **What they're really saying:** "I don't see enough value to justify the cost."
@@ -1333,18 +1333,44 @@ If someone isn't interested, they don't object — they just say "no thanks" and
 4. Social proof: "We've had several clients come to us after trying [competitor type] and here's what they tell us..."
 
 ### 4. TRUST: "How do I know this will work?"
-**What they're really saying:** "I've been burned before."
+**What they're really saying:** "I've been burned before and I'm skeptical."
 
 **Response framework:**
 1. Empathize: "I completely understand — there are a lot of people making promises they can't keep."
-2. Proof: "Let me show you some real results from businesses like yours. [Show case studies.]"
+2. Proof: "Let me show you some real results from businesses like yours."
 3. Reduce risk: "Here's what I can promise — we don't just build and bail. You get monthly reports showing exactly what's happening with your site."
-4. Personal guarantee: "I'm your point of contact. If something isn't right, you call me directly."`,
+4. Personal guarantee: "I'm your point of contact. If something isn't right, you call me directly."
+
+### 5. THE INTERNAL BUILDER: "My nephew / employee / in-house team is going to do it"
+**What they're really saying:** "I have a free or cheap option that feels lower-risk."
+
+**This one is common.** Here's exactly how to handle it without badmouthing whoever it is:
+
+**Response framework:**
+1. Validate: "That's great — and they might do an amazing job."
+2. Reframe from build to ongoing: "Here's the thing though — a website isn't a one-time project. It needs ongoing SEO monitoring, security updates, performance optimization, and content updates. That's a part-time job. Is your nephew / that person going to be doing all of that every month? Consistently?"
+3. Separate the build from the maintenance: "We actually work alongside internal teams all the time. But what most businesses find is that the build is 10% of the work — the 90% is what happens after. That's where we come in."
+4. The real question: "Let me ask you this: if their site doesn't perform in 6 months, what happens then? With us, you have accountability, monthly reports, and a team responsible for the results."
+
+**Script:** "Totally — and honestly, if they're good, that's a real asset. The question I'd ask is: what happens the month after launch? The month after that? Who's monitoring the SEO, running the updates, tracking performance? That ongoing work is where most DIY sites fall apart — not the initial build. We take care of all of that for you. Your nephew keeps their evenings free, and your site keeps improving."
+
+### 6. THE CONTRACT: "I can't commit to 12 months" / "Can we do month-to-month?"
+**What they're really saying:** "I'm not confident enough to commit. What if I hate it?"
+
+**Response framework:**
+1. Acknowledge: "That's a fair concern — 12 months is a real commitment."
+2. Explain why: "Here's the thing — a website takes 3-4 months to show meaningful SEO results. Month-to-month pricing would cost you 40-50% more because we wouldn't be able to plan resources around your build and maintenance. The 12-month structure is what makes the pricing work."
+3. De-risk: "But here's the real answer to your concern: you own everything. Your domain, your content, your code. If for any reason it doesn't work, you take it with you. There's no proprietary lock-in."
+4. Performance commitment: "And realistically — if your website is live and performing, you're going to want to keep it. The people who cancel early are usually the ones we haven't set up for success yet. That's on us as much as them."
+
+**Script:** "I hear you — 12 months sounds like a big commitment. Let me reframe it: you're not committing to us, you're committing to your digital presence. The 12-month structure exists because great SEO takes time, and the pricing reflects that commitment. But you own your domain and your site regardless. If you decide to leave, we hand everything over, no questions asked. Does that help?"`,
         keyTakeaways: [
-          "Price objection: Break it down daily, calculate ROI, show cost of inaction",
-          "Timing objection: Explore what they need to think about, offer a risk-free next step",
-          "Competitor objection: Validate their research, differentiate on ongoing support",
-          "Trust objection: Empathize with past experiences, provide proof and personal accountability"
+          "Price: Break it down daily, calculate ROI, show cost of inaction",
+          "Timing: Explore what they need to think about, offer a risk-free next step",
+          "Competitor: Validate their research, differentiate on ongoing support",
+          "Trust: Empathize with past experiences, provide proof and personal accountability",
+          "Internal builder: Separate build (10%) from ongoing maintenance (90%) — that's where we live",
+          "Contract: You own everything regardless — the 12 months is a commitment to their own results, not to us"
         ],
         script: `**Price Objection Script:**
 "I hear you — $[price] is a real investment. Can I ask you something? What's your average customer worth to you? [Wait.] So $[their number]. If this website brings in just ONE extra customer per month — and honestly, most of our clients see 3-5 — that's $[their number] against a $[monthly] investment. The website pays for itself before the end of month one. Does that math make sense to you?"
@@ -1353,7 +1379,13 @@ If someone isn't interested, they don't object — they just say "no thanks" and
 "Absolutely, take the time you need. But let me ask — what specifically are you weighing? [Listen.] That's a fair concern. Here's what I'd suggest — let me put together a free mockup of what your site could look like. Zero commitment. You'll see exactly what you'd be getting. If you love it, we move forward. If not, you've lost nothing. Fair enough?"
 
 **Trust Objection Script:**
-"I completely get it — and honestly, that's a smart question to ask. Here's what I can tell you: we've helped over 200 businesses, and I can show you real results. But more importantly — I'm your point of contact. Not a call center, not a chatbot. Me. If something isn't right, you have my direct number. That's how confident I am in what we deliver."`
+"I completely get it — and honestly, that's a smart question to ask. Here's what I can tell you: we've helped businesses across many industries, and I can show you real results. But more importantly — I'm your point of contact. Not a call center, not a chatbot. Me. If something isn't right, you have my direct number."
+
+**Internal Builder Script:**
+"Totally — and if they're good, that's a real asset. The question is: what happens the month after launch? The month after that? Who's monitoring the SEO, running the updates, tracking performance? That ongoing work is where most DIY sites fall apart — not the initial build. Your nephew keeps their evenings free, and your site keeps improving."
+
+**Contract Objection Script:**
+"12 months sounds like a big commitment. Let me reframe it: you're not committing to us, you're committing to your own digital presence. And you own everything — domain, content, code. If you leave, we hand it all over, no questions asked."`
       }
     ],
     quiz: [
@@ -1420,6 +1452,34 @@ If someone isn't interested, they don't object — they just say "no thanks" and
         ],
         correctAnswer: 1,
         explanation: "This handles the objection respectfully while keeping control. By asking what the partner's concern might be, you can pre-handle their objection. Offering a joint call shows confidence and keeps the deal moving.",
+        difficulty: "hard"
+      },
+      {
+        id: "oh-6",
+        question: "A prospect says 'My son is going to build our website — he's good with computers.' What's the best response?",
+        type: "scenario",
+        options: [
+          "Tell them their son probably isn't as good as they think",
+          "Offer a discount to compete with the free option",
+          "Validate the choice, then separate the build from the ongoing work: 'That's great — the real question is who's going to handle the monthly SEO, updates, and performance optimization after it's live? That's where most sites built by family members fall apart.'",
+          "Tell them DIY websites never rank on Google"
+        ],
+        correctAnswer: 2,
+        explanation: "Never badmouth the internal option. The powerful move is reframing the conversation from 'who builds it' to 'who maintains it.' The build is 10% of the work. The ongoing SEO, monitoring, and updates are 90% — and that's exactly what MiniMorph provides.",
+        difficulty: "medium"
+      },
+      {
+        id: "oh-7",
+        question: "A prospect says 'I can't commit to 12 months — what if it doesn't work?' How do you respond?",
+        type: "scenario",
+        options: [
+          "Offer month-to-month at the same price",
+          "Tell them the contract is non-negotiable",
+          "Acknowledge the concern, explain why 12 months exists (SEO takes time, pricing reflects commitment), and emphasize that they own everything — domain, content, code — regardless",
+          "Offer a 3-month trial period"
+        ],
+        correctAnswer: 2,
+        explanation: "The contract objection is really a risk objection. Defuse it by: (1) explaining why 12 months makes sense for results, (2) emphasizing full content ownership regardless, and (3) reframing it as a commitment to their own results rather than to you. Do NOT offer month-to-month — it's not how our pricing is structured.",
         difficulty: "hard"
       }
     ],
@@ -2074,10 +2134,24 @@ Your pipeline is a kanban board with forward-only progression. Here's exactly wh
 ### Stage 5: CLOSED WON 🎉
 **What it means:** Deal done! Customer signed up.
 **What happens automatically:**
-- Customer account is created
-- Contract is generated
-- Your commission is calculated and queued for payout
-- The system backfills your pipeline with a new lead
+- Customer account is created with a temporary password
+- Portal access email is sent to the customer with their login credentials
+- Contract is generated and linked to the customer
+- Your commission is calculated based on annual deal value × your tier rate
+- A new lead backfills your pipeline automatically
+
+**Your commission math:** Commission = (monthly price × 12) × your rate.
+Example: Growth deal at $295/mo on Silver tier = ($295 × 12) × 12% = **$424.80**
+Self-sourced lead? Your rate doubles (capped at 40%). Same Growth deal = **$849.60**.
+
+**What the customer experiences next (set this expectation on the call):**
+The customer receives an email with their temporary portal password. When they log in, they meet **Elena** — our AI onboarding agent. Elena conducts a natural conversation to collect their brand details: tone, style references, competitor sites, colors, goals. It takes about 15-20 minutes and eliminates the back-and-forth intake calls that most agencies charge extra for.
+
+After Elena's session, the customer's intake brief goes to our build team. They can track their project stage in the portal: Intake → Questionnaire → Assets → Design → Review → Revisions → Launch.
+
+Before the site goes live, **Stripe processes the subscription payment** through the portal's secure checkout. Your commission is triggered and queued for admin approval on successful payment.
+
+**Your job after close:** Introduce Elena to the customer. Tell them: "You'll get an email with your portal login. When you log in, you'll meet Elena — just chat with her like you'd chat with a person. She'll walk you through everything our team needs. It takes 15-20 minutes. After that, we take it from there."
 
 ### Stage 6: CLOSED LOST
 **What it means:** The prospect declined.
@@ -2165,11 +2239,12 @@ Your performance score (0-100) directly controls how many and how good your lead
 
 ### How Your Score Is Calculated
 
-Four factors, weighted equally:
-1. **Activity Score** — Are you making calls, sending emails, following up consistently?
-2. **Close Rate** — What percentage of your leads convert to deals?
-3. **Client Satisfaction** — Are your closed customers happy? (Based on onboarding feedback)
-4. **Values Compliance** — Are you following the MiniMorph Code of Conduct?
+Four factors — activity and close rate carry more weight because they're the most within your control:
+
+1. **Activity Score (30%)** — Are you making calls, sending emails, following up consistently?
+2. **Close Rate (30%)** — What percentage of your leads convert to deals?
+3. **Client Satisfaction (20%)** — Are your closed customers happy? (Based on onboarding feedback)
+4. **Values Compliance (20%)** — Are you following the MiniMorph Code of Conduct?
 
 ### What Your Score Means
 
@@ -2213,19 +2288,24 @@ Serious violations earn strikes:
 
 ### Your Tier Progression
 
-Your accountability tier determines your commission rate:
-- **Bronze** (starting): 10% commission
-- **Silver**: 12% commission
-- **Gold**: 14% commission  
-- **Platinum**: 15% commission + mentor status + first pick on enterprise leads
+Your accountability tier determines your commission rate AND how the system treats you:
 
-Higher tiers also mean fewer daily training requirements and priority lead assignment. Performance score is the primary factor in tier advancement.`,
+| Tier | Commission | Requirement | Daily Training |
+|------|-----------|-------------|----------------|
+| **Bronze** (start) | 10% | Starting tier — everyone begins here | Up to 10 reviews/day |
+| **Silver** | 12% | 3+ months active + $3,000+/mo closed MRR | Up to 7 reviews/day |
+| **Gold** | 14% | 6+ months active + $7,000+/mo closed MRR | Up to 3 reviews/day |
+| **Platinum** | 15% | 12+ months active + $12,000+/mo closed MRR | Exempt — mentor status |
+
+**MRR = Monthly Recurring Revenue.** Every deal you close contributes to your running total. A Starter deal ($195/mo) adds $195 to your MRR. A Growth deal ($295/mo) adds $295. Close enough deals consistently and you advance automatically.
+
+**Platinum perks beyond commission:** First pick on high-value enterprise leads, mentor designation, and exemption from daily training requirements. The system gets out of your way when you've proven yourself.`,
         keyTakeaways: [
           "Performance score below 40 = lead flow FROZEN until you improve",
           "4-hour acceptance window: make first contact or the lead gets reassigned",
-          "Score is based on: activity, close rate, client satisfaction, and values compliance",
+          "Score: Activity (30%) + Close Rate (30%) + Client Satisfaction (20%) + Values Compliance (20%)",
           "3 strikes in 6 months = account deactivation",
-          "Higher tier = higher commission: Bronze 10%, Silver 12%, Gold 14%, Platinum 15%",
+          "Tier advancement: Silver at 3mo/$3K MRR, Gold at 6mo/$7K MRR, Platinum at 12mo/$12K MRR",
           "Consistency beats intensity — daily activity matters more than sporadic bursts"
         ]
       }
@@ -2355,9 +2435,9 @@ Higher tiers also mean fewer daily training requirements and priority lead assig
   {
     id: "customer-lifecycle",
     title: "Customer Lifecycle & Retention: Your Residual Machine",
-    description: "Closing a deal isn't the end — it's the beginning of your residual income. This module teaches you exactly what MiniMorph delivers to clients every month, how our retention system works, and how to use the competitive workup as a closing differentiator when prospects compare us to other agencies.",
+    description: "Closing a deal isn't the end — it's the beginning of your residual income. This module covers what MiniMorph delivers every month, how the post-close customer journey works (Elena, portal, Stripe payment), exactly how your commission is calculated and paid, and how to handle renewals.",
     icon: "TrendingUp",
-    estimatedMinutes: 25,
+    estimatedMinutes: 45,
     lessons: [
       {
         title: "What Clients Get Every Month",
@@ -2482,6 +2562,70 @@ Listen. Let them talk. Most of the time it's one of three things:
           "Frame renewal as continued momentum, not a new commitment"
         ]
       },
+      {
+        title: "Your Commission: How It's Calculated and When You Get Paid",
+        content: `## Your Money — Know Exactly How It Works
+
+There should be zero mystery about how you get paid. Here's every detail.
+
+### How Commission Is Calculated
+
+Your commission is based on the **annual value** of the deal — not monthly.
+
+**Formula:** Commission = (Monthly Price × 12) × Your Tier Rate
+
+| Tier | Rate | Starter ($195/mo) | Growth ($295/mo) | Pro ($395/mo) | Enterprise ($495/mo) |
+|------|------|-------------------|------------------|----------------|----------------------|
+| Bronze | 10% | $234 | $354 | $474 | $594 |
+| Silver | 12% | $280.80 | $424.80 | $568.80 | $712.80 |
+| Gold | 14% | $327.60 | $495.60 | $663.60 | $831.60 |
+| Platinum | 15% | $351 | $531 | $711 | $891 |
+
+### Self-Sourced Leads = Double Commission
+
+If YOU found the lead (not the system), your rate doubles — automatically.
+
+- Bronze self-sourced: 20% (instead of 10%)
+- Silver self-sourced: 24% (instead of 12%)
+- Gold self-sourced: 28% (instead of 14%)
+- Platinum self-sourced: 30% (instead of 15%)
+
+**Cap:** Self-sourced commission is capped at 40% regardless of tier. This protects the business while still rewarding your hustle massively.
+
+**Example:** You're at Silver and you found a Growth lead yourself: ($295 × 12) × 24% = **$849.60** on one deal.
+
+### How Payout Works
+
+1. **You close the deal** — Commission is calculated automatically when the customer's Stripe payment succeeds
+2. **Admin reviews and approves** — Commissions go through a brief approval process
+3. **You're paid via Stripe Connect** — Direct transfer to your connected bank account
+4. **Payout timing** — Approved commissions are processed regularly (you'll see the schedule in your dashboard)
+
+### Setting Up Your Payout Account
+
+Before you can receive your first commission, you need to **connect your bank account through Stripe**. Look for the "Set Up Payouts" option in your rep dashboard. It takes about 5 minutes and requires your bank routing/account number or debit card. If you haven't done this yet, do it now — you don't want to close your first deal and wait on a payout because your account isn't connected.
+
+### Residual Commissions
+
+For recurring monthly commissions (not your initial deal commission — those are one-time on annual value), the system may generate monthly residuals as long as the customer stays active. The exact residual structure is visible in your Performance Hub under "My Commissions."
+
+### What You Can See
+
+In your rep dashboard under **"My Commissions"**, you can track:
+- Every commission you've earned
+- Status: Pending → Approved → Paid
+- The deal it came from
+- The exact calculation
+
+No black box. You know exactly what you're owed and where it is in the process at all times.`,
+        keyTakeaways: [
+          "Commission = (monthly price × 12) × your tier rate — based on annual deal value, not monthly",
+          "Self-sourced leads earn double your rate, capped at 40%",
+          "Payment is via Stripe Connect — set up your payout account BEFORE you close your first deal",
+          "Track every commission in your dashboard under My Commissions",
+          "Payout flow: deal closes → payment succeeds → admin approves → Stripe transfers to you"
+        ]
+      },
     ],
     quiz: [
       {
@@ -2553,6 +2697,48 @@ Listen. Let them talk. Most of the time it's one of three things:
         correctAnswer: 1,
         explanation: "Clients receive renewal reminders at 60, 30, and 7 days before contract end. The 7-day email specifically says 'no action needed' — the plan auto-renews. This gives clients plenty of time to make changes if they want to, while removing anxiety about the renewal itself.",
         difficulty: "easy"
+      },
+      {
+        id: "cl-6",
+        question: "You just closed a Growth deal ($295/mo) and you're at the Silver tier. What is your commission?",
+        type: "multiple_choice",
+        options: [
+          "$35.40 (12% of $295)",
+          "$354 (10% of annual value)",
+          "$424.80 (12% of annual value)",
+          "$295 (one month's revenue)"
+        ],
+        correctAnswer: 2,
+        explanation: "Commission is calculated on annual value, not monthly. ($295 × 12) × 12% = $424.80. Your tier rate (Silver = 12%) applies to the full 12-month contract value — which is why closing deals at higher tiers and advancing your accountability tier both matter.",
+        difficulty: "medium"
+      },
+      {
+        id: "cl-7",
+        question: "You found a Pro ($395/mo) lead yourself through your own networking (self-sourced). You're at Bronze tier. What's your commission?",
+        type: "multiple_choice",
+        options: [
+          "$474 (10% of annual value)",
+          "$948 (20% of annual value — double Bronze rate)",
+          "$711 (15% of annual value)",
+          "$395 (one month's revenue)"
+        ],
+        correctAnswer: 1,
+        explanation: "Self-sourced leads earn double your tier rate. Bronze is 10%, so self-sourced Bronze = 20%. ($395 × 12) × 20% = $948. This is the self-sourcing incentive — prospecting your own leads can nearly double your commission on the same deal.",
+        difficulty: "hard"
+      },
+      {
+        id: "cl-8",
+        question: "After closing a deal, what should you tell the customer to expect next?",
+        type: "scenario",
+        options: [
+          "Tell them to expect a call from your manager to schedule a kickoff meeting",
+          "Tell them their site will be live in 2 weeks",
+          "Explain that they'll receive a portal login email and will meet Elena — our AI onboarding agent — who will walk them through everything our team needs to build their site",
+          "Tell them to wait for an invoice"
+        ],
+        correctAnswer: 2,
+        explanation: "After closing, customers receive a portal access email with a temporary password. When they log in, they meet Elena — the AI onboarding agent who collects their brand details through a natural conversation. Setting this expectation on the call prevents confusion and builds confidence in the process.",
+        difficulty: "medium"
       }
     ],
     passingScore: 80,
