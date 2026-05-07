@@ -77,6 +77,7 @@ import {
   InsertProductCatalogItem,
   broadcasts,
   InsertBroadcast,
+  systemSettings,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import mysql from "mysql2/promise";
@@ -132,11 +133,17 @@ export async function repairSchema(): Promise<void> {
       \`body\` text NOT NULL, \`readAt\` timestamp,
       \`createdAt\` timestamp NOT NULL DEFAULT (now())
     )`);
-    // product_catalog: create with ALL columns (including 0048 additions)
+    // product_catalog: create with ALL columns (including 0049 additions)
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`product_catalog\` (
       \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
       \`productKey\` varchar(64) NOT NULL UNIQUE, \`name\` varchar(255) NOT NULL,
       \`description\` text,
+      \`longDescription\` text DEFAULT NULL,
+      \`isFree\` boolean NOT NULL DEFAULT false,
+      \`pitchTriggers\` json DEFAULT NULL,
+      \`pitchScript\` text DEFAULT NULL,
+      \`howItWorks\` text DEFAULT NULL,
+      \`roiExample\` text DEFAULT NULL,
       \`category\` enum('package','addon','one_time') NOT NULL DEFAULT 'package',
       \`basePrice\` decimal(10,2) NOT NULL,
       \`discountPercent\` int NOT NULL DEFAULT 0,
@@ -278,6 +285,15 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `product_catalog` ADD COLUMN `discountDuration` enum('once','repeating','forever') NOT NULL DEFAULT 'once'");
     await safe("ALTER TABLE `product_catalog` ADD COLUMN `stripeProductId` varchar(100) DEFAULT NULL");
     await safe("ALTER TABLE `product_catalog` ADD COLUMN `stripeDiscountPriceId` varchar(100) DEFAULT NULL");
+
+    // ── Columns from 0049 (product_catalog Phase 1) ───────────────────────
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `longDescription` text DEFAULT NULL");
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `isFree` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `pitchTriggers` json DEFAULT NULL");
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `pitchScript` text DEFAULT NULL");
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `howItWorks` text DEFAULT NULL");
+    await safe("ALTER TABLE `product_catalog` ADD COLUMN `roiExample` text DEFAULT NULL");
+
     await safe("ALTER TABLE `contracts` ADD COLUMN `originalPriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `effectivePriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `contractDiscountPercent` decimal(5,2) DEFAULT NULL");
@@ -2004,31 +2020,265 @@ export async function seedProductCatalog() {
   const db = await getDb();
   if (!db) return;
 
-  const seed = [
+  // Version gate — only re-seed if v3 catalog hasn't run yet
+  const flagRows = await db.select().from(systemSettings).where(eq(systemSettings.settingKey, "product_catalog_v3")).limit(1);
+  if (flagRows.length > 0) {
+    console.log("[ProductCatalog] v3 catalog already seeded — skipping");
+    return;
+  }
+
+  type SeedItem = Omit<InsertProductCatalogItem, "id" | "createdAt" | "updatedAt" | "stripePriceId" | "stripeProductId" | "stripeDiscountPriceId" | "discountDuration">;
+  const seed: SeedItem[] = [
     // ── Core packages ──────────────────────────────────────────────────────────
-    { productKey: "starter", name: "Starter Website", description: "5-page professional website, mobile-responsive, SEO optimized", category: "package" as const, basePrice: "195.00", discountPercent: 0, active: true },
-    { productKey: "growth", name: "Growth Website", description: "10-page website with blog, lead capture forms, analytics dashboard", category: "package" as const, basePrice: "295.00", discountPercent: 0, active: true },
-    { productKey: "premium", name: "Premium Website", description: "15-page website with e-commerce, CRM integration, priority support", category: "package" as const, basePrice: "395.00", discountPercent: 0, active: true },
+    { productKey: "starter", name: "Starter Website", description: "5-page professional website, mobile-responsive, SEO optimized", category: "package", basePrice: "195.00", discountPercent: 0, isFree: false, active: true },
+    { productKey: "growth", name: "Growth Website", description: "10-page website with blog, lead capture forms, analytics dashboard", category: "package", basePrice: "295.00", discountPercent: 0, isFree: false, active: true },
+    { productKey: "premium", name: "Premium Website", description: "15-page website with e-commerce, CRM integration, priority support", category: "package", basePrice: "395.00", discountPercent: 0, isFree: false, active: true },
     // ── eCommerce packages ─────────────────────────────────────────────────────
-    { productKey: "shop_starter", name: "Shop Starter", description: "Up to 10 products, inquiry-based ordering", category: "package" as const, basePrice: "295.00", discountPercent: 0, active: true },
-    { productKey: "shop_growth", name: "Shop Growth", description: "Up to 25 products, all features", category: "package" as const, basePrice: "395.00", discountPercent: 0, active: true },
-    { productKey: "shop_premium", name: "Shop Premium", description: "Up to 50 products, premium template", category: "package" as const, basePrice: "495.00", discountPercent: 0, active: true },
-    // ── Add-ons Elena pitches ──────────────────────────────────────────────────
-    { productKey: "review_collector", name: "Review Collector", description: "Automated Google review collection and display", category: "addon" as const, basePrice: "149.00", discountPercent: 0, active: true },
-    { productKey: "booking_widget", name: "Booking Widget", description: "Online appointment booking system embedded on your site", category: "addon" as const, basePrice: "199.00", discountPercent: 0, active: true },
-    { productKey: "ai_chatbot", name: "AI Chatbot", description: "AI-powered website chat assistant for lead capture", category: "addon" as const, basePrice: "299.00", discountPercent: 0, active: true },
-    { productKey: "lead_capture_bot", name: "Lead Capture Bot", description: "Proactive visitor lead capture and qualification", category: "addon" as const, basePrice: "249.00", discountPercent: 0, active: true },
-    { productKey: "seo_autopilot", name: "SEO Autopilot", description: "Monthly blog posts and ongoing SEO optimization", category: "addon" as const, basePrice: "199.00", discountPercent: 0, active: true },
-    { productKey: "social_feed_embed", name: "Social Feed Embed", description: "Live Instagram and Facebook feed embedded on site", category: "addon" as const, basePrice: "49.00", discountPercent: 0, active: true },
-    { productKey: "email_marketing_setup", name: "Email Marketing Setup", description: "Email list setup, templates, and first campaign", category: "addon" as const, basePrice: "149.00", discountPercent: 0, active: true },
-    { productKey: "priority_support", name: "Priority Support", description: "2-hour response SLA for all change requests", category: "addon" as const, basePrice: "99.00", discountPercent: 0, active: true },
-    // ── One-time items ─────────────────────────────────────────────────────────
-    { productKey: "extra_revision_block", name: "Extra Revision Block", description: "One additional round of site revisions", category: "one_time" as const, basePrice: "149.00", discountPercent: 0, active: true },
-    { productKey: "setup_fee", name: "One-Time Setup Fee", description: "Domain setup, hosting configuration, launch checklist", category: "one_time" as const, basePrice: "149.00", discountPercent: 0, active: true },
+    { productKey: "shop_starter", name: "Shop Starter", description: "Up to 10 products, inquiry-based ordering", category: "package", basePrice: "295.00", discountPercent: 0, isFree: false, active: true },
+    { productKey: "shop_growth", name: "Shop Growth", description: "Up to 25 products, all shop features", category: "package", basePrice: "395.00", discountPercent: 0, isFree: false, active: true },
+    { productKey: "shop_premium", name: "Shop Premium", description: "Up to 50 products, premium template", category: "package", basePrice: "495.00", discountPercent: 0, isFree: false, active: true },
+    // ── Free features included in every plan ───────────────────────────────────
+    {
+      productKey: "ssl_certificate", name: "SSL Certificate", description: "HTTPS encryption, auto-renewed annually at no charge",
+      category: "addon", basePrice: "0.00", discountPercent: 0, isFree: true,
+      howItWorks: "Issued and auto-renewed via Let's Encrypt — zero action required from you.",
+      active: true,
+    },
+    {
+      productKey: "daily_backups", name: "Daily Backups", description: "Automatic daily site backups with 30-day retention",
+      category: "addon", basePrice: "0.00", discountPercent: 0, isFree: true,
+      howItWorks: "Your full site is snapshotted each night. Restore to any point in 30 days in under 60 seconds.",
+      active: true,
+    },
+    {
+      productKey: "mobile_responsive", name: "Mobile-Responsive Design", description: "Flawless display across phones, tablets, and desktops",
+      category: "addon", basePrice: "0.00", discountPercent: 0, isFree: true,
+      howItWorks: "Every layout is designed mobile-first. We test on iOS, Android, and all major browsers before launch.",
+      roiExample: "60%+ of local business traffic comes from phones. A broken mobile experience sends them straight to a competitor.",
+      active: true,
+    },
+    {
+      productKey: "seo_foundation", name: "SEO Foundation", description: "Meta tags, sitemap, schema markup, and Google Search Console setup",
+      category: "addon", basePrice: "0.00", discountPercent: 0, isFree: true,
+      howItWorks: "We configure title tags, meta descriptions, XML sitemap, structured data, and submit your site to Google on launch day.",
+      active: true,
+    },
+    {
+      productKey: "monthly_reports", name: "Monthly Performance Reports", description: "Traffic, rankings, and lead summary emailed every month",
+      category: "addon", basePrice: "0.00", discountPercent: 0, isFree: true,
+      howItWorks: "Every month you get a one-page report: page views, Google ranking changes, form submissions, and top landing pages.",
+      active: true,
+    },
+    {
+      productKey: "security_monitoring", name: "Security Monitoring", description: "24/7 malware scanning, firewall protection, and threat alerts",
+      category: "addon", basePrice: "0.00", discountPercent: 0, isFree: true,
+      howItWorks: "Our security layer scans for malware, blocks bad bots, and alerts us instantly if anything looks wrong.",
+      active: true,
+    },
+    // ── Paid add-ons Elena pitches ──────────────────────────────────────────────
+    {
+      productKey: "review_collector", name: "Review Collector", description: "Automated Google review collection after every service",
+      category: "addon", basePrice: "149.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["review", "reputation", "google", "rating", "word of mouth", "referral", "yelp", "testimonial", "reviews"]),
+      pitchScript: "Real talk — for a local business, Google reviews are your most valuable marketing asset. Our Review Collector automatically texts your customers after a job and sends them straight to your Google listing to leave a review. Most clients see their review count double in the first 90 days. It's $149/month and I've seen businesses go from 12 reviews to 80+ in three months. Want to add that on?",
+      howItWorks: "After a service, the system texts the customer with a personalized message and a direct link to your Google review page. No app required.",
+      roiExample: "Going from 12 to 80 Google reviews typically moves a local business from page 2 to the top 3 in Google Maps — that's the difference between 5 calls/week and 25.",
+      active: true,
+    },
+    {
+      productKey: "booking_widget", name: "Booking Widget", description: "Online appointment scheduling embedded directly on your site",
+      category: "addon", basePrice: "199.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["appointment", "booking", "schedule", "reservation", "consultation", "calendar", "availability", "book", "appointments", "scheduling"]),
+      pitchScript: "If you take appointments or consultations, our Booking Widget is a no-brainer. It embeds right in your site — customers pick a time, it syncs to your calendar, sends confirmation texts, and sends reminders so no-shows drop by 40%. At $199/month, most clients book 2-3 extra appointments per week because people can self-schedule at 11pm instead of waiting to call. Want to add that?",
+      howItWorks: "Customers pick a time slot on your site, get an instant confirmation SMS/email, and you get a calendar invite. Automated reminder 24 hours before the appointment.",
+      roiExample: "If you charge $150/appointment and book just 2 more per week, that's $1,200/month in extra revenue from a $199 add-on.",
+      active: true,
+    },
+    {
+      productKey: "ai_chatbot", name: "AI Chatbot", description: "24/7 AI assistant trained on your business — answers questions and captures leads",
+      category: "addon", basePrice: "299.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["questions", "inquiries", "after hours", "same questions", "menu questions", "pricing questions", "faq", "chat", "24/7", "always available", "always on", "hours"]),
+      pitchScript: "Something I notice with a lot of businesses — they get the same questions over and over. Hours, pricing, what services you offer, availability. Our AI Chatbot handles all of that 24/7, trained specifically on your business. It captures leads, answers questions, and routes urgent things to you. At $299/month, most clients tell us within two weeks it paid for itself. Want that on yours?",
+      howItWorks: "We train the chatbot on your FAQs, services, pricing, and hours. It handles conversations on your site, captures contact info, and escalates complex requests to you via text.",
+      roiExample: "If the chatbot captures 4 leads/month that would have bounced, and you close 2 at $500 average — that's $1,000/month from a $299 add-on.",
+      active: true,
+    },
+    {
+      productKey: "lead_capture_bot", name: "Lead Capture Bot", description: "Proactively engages visitors and collects contact info before they bounce",
+      category: "addon", basePrice: "249.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["leads", "traffic", "visitors", "bounce", "competition", "competitive", "more customers", "more clients", "generate leads", "capture leads", "funnel"]),
+      pitchScript: "Most visitors don't fill out contact forms — they browse and leave. Our Lead Capture Bot watches visitor behavior and triggers a targeted message right before they bounce. 'Still looking for [service]? Let us send you a quick quote.' It converts 8-15% of visitors who would have left. At $249/month, if you're getting 200 visitors/month and capturing even 10 more leads — that's transformative. Interested?",
+      howItWorks: "Uses exit-intent detection and scroll depth to trigger personalized messages. Captures name, email, and phone. Sends captured leads to your dashboard and your email instantly.",
+      roiExample: "200 visitors × 10% capture rate = 20 extra leads/month. Close 5 at $300 avg = $1,500/month from a $249 add-on.",
+      active: true,
+    },
+    {
+      productKey: "seo_autopilot", name: "SEO Autopilot", description: "Monthly AI-written blog posts + ongoing technical SEO optimization",
+      category: "addon", basePrice: "199.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["google", "search", "rank", "seo", "found online", "organic", "traffic", "blog", "content", "competitors rank higher", "show up", "search engine", "ranking"]),
+      pitchScript: "Here's the thing about Google — your site needs fresh content to keep climbing. Our SEO Autopilot publishes 2 optimized blog posts per month on topics your customers are actually searching for, plus we handle all the technical stuff: broken links, page speed, schema updates. At $199/month, clients typically see their Google ranking improve in 60-90 days. It compounds — the longer you're on it, the better it gets. Want to add that?",
+      howItWorks: "We research the top keywords your competitors rank for, write 2 blog posts/month targeting those terms, and run a technical SEO audit quarterly. Published to your site automatically.",
+      roiExample: "Ranking on page 1 for '[city] + [service]' typically generates 50-200 extra visits/month. At a 3% conversion rate, that's 1-6 new leads/month, ongoing and compounding.",
+      active: true,
+    },
+    {
+      productKey: "sms_alerts", name: "SMS Lead Alerts", description: "Instant SMS notification the moment a new lead submits a form",
+      category: "addon", basePrice: "79.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["miss leads", "phone", "text", "sms", "fast response", "call back", "lead alerts", "instant notification", "miss calls", "miss messages", "speed", "respond fast"]),
+      pitchScript: "Speed-to-lead is huge — research shows the first business to respond wins the job 78% of the time. Our SMS Lead Alerts fires a text to your phone the moment someone submits a form on your site, so you can call them back in minutes. It's $79/month and it's one of the highest-ROI things I've seen. Closing one extra job per month covers it many times over. Want that?",
+      howItWorks: "When a form is submitted, you get an instant SMS with the lead's name, phone number, and their message. One tap calls them back directly.",
+      roiExample: "Responding within 5 minutes vs. 60 minutes increases conversion by 8×. That's not a marginal improvement — that's transformative.",
+      active: true,
+    },
+    {
+      productKey: "social_feed_embed", name: "Social Feed Embed", description: "Live Instagram, Facebook, or TikTok feed embedded on your site",
+      category: "addon", basePrice: "49.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["instagram", "facebook", "tiktok", "social media", "social", "photos", "portfolio", "recent work", "feed", "posts", "active on social"]),
+      pitchScript: "Since you mentioned your Instagram — we can pull your latest posts directly onto your website so visitors see your most recent work without you updating anything. It stays fresh automatically. It's only $49/month. Really easy way to show off your style to people who find the site first.",
+      howItWorks: "We connect to your Instagram, Facebook, or TikTok via API. Your latest posts display in a beautiful grid or carousel and update automatically whenever you post.",
+      roiExample: "Visitors who see real recent work convert at 2-3× the rate of visitors who only see generic stock photos.",
+      active: true,
+    },
+    {
+      productKey: "competitor_monitoring", name: "Competitor Monitoring", description: "Monthly report tracking competitor rankings, pricing changes, and new pages",
+      category: "addon", basePrice: "149.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["competitor", "competition", "competing", "local market", "other businesses", "beating competitors", "market share", "they rank higher", "losing to"]),
+      pitchScript: "Do you know what your competitors are ranking for right now? Our Competitor Monitoring gives you a monthly report — who's outranking you, what pages they added, what pricing they're showing, what keywords they're targeting. Competitive intelligence on autopilot for $149/month. Most clients say it changed how they think about their positioning.",
+      howItWorks: "We track up to 5 competitors monthly: their top-ranking pages, keyword positions, new content, and any pricing or offer changes. Delivered as a simple monthly report.",
+      roiExample: "Knowing a competitor dropped their prices before you do lets you respond proactively instead of losing jobs and wondering why.",
+      active: true,
+    },
+    {
+      productKey: "event_calendar", name: "Event Calendar", description: "Interactive events calendar with RSVP and automated reminders",
+      category: "addon", basePrice: "99.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["event", "events", "classes", "workshops", "upcoming", "weekly", "class schedule", "open mic", "live music", "tasting", "tour", "seminar", "recurring"]),
+      pitchScript: "If you do events, classes, or anything recurring, your website needs a live calendar that actually works. Our Event Calendar embeds right in the site — people can see what's coming, RSVP, and get reminder texts. No more 'when's your next class?' in the DMs. At $99/month it runs itself once you set it up.",
+      howItWorks: "You add events in a simple dashboard. Visitors see them on your site, can RSVP with their email, and get automated reminder texts 24 hours before.",
+      roiExample: "Businesses with event calendars see 30-40% higher repeat visit rates — people bookmark the page and come back regularly.",
+      active: true,
+    },
+    {
+      productKey: "menu_price_list", name: "Menu & Price List", description: "Styled, easy-to-update menu or service price list with category tabs",
+      category: "addon", basePrice: "49.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["menu", "pricing page", "services list", "price list", "rate sheet", "what do you charge", "offerings", "specials", "items", "drinks", "food", "rates"]),
+      pitchScript: "One of the most visited pages on any local business site is the menu or services page. Our Menu & Price List gives you a beautifully formatted, easy-to-update pricing page with category tabs. You update it yourself through a simple dashboard — no coding, just type and save. $49/month for something that answers 'what do you charge?' before they even call.",
+      howItWorks: "You get a dedicated menu/pricing dashboard. Add categories, items, prices, and descriptions. Updates appear on the site instantly.",
+      roiExample: "Displaying clear pricing reduces tire-kicker calls by 40% and pre-qualifies leads before they contact you.",
+      active: true,
+    },
+    {
+      productKey: "email_marketing_setup", name: "Email Marketing Setup", description: "Email list, welcome sequence, and monthly newsletter templates",
+      category: "addon", basePrice: "149.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["email", "newsletter", "list", "promotions", "stay in touch", "customer list", "mailchimp", "follow up", "repeat customers", "loyalty", "email marketing"]),
+      pitchScript: "If you have a customer list — or want to build one — email marketing is still the highest ROI channel out there. We set up your list, configure a signup form on the site, write your welcome sequence, and give you monthly newsletter templates you can customize in 15 minutes. $149/month gets you a professional email system without hiring a marketer. Worth it?",
+      howItWorks: "We integrate Mailchimp or Klaviyo, build your signup forms, write a 3-email welcome sequence, and set up a monthly newsletter template. You send when you're ready.",
+      roiExample: "Email subscribers convert at 3-5× the rate of cold traffic. A list of 500 people = 15-25 sales per campaign at zero ad spend.",
+      active: true,
+    },
+    {
+      productKey: "live_chat", name: "Live Chat", description: "Real-time chat widget with mobile app and business hours auto-away",
+      category: "addon", basePrice: "149.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["chat", "live chat", "message", "instant response", "talk to someone", "quick question", "real person", "contact", "reach you", "get in touch", "messaging"]),
+      pitchScript: "Some customers won't call, won't email, but they'll send a quick chat message. Our Live Chat gives you a chat widget on your site with a mobile app so you can respond from your phone. Business hours auto-set it to away when you're not available. $149/month — you capture conversations you'd otherwise lose completely.",
+      howItWorks: "We install a chat widget on your site. You manage conversations through a mobile app. Business hours settings let you set when you're available — offline takes a message.",
+      roiExample: "Live chat increases lead capture by 40% on service-based websites. Even one extra job per month pays for it several times over.",
+      active: true,
+    },
+    {
+      productKey: "online_store", name: "Online Store", description: "Full e-commerce with Stripe payments, inventory, and order management",
+      category: "addon", basePrice: "199.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["sell", "shop", "products", "merchandise", "online store", "e-commerce", "ecommerce", "buy online", "purchase online", "order online", "shipping", "checkout", "inventory"]),
+      pitchScript: "If you're looking to sell products online — merch, kits, prepaid services, gift cards — our Online Store adds a full e-commerce checkout to your site. Stripe payments, inventory tracking, order management, shipping options. At $199/month it's far cheaper than running a separate Shopify and keeps everything under one roof.",
+      howItWorks: "Powered by Stripe. Add products with photos, pricing, and inventory levels. Customers checkout directly on your site. You manage orders from a simple dashboard.",
+      roiExample: "Adding even a simple merch store to a gym or brewery generates $500-2,000/month in passive revenue for most businesses that try it.",
+      active: true,
+    },
+    {
+      productKey: "ai_photography", name: "AI Photography", description: "Monthly batch of AI-generated lifestyle photos custom-branded to your business",
+      category: "addon", basePrice: "149.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["photos", "images", "photography", "pictures", "photoshoot", "stock photos", "generic photos", "look professional", "visual", "branding photos", "consistent look"]),
+      pitchScript: "Stock photos look fake and everyone knows it. Our AI Photography generates a new batch of custom lifestyle images every month that match your brand colors, setting, and aesthetic. No photographer needed. You get 10 fresh, on-brand images per month for $149. It's one of those things that makes a site instantly look more premium.",
+      howItWorks: "You give us your brand colors, style direction, and industry. Every month we generate 10 images tailored to your brand. Delivered to your site automatically.",
+      roiExample: "Professional photography costs $1,500-3,000 for a one-time shoot. AI Photography gets you fresh content every month for less than that in a year.",
+      active: true,
+    },
+    {
+      productKey: "priority_support", name: "Priority Support", description: "4-hour response SLA, dedicated support line, same-day changes",
+      category: "addon", basePrice: "99.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["fast changes", "quick changes", "urgent", "busy", "response time", "support", "updates quickly", "important", "high volume", "critical", "same day"]),
+      pitchScript: "For businesses that move fast — if you need a change made today, not next week, Priority Support gets you a 4-hour response on any update request and a dedicated line you can text. It's $99/month. For anyone running a high-volume operation where a broken form or wrong price could cost real money, this one tends to pay for itself fast.",
+      howItWorks: "You get a direct support text line. Any change request — copy, images, forms — handled within 4 hours guaranteed. Evenings and weekends included.",
+      roiExample: "If one missed lead from a slow response costs you $500, Priority Support has already paid for itself 5× in a single month.",
+      active: true,
+    },
+    // ── One-time items ──────────────────────────────────────────────────────────
+    {
+      productKey: "logo_design", name: "Logo Design", description: "Professional logo + 3 variations, all formats for print and web",
+      category: "one_time", basePrice: "499.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["logo", "no logo", "old logo", "update logo", "professional look", "brand identity", "branding"]),
+      pitchScript: "If you don't have a logo yet — or the one you have isn't professional — this is the time to fix it. We design a custom logo: 3 concepts, 2 rounds of revisions, delivered in every format you'll ever need (web, print, social, dark/light versions). One-time $499, no monthly fee.",
+      howItWorks: "You fill out a brand questionnaire. We deliver 3 logo concepts in 5 business days. You pick your favorite, we refine it through 2 revision rounds, then deliver all source files.",
+      roiExample: "A professional logo increases trust signals on your site by 32% — and you'll use it for years on everything from your truck wrap to your business cards.",
+      active: true,
+    },
+    {
+      productKey: "brand_style_guide", name: "Brand Style Guide", description: "Color palette, typography, logo rules, and visual standards document",
+      category: "one_time", basePrice: "299.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["brand guide", "consistent", "style guide", "colors", "fonts", "typography", "guidelines", "team", "marketing materials", "brand standards"]),
+      pitchScript: "A brand style guide makes sure your business looks consistent everywhere — your site, your social posts, your business cards, anything your team creates. It's a one-page reference with your exact colors, fonts, logo rules, and visual standards. One-time $299. Super useful if you have a team or work with contractors.",
+      howItWorks: "We document your brand colors (HEX/RGB/CMYK), typography, logo usage rules, and provide a PDF style guide your team can reference.",
+      roiExample: "Businesses with a documented brand identity maintain 3-4× better visual consistency across channels, which directly correlates to perceived professionalism and trust.",
+      active: true,
+    },
+    {
+      productKey: "extra_pages", name: "Extra Pages (5-pack)", description: "5 additional pages beyond your plan's included page count",
+      category: "one_time", basePrice: "149.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["more pages", "extra pages", "another page", "team page", "portfolio", "gallery", "testimonials page", "faq page", "locations page"]),
+      pitchScript: "If you need more pages than your plan includes — team bios, a full portfolio, separate location pages, a detailed FAQ — we can add a block of 5 pages for a one-time $149. No monthly fee.",
+      howItWorks: "We build 5 additional pages to the same standard as your main site. Includes mobile optimization, SEO setup, and full navigation integration.",
+      active: true,
+    },
+    {
+      productKey: "copywriting", name: "Professional Copywriting", description: "Expert-written copy for all site pages by a conversion specialist",
+      category: "one_time", basePrice: "199.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["copy", "writing", "text", "words", "content", "don't know what to write", "not a writer", "bad at writing", "help with content", "what to say"]),
+      pitchScript: "Most people aren't copywriters — and that's totally fine. Our copywriting add-on means you answer a questionnaire about your business, and our team writes all your page copy. Headlines, service descriptions, calls to action — the words that actually convert visitors into customers. One-time $199 for the full site.",
+      howItWorks: "You complete a brand and messaging questionnaire. Our copywriter writes all your page text. You review and approve. We load it into the site.",
+      roiExample: "Professional copy typically increases conversion rates by 30-50% vs. self-written content — that's the difference between 5 leads/month and 7-8.",
+      active: true,
+    },
+    {
+      productKey: "video_background", name: "Video Background", description: "Cinematic auto-playing video header for a stunning first impression",
+      category: "one_time", basePrice: "299.00", discountPercent: 0, isFree: false,
+      pitchTriggers: JSON.stringify(["video", "cinematic", "wow factor", "impressive", "standout", "premium feel", "high end", "luxury", "visual impact", "bold", "video header"]),
+      pitchScript: "If you want your site to stop people in their tracks — a video background on the homepage makes an immediate impression. We source or create a short looping video clip that fits your brand and embed it as the header. Visitors spend 2-3× more time on the page. One-time $299.",
+      howItWorks: "We source a professionally shot stock video matching your industry/brand, compress it for fast loading, and set it to autoplay and loop. Falls back to a static image on mobile.",
+      roiExample: "Sites with video backgrounds have 2-3× lower bounce rates — visitors see something compelling and keep scrolling instead of leaving.",
+      active: true,
+    },
+    {
+      productKey: "extra_revision_block", name: "Extra Revision Block", description: "One additional round of site revisions beyond the included 3",
+      category: "one_time", basePrice: "149.00", discountPercent: 0, isFree: false,
+      howItWorks: "One full round of revisions — provide a consolidated list of changes, we implement everything within 3 business days.",
+      active: true,
+    },
+    {
+      productKey: "setup_fee", name: "One-Time Setup Fee", description: "Domain setup, hosting configuration, DNS, and launch checklist",
+      category: "one_time", basePrice: "149.00", discountPercent: 0, isFree: false,
+      howItWorks: "Covers domain registration or transfer, DNS configuration, hosting setup, SSL certificate installation, and pre-launch QA checklist.",
+      active: true,
+    },
   ];
 
   for (const item of seed) {
-    await upsertProductCatalogItem(item);
+    await upsertProductCatalogItem(item as InsertProductCatalogItem);
   }
-  console.log("[ProductCatalog] Seeded", seed.length, "products");
+
+  await db.insert(systemSettings).values({
+    settingKey: "product_catalog_v3",
+    settingValue: "true",
+    description: "Product catalog v3 — 6 packages, 6 free features, 14 paid addons, 6 one-time items with pitch scripts",
+  }).onDuplicateKeyUpdate({ set: { settingValue: "true" } });
+
+  console.log("[ProductCatalog] Seeded v3 catalog:", seed.length, "products");
 }
