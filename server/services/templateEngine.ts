@@ -220,12 +220,7 @@ export async function injectContentIntoTemplate(
   copy: Record<string, string>,
   imageDirection?: string,
 ): Promise<string> {
-  const fullPath = path.join(
-    path.dirname(path.dirname(__dirname)),
-    "server",
-    "templates",
-    templatePath,
-  );
+  const fullPath = path.join(process.cwd(), "server", "templates", templatePath);
 
   let html = fs.readFileSync(fullPath, "utf-8");
 
