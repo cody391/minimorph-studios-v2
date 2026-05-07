@@ -310,6 +310,7 @@ PACKAGE TIER GATING — wrap optional sections with these exact HTML comments:
 REQUIRED SECTIONS (in order):
 1. <head>: charset, viewport, title (BUSINESS_NAME | ${brief.businessType}), meta description (META_DESCRIPTION), Google Fonts link, inline <style>
 2. Sticky nav: logo = BUSINESS_NAME, <ul class="nav-links">NAV_LINKS</ul>, <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+   CRITICAL: The nav must use exactly this markup. NAV_LINKS is a token that will be replaced with real <li><a href="page.html">Label</a></li> elements at build time. Do NOT hardcode any nav links. Do NOT use #hash anchors. Just put NAV_LINKS inside the ul and nothing else.
 3. Full-viewport hero: HERO_IMAGE background with overlay, HEADLINE, SUBHEADLINE, CTA button, trust badge (SERVICE_AREA · YEARS_IN_BUSINESS years)
 4. Services/offerings grid: 3 cards — SERVICE_1_DESC, SERVICE_2_DESC, SERVICE_3_DESC with appropriate icons and short copy
 5. About section: ABOUT_IMAGE on one side, OWNER_NAME + ABOUT_STORY on other, years badge showing YEARS_IN_BUSINESS
