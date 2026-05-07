@@ -128,6 +128,9 @@ export default function GetStarted() {
   // tRPC mutations
   const registerMutation = trpc.localAuth.register.useMutation();
   const loginMutation = trpc.localAuth.login.useMutation();
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => { window.location.href = "/login"; },
+  });
   const createProjectMutation = trpc.onboarding.createSelfServiceProject.useMutation();
   const resetSessionMutation = trpc.onboarding.resetSelfServiceSession.useMutation();
   const chatMutation = trpc.ai.onboardingChat.useMutation();
@@ -370,6 +373,18 @@ export default function GetStarted() {
   if (stage === "capture") {
     return (
       <div className="min-h-screen bg-[#0a0a14] flex flex-col items-center justify-center px-4">
+        {/* DEV controls */}
+        {DEV_MODE && (
+          <div className="absolute top-4 right-4 flex gap-2">
+            <button
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="text-xs text-yellow-400/50 hover:text-yellow-400 border border-yellow-400/20 rounded px-2 py-1 transition-colors"
+            >
+              ↪ Switch Account
+            </button>
+          </div>
+        )}
         {/* Back link */}
         <div className="absolute top-6 left-6">
           <Link href="/">
@@ -546,21 +561,30 @@ export default function GetStarted() {
             {user?.email}
           </span>
           {DEV_MODE && (
-            <button
-              onClick={async () => {
-                await resetSessionMutation.mutateAsync();
-                setStage("capture");
-                setProjectId(null);
-                setMessages([]);
-                hasSentInit.current = false;
-                setPaymentReady(null);
-                setAddonsInSummary([]);
-              }}
-              disabled={resetSessionMutation.isPending}
-              className="text-xs text-red-400/50 hover:text-red-400 border border-red-400/20 rounded px-2 py-1 transition-colors"
-            >
-              ↺ Reset
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="text-xs text-yellow-400/50 hover:text-yellow-400 border border-yellow-400/20 rounded px-2 py-1 transition-colors"
+              >
+                ↪ Switch Account
+              </button>
+              <button
+                onClick={async () => {
+                  await resetSessionMutation.mutateAsync();
+                  setStage("capture");
+                  setProjectId(null);
+                  setMessages([]);
+                  hasSentInit.current = false;
+                  setPaymentReady(null);
+                  setAddonsInSummary([]);
+                }}
+                disabled={resetSessionMutation.isPending}
+                className="text-xs text-red-400/50 hover:text-red-400 border border-red-400/20 rounded px-2 py-1 transition-colors"
+              >
+                ↺ Reset
+              </button>
+            </div>
           )}
         </div>
       </header>
