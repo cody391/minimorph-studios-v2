@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Story — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--bg:#faf6f0;--surface:#f0e8dc;--text:#1a1008;--muted:rgba(26,16,8,0.55);--border:rgba(26,16,8,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+.top-bar{background:var(--primary);color:#fff;text-align:center;padding:0.6rem 1rem;font-size:0.8rem;position:sticky;top:0;z-index:1001}
+.top-bar a{color:#fff;font-weight:700;text-decoration:underline}
+nav{position:sticky;top:2.25rem;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(250,246,240,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--text)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.875rem;font-weight:400;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--primary)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.625rem 1.5rem;border-radius:50px;font-size:0.825rem;font-weight:700;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+
+/* HERO */
+.about-hero{position:relative;min-height:80vh;display:flex;align-items:flex-end;padding:0 5% 5rem;overflow:hidden}
+.about-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;object-position:center 30%}
+.about-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(26,16,8,0.9) 0%,rgba(26,16,8,0.2) 60%,transparent 100%);z-index:1}
+.about-hero-content{position:relative;z-index:2;max-width:700px}
+.about-hero-eyebrow{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:1rem}
+.about-hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,6vw,5.5rem);font-weight:900;color:#fff;line-height:1.05;margin-bottom:1.25rem}
+.about-hero-sub{font-size:1.0625rem;color:rgba(255,255,255,0.75);font-weight:300;max-width:500px}
+
+/* STORY */
+.story{padding:7rem 5%;max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:start}
+.story-lead{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,2.5vw,2.25rem);font-style:italic;color:var(--text);line-height:1.3;margin-bottom:2rem}
+.story-body{color:var(--muted);font-size:1rem;line-height:1.875;font-weight:300}
+.story-body p+p{margin-top:1.25rem}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;padding-top:3rem;border-top:1px solid var(--border)}
+.stat-num{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:900;color:var(--primary);line-height:1}
+.stat-label{font-size:0.8rem;color:var(--muted);margin-top:0.35rem}
+
+/* PHILOSOPHY */
+.philosophy{background:var(--text);padding:7rem 5%;text-align:center}
+.philosophy-inner{max-width:800px;margin:0 auto}
+.philosophy-eyebrow{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1.5rem;font-weight:700}
+.philosophy-quote{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,3vw,2.5rem);font-style:italic;color:#fff;line-height:1.35;margin-bottom:2rem}
+.philosophy-attr{font-size:0.875rem;color:rgba(255,255,255,0.5);letter-spacing:0.08em}
+
+/* SOURCING */
+.sourcing{padding:7rem 5%}
+.sourcing-inner{max-width:1200px;margin:0 auto}
+.sourcing-header{margin-bottom:3.5rem}
+.sourcing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
+.source-card{padding:2rem;background:var(--surface);border:1px solid var(--border)}
+.source-icon{font-size:1.75rem;margin-bottom:1rem}
+.source-title{font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;margin-bottom:0.5rem}
+.source-desc{font-size:0.875rem;color:var(--muted);line-height:1.7;font-weight:300}
+
+<!-- IF_ENTERPRISE_START -->
+/* TEAM */
+.team{padding:7rem 5%;background:var(--surface)}
+.team-inner{max-width:1200px;margin:0 auto}
+.team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem}
+.team-card{text-align:center}
+.team-img{aspect-ratio:3/4;overflow:hidden;margin-bottom:1.25rem;background:var(--border)}
+.team-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s}
+.team-card:hover .team-img img{transform:scale(1.03)}
+.team-name{font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;margin-bottom:0.25rem}
+.team-role{font-size:0.8rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.1em;font-weight:700}
+<!-- IF_ENTERPRISE_END -->
+
+/* CTA */
+.cta{padding:7rem 5%;text-align:center;background:var(--primary)}
+.cta h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:900;color:#fff;margin-bottom:1rem}
+.cta p{color:rgba(255,255,255,0.8);font-size:1.0625rem;margin-bottom:2.5rem;max-width:500px;margin-left:auto;margin-right:auto}
+.btn-white{display:inline-block;background:#fff;color:var(--primary);padding:1rem 2.5rem;border-radius:50px;font-size:0.9rem;font-weight:700;transition:opacity 0.2s}
+.btn-white:hover{opacity:0.9}
+
+/* FOOTER */
+footer{background:var(--text);color:rgba(255,255,255,0.7);padding:4rem 5% 2rem}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+.footer-brand{font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:#fff;margin-bottom:0.75rem}
+.footer-tagline{font-size:0.875rem;line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1rem;font-weight:700}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.625rem}
+.footer-links a{font-size:0.875rem;color:rgba(255,255,255,0.6);transition:color 0.2s}
+.footer-links a:hover{color:#fff}
+.footer-contact-item{font-size:0.875rem;color:rgba(255,255,255,0.6);display:block;margin-bottom:0.625rem}
+.footer-bottom{border-top:1px solid rgba(255,255,255,0.1);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(255,255,255,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(255,255,255,0.2)}
+.footer-mini a{color:var(--primary);opacity:0.8}
+[data-animate]{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.nav-links{display:none}.story{grid-template-columns:1fr}.sourcing-grid{grid-template-columns:1fr 1fr}.team-grid{grid-template-columns:1fr 1fr}.footer-inner{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="top-bar">Now open in SERVICE_AREA · <a href="tel:PHONE">PHONE</a></div>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<section class="about-hero">
+  <img src="ABOUT_IMAGE" alt="BUSINESS_NAME" class="about-hero-bg">
+  <div class="about-hero-overlay"></div>
+  <div class="about-hero-content">
+    <div class="about-hero-eyebrow">Our Story</div>
+    <h1>Food Made<br>with Intention</h1>
+    <p class="about-hero-sub">YEARS_IN_BUSINESS years of cooking for SERVICE_AREA. The same values that started this place are the ones guiding it today.</p>
+  </div>
+</section>
+
+<div class="story">
+  <div data-animate>
+    <div class="story-lead">"Good food should feel like it was made for you, not just made fast."</div>
+    <div class="stat-row">
+      <div><div class="stat-num">YEARS_IN_BUSINESS</div><div class="stat-label">Years Open</div></div>
+      <div><div class="stat-num">100%</div><div class="stat-label">Scratch Kitchen</div></div>
+      <div><div class="stat-num">Local</div><div class="stat-label">Ingredients First</div></div>
+    </div>
+  </div>
+  <div data-animate>
+    <div class="story-body">ABOUT_STORY</div>
+  </div>
+</div>
+
+<section class="philosophy" data-animate>
+  <div class="philosophy-inner">
+    <div class="philosophy-eyebrow">Our Philosophy</div>
+    <div class="philosophy-quote">"We don't have a formula. We have a standard. Every plate has to be something we'd be proud to eat ourselves."</div>
+    <div class="philosophy-attr">— OWNER_NAME, Owner &amp; Chef</div>
+  </div>
+</section>
+
+<section class="sourcing" data-animate>
+  <div class="sourcing-inner">
+    <div class="sourcing-header">
+      <div style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:0.75rem">How We Cook</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,3vw,2.75rem);font-weight:900;max-width:600px">Where the ingredients come from matters as much as what we do with them.</h2>
+    </div>
+    <div class="sourcing-grid">
+      <div class="source-card">
+        <div class="source-icon">🌾</div>
+        <div class="source-title">Local Farms</div>
+        <div class="source-desc">We source from farms within 150 miles of SERVICE_AREA wherever possible. Seasonal availability drives our menu changes, not the other way around.</div>
+      </div>
+      <div class="source-card">
+        <div class="source-icon">🍽</div>
+        <div class="source-title">Made From Scratch</div>
+        <div class="source-desc">Stocks, sauces, pastas, pastries — all made in-house. We don't open cans when we can cook it ourselves.</div>
+      </div>
+      <div class="source-card">
+        <div class="source-icon">♻</div>
+        <div class="source-title">Minimal Waste</div>
+        <div class="source-desc">Vegetable scraps become stocks. Bread becomes crumbs. We design our prep to use the whole ingredient — it makes better food and less waste.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IF_ENTERPRISE_START -->
+<section class="team" data-animate>
+  <div class="team-inner">
+    <div style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:0.75rem">The People</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,3vw,2.75rem);font-weight:900;margin-bottom:0">The team behind every plate.</h2>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-img"><img src="TEAM_IMAGE_1" alt="OWNER_NAME" loading="lazy"></div>
+        <div class="team-name">OWNER_NAME</div>
+        <div class="team-role">Owner &amp; Executive Chef</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_1" alt="Sous Chef" loading="lazy"></div>
+        <div class="team-name">Sous Chef</div>
+        <div class="team-role">Kitchen Lead</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_2" alt="Pastry Chef" loading="lazy"></div>
+        <div class="team-name">Pastry Chef</div>
+        <div class="team-role">Desserts &amp; Bread</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_3" alt="Bar Manager" loading="lazy"></div>
+        <div class="team-name">Bar Manager</div>
+        <div class="team-role">Drinks Program</div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- IF_ENTERPRISE_END -->
+
+<section class="cta">
+  <h2>Come for dinner.</h2>
+  <p>Experience the cooking that's been part of SERVICE_AREA for YEARS_IN_BUSINESS years. Reserve your table and taste the difference intention makes.</p>
+  <a href="NAV_CTA_HREF" class="btn-white">Make a Reservation</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">BUSINESS_NAME</div>
+      <p class="footer-tagline">TAGLINE</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Visit Us</div>
+      <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+      <span class="footer-contact-item">ADDRESS</span>
+      <span class="footer-contact-item">HOURS</span>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+    <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

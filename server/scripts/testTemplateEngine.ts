@@ -25,62 +25,72 @@ const brief = {
   subNiche: 'contractor',
 };
 
-async function run() {
-  console.log('Starting template engine test...');
-  console.time('generation');
+const skipWords = new Set([
+  'DOCTYPE','UTF','CDN','CTA','FAQ','SEO','CSS','HTML','URL','SVG','API',
+  'GPS','USD','IMG','SRC','ALT','MIN','MAX','VAR','NAN','NOW','MN','BC',
+  'RGB','RGBA','MON','FRI','NEW','OLD','END','TOP','GET','SET','ADD','DIV',
+  'NAV','BIO','MAP','PDF','ZIP','REF','LOG','ROW','COL','GAP','BOX','BG',
+  'FX','ID','JS','TS','FPS','HVAC','ROOF','HOME','TYPE','NAME','DESC',
+  'GF','AM','PM','OPEN',
+]);
 
-  const pages = await generateSiteFromTemplate(brief);
-  const html = pages.index || pages['index.html'] || Object.values(pages)[0] || '';
-
-  console.timeEnd('generation');
-  console.log('\n=== GENERATION RESULTS ===');
-  console.log('Pages generated:', Object.keys(pages));
-  console.log('HTML size:', html.length.toLocaleString(), 'chars');
-  console.log('');
-  console.log('Token replacement:');
-  console.log('  HEADLINE replaced:      ', !html.includes('HEADLINE'));
-  console.log('  SUBHEADLINE replaced:   ', !html.includes('SUBHEADLINE'));
-  console.log('  ABOUT_STORY replaced:   ', !html.includes('ABOUT_STORY'));
-  console.log('  Phone present:          ', html.includes('(612) 555-0142'));
-  console.log('  Business name present:  ', html.includes('Hammerstone Builds'));
-  console.log('  Owner name present:     ', html.includes('Mike Hammerstone'));
-  console.log('  Primary color present:  ', html.includes('#e07b39'));
-  console.log('  License present:        ', html.includes('MN-BC-45892'));
-  console.log('  Minneapolis present:    ', html.includes('Minneapolis'));
-  console.log('  Growth tier label:      ', html.includes('Growth'));
-  console.log('  Kitchen Remodeling:     ', html.includes('Kitchen Remodeling'));
-
-  // Hero H1 — the actual generated copy
-  const h1 = html.match(/<h1[^>]*>([\s\S]{0,400}?)<\/h1>/);
-  if (h1) {
-    const text = h1[1].replace(/<[^>]+>/g, '').trim();
-    console.log('\nHero headline copy:');
-    console.log(' ', JSON.stringify(text.substring(0, 200)));
-  }
-
-  // Check for unreplaced uppercase tokens (false-positive filtered)
-  const skipWords = new Set([
-    'DOCTYPE','UTF','CDN','CTA','FAQ','SEO','CSS','HTML','URL','SVG','API',
-    'GPS','USD','IMG','SRC','ALT','MIN','MAX','VAR','NAN','NOW','MN','BC',
-    'RGB','RGBA','MON','FRI','NEW','OLD','END','TOP','GET','SET','ADD','DIV',
-    'NAV','BIO','MAP','PDF','ZIP','REF','LOG','ROW','COL','GAP','BOX','BG',
-    'FX','ID','JS','TS','FPS','HVAC','ROOF','HOME','TYPE','NAME','DESC',
-  ]);
+function checkTokens(html: string, pageName: string) {
   const remaining = html.match(/\b[A-Z][A-Z_]{4,}\b/g)?.filter(t =>
     !t.startsWith('RGBA') && !t.startsWith('RGB') && !skipWords.has(t)
   ) ?? [];
   const unique = Array.from(new Set(remaining));
   if (unique.length > 0) {
-    console.log('\nPossible unreplaced tokens:', unique.slice(0, 20));
-  } else {
-    console.log('\nAll tokens replaced ✅');
+    console.log(`  ⚠ Possible unreplaced tokens [${pageName}]:`, unique.slice(0, 10).join(', '));
+  }
+}
+
+async function run() {
+  console.log('Starting multi-page template engine test...');
+  console.time('generation');
+
+  const pages = await generateSiteFromTemplate(brief);
+
+  console.timeEnd('generation');
+
+  const pageNames = Object.keys(pages);
+  console.log('\n=== PAGES GENERATED ===');
+  console.log(`Total: ${pageNames.length} pages\n`);
+
+  // Save all pages and report
+  const outDir = '/tmp/hammerstone-test';
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+  for (const [name, html] of Object.entries(pages)) {
+    const fileName = name === 'index' ? 'index.html' : `${name}.html`;
+    const outPath = path.join(outDir, fileName);
+    fs.writeFileSync(outPath, html);
+
+    const sizeKb = (Buffer.byteLength(html) / 1024).toFixed(1);
+    const hasPhone = html.includes('(612) 555-0142');
+    const hasName = html.includes('Hammerstone Builds');
+    const hasNavLinks = html.includes('href="services.html"') || html.includes('href="index.html"');
+    console.log(`${fileName.padEnd(20)} ${sizeKb.padStart(6)} KB  phone:${hasPhone ? '✓' : '✗'}  name:${hasName ? '✓' : '✗'}  nav:${hasNavLinks ? '✓' : '✗'}`);
+    checkTokens(html, name);
   }
 
-  // Save output
-  const outPath = path.join('/tmp', 'hammerstone-test.html');
-  fs.writeFileSync(outPath, html);
-  console.log('\nSaved to:', outPath);
-  console.log('File size:', (fs.statSync(outPath).size / 1024).toFixed(1), 'KB');
+  // Detailed check on index
+  const indexHtml = pages['index'] ?? '';
+  console.log('\n=== INDEX PAGE DETAILS ===');
+  console.log('HEADLINE replaced:     ', !indexHtml.includes('"HEADLINE"') && !indexHtml.includes('>HEADLINE<'));
+  console.log('Primary color present: ', indexHtml.includes('#e07b39'));
+  console.log('License present:       ', indexHtml.includes('MN-BC-45892'));
+  console.log('Growth tier label:     ', indexHtml.includes('Growth'));
+  console.log('NAV_LINKS replaced:    ', !indexHtml.includes('NAV_LINKS'));
+  console.log('NAV_CTA_HREF replaced: ', !indexHtml.includes('NAV_CTA_HREF'));
+
+  const h1 = indexHtml.match(/<h1[^>]*>([\s\S]{0,400}?)<\/h1>/);
+  if (h1) {
+    const text = h1[1].replace(/<[^>]+>/g, '').trim();
+    console.log('\nHero headline:', JSON.stringify(text.substring(0, 200)));
+  }
+
+  console.log(`\nSaved to: ${outDir}/`);
+  console.log(`Open: open ${outDir}/index.html`);
 }
 
 run().catch(err => {

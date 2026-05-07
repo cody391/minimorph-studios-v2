@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--secondary:SECONDARY_COLOR;--bg:#ffffff;--surface:#f8f9fa;--dark:#0f1923;--text:#1a2332;--muted:#6b7a8d;--border:#e4e9f0}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.97);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%}
+.nav-logo{font-size:1.125rem;font-weight:700;color:var(--text)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.875rem;color:var(--muted);font-weight:500;transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--primary)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.625rem 1.5rem;border-radius:8px;font-size:0.875rem;font-weight:600;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+
+/* CONTACT LAYOUT */
+.contact-layout{display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:calc(100vh - 68px)}
+
+/* LEFT — INFO */
+.contact-info{background:var(--dark);padding:5rem 5%;display:flex;flex-direction:column;justify-content:center}
+.info-eyebrow{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:1rem}
+.info-title{font-size:clamp(2rem,3.5vw,3rem);font-weight:700;color:#fff;letter-spacing:-0.02em;line-height:1.1;margin-bottom:1.5rem}
+.info-sub{color:rgba(255,255,255,0.6);font-size:0.9375rem;line-height:1.75;margin-bottom:3rem;font-weight:300;max-width:440px}
+.contact-detail-list{display:flex;flex-direction:column;gap:1.25rem;margin-bottom:3rem}
+.contact-detail{display:flex;align-items:flex-start;gap:1.125rem}
+.detail-icon{font-size:1.25rem;flex-shrink:0;margin-top:0.125rem}
+.detail-label{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.35);font-weight:600;margin-bottom:0.25rem}
+.detail-value{font-size:0.9375rem;color:rgba(255,255,255,0.85);line-height:1.4}
+.detail-value a{color:var(--primary);transition:opacity 0.2s}
+.detail-value a:hover{opacity:0.75}
+.contact-img{aspect-ratio:16/9;overflow:hidden;margin-top:auto}
+.contact-img img{width:100%;height:100%;object-fit:cover;filter:grayscale(20%);opacity:0.7}
+
+/* RIGHT — FORM */
+.contact-form-side{padding:5rem 5%;display:flex;flex-direction:column;justify-content:center}
+.form-intro{margin-bottom:2.5rem}
+.form-intro h2{font-size:1.625rem;font-weight:700;color:var(--text);letter-spacing:-0.02em;margin-bottom:0.5rem}
+.form-intro p{font-size:0.9rem;color:var(--muted)}
+.contact-form{display:flex;flex-direction:column;gap:1.125rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1.125rem}
+.form-group{display:flex;flex-direction:column;gap:0.4rem}
+.form-label{font-size:0.75rem;font-weight:600;color:var(--text);letter-spacing:0.02em}
+.form-input{border:1px solid var(--border);padding:0.875rem 1rem;font-family:'Inter',sans-serif;font-size:0.9375rem;color:var(--text);background:var(--bg);outline:none;border-radius:6px;transition:border-color 0.2s;width:100%}
+.form-input:focus{border-color:var(--primary)}
+.form-input::placeholder{color:var(--muted);opacity:0.6}
+.form-textarea{resize:vertical;min-height:140px}
+.form-submit{background:var(--primary);color:#fff;padding:1rem;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;border:none;border-radius:8px;cursor:pointer;transition:opacity 0.2s;width:100%;letter-spacing:0.02em}
+.form-submit:hover{opacity:0.85}
+.form-note{font-size:0.75rem;color:var(--muted);margin-top:0.5rem;text-align:center;line-height:1.6}
+
+/* FOOTER */
+footer{background:var(--dark);padding:3rem 5% 2rem}
+.footer-bottom{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(255,255,255,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(255,255,255,0.2)}
+.footer-mini a{color:var(--primary);opacity:0.8}
+@media(max-width:900px){.nav-links{display:none}.contact-layout{grid-template-columns:1fr}.contact-info{padding:4rem 5%}.contact-img{display:none}}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+    <ul class="nav-links">NAV_LINKS</ul>
+    <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+  </div>
+</nav>
+
+<div class="contact-layout">
+  <div class="contact-info">
+    <div class="info-eyebrow">Get in Touch</div>
+    <h1 class="info-title">We'd love<br>to hear from you.</h1>
+    <p class="info-sub">Whether you have a question, want a quote, or just want to learn more about what we do in SERVICE_AREA — reach out. OWNER_NAME responds to every message directly.</p>
+
+    <div class="contact-detail-list">
+      <div class="contact-detail">
+        <div class="detail-icon">📞</div>
+        <div>
+          <div class="detail-label">Phone</div>
+          <div class="detail-value"><a href="tel:PHONE">PHONE</a></div>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="detail-icon">✉</div>
+        <div>
+          <div class="detail-label">Email</div>
+          <div class="detail-value"><a href="mailto:EMAIL">EMAIL</a></div>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="detail-icon">📍</div>
+        <div>
+          <div class="detail-label">Address</div>
+          <div class="detail-value">ADDRESS</div>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="detail-icon">⏰</div>
+        <div>
+          <div class="detail-label">Hours</div>
+          <div class="detail-value">HOURS</div>
+        </div>
+      </div>
+      <div class="contact-detail">
+        <div class="detail-icon">🗺</div>
+        <div>
+          <div class="detail-label">Service Area</div>
+          <div class="detail-value">SERVICE_AREA</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="contact-img">
+      <img src="ABOUT_IMAGE" alt="BUSINESS_NAME" loading="lazy">
+    </div>
+  </div>
+
+  <div class="contact-form-side">
+    <div class="form-intro">
+      <h2>Send us a message</h2>
+      <p>We'll get back to you within one business day.</p>
+    </div>
+
+    <form class="contact-form" action="https://formspree.io/f/placeholder" method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="name">Name</label>
+          <input id="name" class="form-input" type="text" name="name" placeholder="Your name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone</label>
+          <input id="phone" class="form-input" type="tel" name="phone" placeholder="Optional">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input id="email" class="form-input" type="email" name="email" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="subject">Subject</label>
+        <input id="subject" class="form-input" type="text" name="subject" placeholder="How can we help?">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="message">Message</label>
+        <textarea id="message" class="form-input form-textarea" name="message" placeholder="Tell us more about what you're looking for..." required></textarea>
+      </div>
+      <button type="submit" class="form-submit">Send Message →</button>
+      <p class="form-note">We respond to every message personally. Your information is never shared.</p>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved. · <a href="privacy.html" style="color:rgba(255,255,255,0.4)">Privacy Policy</a></span>
+    <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+  </div>
+</footer>
+</body>
+</html>

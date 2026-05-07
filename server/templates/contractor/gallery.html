@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Work — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--secondary:SECONDARY_COLOR;--bg:#0d0d0d;--surface:#1a1a1a;--text:#f0f0f0;--muted:rgba(240,240,240,0.5);--border:rgba(240,240,240,0.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(13,13,13,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.375rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--primary)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:500;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.75rem 1.5rem;font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+.page-hero{position:relative;min-height:45vh;display:flex;align-items:flex-end;padding:0 5% 4rem;overflow:hidden;padding-top:100px;background:var(--surface)}
+.page-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0.25}
+.page-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.4) 100%);z-index:1}
+.page-hero-content{position:relative;z-index:2}
+.breadcrumb{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+.breadcrumb a{color:var(--primary)}
+.page-hero h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2.5rem,5vw,5rem);font-weight:900;text-transform:uppercase;line-height:0.95;color:#fff}
+.section-label{font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem}
+.section-label::before{content:'';display:block;width:2rem;height:1px;background:var(--primary)}
+
+/* FILTER BAR — CSS only */
+.filter-section{padding:3rem 5% 0}
+.filter-inner{max-width:1200px;margin:0 auto}
+.filter-bar{display:flex;gap:0;border:1px solid var(--border);width:fit-content}
+.filter-tab input[type=radio]{display:none}
+.filter-tab label{display:block;padding:0.75rem 1.5rem;font-size:0.7rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;border-right:1px solid var(--border)}
+.filter-tab:last-child label{border-right:none}
+.filter-tab input:checked + label{background:var(--primary);color:#fff}
+.filter-tab label:hover{color:var(--text)}
+
+/* GALLERY GRID */
+.gallery-section{padding:3rem 5% 6rem}
+.gallery-inner{max-width:1200px;margin:0 auto}
+.gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2rem}
+.project-card{background:var(--surface);overflow:hidden;position:relative;cursor:pointer}
+.project-card:nth-child(4n+1){grid-row:span 2}
+.project-img{width:100%;height:280px;object-fit:cover;display:block;transition:transform 0.5s}
+.project-card:nth-child(4n+1) .project-img{height:100%;min-height:580px}
+.project-card:hover .project-img{transform:scale(1.04)}
+.project-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.85) 0%,transparent 50%);opacity:0;transition:opacity 0.3s;pointer-events:none}
+.project-card:hover .project-overlay{opacity:1}
+.project-info{position:absolute;bottom:0;left:0;right:0;padding:1.5rem;transform:translateY(8px);opacity:0;transition:all 0.3s}
+.project-card:hover .project-info{transform:translateY(0);opacity:1}
+.project-type{font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:0.3rem}
+.project-location{font-family:'Barlow Condensed',sans-serif;font-size:1.125rem;font-weight:700;text-transform:uppercase;color:#fff;margin-bottom:0.3rem}
+.project-desc{font-size:0.8rem;color:rgba(255,255,255,0.75);line-height:1.5}
+
+/* TRUST BAR */
+.trust-bar{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:2rem 5%;text-align:center}
+.trust-bar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap}
+.trust-badge{display:flex;align-items:center;gap:0.75rem;font-size:0.85rem;color:var(--muted)}
+.trust-badge span{color:var(--primary);font-size:1.125rem}
+.trust-divider{width:1px;height:1.5rem;background:var(--border)}
+
+/* CTA */
+.cta-section{padding:6rem 5%;text-align:center;background:var(--primary)}
+.cta-section h2{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:900;text-transform:uppercase;color:#fff;line-height:0.95;margin-bottom:1rem}
+.cta-section p{color:rgba(255,255,255,0.8);font-size:1.0625rem;margin-bottom:2.5rem;max-width:540px;margin-left:auto;margin-right:auto}
+.btn-white{background:#fff;color:var(--primary);padding:1rem 2.5rem;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;display:inline-block;transition:opacity 0.2s}
+.btn-white:hover{opacity:0.9}
+
+/* FOOTER */
+footer{background:#080808;padding:5rem 5% 2rem;border-top:1px solid var(--border)}
+.footer-inner{max-width:1200px;margin:0 auto}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:4rem}
+.footer-brand{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem}
+.footer-tagline{font-size:0.875rem;color:var(--muted);line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(240,240,240,0.35);margin-bottom:1.25rem;font-weight:600}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.75rem}
+.footer-links a{font-size:0.875rem;color:var(--muted);transition:color 0.2s}
+.footer-links a:hover{color:var(--text)}
+.footer-contact-item{font-size:0.875rem;color:var(--muted);display:block;margin-bottom:0.75rem;transition:color 0.2s}
+.footer-contact-item:hover{color:var(--text)}
+.footer-bottom{border-top:1px solid var(--border);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(240,240,240,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(240,240,240,0.25)}
+.footer-mini a{color:var(--primary);opacity:0.7}
+[data-animate]{opacity:0;transform:translateY(24px);transition:opacity 0.65s ease,transform 0.65s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.nav-links{display:none}.gallery-grid{grid-template-columns:1fr 1fr}.project-card:nth-child(4n+1){grid-row:span 1}.project-card:nth-child(4n+1) .project-img{min-height:280px}.footer-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.gallery-grid{grid-template-columns:1fr}.filter-bar{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<section class="page-hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME project gallery" class="page-hero-bg">
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content">
+    <div class="breadcrumb"><a href="index.html">Home</a> › Our Work</div>
+    <h1>Our<br>Work</h1>
+  </div>
+</section>
+
+<div class="filter-section">
+  <div class="filter-inner">
+    <div class="filter-bar">
+      <div class="filter-tab"><input type="radio" name="filter" id="f-all" checked><label for="f-all">All Projects</label></div>
+      <div class="filter-tab"><input type="radio" name="filter" id="f-kitchen"><label for="f-kitchen">Kitchen</label></div>
+      <div class="filter-tab"><input type="radio" name="filter" id="f-bath"><label for="f-bath">Bathroom</label></div>
+      <div class="filter-tab"><input type="radio" name="filter" id="f-additions"><label for="f-additions">Additions</label></div>
+      <div class="filter-tab"><input type="radio" name="filter" id="f-exterior"><label for="f-exterior">Exterior</label></div>
+    </div>
+  </div>
+</div>
+
+<section class="gallery-section">
+  <div class="gallery-inner">
+    <div class="gallery-grid" data-animate>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_1" alt="Kitchen renovation" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Kitchen Remodel</div>
+          <div class="project-location">Linden Hills</div>
+          <div class="project-desc">Full gut renovation — custom cabinetry, quartz waterfall island, professional appliances.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_2" alt="Bathroom renovation" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Master Bath</div>
+          <div class="project-location">Edina</div>
+          <div class="project-desc">Walk-in steam shower, heated floors, dual vanity with custom millwork.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_3" alt="Home addition" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Home Addition</div>
+          <div class="project-location">Wayzata</div>
+          <div class="project-desc">800 sq ft main-level addition — mudroom, office, and expanded family room.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_1" alt="Kitchen remodel" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Kitchen Remodel</div>
+          <div class="project-location">Minnetonka</div>
+          <div class="project-desc">Open-concept conversion with structural beam work and custom range hood.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_2" alt="Bathroom remodel" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Guest Bath</div>
+          <div class="project-location">Bloomington</div>
+          <div class="project-desc">Complete bath remodel with subway tile, new plumbing layout, and glass enclosure.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_3" alt="Deck construction" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Exterior / Deck</div>
+          <div class="project-location">Eden Prairie</div>
+          <div class="project-desc">Two-level composite deck with built-in seating and pergola structure.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_1" alt="Basement finishing" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Basement Finish</div>
+          <div class="project-location">Plymouth</div>
+          <div class="project-desc">Unfinished basement converted to home theater, wet bar, and full bath.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_2" alt="Kitchen update" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Kitchen Update</div>
+          <div class="project-location">St. Louis Park</div>
+          <div class="project-desc">Cabinet refacing, new quartz tops, and recessed lighting throughout.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_3" alt="Sunroom addition" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Sunroom Addition</div>
+          <div class="project-location">Excelsior</div>
+          <div class="project-desc">Three-season sunroom addition with floor-to-ceiling glass panels and vaulted ceiling.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_1" alt="Primary bathroom" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Primary Bath</div>
+          <div class="project-location">Deephaven</div>
+          <div class="project-desc">Freestanding tub, marble wall tile, and custom floating vanity.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_2" alt="Kitchen renovation" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Kitchen Renovation</div>
+          <div class="project-location">Orono</div>
+          <div class="project-desc">Full demo to studs — new layout, custom cabinetry, and butler's pantry addition.</div>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <img src="GALLERY_IMAGE_3" alt="Garage conversion" class="project-img" loading="lazy">
+        <div class="project-overlay"></div>
+        <div class="project-info">
+          <div class="project-type">Garage Conversion</div>
+          <div class="project-location">Hopkins</div>
+          <div class="project-desc">Attached garage converted to conditioned living space with radiant heat floors.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="trust-bar">
+  <div class="trust-bar-inner">
+    <div class="trust-badge"><span>✓</span> Every project is permitted and inspected</div>
+    <div class="trust-divider"></div>
+    <div class="trust-badge"><span>✓</span> Licensed &amp; insured in SERVICE_AREA</div>
+    <div class="trust-divider"></div>
+    <div class="trust-badge"><span>✓</span> YEARS_IN_BUSINESS years of completed projects</div>
+    <div class="trust-divider"></div>
+    <div class="trust-badge"><span>✓</span> Full documentation provided at close</div>
+  </div>
+</div>
+
+<section class="cta-section">
+  <h2>Like What<br>You See?</h2>
+  <p>Let's talk about your project. We'll walk the space, understand your goals, and put together a clear scope and budget — no pressure, no surprises.</p>
+  <a href="NAV_CTA_HREF" class="btn-white">Start Your Project</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <p class="footer-tagline">TAGLINE</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+        <a href="mailto:EMAIL" class="footer-contact-item">EMAIL</a>
+        <span class="footer-contact-item">ADDRESS</span>
+      </div>
+      <div>
+        <div class="footer-col-title">Hours</div>
+        <span class="footer-contact-item">HOURS</span>
+        <span class="footer-contact-item">License: LICENSE_NUMBER</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+      <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

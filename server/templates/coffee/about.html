@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Story — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--bg:#faf5ee;--surface:#f0e6d6;--text:#1e1208;--muted:rgba(30,18,8,0.55);--border:rgba(30,18,8,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+.top-bar{background:var(--primary);color:#fff;text-align:center;padding:0.625rem 1rem;font-size:0.8rem;position:sticky;top:0;z-index:1001}
+.top-bar a{color:#fff;font-weight:700}
+nav{position:sticky;top:2.1rem;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(250,245,238,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:var(--text)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.875rem;font-weight:400;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--primary)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.625rem 1.5rem;border-radius:50px;font-size:0.825rem;font-weight:700;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+
+/* HERO */
+.about-hero{position:relative;min-height:75vh;display:flex;align-items:flex-end;padding:0 5% 5rem;overflow:hidden}
+.about-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.about-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(30,18,8,0.92) 0%,rgba(30,18,8,0.25) 60%,transparent 100%);z-index:1}
+.about-hero-content{position:relative;z-index:2;max-width:650px}
+.about-hero-eyebrow{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:1rem}
+.about-hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:700;color:#fff;line-height:1.05;margin-bottom:1.25rem}
+.about-hero-sub{font-size:1.0625rem;color:rgba(255,255,255,0.75);font-weight:300;max-width:480px}
+.about-hero-name{margin-top:1.5rem;font-size:0.875rem;color:var(--primary);font-weight:700}
+
+/* STORY */
+.story{display:grid;grid-template-columns:1fr 1fr;gap:6rem;max-width:1200px;margin:0 auto;padding:6rem 5%;align-items:start}
+.story-lead{font-family:'Playfair Display',serif;font-size:clamp(1.375rem,2vw,1.875rem);font-style:italic;color:var(--text);line-height:1.35;margin-bottom:2.5rem}
+.story-body{color:var(--muted);font-size:0.9375rem;line-height:1.875;font-weight:300}
+.story-body p+p{margin-top:1.25rem}
+.story-img-stack{display:grid;grid-template-rows:auto auto;gap:1rem}
+.story-img-main{aspect-ratio:4/3;overflow:hidden}
+.story-img-main img{width:100%;height:100%;object-fit:cover}
+.story-img-secondary{aspect-ratio:16/7;overflow:hidden}
+.story-img-secondary img{width:100%;height:100%;object-fit:cover}
+
+/* SOURCING */
+.sourcing{background:var(--text);padding:7rem 5%}
+.sourcing-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+.sourcing-title{font-family:'Playfair Display',serif;font-size:clamp(1.75rem,3vw,2.75rem);font-weight:700;color:#fff;line-height:1.1;margin-bottom:1.5rem}
+.sourcing-body{color:rgba(255,255,255,0.65);font-size:0.9375rem;line-height:1.85;font-weight:300}
+.sourcing-body p+p{margin-top:1.25rem}
+.origin-cards{display:flex;flex-direction:column;gap:1.25rem}
+.origin-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:1.5rem;display:flex;gap:1.25rem;align-items:flex-start}
+.origin-flag{font-size:1.75rem;flex-shrink:0}
+.origin-country{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#fff;margin-bottom:0.3rem}
+.origin-notes{font-size:0.825rem;color:rgba(255,255,255,0.55);line-height:1.6}
+
+/* ROASTING (if applicable) */
+.roasting{padding:6rem 5%;background:var(--surface)}
+.roasting-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+.roasting-img{aspect-ratio:4/3;overflow:hidden}
+.roasting-img img{width:100%;height:100%;object-fit:cover}
+.roasting-eyebrow{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:0.75rem}
+.roasting-title{font-family:'Playfair Display',serif;font-size:clamp(1.75rem,2.5vw,2.5rem);font-weight:700;margin-bottom:1.25rem;line-height:1.1}
+.roasting-body{color:var(--muted);font-size:0.9375rem;line-height:1.85;font-weight:300}
+
+/* CTA */
+.cta{padding:5rem 5%;text-align:center;background:var(--primary)}
+.cta h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,3.5vw,3rem);font-weight:700;color:#fff;margin-bottom:1rem}
+.cta p{color:rgba(255,255,255,0.8);font-size:1.0rem;margin-bottom:2rem;max-width:420px;margin-left:auto;margin-right:auto}
+.btn-white{display:inline-block;background:#fff;color:var(--primary);padding:1rem 2.5rem;border-radius:50px;font-size:0.9rem;font-weight:700;transition:opacity 0.2s}
+.btn-white:hover{opacity:0.9}
+
+/* FOOTER */
+footer{background:var(--text);color:rgba(255,255,255,0.7);padding:4rem 5% 2rem}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+.footer-brand{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:0.75rem}
+.footer-tagline{font-size:0.875rem;line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1rem;font-weight:700}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.625rem}
+.footer-links a{font-size:0.875rem;color:rgba(255,255,255,0.6);transition:color 0.2s}
+.footer-links a:hover{color:#fff}
+.footer-contact-item{font-size:0.875rem;color:rgba(255,255,255,0.6);display:block;margin-bottom:0.625rem}
+.footer-bottom{border-top:1px solid rgba(255,255,255,0.1);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(255,255,255,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(255,255,255,0.2)}
+.footer-mini a{color:var(--primary);opacity:0.8}
+[data-animate]{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.nav-links{display:none}.story{grid-template-columns:1fr}.sourcing-inner{grid-template-columns:1fr}.roasting-inner{grid-template-columns:1fr}.footer-inner{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="top-bar">Now open in SERVICE_AREA · <a href="tel:PHONE">PHONE</a> · HOURS</div>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<section class="about-hero">
+  <img src="ABOUT_IMAGE" alt="BUSINESS_NAME" class="about-hero-bg">
+  <div class="about-hero-overlay"></div>
+  <div class="about-hero-content">
+    <div class="about-hero-eyebrow">Our Story</div>
+    <h1>Coffee Made<br>with Purpose</h1>
+    <p class="about-hero-sub">YEARS_IN_BUSINESS years of sourcing honestly, roasting carefully, and serving SERVICE_AREA every morning.</p>
+    <div class="about-hero-name">— OWNER_NAME, Founder</div>
+  </div>
+</section>
+
+<div class="story">
+  <div data-animate>
+    <div class="story-lead">"We got into coffee because we couldn't find a place in SERVICE_AREA that took it as seriously as we did."</div>
+    <div class="story-body">ABOUT_STORY</div>
+  </div>
+  <div data-animate>
+    <div class="story-img-stack">
+      <div class="story-img-main"><img src="GALLERY_IMAGE_1" alt="BUSINESS_NAME interior" loading="lazy"></div>
+      <div class="story-img-secondary"><img src="GALLERY_IMAGE_2" alt="Coffee preparation" loading="lazy"></div>
+    </div>
+  </div>
+</div>
+
+<section class="sourcing" data-animate>
+  <div class="sourcing-inner">
+    <div>
+      <div style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:0.75rem">Where It Comes From</div>
+      <div class="sourcing-title">We know who grew every bean we serve.</div>
+      <div class="sourcing-body"><p>Sourcing transparently means paying farmers a price that reflects the actual cost and quality of their work — not commodity market price. We visit farms when we can, and we work with importers who share that same commitment.</p><p>What's on our bar changes with the harvest cycle. When a great lot is gone, we find the next great lot — we don't substitute with something lesser to keep the menu consistent.</p></div>
+    </div>
+    <div class="origin-cards">
+      <div class="origin-card"><div class="origin-flag">🇪🇹</div><div><div class="origin-country">Ethiopia — Yirgacheffe</div><div class="origin-notes">Washed process · jasmine, bergamot, stone fruit · Espresso &amp; pour-over</div></div></div>
+      <div class="origin-card"><div class="origin-flag">🇨🇴</div><div><div class="origin-country">Colombia — Huila</div><div class="origin-notes">Honey process · red grape, molasses, dark chocolate · House espresso blend</div></div></div>
+      <div class="origin-card"><div class="origin-flag">🇬🇹</div><div><div class="origin-country">Guatemala — Antigua</div><div class="origin-notes">Natural process · tropical fruit, brown sugar · Filter and cold brew</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="roasting" data-animate>
+  <div class="roasting-inner">
+    <div class="roasting-img"><img src="GALLERY_IMAGE_3" alt="BUSINESS_NAME roastery" loading="lazy"></div>
+    <div>
+      <div class="roasting-eyebrow">How We Roast</div>
+      <h2 class="roasting-title">Light enough to taste where it came from.</h2>
+      <div class="roasting-body">We roast to highlight the origin character of each coffee — not to cover it up. Our espresso roast is developed just far enough to bring out sweetness and body while keeping the brightness of the origin intact. Our filter coffees are roasted lighter, designed to reward slower brewing methods like pour-over and cold brew. Everything is roasted in small batches and rested the right amount of time before it goes on bar.</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <h2>Come in for a cup.</h2>
+  <p>We're here every morning in SERVICE_AREA. Come meet the people behind the coffee.</p>
+  <a href="index.html" class="btn-white">See Our Hours &amp; Location</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">BUSINESS_NAME</div>
+      <p class="footer-tagline">TAGLINE</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Visit Us</div>
+      <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+      <span class="footer-contact-item">ADDRESS</span>
+      <span class="footer-contact-item">HOURS</span>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+    <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

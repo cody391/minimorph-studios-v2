@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--bg:#faf5ee;--surface:#f0e6d6;--text:#1e1208;--muted:rgba(30,18,8,0.55);--border:rgba(30,18,8,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+.top-bar{background:var(--primary);color:#fff;text-align:center;padding:0.625rem 1rem;font-size:0.8rem;position:sticky;top:0;z-index:1001}
+.top-bar a{color:#fff;font-weight:700}
+nav{position:sticky;top:2.1rem;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(250,245,238,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:var(--text)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.875rem;font-weight:400;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--primary)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.625rem 1.5rem;border-radius:50px;font-size:0.825rem;font-weight:700;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+
+/* HEADER */
+.menu-header{padding:8rem 5% 0;text-align:center}
+.menu-header-eyebrow{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:1rem}
+.menu-header h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:700;color:var(--text);margin-bottom:1rem}
+.menu-header-img{width:100%;max-height:280px;object-fit:cover;display:block;margin-top:2.5rem}
+
+/* STICKY MENU NAV */
+.menu-cat-nav{position:sticky;top:calc(2.1rem + 68px);z-index:800;background:var(--surface);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.menu-cat-nav a{flex-shrink:0;padding:1rem 1.5rem;font-size:0.78rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.2s;white-space:nowrap}
+.menu-cat-nav a:hover,.menu-cat-nav a.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+/* MENU BODY */
+.menu-body{max-width:800px;margin:0 auto;padding:4rem 5% 5rem}
+.menu-section{margin-bottom:4rem}
+.menu-section-title{font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;margin-bottom:0.5rem;color:var(--text)}
+.menu-section-note{font-size:0.85rem;color:var(--muted);font-weight:300;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:2px solid var(--primary)}
+.menu-items{display:flex;flex-direction:column;gap:0}
+.menu-row{display:flex;align-items:baseline;justify-content:space-between;gap:1.5rem;padding:1rem 0;border-bottom:1px solid var(--border)}
+.menu-row:last-child{border-bottom:none}
+.menu-row-left{flex:1}
+.menu-item-name{font-weight:700;font-size:0.9375rem;color:var(--text);margin-bottom:0.2rem}
+.menu-item-desc{font-size:0.825rem;color:var(--muted);font-weight:300;line-height:1.5}
+.menu-item-badges{display:flex;gap:0.4rem;margin-top:0.3rem;flex-wrap:wrap}
+.menu-badge{font-size:0.65rem;padding:0.2rem 0.4rem;background:var(--surface);color:var(--muted);font-weight:600;border-radius:2px}
+.menu-badge.seasonal{background:var(--primary);color:#fff}
+.menu-item-price{font-family:'Playfair Display',serif;font-size:1.0625rem;font-weight:700;color:var(--primary);flex-shrink:0;white-space:nowrap}
+
+/* PHOTO BREAK */
+.photo-break{width:100%;height:200px;object-fit:cover;margin:3rem 0;max-width:800px;margin-left:auto;margin-right:auto;display:block}
+
+/* FOOTER */
+footer{background:var(--text);color:rgba(255,255,255,0.7);padding:4rem 5% 2rem}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+.footer-brand{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:0.75rem}
+.footer-tagline{font-size:0.875rem;line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1rem;font-weight:700}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.625rem}
+.footer-links a{font-size:0.875rem;color:rgba(255,255,255,0.6);transition:color 0.2s}
+.footer-links a:hover{color:#fff}
+.footer-contact-item{font-size:0.875rem;color:rgba(255,255,255,0.6);display:block;margin-bottom:0.625rem}
+.footer-bottom{border-top:1px solid rgba(255,255,255,0.1);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(255,255,255,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(255,255,255,0.2)}
+.footer-mini a{color:var(--primary);opacity:0.8}
+@media(max-width:800px){.nav-links{display:none}.footer-inner{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="top-bar">Now open · <a href="tel:PHONE">PHONE</a> · HOURS</div>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<div class="menu-header">
+  <div class="menu-header-eyebrow">What We're Serving</div>
+  <h1>Our Menu</h1>
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME coffee bar" class="menu-header-img">
+</div>
+
+<nav class="menu-cat-nav" aria-label="Menu categories">
+  <a href="#espresso" class="active">Espresso</a>
+  <a href="#filter">Filter &amp; Pour-Over</a>
+  <a href="#seasonal">Seasonal</a>
+  <a href="#food">Food</a>
+  <a href="#retail">Retail</a>
+</nav>
+
+<div class="menu-body">
+
+  <section class="menu-section" id="espresso">
+    <div class="menu-section-title">Espresso</div>
+    <div class="menu-section-note">All espresso drinks use our rotating single-origin house espresso blend. Available on oat, almond, or whole milk.</div>
+    <div class="menu-items">
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Espresso</div><div class="menu-item-desc">Single or double shot, served short</div></div><div class="menu-item-price">$3 / $4</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Cortado</div><div class="menu-item-desc">Equal parts espresso and steamed milk, no foam</div></div><div class="menu-item-price">$5</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Cappuccino</div><div class="menu-item-desc">Double shot, dense microfoam, served in a 6oz cup</div></div><div class="menu-item-price">$5.50</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Flat White</div><div class="menu-item-desc">Ristretto shots with velvety milk in a 5oz cup</div></div><div class="menu-item-price">$6</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Latte</div><div class="menu-item-desc">Double shot, steamed milk, light foam. 12oz / 16oz</div><div class="menu-item-badges"><span class="menu-badge">Oat +$0.75</span></div></div><div class="menu-item-price">$6 / $7</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">SERVICE_1_DESC Latte</div><div class="menu-item-desc">House-made seasonal syrup, espresso, steamed milk</div><div class="menu-item-badges"><span class="menu-badge seasonal">Seasonal</span></div></div><div class="menu-item-price">$7</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Iced Latte</div><div class="menu-item-desc">Double shot over ice, cold milk of choice</div></div><div class="menu-item-price">$6.50</div></div>
+    </div>
+  </section>
+
+  <img src="GALLERY_IMAGE_1" alt="Pour-over coffee" class="photo-break">
+
+  <section class="menu-section" id="filter">
+    <div class="menu-section-title">Filter &amp; Pour-Over</div>
+    <div class="menu-section-note">Rotating single-origins prepared with care. Ask us what's on today — we change them weekly.</div>
+    <div class="menu-items">
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">House Drip</div><div class="menu-item-desc">Our everyday blend, batch-brewed fresh every 30 minutes</div></div><div class="menu-item-price">$3.50</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Pour-Over (V60)</div><div class="menu-item-desc">Single-origin, made to order — rotating origin. Ask your barista.</div><div class="menu-item-badges"><span class="menu-badge">10 min</span></div></div><div class="menu-item-price">$7</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Cold Brew</div><div class="menu-item-desc">18-hour steep, served over ice. House blend or with oat milk.</div></div><div class="menu-item-price">$5.50</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Nitro Cold Brew</div><div class="menu-item-desc">Cold brew on nitrogen tap — smooth, naturally sweet, no ice</div></div><div class="menu-item-price">$6.50</div></div>
+    </div>
+  </section>
+
+  <section class="menu-section" id="seasonal">
+    <div class="menu-section-title">Seasonal Specials</div>
+    <div class="menu-section-note">What's rotating right now in SERVICE_AREA. These change with the season — ask us what's new.</div>
+    <div class="menu-items">
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">SERVICE_2_DESC</div><div class="menu-item-desc">House-crafted seasonal drink — ask your barista for today's special</div><div class="menu-item-badges"><span class="menu-badge seasonal">Limited</span></div></div><div class="menu-item-price">$7.50</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Turmeric Latte</div><div class="menu-item-desc">Oat milk, house-made golden spice blend, honey, touch of black pepper</div><div class="menu-item-badges"><span class="menu-badge">Caffeine-free</span></div></div><div class="menu-item-price">$6.50</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Matcha Latte</div><div class="menu-item-desc">Ceremonial grade matcha, steamed milk, optional sweetener</div><div class="menu-item-badges"><span class="menu-badge">Caffeine-free</span></div></div><div class="menu-item-price">$6.50</div></div>
+    </div>
+  </section>
+
+  <img src="GALLERY_IMAGE_2" alt="Baked goods" class="photo-break">
+
+  <section class="menu-section" id="food">
+    <div class="menu-section-title">Food</div>
+    <div class="menu-section-note">Baked in-house daily. We stop baking when we sell out — come early for the best selection.</div>
+    <div class="menu-items">
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Croissant</div><div class="menu-item-desc">Plain, almond, or ham &amp; cheese — baked fresh every morning</div></div><div class="menu-item-price">$4.50–$5.50</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">SERVICE_3_DESC Scone</div><div class="menu-item-desc">House recipe, seasonal fruit and glaze</div><div class="menu-item-badges"><span class="menu-badge seasonal">Seasonal</span></div></div><div class="menu-item-price">$4</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Avocado Toast</div><div class="menu-item-desc">House bread, smashed avocado, chili flake, lemon, sea salt</div><div class="menu-item-badges"><span class="menu-badge">V</span></div></div><div class="menu-item-price">$10</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Granola Bowl</div><div class="menu-item-desc">House-made granola, seasonal fruit, yogurt, local honey</div><div class="menu-item-badges"><span class="menu-badge">GF</span><span class="menu-badge">V</span></div></div><div class="menu-item-price">$9</div></div>
+    </div>
+  </section>
+
+  <section class="menu-section" id="retail">
+    <div class="menu-section-title">Retail &amp; Beans</div>
+    <div class="menu-section-note">Take home the same coffees we brew. All bags are 250g whole bean — we grind to order.</div>
+    <div class="menu-items">
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">House Espresso Blend — 250g</div><div class="menu-item-desc">Our rotating house blend. Changes seasonally.</div></div><div class="menu-item-price">$18</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Single-Origin — 250g</div><div class="menu-item-desc">Current pour-over origin. Ask us what we're featuring this week.</div></div><div class="menu-item-price">$22</div></div>
+      <div class="menu-row"><div class="menu-row-left"><div class="menu-item-name">Dripper + Starter Kit</div><div class="menu-item-desc">V60 or Chemex dripper, filters, and 250g of house beans</div></div><div class="menu-item-price">$48</div></div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">BUSINESS_NAME</div>
+      <p class="footer-tagline">TAGLINE</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Visit Us</div>
+      <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+      <span class="footer-contact-item">ADDRESS</span>
+      <span class="footer-contact-item">HOURS</span>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+    <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+  </div>
+</footer>
+
+<script>
+const navLinks = document.querySelectorAll('.menu-cat-nav a');
+const sections = document.querySelectorAll('.menu-section[id]');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => { if(window.scrollY >= s.offsetTop - 200) cur = s.id; });
+  navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
+});
+</script>
+</body>
+</html>

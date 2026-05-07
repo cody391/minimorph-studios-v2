@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get a Quote — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--secondary:SECONDARY_COLOR;--bg:#0d0d0d;--surface:#1a1a1a;--text:#f0f0f0;--muted:rgba(240,240,240,0.5);--border:rgba(240,240,240,0.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(13,13,13,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.375rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--primary)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:500;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.75rem 1.5rem;font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+.page-hero{position:relative;min-height:40vh;display:flex;align-items:flex-end;padding:0 5% 4rem;overflow:hidden;padding-top:100px;background:var(--surface)}
+.page-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0.2}
+.page-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.3) 100%);z-index:1}
+.page-hero-content{position:relative;z-index:2}
+.breadcrumb{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+.breadcrumb a{color:var(--primary)}
+.page-hero h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2.5rem,5vw,5rem);font-weight:900;text-transform:uppercase;line-height:0.95;color:#fff}
+
+/* QUOTE LAYOUT */
+.quote-layout{display:grid;grid-template-columns:1fr 400px;gap:5rem;max-width:1200px;margin:0 auto;padding:6rem 5%}
+.quote-intro{margin-bottom:3rem}
+.section-label{font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem}
+.section-label::before{content:'';display:block;width:2rem;height:1px;background:var(--primary)}
+.quote-intro h2{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,3.5vw,3rem);font-weight:900;text-transform:uppercase;line-height:0.95;margin-bottom:1rem}
+.quote-intro p{color:var(--muted);font-size:0.9375rem;line-height:1.8;font-weight:300;max-width:560px}
+
+/* FORM */
+.quote-form{display:flex;flex-direction:column;gap:1.25rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.form-group{display:flex;flex-direction:column;gap:0.5rem}
+.form-label{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.form-input{background:transparent;border:1px solid var(--border);padding:1rem 1.25rem;color:var(--text);font-size:0.9375rem;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.2s;width:100%;appearance:none}
+.form-input:focus{border-color:var(--primary)}
+.form-input::placeholder{color:rgba(240,240,240,0.25)}
+select.form-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(240,240,240,0.4)'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;padding-right:2.5rem}
+.form-textarea{resize:vertical;min-height:130px}
+.form-radio-group{display:flex;flex-direction:column;gap:0.625rem;margin-top:0.25rem}
+.radio-option{display:flex;align-items:center;gap:0.75rem;cursor:pointer;font-size:0.9rem;color:var(--muted);transition:color 0.2s}
+.radio-option input{accent-color:var(--primary);width:1rem;height:1rem;cursor:pointer}
+.radio-option:hover{color:var(--text)}
+.form-submit{background:var(--primary);color:#fff;padding:1.25rem;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:none;cursor:pointer;transition:opacity 0.2s;width:100%;margin-top:0.5rem}
+.form-submit:hover{opacity:0.85}
+.form-disclaimer{font-size:0.75rem;color:rgba(240,240,240,0.25);text-align:center;margin-top:0.5rem;line-height:1.6}
+
+/* TRUST SIDEBAR */
+.trust-sidebar{display:flex;flex-direction:column;gap:2rem}
+.trust-card{background:var(--surface);border:1px solid var(--border);padding:2rem}
+.trust-card-title{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1.25rem;color:var(--primary)}
+.trust-list{list-style:none;display:flex;flex-direction:column;gap:0.875rem}
+.trust-list li{font-size:0.875rem;color:var(--muted);display:flex;align-items:flex-start;gap:0.625rem;line-height:1.55}
+.trust-list li::before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0}
+.contact-card{background:var(--surface);border:1px solid var(--border);padding:2rem}
+.contact-card-title{font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(240,240,240,0.35);margin-bottom:1.5rem;font-weight:600}
+.contact-line{font-size:0.9rem;color:var(--muted);display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;transition:color 0.2s}
+.contact-line:hover{color:var(--text)}
+.contact-line:last-child{margin-bottom:0}
+.contact-line span:first-child{color:var(--primary);font-size:1.1rem}
+.timeline-card{background:var(--primary);padding:2rem}
+.timeline-title{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fff;margin-bottom:1.25rem}
+.timeline-steps{display:flex;flex-direction:column;gap:0.875rem}
+.timeline-step{display:flex;align-items:flex-start;gap:0.875rem}
+.timeline-num{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:rgba(255,255,255,0.4);line-height:1;flex-shrink:0;min-width:1.5rem}
+.timeline-text{font-size:0.85rem;color:rgba(255,255,255,0.85);line-height:1.5}
+
+/* FOOTER */
+footer{background:#080808;padding:5rem 5% 2rem;border-top:1px solid var(--border)}
+.footer-inner{max-width:1200px;margin:0 auto}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:4rem}
+.footer-brand{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem}
+.footer-tagline{font-size:0.875rem;color:var(--muted);line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(240,240,240,0.35);margin-bottom:1.25rem;font-weight:600}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.75rem}
+.footer-links a{font-size:0.875rem;color:var(--muted);transition:color 0.2s}
+.footer-links a:hover{color:var(--text)}
+.footer-contact-item{font-size:0.875rem;color:var(--muted);display:block;margin-bottom:0.75rem}
+.footer-bottom{border-top:1px solid var(--border);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(240,240,240,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(240,240,240,0.25)}
+.footer-mini a{color:var(--primary);opacity:0.7}
+@media(max-width:1000px){.quote-layout{grid-template-columns:1fr}.trust-sidebar{display:grid;grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.nav-links{display:none}.form-row{grid-template-columns:1fr}.trust-sidebar{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<section class="page-hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME quote" class="page-hero-bg">
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content">
+    <div class="breadcrumb"><a href="index.html">Home</a> › Get a Quote</div>
+    <h1>Get a<br>Quote</h1>
+  </div>
+</section>
+
+<div class="quote-layout">
+  <div>
+    <div class="quote-intro" data-animate>
+      <div class="section-label">Start Here</div>
+      <h2>Tell us about<br>your project.</h2>
+      <p>Fill out the form below and OWNER_NAME will personally review it. You'll hear back within one business day to schedule a site visit — no automated responses, no sales pressure.</p>
+    </div>
+
+    <form class="quote-form" data-animate action="https://formspree.io/f/placeholder" method="POST">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="q-name">Full Name</label>
+          <input id="q-name" class="form-input" type="text" name="name" placeholder="Jane Smith" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="q-phone">Phone Number</label>
+          <input id="q-phone" class="form-input" type="tel" name="phone" placeholder="(612) 555-0100">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="q-email">Email Address</label>
+        <input id="q-email" class="form-input" type="email" name="email" placeholder="jane@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="q-address">Property Address</label>
+        <input id="q-address" class="form-input" type="text" name="address" placeholder="123 Main St, Minneapolis MN">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="q-service">Type of Project</label>
+        <select id="q-service" class="form-input" name="service">
+          <option value="" disabled selected>Select a project type</option>
+          <option>SERVICE_1_DESC</option>
+          <option>SERVICE_2_DESC</option>
+          <option>SERVICE_3_DESC</option>
+          <option>Multiple / Not Sure</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Budget Range</label>
+        <div class="form-radio-group">
+          <label class="radio-option"><input type="radio" name="budget" value="under-10k"> Under $10,000</label>
+          <label class="radio-option"><input type="radio" name="budget" value="10-30k"> $10,000 – $30,000</label>
+          <label class="radio-option"><input type="radio" name="budget" value="30-75k"> $30,000 – $75,000</label>
+          <label class="radio-option"><input type="radio" name="budget" value="75-150k"> $75,000 – $150,000</label>
+          <label class="radio-option"><input type="radio" name="budget" value="150k+"> $150,000+</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Desired Timeline</label>
+        <div class="form-radio-group">
+          <label class="radio-option"><input type="radio" name="timeline" value="asap"> As soon as possible</label>
+          <label class="radio-option"><input type="radio" name="timeline" value="1-3mo"> 1–3 months</label>
+          <label class="radio-option"><input type="radio" name="timeline" value="3-6mo"> 3–6 months</label>
+          <label class="radio-option"><input type="radio" name="timeline" value="flexible"> Flexible / planning ahead</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="q-desc">Describe Your Project</label>
+        <textarea id="q-desc" class="form-input form-textarea" name="description" placeholder="Tell us what you're hoping to accomplish — the more detail the better."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="q-referral">How Did You Hear About Us?</label>
+        <select id="q-referral" class="form-input" name="referral">
+          <option value="" disabled selected>Select one</option>
+          <option>Google Search</option>
+          <option>Neighbor or Friend Referral</option>
+          <option>Houzz</option>
+          <option>NextDoor</option>
+          <option>Previous Customer</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <button type="submit" class="form-submit">Submit My Project Details →</button>
+      <p class="form-disclaimer">We typically respond within 1 business day. Your information is never shared or sold.</p>
+    </form>
+  </div>
+
+  <div class="trust-sidebar">
+    <div class="trust-card" data-animate>
+      <div class="trust-card-title">Why Homeowners Choose Us</div>
+      <ul class="trust-list">
+        <li>Licensed general contractor — License No. LICENSE_NUMBER</li>
+        <li>$2M general liability + workers' comp on every job</li>
+        <li>All permits pulled by us — no risk to you</li>
+        <li>Fixed-price contracts: we absorb cost overruns we caused</li>
+        <li>YEARS_IN_BUSINESS years serving SERVICE_AREA homeowners</li>
+        <li>Daily updates while on site — always reachable</li>
+        <li>Punch-list walkthrough before final payment</li>
+      </ul>
+    </div>
+
+    <div class="contact-card" data-animate>
+      <div class="contact-card-title">Prefer to call?</div>
+      <a href="tel:PHONE" class="contact-line"><span>📞</span> PHONE</a>
+      <a href="mailto:EMAIL" class="contact-line"><span>✉</span> EMAIL</a>
+      <span class="contact-line"><span>⏰</span> HOURS</span>
+    </div>
+
+    <div class="timeline-card" data-animate>
+      <div class="timeline-title">What Happens Next</div>
+      <div class="timeline-steps">
+        <div class="timeline-step"><div class="timeline-num">1</div><div class="timeline-text">OWNER_NAME reviews your submission personally within 1 business day</div></div>
+        <div class="timeline-step"><div class="timeline-num">2</div><div class="timeline-text">We schedule a site visit to walk the space and ask questions</div></div>
+        <div class="timeline-step"><div class="timeline-num">3</div><div class="timeline-text">We prepare a detailed written scope and budget — no vague estimates</div></div>
+        <div class="timeline-step"><div class="timeline-num">4</div><div class="timeline-text">If it's a fit, we lock in a start date and get to work</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <p class="footer-tagline">TAGLINE</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+        <a href="mailto:EMAIL" class="footer-contact-item">EMAIL</a>
+        <span class="footer-contact-item">ADDRESS</span>
+      </div>
+      <div>
+        <div class="footer-col-title">Hours</div>
+        <span class="footer-contact-item">HOURS</span>
+        <span class="footer-contact-item">License: LICENSE_NUMBER</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+      <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

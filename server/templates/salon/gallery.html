@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallery — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--bg:#fdf9f4;--surface:#f5ede2;--text:#2a1f1a;--muted:rgba(42,31,26,0.55);--border:rgba(42,31,26,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(253,249,244,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:var(--text)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.875rem;font-weight:400;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--primary)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.625rem 1.5rem;border-radius:50px;font-size:0.825rem;font-weight:700;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+.book-sticky{position:fixed;bottom:2rem;right:2rem;z-index:900;background:var(--primary);color:#fff;padding:0.875rem 1.75rem;border-radius:50px;font-size:0.875rem;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.2);transition:transform 0.2s}
+.book-sticky:hover{transform:translateY(-2px)}
+
+/* HEADER */
+.gallery-header{padding:8rem 5% 3rem;text-align:center}
+.gallery-header-eyebrow{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:1rem}
+.gallery-header h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:700;color:var(--text);line-height:1.05;margin-bottom:1rem}
+.gallery-header p{color:var(--muted);font-size:1rem;font-weight:300;max-width:480px;margin:0 auto}
+
+/* FILTER — CSS only tabs */
+.filter-bar{display:flex;gap:0;justify-content:center;margin:3rem 0 2rem;border:1px solid var(--border)}
+.filter-tab input[type=radio]{display:none}
+.filter-tab label{display:block;padding:0.75rem 1.5rem;font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all 0.2s;border-right:1px solid var(--border)}
+.filter-tab:last-child label{border-right:none}
+.filter-tab input:checked + label{background:var(--primary);color:#fff}
+.filter-tab label:hover{color:var(--text)}
+
+/* GALLERY GRID */
+.gallery-grid{columns:3;column-gap:1rem;padding:0 5% 5rem;max-width:1200px;margin:0 auto}
+.gallery-item{break-inside:avoid;margin-bottom:1rem;overflow:hidden;position:relative;cursor:pointer}
+.gallery-item img{width:100%;display:block;transition:transform 0.5s}
+.gallery-item:hover img{transform:scale(1.04)}
+.gallery-item-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(42,31,26,0.7) 0%,transparent 50%);opacity:0;transition:opacity 0.3s}
+.gallery-item:hover .gallery-item-overlay{opacity:1}
+.gallery-item-label{position:absolute;bottom:0;left:0;right:0;padding:1.25rem;transform:translateY(6px);opacity:0;transition:all 0.3s}
+.gallery-item:hover .gallery-item-label{transform:translateY(0);opacity:1}
+.gallery-label-cat{font-size:0.65rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--primary);margin-bottom:0.2rem}
+.gallery-label-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#fff}
+
+/* CTA */
+.cta{background:var(--primary);padding:5rem 5%;text-align:center}
+.cta h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,3.5vw,3rem);font-weight:700;color:#fff;margin-bottom:1rem}
+.cta p{color:rgba(255,255,255,0.8);font-size:1.0rem;margin-bottom:2rem;max-width:420px;margin-left:auto;margin-right:auto}
+.btn-white{display:inline-block;background:#fff;color:var(--primary);padding:1rem 2.5rem;border-radius:50px;font-size:0.9rem;font-weight:700;transition:opacity 0.2s}
+.btn-white:hover{opacity:0.9}
+
+/* FOOTER */
+footer{background:var(--text);color:rgba(255,255,255,0.7);padding:4rem 5% 2rem}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+.footer-brand{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:0.75rem}
+.footer-tagline{font-size:0.875rem;line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1rem;font-weight:700}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.625rem}
+.footer-links a{font-size:0.875rem;color:rgba(255,255,255,0.6);transition:color 0.2s}
+.footer-links a:hover{color:#fff}
+.footer-contact-item{font-size:0.875rem;color:rgba(255,255,255,0.6);display:block;margin-bottom:0.625rem}
+.footer-bottom{border-top:1px solid rgba(255,255,255,0.1);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(255,255,255,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(255,255,255,0.2)}
+.footer-mini a{color:var(--primary);opacity:0.8}
+@media(max-width:800px){.nav-links{display:none}.gallery-grid{columns:2}.footer-inner{grid-template-columns:1fr}.filter-bar{flex-wrap:wrap;justify-content:flex-start}}
+@media(max-width:500px){.gallery-grid{columns:1}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+<a href="NAV_CTA_HREF" class="book-sticky">Book Now</a>
+
+<div class="gallery-header">
+  <div class="gallery-header-eyebrow">Our Work</div>
+  <h1>The Gallery</h1>
+  <p>Real clients, real results. Every look here was created right here in our salon in SERVICE_AREA.</p>
+</div>
+
+<div style="display:flex;justify-content:center;padding:0 5%">
+  <div class="filter-bar">
+    <div class="filter-tab"><input type="radio" name="filter" id="f-all" checked><label for="f-all">All</label></div>
+    <div class="filter-tab"><input type="radio" name="filter" id="f-color"><label for="f-color">Color</label></div>
+    <div class="filter-tab"><input type="radio" name="filter" id="f-cuts"><label for="f-cuts">Cuts</label></div>
+    <div class="filter-tab"><input type="radio" name="filter" id="f-ext"><label for="f-ext">Extensions</label></div>
+    <div class="filter-tab"><input type="radio" name="filter" id="f-bridal"><label for="f-bridal">Bridal</label></div>
+  </div>
+</div>
+
+<div class="gallery-grid">
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_1" alt="Balayage color" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Color</div><div class="gallery-label-name">Warm Balayage</div></div>
+  </div>
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_2" alt="Cut and style" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Cut</div><div class="gallery-label-name">Textured Lob</div></div>
+  </div>
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_3" alt="Full highlights" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Color</div><div class="gallery-label-name">Full Highlights</div></div>
+  </div>
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_1" alt="Bridal updo" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Bridal</div><div class="gallery-label-name">Romantic Updo</div></div>
+  </div>
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_2" alt="Color melt" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Color</div><div class="gallery-label-name">Color Melt</div></div>
+  </div>
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_3" alt="Curtain bangs" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Cut</div><div class="gallery-label-name">Curtain Bangs</div></div>
+  </div>
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_1" alt="Extensions" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Extensions</div><div class="gallery-label-name">Hand-Tied Extensions</div></div>
+  </div>
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_2" alt="Blonde transformation" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Color</div><div class="gallery-label-name">Blonde Transformation</div></div>
+  </div>
+  <div class="gallery-item">
+    <img src="GALLERY_IMAGE_3" alt="Blowout style" loading="lazy">
+    <div class="gallery-item-overlay"></div>
+    <div class="gallery-item-label"><div class="gallery-label-cat">Styling</div><div class="gallery-label-name">Blowout &amp; Waves</div></div>
+  </div>
+</div>
+
+<section class="cta">
+  <h2>Love what you see?</h2>
+  <p>Book a consultation and let's create your look together.</p>
+  <a href="NAV_CTA_HREF" class="btn-white">Book an Appointment</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">BUSINESS_NAME</div>
+      <p class="footer-tagline">TAGLINE</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Visit Us</div>
+      <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+      <span class="footer-contact-item">ADDRESS</span>
+      <span class="footer-contact-item">HOURS</span>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+    <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

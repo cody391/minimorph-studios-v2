@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Us — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--bg:#fdf9f4;--surface:#f5ede2;--text:#2a1f1a;--muted:rgba(42,31,26,0.55);--border:rgba(42,31,26,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(253,249,244,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.375rem;font-weight:700;color:var(--text)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.875rem;font-weight:400;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--primary)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.625rem 1.5rem;border-radius:50px;font-size:0.825rem;font-weight:700;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+.book-sticky{position:fixed;bottom:2rem;right:2rem;z-index:900;background:var(--primary);color:#fff;padding:0.875rem 1.75rem;border-radius:50px;font-size:0.875rem;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,0.2);transition:transform 0.2s}
+.book-sticky:hover{transform:translateY(-2px)}
+
+/* OWNER HERO */
+.owner-hero{position:relative;min-height:80vh;display:flex;align-items:flex-end;padding:0 5% 5rem;overflow:hidden;padding-top:80px}
+.owner-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;object-position:center 20%}
+.owner-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(42,31,26,0.85) 0%,rgba(42,31,26,0.2) 60%,transparent 100%);z-index:1}
+.owner-hero-content{position:relative;z-index:2;max-width:600px}
+.owner-hero-eyebrow{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:1rem}
+.owner-hero h1{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:700;color:#fff;line-height:1.05;margin-bottom:1.25rem}
+.owner-hero-sub{font-size:1.0625rem;color:rgba(255,255,255,0.75);font-weight:300;max-width:460px}
+.owner-hero-name{margin-top:1.5rem;font-size:0.875rem;color:var(--primary);font-weight:700}
+
+/* STORY */
+.story{display:grid;grid-template-columns:1fr 1fr;gap:6rem;max-width:1200px;margin:0 auto;padding:6rem 5%}
+.story-lead{font-family:'Playfair Display',serif;font-size:clamp(1.375rem,2vw,1.875rem);font-style:italic;color:var(--text);line-height:1.35;margin-bottom:2rem}
+.story-body{color:var(--muted);font-size:0.9375rem;line-height:1.85;font-weight:300}
+.story-body p+p{margin-top:1.25rem}
+.story-stats{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:3rem;padding-top:3rem;border-top:1px solid var(--border)}
+.stat-num{font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:700;color:var(--primary);line-height:1}
+.stat-label{font-size:0.8rem;color:var(--muted);margin-top:0.35rem}
+
+/* VALUES */
+.values{background:var(--surface);padding:6rem 5%}
+.values-inner{max-width:1100px;margin:0 auto}
+.values-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+.value-card{padding:2rem;background:var(--bg);border:1px solid var(--border)}
+.value-icon{font-size:1.75rem;margin-bottom:1rem}
+.value-title{font-family:'Playfair Display',serif;font-size:1.125rem;font-weight:700;margin-bottom:0.625rem}
+.value-desc{font-size:0.875rem;color:var(--muted);line-height:1.7;font-weight:300}
+
+<!-- IF_ENTERPRISE_START -->
+/* TEAM */
+.team{padding:6rem 5%}
+.team-inner{max-width:1100px;margin:0 auto}
+.team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:3rem}
+.team-card{}
+.team-img{aspect-ratio:3/4;overflow:hidden;margin-bottom:1rem;background:var(--surface)}
+.team-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s}
+.team-card:hover .team-img img{transform:scale(1.03)}
+.team-name{font-family:'Playfair Display',serif;font-size:1.0625rem;font-weight:700;margin-bottom:0.2rem}
+.team-role{font-size:0.75rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:0.5rem}
+.team-spec{font-size:0.8rem;color:var(--muted);font-weight:300}
+<!-- IF_ENTERPRISE_END -->
+
+/* CTA */
+.cta{background:var(--primary);padding:5rem 5%;text-align:center}
+.cta h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,3.5vw,3rem);font-weight:700;color:#fff;margin-bottom:1rem}
+.cta p{color:rgba(255,255,255,0.8);font-size:1.0rem;margin-bottom:2rem;max-width:420px;margin-left:auto;margin-right:auto}
+.btn-white{display:inline-block;background:#fff;color:var(--primary);padding:1rem 2.5rem;border-radius:50px;font-size:0.9rem;font-weight:700;transition:opacity 0.2s}
+.btn-white:hover{opacity:0.9}
+
+/* FOOTER */
+footer{background:var(--text);color:rgba(255,255,255,0.7);padding:4rem 5% 2rem}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+.footer-brand{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:0.75rem}
+.footer-tagline{font-size:0.875rem;line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:1rem;font-weight:700}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.625rem}
+.footer-links a{font-size:0.875rem;color:rgba(255,255,255,0.6);transition:color 0.2s}
+.footer-links a:hover{color:#fff}
+.footer-contact-item{font-size:0.875rem;color:rgba(255,255,255,0.6);display:block;margin-bottom:0.625rem}
+.footer-bottom{border-top:1px solid rgba(255,255,255,0.1);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(255,255,255,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(255,255,255,0.2)}
+.footer-mini a{color:var(--primary);opacity:0.8}
+[data-animate]{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.nav-links{display:none}.story{grid-template-columns:1fr}.values-grid{grid-template-columns:1fr 1fr}.team-grid{grid-template-columns:1fr 1fr}.footer-inner{grid-template-columns:1fr}}
+@media(max-width:500px){.team-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+<a href="NAV_CTA_HREF" class="book-sticky">Book Now</a>
+
+<section class="owner-hero">
+  <img src="ABOUT_IMAGE" alt="OWNER_NAME at BUSINESS_NAME" class="owner-hero-bg">
+  <div class="owner-hero-overlay"></div>
+  <div class="owner-hero-content">
+    <div class="owner-hero-eyebrow">Meet the Team</div>
+    <h1>The Story<br>Behind the<br>Salon</h1>
+    <p class="owner-hero-sub">YEARS_IN_BUSINESS years of building a place where clients leave feeling genuinely transformed.</p>
+    <div class="owner-hero-name">— OWNER_NAME, Owner &amp; Stylist</div>
+  </div>
+</section>
+
+<div class="story">
+  <div data-animate>
+    <div class="story-lead">"I opened this salon because I wanted a place where the work actually speaks for itself."</div>
+    <div class="story-stats">
+      <div><div class="stat-num">YEARS_IN_BUSINESS</div><div class="stat-label">Years in Business</div></div>
+      <div><div class="stat-num">4.9★</div><div class="stat-label">Avg. Rating</div></div>
+      <div><div class="stat-num">2,500+</div><div class="stat-label">Happy Clients</div></div>
+      <div><div class="stat-num">100%</div><div class="stat-label">Referral Growth</div></div>
+    </div>
+  </div>
+  <div data-animate>
+    <div class="story-body">ABOUT_STORY</div>
+  </div>
+</div>
+
+<section class="values" data-animate>
+  <div class="values-inner">
+    <div style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:0.75rem">How We Work</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,3vw,2.75rem);font-weight:700;margin-bottom:0">Three things we won't compromise on.</h2>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="value-icon">💬</div>
+        <div class="value-title">Consultation First</div>
+        <div class="value-desc">Every service starts with a real conversation. We want to understand your hair history, lifestyle, and maintenance preferences before we pick up a single tool.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">🎨</div>
+        <div class="value-title">Color Integrity</div>
+        <div class="value-desc">We use professional-grade color lines and don't cut corners on processing time. The result has to hold up three months later, not just on the day.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-icon">✂</div>
+        <div class="value-title">Education Never Stops</div>
+        <div class="value-desc">Every stylist on our team attends continuing education every year. New techniques, new products, new trends — we bring them to SERVICE_AREA before anyone else does.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IF_ENTERPRISE_START -->
+<section class="team" data-animate>
+  <div class="team-inner">
+    <div style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:0.75rem">Our Stylists</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:clamp(1.75rem,3vw,2.75rem);font-weight:700;margin-bottom:0">Meet the team.</h2>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-img"><img src="TEAM_IMAGE_1" alt="OWNER_NAME" loading="lazy"></div>
+        <div class="team-name">OWNER_NAME</div>
+        <div class="team-role">Owner &amp; Lead Stylist</div>
+        <div class="team-spec">Color specialist · YEARS_IN_BUSINESS years experience</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_1" alt="Senior Stylist" loading="lazy"></div>
+        <div class="team-name">Senior Stylist</div>
+        <div class="team-role">Balayage Specialist</div>
+        <div class="team-spec">Extensions · lived-in color</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_2" alt="Stylist" loading="lazy"></div>
+        <div class="team-name">Stylist</div>
+        <div class="team-role">Cuts &amp; Texture</div>
+        <div class="team-spec">Precision cuts · curly hair</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_3" alt="Junior Stylist" loading="lazy"></div>
+        <div class="team-name">Junior Stylist</div>
+        <div class="team-role">Color &amp; Blowouts</div>
+        <div class="team-spec">Highlights · styling</div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- IF_ENTERPRISE_END -->
+
+<section class="cta">
+  <h2>Ready to book?</h2>
+  <p>OWNER_NAME and the team are ready to help you love your hair again.</p>
+  <a href="NAV_CTA_HREF" class="btn-white">Book an Appointment</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">BUSINESS_NAME</div>
+      <p class="footer-tagline">TAGLINE</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Visit Us</div>
+      <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+      <span class="footer-contact-item">ADDRESS</span>
+      <span class="footer-contact-item">HOURS</span>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+    <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

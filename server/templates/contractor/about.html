@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--secondary:SECONDARY_COLOR;--bg:#0d0d0d;--surface:#1a1a1a;--text:#f0f0f0;--muted:rgba(240,240,240,0.5);--border:rgba(240,240,240,0.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(13,13,13,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.375rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--primary)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:500;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.75rem 1.5rem;font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+.section-label{font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem}
+.section-label::before{content:'';display:block;width:2rem;height:1px;background:var(--primary)}
+
+/* OWNER HERO */
+.owner-hero{position:relative;min-height:90vh;display:flex;align-items:flex-end;padding:0 5% 6rem;overflow:hidden;padding-top:100px}
+.owner-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;object-position:top center}
+.owner-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.97) 0%,rgba(0,0,0,0.5) 50%,rgba(0,0,0,0.15) 100%);z-index:1}
+.owner-hero-content{position:relative;z-index:2;max-width:700px}
+.owner-hero-eyebrow{font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:1.5rem}
+.owner-hero h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(3rem,7vw,6.5rem);font-weight:900;text-transform:uppercase;line-height:0.9;color:#fff;margin-bottom:1.5rem}
+.owner-hero-sub{font-size:1.125rem;color:var(--muted);line-height:1.75;font-weight:300;max-width:560px}
+.owner-hero-name{margin-top:2rem;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary)}
+
+/* STORY SECTION */
+.story{padding:7rem 5%;display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:start;max-width:1400px;margin:0 auto}
+.story-lead{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.5rem,2.5vw,2.25rem);font-weight:700;line-height:1.2;color:var(--text);margin-bottom:2rem}
+.story-body{color:var(--muted);font-size:1.0rem;line-height:1.85;font-weight:300}
+.story-body p+p{margin-top:1.25rem}
+.story-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem;padding-top:3rem;border-top:1px solid var(--border)}
+.story-stat-num{font-family:'Barlow Condensed',sans-serif;font-size:3rem;font-weight:900;color:var(--primary);line-height:1}
+.story-stat-label{font-size:0.8rem;color:var(--muted);margin-top:0.4rem;letter-spacing:0.05em}
+
+/* VALUES */
+.values{padding:6rem 5%;background:var(--surface)}
+.values-inner{max-width:1200px;margin:0 auto}
+.values-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem}
+.value-card{padding:2rem;border:1px solid var(--border);transition:border-color 0.3s}
+.value-card:hover{border-color:var(--primary)}
+.value-num{font-family:'Barlow Condensed',sans-serif;font-size:3rem;font-weight:900;color:var(--primary);opacity:0.25;line-height:1;margin-bottom:1rem}
+.value-title{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:900;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem}
+.value-desc{font-size:0.875rem;color:var(--muted);line-height:1.75;font-weight:300}
+
+/* PROCESS */
+.process{padding:6rem 5%}
+.process-inner{max-width:1200px;margin:0 auto}
+.process-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:3rem;position:relative}
+.process-steps::before{content:'';position:absolute;top:2rem;left:calc(100%/12);right:calc(100%/12);height:1px;background:var(--border);z-index:0}
+.step{text-align:center;position:relative;z-index:1}
+.step-num{width:4rem;height:4rem;border-radius:50%;border:1px solid var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-family:'Barlow Condensed',sans-serif;font-size:1.375rem;font-weight:900;color:var(--primary);background:var(--bg)}
+.step-title{font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem}
+.step-desc{font-size:0.775rem;color:var(--muted);line-height:1.6;padding:0 0.5rem}
+
+/* CREDENTIALS */
+.credentials{padding:6rem 5%;background:var(--surface);border-top:1px solid var(--border)}
+.credentials-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+.cred-list{display:flex;flex-direction:column;gap:1.5rem;margin-top:2.5rem}
+.cred-item{display:flex;align-items:flex-start;gap:1.25rem;padding:1.25rem;background:var(--bg);border:1px solid var(--border)}
+.cred-icon{color:var(--primary);font-size:1.25rem;flex-shrink:0;margin-top:0.1rem}
+.cred-title{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem}
+.cred-text{font-size:0.85rem;color:var(--muted);line-height:1.6}
+.cred-img{aspect-ratio:4/3;overflow:hidden}
+.cred-img img{width:100%;height:100%;object-fit:cover}
+
+/* ENTERPRISE TEAM SECTION */
+<!-- IF_ENTERPRISE_START -->
+.team{padding:6rem 5%}
+.team-inner{max-width:1200px;margin:0 auto}
+.team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;margin-top:3rem}
+.team-card{text-align:center}
+.team-img{aspect-ratio:1;overflow:hidden;margin-bottom:1.25rem}
+.team-img img{width:100%;height:100%;object-fit:cover;filter:grayscale(30%);transition:filter 0.3s}
+.team-card:hover .team-img img{filter:grayscale(0)}
+.team-name{font-family:'Barlow Condensed',sans-serif;font-size:1.125rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem}
+.team-role{font-size:0.75rem;color:var(--primary);text-transform:uppercase;letter-spacing:0.12em;font-weight:600}
+<!-- IF_ENTERPRISE_END -->
+
+/* CTA */
+.cta-section{padding:6rem 5%;text-align:center;background:var(--primary)}
+.cta-section h2{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:900;text-transform:uppercase;color:#fff;line-height:0.95;margin-bottom:1rem}
+.cta-section p{color:rgba(255,255,255,0.8);font-size:1.0625rem;margin-bottom:2.5rem;max-width:540px;margin-left:auto;margin-right:auto}
+.btn-white{background:#fff;color:var(--primary);padding:1rem 2.5rem;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;display:inline-block;transition:opacity 0.2s}
+.btn-white:hover{opacity:0.9}
+
+/* FOOTER */
+footer{background:#080808;padding:5rem 5% 2rem;border-top:1px solid var(--border)}
+.footer-inner{max-width:1200px;margin:0 auto}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:4rem}
+.footer-brand{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem}
+.footer-tagline{font-size:0.875rem;color:var(--muted);line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(240,240,240,0.35);margin-bottom:1.25rem;font-weight:600}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.75rem}
+.footer-links a{font-size:0.875rem;color:var(--muted);transition:color 0.2s}
+.footer-links a:hover{color:var(--text)}
+.footer-contact-item{font-size:0.875rem;color:var(--muted);display:block;margin-bottom:0.75rem;transition:color 0.2s}
+.footer-bottom{border-top:1px solid var(--border);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(240,240,240,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(240,240,240,0.25)}
+.footer-mini a{color:var(--primary);opacity:0.7}
+[data-animate]{opacity:0;transform:translateY(24px);transition:opacity 0.65s ease,transform 0.65s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.nav-links{display:none}.story{grid-template-columns:1fr}.values-grid{grid-template-columns:1fr 1fr}.process-steps{grid-template-columns:repeat(3,1fr)}.process-steps::before{display:none}.credentials-inner{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<section class="owner-hero">
+  <img src="ABOUT_IMAGE" alt="OWNER_NAME — BUSINESS_NAME" class="owner-hero-bg">
+  <div class="owner-hero-overlay"></div>
+  <div class="owner-hero-content">
+    <div class="owner-hero-eyebrow">The person behind the work</div>
+    <h1>Built on<br>Honest<br>Work</h1>
+    <p class="owner-hero-sub">YEARS_IN_BUSINESS years of showing up, doing it right, and standing behind every job.</p>
+    <div class="owner-hero-name">— OWNER_NAME, Owner</div>
+  </div>
+</section>
+
+<div class="story">
+  <div data-animate>
+    <div class="section-label">Our Story</div>
+    <div class="story-lead">We didn't start a company to scale. We started it to build things properly.</div>
+    <div class="story-stat-grid">
+      <div><div class="story-stat-num">YEARS_IN_BUSINESS</div><div class="story-stat-label">Years in Business</div></div>
+      <div><div class="story-stat-num">500+</div><div class="story-stat-label">Projects Completed</div></div>
+      <div><div class="story-stat-num">100%</div><div class="story-stat-label">Permitted Work</div></div>
+      <div><div class="story-stat-num">4.9★</div><div class="story-stat-label">Average Rating</div></div>
+    </div>
+  </div>
+  <div data-animate>
+    <div class="story-body">ABOUT_STORY</div>
+  </div>
+</div>
+
+<section class="values" data-animate>
+  <div class="values-inner">
+    <div class="section-label">What We Stand For</div>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:900;text-transform:uppercase;line-height:0.95;max-width:600px">Four commitments we make on every single job.</h2>
+    <div class="values-grid">
+      <div class="value-card">
+        <div class="value-num">01</div>
+        <div class="value-title">Permit Everything</div>
+        <div class="value-desc">We pull permits on every job that requires one. No shortcuts that put your home or resale value at risk.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-num">02</div>
+        <div class="value-title">Communicate Daily</div>
+        <div class="value-desc">You get an update every day we're on site — what happened, what's next, and any decisions that need your input.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-num">03</div>
+        <div class="value-title">Fixed Scope</div>
+        <div class="value-desc">We spec everything before we start. Change orders only happen when you change the scope — not because we missed something.</div>
+      </div>
+      <div class="value-card">
+        <div class="value-num">04</div>
+        <div class="value-title">Punch List Promise</div>
+        <div class="value-desc">We don't consider a job done until you've walked it with us and signed off. Every item, every time.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="process" data-animate>
+  <div class="process-inner">
+    <div class="section-label">How We Work</div>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:900;text-transform:uppercase;line-height:0.95;margin-bottom:0">Our six-step process, every project.</h2>
+    <div class="process-steps">
+      <div class="step"><div class="step-num">1</div><div class="step-title">Consult</div><div class="step-desc">Walk the space, understand your goals and budget</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-title">Scope</div><div class="step-desc">Full written specification — no vague line items</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-title">Permit</div><div class="step-desc">We handle all permit applications and scheduling</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-title">Build</div><div class="step-desc">Daily updates while our team executes the plan</div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-title">Inspect</div><div class="step-desc">All inspections passed before we proceed</div></div>
+      <div class="step"><div class="step-num">6</div><div class="step-title">Deliver</div><div class="step-desc">Walk-through, punch list signed, documentation handed over</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="credentials" data-animate>
+  <div class="credentials-inner">
+    <div>
+      <div class="section-label">Credentials</div>
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,3.5vw,3rem);font-weight:900;text-transform:uppercase;line-height:0.95;margin-bottom:0">Licensed, insured, and accountable.</h2>
+      <div class="cred-list">
+        <div class="cred-item">
+          <div class="cred-icon">🏛</div>
+          <div><div class="cred-title">MN General Contractor License</div><div class="cred-text">License No. LICENSE_NUMBER — fully bonded and in good standing.</div></div>
+        </div>
+        <div class="cred-item">
+          <div class="cred-icon">🛡</div>
+          <div><div class="cred-title">$2M General Liability Insurance</div><div class="cred-text">Full coverage on every job site. Certificate available on request.</div></div>
+        </div>
+        <div class="cred-item">
+          <div class="cred-icon">📋</div>
+          <div><div class="cred-title">Workers' Comp on Every Employee</div><div class="cred-text">All subcontractors carry their own coverage or are covered under ours.</div></div>
+        </div>
+        <div class="cred-item">
+          <div class="cred-icon">⭐</div>
+          <div><div class="cred-title">Better Business Bureau Accredited</div><div class="cred-text">A+ rating. SERVICE_AREA homeowners have trusted us for YEARS_IN_BUSINESS years.</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="cred-img">
+      <img src="GALLERY_IMAGE_1" alt="BUSINESS_NAME at work" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<!-- IF_ENTERPRISE_START -->
+<section class="team" data-animate>
+  <div class="team-inner">
+    <div class="section-label">The Team</div>
+    <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:900;text-transform:uppercase;line-height:0.95;margin-bottom:0">The people who make it happen.</h2>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-img"><img src="TEAM_IMAGE_1" alt="OWNER_NAME" loading="lazy"></div>
+        <div class="team-name">OWNER_NAME</div>
+        <div class="team-role">Owner &amp; Lead Contractor</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_2" alt="Project Manager" loading="lazy"></div>
+        <div class="team-name">Project Manager</div>
+        <div class="team-role">Job Site Coordination</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_3" alt="Lead Carpenter" loading="lazy"></div>
+        <div class="team-name">Lead Carpenter</div>
+        <div class="team-role">Finish Work &amp; Millwork</div>
+      </div>
+      <div class="team-card">
+        <div class="team-img"><img src="GALLERY_IMAGE_1" alt="Design Consultant" loading="lazy"></div>
+        <div class="team-name">Design Consultant</div>
+        <div class="team-role">Material Selection</div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- IF_ENTERPRISE_END -->
+
+<section class="cta-section">
+  <h2>Ready to<br>Build?</h2>
+  <p>Tell us about your project. We'll set up a site visit, talk through your goals, and give you a clear picture of what it would take.</p>
+  <a href="NAV_CTA_HREF" class="btn-white">Get a Quote</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <p class="footer-tagline">TAGLINE</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+        <a href="mailto:EMAIL" class="footer-contact-item">EMAIL</a>
+        <span class="footer-contact-item">ADDRESS</span>
+      </div>
+      <div>
+        <div class="footer-col-title">Hours</div>
+        <span class="footer-contact-item">HOURS</span>
+        <span class="footer-contact-item">License: LICENSE_NUMBER</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+      <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

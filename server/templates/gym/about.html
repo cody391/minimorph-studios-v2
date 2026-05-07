@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Us — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--bg:#ffffff;--surface:#f8f7f5;--text:#1a1a1a;--muted:rgba(26,26,26,0.5);--border:rgba(26,26,26,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(255,255,255,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:1.125rem;font-weight:700;color:var(--text);letter-spacing:-0.01em}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.875rem;font-weight:500;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.625rem 1.5rem;border-radius:100px;font-size:0.825rem;font-weight:600;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+
+/* HERO */
+.about-hero{position:relative;min-height:90vh;display:flex;align-items:flex-end;padding:0 5% 6rem;overflow:hidden;padding-top:80px}
+.about-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.about-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(26,26,26,0.95) 0%,rgba(26,26,26,0.4) 50%,transparent 100%);z-index:1}
+.about-hero-content{position:relative;z-index:2;max-width:800px}
+.about-hero-eyebrow{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;color:var(--primary);margin-bottom:1.5rem}
+.about-hero h1{font-size:clamp(3rem,7vw,6rem);font-weight:900;line-height:0.95;color:#fff;letter-spacing:-0.03em;margin-bottom:1.5rem}
+.about-hero-sub{font-size:1.0625rem;color:rgba(255,255,255,0.7);font-weight:300;max-width:520px}
+.about-hero-name{margin-top:2rem;font-size:0.875rem;font-weight:600;color:var(--primary)}
+
+/* MISSION */
+.mission{padding:7rem 5%;display:grid;grid-template-columns:1fr 1fr;gap:7rem;max-width:1300px;margin:0 auto;align-items:center}
+.mission-lead{font-size:clamp(1.5rem,2.5vw,2.125rem);font-weight:700;letter-spacing:-0.02em;line-height:1.2;margin-bottom:2rem}
+.mission-body{color:var(--muted);font-size:0.9375rem;line-height:1.85;font-weight:300}
+.mission-body p+p{margin-top:1.25rem}
+.mission-stats{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:3rem;padding-top:3rem;border-top:1px solid var(--border)}
+.stat-num{font-size:2.75rem;font-weight:900;letter-spacing:-0.03em;color:var(--primary);line-height:1}
+.stat-label{font-size:0.8rem;color:var(--muted);margin-top:0.35rem}
+
+/* TRAINER PROFILES */
+.trainers{padding:6rem 5%;background:var(--surface)}
+.trainers-inner{max-width:1200px;margin:0 auto}
+.section-eyebrow{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:0.75rem}
+.section-title{font-size:clamp(1.75rem,3vw,2.75rem);font-weight:700;letter-spacing:-0.02em;line-height:1.1}
+.trainers-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+.trainer-card{background:var(--bg);overflow:hidden}
+.trainer-img{aspect-ratio:4/5;overflow:hidden}
+.trainer-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s;filter:grayscale(20%)}
+.trainer-card:hover .trainer-img img{transform:scale(1.03);filter:grayscale(0)}
+.trainer-body{padding:1.5rem}
+.trainer-name{font-size:1.0625rem;font-weight:700;letter-spacing:-0.01em;margin-bottom:0.25rem}
+.trainer-spec{font-size:0.75rem;color:var(--primary);font-weight:600;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem}
+.trainer-bio{font-size:0.875rem;color:var(--muted);line-height:1.65;font-weight:300}
+.trainer-certs{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem}
+.cert-badge{font-size:0.65rem;font-weight:600;padding:0.25rem 0.625rem;background:var(--surface);color:var(--muted);border-radius:100px}
+
+/* FACILITY */
+.facility{padding:6rem 5%}
+.facility-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center}
+.facility-imgs{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.facility-img{overflow:hidden}
+.facility-img img{width:100%;height:100%;object-fit:cover;display:block}
+.facility-img:first-child{grid-row:span 2;aspect-ratio:2/3}
+.facility-img:not(:first-child){aspect-ratio:4/3}
+.facility-list{display:flex;flex-direction:column;gap:1.25rem;margin-top:2rem}
+.facility-item{display:flex;align-items:flex-start;gap:1rem;font-size:0.9rem}
+.facility-item-icon{font-size:1.25rem;flex-shrink:0}
+.facility-item-text{color:var(--muted);line-height:1.6;font-weight:300}
+.facility-item-text strong{display:block;color:var(--text);font-weight:600;margin-bottom:0.2rem;font-size:0.9375rem}
+
+<!-- IF_GROWTH_PLUS_START -->
+/* COMMUNITY GALLERY */
+.community{padding:6rem 5%;background:var(--surface)}
+.community-inner{max-width:1200px;margin:0 auto}
+.community-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2.5rem}
+.community-photo{overflow:hidden;aspect-ratio:1}
+.community-photo img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s}
+.community-photo:hover img{transform:scale(1.05)}
+<!-- IF_GROWTH_PLUS_END -->
+
+/* CTA */
+.cta{padding:7rem 5%;text-align:center;background:var(--primary)}
+.cta h2{font-size:clamp(2rem,4vw,3.5rem);font-weight:900;color:#fff;letter-spacing:-0.02em;margin-bottom:1rem}
+.cta p{color:rgba(255,255,255,0.8);font-size:1.0625rem;margin-bottom:2.5rem;max-width:500px;margin-left:auto;margin-right:auto}
+.btn-white{display:inline-block;background:#fff;color:var(--primary);padding:1rem 2.5rem;border-radius:100px;font-size:0.9rem;font-weight:700;transition:opacity 0.2s}
+.btn-white:hover{opacity:0.9}
+
+/* FOOTER */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:4rem 5% 2rem}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+.footer-brand{font-size:1.125rem;font-weight:700;color:var(--text);margin-bottom:0.75rem}
+.footer-tagline{font-size:0.875rem;color:var(--muted);line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;font-weight:600}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.625rem}
+.footer-links a{font-size:0.875rem;color:var(--muted);transition:color 0.2s}
+.footer-links a:hover{color:var(--text)}
+.footer-contact-item{font-size:0.875rem;color:var(--muted);display:block;margin-bottom:0.625rem}
+.footer-bottom{border-top:1px solid var(--border);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:var(--muted)}
+.footer-mini{font-size:0.7rem;color:rgba(26,26,26,0.3)}
+.footer-mini a{color:var(--primary)}
+[data-animate]{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){.nav-links{display:none}.mission{grid-template-columns:1fr}.facility-inner{grid-template-columns:1fr}.trainers-grid{grid-template-columns:1fr 1fr}.footer-inner{grid-template-columns:1fr}}
+@media(max-width:500px){.trainers-grid{grid-template-columns:1fr}.community-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<section class="about-hero">
+  <img src="ABOUT_IMAGE" alt="BUSINESS_NAME" class="about-hero-bg">
+  <div class="about-hero-overlay"></div>
+  <div class="about-hero-content">
+    <div class="about-hero-eyebrow">Our Story</div>
+    <h1>Built for<br>Real People.</h1>
+    <p class="about-hero-sub">Not fitness influencers. Not athletes only. Everyone who shows up deserves to get stronger.</p>
+    <div class="about-hero-name">— OWNER_NAME, Founder</div>
+  </div>
+</section>
+
+<div class="mission">
+  <div data-animate>
+    <div class="mission-lead">We started BUSINESS_NAME because SERVICE_AREA needed a gym where real people actually felt welcome.</div>
+    <div class="mission-stats">
+      <div><div class="stat-num">YEARS_IN_BUSINESS</div><div class="stat-label">Years in Service_area</div></div>
+      <div><div class="stat-num">1,200+</div><div class="stat-label">Members Served</div></div>
+      <div><div class="stat-num">5★</div><div class="stat-label">Avg. Rating</div></div>
+      <div><div class="stat-num">3</div><div class="stat-label">Certified Coaches</div></div>
+    </div>
+  </div>
+  <div data-animate>
+    <div class="mission-body">ABOUT_STORY</div>
+  </div>
+</div>
+
+<section class="trainers" data-animate>
+  <div class="trainers-inner">
+    <div class="section-eyebrow">The Coaches</div>
+    <div class="section-title">People who know this stuff cold.</div>
+    <div class="trainers-grid">
+      <div class="trainer-card">
+        <div class="trainer-img"><img src="TEAM_IMAGE_1" alt="OWNER_NAME" loading="lazy"></div>
+        <div class="trainer-body">
+          <div class="trainer-name">OWNER_NAME</div>
+          <div class="trainer-spec">Owner · Head Coach</div>
+          <div class="trainer-bio">YEARS_IN_BUSINESS years coaching in SERVICE_AREA. Specializes in strength programming for beginners and intermediate lifters. OWNER_NAME started this gym after seeing how intimidating larger facilities were for people who just wanted to get healthier.</div>
+          <div class="trainer-certs"><span class="cert-badge">NSCA-CPT</span><span class="cert-badge">FMS Level 2</span><span class="cert-badge">Precision Nutrition</span></div>
+        </div>
+      </div>
+      <div class="trainer-card">
+        <div class="trainer-img"><img src="GALLERY_IMAGE_2" alt="Coach" loading="lazy"></div>
+        <div class="trainer-body">
+          <div class="trainer-name">Lead Coach</div>
+          <div class="trainer-spec">SERVICE_1_DESC Specialist</div>
+          <div class="trainer-bio">Former collegiate athlete with 8 years of coaching experience. Known for making high-intensity training approachable for all fitness levels. Runs our flagship morning sessions.</div>
+          <div class="trainer-certs"><span class="cert-badge">NASM-CPT</span><span class="cert-badge">CrossFit L2</span></div>
+        </div>
+      </div>
+      <div class="trainer-card">
+        <div class="trainer-img"><img src="GALLERY_IMAGE_3" alt="Yoga Coach" loading="lazy"></div>
+        <div class="trainer-body">
+          <div class="trainer-name">Recovery Coach</div>
+          <div class="trainer-spec">Mobility &amp; Yoga</div>
+          <div class="trainer-bio">500-hour registered yoga teacher with a background in physical therapy. Leads our recovery and mobility classes and works with athletes managing existing injuries.</div>
+          <div class="trainer-certs"><span class="cert-badge">RYT-500</span><span class="cert-badge">FRCms</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="facility" data-animate>
+  <div class="facility-inner">
+    <div class="facility-imgs">
+      <div class="facility-img"><img src="GALLERY_IMAGE_1" alt="Main floor" loading="lazy"></div>
+      <div class="facility-img"><img src="GALLERY_IMAGE_2" alt="Weight room" loading="lazy"></div>
+      <div class="facility-img"><img src="GALLERY_IMAGE_3" alt="Studio space" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="section-eyebrow">Our Facility</div>
+      <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+      <div class="facility-list">
+        <div class="facility-item">
+          <div class="facility-item-icon">🏋</div>
+          <div class="facility-item-text"><strong>Full Free Weight Area</strong>Squat racks, deadlift platforms, dumbbells up to 120 lbs.</div>
+        </div>
+        <div class="facility-item">
+          <div class="facility-item-icon">🧘</div>
+          <div class="facility-item-text"><strong>Dedicated Studio</strong>1,200 sq ft dedicated class space for yoga, mobility, and group sessions.</div>
+        </div>
+        <div class="facility-item">
+          <div class="facility-item-icon">🚿</div>
+          <div class="facility-item-text"><strong>Clean Locker Rooms</strong>Private showers, lockers, towel service for members.</div>
+        </div>
+        <div class="facility-item">
+          <div class="facility-item-icon">📱</div>
+          <div class="facility-item-text"><strong>Member App</strong>Book classes, track workouts, and connect with coaches directly.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- IF_GROWTH_PLUS_START -->
+<section class="community" data-animate>
+  <div class="community-inner">
+    <div class="section-eyebrow">Community</div>
+    <div class="section-title">The people who make this place what it is.</div>
+    <div class="community-grid">
+      <div class="community-photo"><img src="GALLERY_IMAGE_1" alt="Members" loading="lazy"></div>
+      <div class="community-photo"><img src="GALLERY_IMAGE_2" alt="Class" loading="lazy"></div>
+      <div class="community-photo"><img src="GALLERY_IMAGE_3" alt="Training" loading="lazy"></div>
+      <div class="community-photo"><img src="GALLERY_IMAGE_1" alt="Community event" loading="lazy"></div>
+      <div class="community-photo"><img src="GALLERY_IMAGE_2" alt="Workout" loading="lazy"></div>
+      <div class="community-photo"><img src="GALLERY_IMAGE_3" alt="Progress" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+<!-- IF_GROWTH_PLUS_END -->
+
+<section class="cta">
+  <h2>Come see for yourself.</h2>
+  <p>Your first class is on us. Drop in and see why SERVICE_AREA members keep coming back to BUSINESS_NAME.</p>
+  <a href="NAV_CTA_HREF" class="btn-white">Book a Free Class</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">BUSINESS_NAME</div>
+      <p class="footer-tagline">TAGLINE</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Find Us</div>
+      <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+      <span class="footer-contact-item">ADDRESS</span>
+      <span class="footer-contact-item">HOURS</span>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+    <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

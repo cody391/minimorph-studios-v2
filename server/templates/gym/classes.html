@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classes &amp; Schedule — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--primary:PRIMARY_COLOR;--bg:#ffffff;--surface:#f8f7f5;--text:#1a1a1a;--muted:rgba(26,26,26,0.5);--border:rgba(26,26,26,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(255,255,255,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.nav-logo{font-size:1.125rem;font-weight:700;color:var(--text);letter-spacing:-0.01em}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.875rem;font-weight:500;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.625rem 1.5rem;border-radius:100px;font-size:0.825rem;font-weight:600;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+
+/* PAGE HERO */
+.page-hero{position:relative;min-height:50vh;display:flex;align-items:flex-end;padding:0 5% 4rem;overflow:hidden;padding-top:80px}
+.page-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.page-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.85) 0%,rgba(0,0,0,0.2) 100%);z-index:1}
+.page-hero-content{position:relative;z-index:2;max-width:800px}
+.page-hero-eyebrow{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;color:var(--primary);margin-bottom:1rem}
+.page-hero h1{font-size:clamp(2.5rem,5vw,4.5rem);font-weight:900;line-height:1;color:#fff;letter-spacing:-0.02em;margin-bottom:1rem}
+.page-hero-sub{font-size:1.0625rem;color:rgba(255,255,255,0.75);font-weight:300;max-width:480px}
+
+/* SCHEDULE GRID */
+.schedule-section{padding:6rem 5%;background:var(--surface)}
+.schedule-inner{max-width:1200px;margin:0 auto}
+.section-eyebrow{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:0.75rem}
+.section-title{font-size:clamp(1.75rem,3vw,2.75rem);font-weight:700;letter-spacing:-0.02em;line-height:1.1;margin-bottom:3rem}
+.schedule-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border)}
+.day-col{background:var(--bg)}
+.day-header{background:var(--text);color:#fff;padding:0.875rem 1rem;text-align:center;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase}
+.time-slot{padding:0.75rem 1rem;border-bottom:1px solid var(--border);min-height:80px}
+.time-slot.empty{background:var(--surface)}
+.class-time{font-size:0.65rem;color:var(--muted);font-weight:500;margin-bottom:0.25rem}
+.class-name{font-size:0.8rem;font-weight:600;color:var(--text);margin-bottom:0.2rem;line-height:1.3}
+.class-tag{font-size:0.65rem;padding:0.2rem 0.5rem;border-radius:100px;display:inline-block;font-weight:600;margin-top:0.25rem}
+.tag-low{background:#e8f5e9;color:#2e7d32}
+.tag-mod{background:#fff8e1;color:#f57f17}
+.tag-high{background:#fce4ec;color:#c62828}
+
+/* CLASS CARDS */
+.classes-section{padding:6rem 5%}
+.classes-inner{max-width:1200px;margin:0 auto}
+.classes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+.class-card{background:var(--surface);border:1px solid var(--border);overflow:hidden;transition:transform 0.2s,box-shadow 0.2s}
+.class-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.1)}
+.class-card-img{aspect-ratio:16/9;overflow:hidden}
+.class-card-img img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s}
+.class-card:hover .class-card-img img{transform:scale(1.04)}
+.class-card-body{padding:1.5rem}
+.class-intensity{font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.5rem}
+.class-card-name{font-size:1.125rem;font-weight:700;letter-spacing:-0.01em;margin-bottom:0.5rem}
+.class-card-desc{font-size:0.875rem;color:var(--muted);line-height:1.65;margin-bottom:1rem}
+.class-meta{display:flex;gap:1.25rem;font-size:0.75rem;color:var(--muted);padding-top:1rem;border-top:1px solid var(--border)}
+.class-meta span{display:flex;align-items:center;gap:0.375rem}
+
+/* PRICING */
+.pricing{padding:6rem 5%;background:var(--text);color:#fff}
+.pricing-inner{max-width:1100px;margin:0 auto}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;margin-top:3rem}
+.price-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);padding:2.5rem 2rem;position:relative;transition:border-color 0.3s}
+.price-card.featured{border-color:var(--primary);background:rgba(var(--primary),0.05)}
+.price-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.35rem 1rem}
+.price-tier{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.5);font-weight:600;margin-bottom:1rem}
+.price-amount{font-size:3rem;font-weight:900;letter-spacing:-0.03em;line-height:1;color:#fff;margin-bottom:0.375rem}
+.price-period{font-size:0.875rem;color:rgba(255,255,255,0.5);margin-bottom:1.75rem}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:0.75rem;margin-bottom:2rem}
+.price-features li{font-size:0.875rem;color:rgba(255,255,255,0.75);display:flex;gap:0.625rem;align-items:baseline}
+.price-features li::before{content:'✓';color:var(--primary);flex-shrink:0;font-weight:700}
+.btn-price{display:block;text-align:center;padding:0.875rem;font-size:0.875rem;font-weight:600;letter-spacing:0.05em;border-radius:100px;transition:all 0.2s}
+.btn-price-primary{background:var(--primary);color:#fff}
+.btn-price-primary:hover{opacity:0.85}
+.btn-price-outline{border:1px solid rgba(255,255,255,0.25);color:#fff}
+.btn-price-outline:hover{border-color:rgba(255,255,255,0.6)}
+
+/* FOOTER */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:4rem 5% 2rem}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;margin-bottom:3rem}
+.footer-brand{font-size:1.125rem;font-weight:700;color:var(--text);margin-bottom:0.75rem;letter-spacing:-0.01em}
+.footer-tagline{font-size:0.875rem;color:var(--muted);line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;font-weight:600}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.625rem}
+.footer-links a{font-size:0.875rem;color:var(--muted);transition:color 0.2s}
+.footer-links a:hover{color:var(--text)}
+.footer-contact-item{font-size:0.875rem;color:var(--muted);display:block;margin-bottom:0.625rem}
+.footer-bottom{border-top:1px solid var(--border);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:var(--muted)}
+.footer-mini{font-size:0.7rem;color:rgba(26,26,26,0.3)}
+.footer-mini a{color:var(--primary)}
+[data-animate]{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+@media(max-width:1000px){.schedule-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){.nav-links{display:none}.classes-grid{grid-template-columns:1fr 1fr}.pricing-grid{grid-template-columns:1fr}.footer-inner{grid-template-columns:1fr}}
+@media(max-width:500px){.classes-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<section class="page-hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME classes" class="page-hero-bg">
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content">
+    <div class="page-hero-eyebrow">Find Your Class</div>
+    <h1>Classes &amp;<br>Schedule</h1>
+    <p class="page-hero-sub">Something for every level, every goal. Drop in or commit to a membership.</p>
+  </div>
+</section>
+
+<section class="schedule-section" data-animate>
+  <div class="schedule-inner">
+    <div class="section-eyebrow">Weekly Schedule</div>
+    <div class="section-title">When we meet</div>
+    <div class="schedule-grid">
+      <div class="day-col">
+        <div class="day-header">Monday</div>
+        <div class="time-slot"><div class="class-time">6:00 AM</div><div class="class-name">SERVICE_1_DESC</div><span class="class-tag tag-high">High</span></div>
+        <div class="time-slot"><div class="class-time">12:00 PM</div><div class="class-name">Yoga Flow</div><span class="class-tag tag-low">Low</span></div>
+        <div class="time-slot"><div class="class-time">6:00 PM</div><div class="class-name">SERVICE_2_DESC</div><span class="class-tag tag-mod">Moderate</span></div>
+      </div>
+      <div class="day-col">
+        <div class="day-header">Tuesday</div>
+        <div class="time-slot"><div class="class-time">7:00 AM</div><div class="class-name">Strength &amp; Conditioning</div><span class="class-tag tag-high">High</span></div>
+        <div class="time-slot empty"></div>
+        <div class="time-slot"><div class="class-time">7:00 PM</div><div class="class-name">SERVICE_3_DESC</div><span class="class-tag tag-mod">Moderate</span></div>
+      </div>
+      <div class="day-col">
+        <div class="day-header">Wednesday</div>
+        <div class="time-slot"><div class="class-time">6:00 AM</div><div class="class-name">SERVICE_1_DESC</div><span class="class-tag tag-high">High</span></div>
+        <div class="time-slot"><div class="class-time">12:00 PM</div><div class="class-name">Mobility &amp; Recovery</div><span class="class-tag tag-low">Low</span></div>
+        <div class="time-slot"><div class="class-time">6:00 PM</div><div class="class-name">Open Gym</div><span class="class-tag tag-mod">Moderate</span></div>
+      </div>
+      <div class="day-col">
+        <div class="day-header">Thursday</div>
+        <div class="time-slot"><div class="class-time">7:00 AM</div><div class="class-name">SERVICE_2_DESC</div><span class="class-tag tag-mod">Moderate</span></div>
+        <div class="time-slot empty"></div>
+        <div class="time-slot"><div class="class-time">7:00 PM</div><div class="class-name">Strength &amp; Conditioning</div><span class="class-tag tag-high">High</span></div>
+      </div>
+      <div class="day-col">
+        <div class="day-header">Saturday</div>
+        <div class="time-slot"><div class="class-time">8:00 AM</div><div class="class-name">Community Class</div><span class="class-tag tag-mod">All levels</span></div>
+        <div class="time-slot"><div class="class-time">10:00 AM</div><div class="class-name">SERVICE_3_DESC</div><span class="class-tag tag-high">High</span></div>
+        <div class="time-slot empty"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="classes-section">
+  <div class="classes-inner">
+    <div class="section-eyebrow">Our Classes</div>
+    <div class="section-title">Find what works for you</div>
+    <div class="classes-grid" data-animate>
+      <div class="class-card">
+        <div class="class-card-img"><img src="GALLERY_IMAGE_1" alt="SERVICE_1_DESC" loading="lazy"></div>
+        <div class="class-card-body">
+          <div class="class-intensity" style="color:var(--primary)">High Intensity</div>
+          <div class="class-card-name">SERVICE_1_DESC</div>
+          <div class="class-card-desc">A full-body, coach-led session combining strength and cardio. Scalable for all fitness levels — beginners are always welcome.</div>
+          <div class="class-meta">
+            <span>⏱ 60 min</span>
+            <span>👤 All levels</span>
+            <span>🔥 450–600 cal</span>
+          </div>
+        </div>
+      </div>
+      <div class="class-card">
+        <div class="class-card-img"><img src="GALLERY_IMAGE_2" alt="SERVICE_2_DESC" loading="lazy"></div>
+        <div class="class-card-body">
+          <div class="class-intensity" style="color:#f57f17">Moderate</div>
+          <div class="class-card-name">SERVICE_2_DESC</div>
+          <div class="class-card-desc">Focused on building foundational strength through compound lifts. We teach form before we add weight.</div>
+          <div class="class-meta">
+            <span>⏱ 50 min</span>
+            <span>👤 Beginner–Int.</span>
+            <span>🏋 Strength</span>
+          </div>
+        </div>
+      </div>
+      <div class="class-card">
+        <div class="class-card-img"><img src="GALLERY_IMAGE_3" alt="SERVICE_3_DESC" loading="lazy"></div>
+        <div class="class-card-body">
+          <div class="class-intensity" style="color:#2e7d32">Low Impact</div>
+          <div class="class-card-name">SERVICE_3_DESC</div>
+          <div class="class-card-desc">Mobility work, recovery protocols, and breath practice. Designed to complement your harder training days and prevent injury.</div>
+          <div class="class-meta">
+            <span>⏱ 45 min</span>
+            <span>👤 All levels</span>
+            <span>🧘 Recovery</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" data-animate>
+  <div class="pricing-inner">
+    <div style="font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(255,255,255,0.4);font-weight:600;margin-bottom:0.75rem">Membership</div>
+    <h2 style="font-size:clamp(1.75rem,3vw,2.75rem);font-weight:700;letter-spacing:-0.02em;margin-bottom:0;color:#fff">Simple, transparent pricing.</h2>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Drop-In</div>
+        <div class="price-amount">$25</div>
+        <div class="price-period">per class</div>
+        <ul class="price-features">
+          <li>Any single class</li>
+          <li>No commitment</li>
+          <li>Reserve online 24h in advance</li>
+        </ul>
+        <a href="NAV_CTA_HREF" class="btn-price btn-price-outline">Book a Class</a>
+      </div>
+      <div class="price-card featured">
+        <div class="price-badge">Most Popular</div>
+        <div class="price-tier">Unlimited</div>
+        <div class="price-amount">$149</div>
+        <div class="price-period">per month</div>
+        <ul class="price-features">
+          <li>Unlimited classes</li>
+          <li>Priority scheduling</li>
+          <li>Access to open gym hours</li>
+          <li>Member community events</li>
+        </ul>
+        <a href="NAV_CTA_HREF" class="btn-price btn-price-primary">Start Today</a>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">10-Class Pack</div>
+        <div class="price-amount">$199</div>
+        <div class="price-period">use within 90 days</div>
+        <ul class="price-features">
+          <li>10 classes, any time</li>
+          <li>No monthly commitment</li>
+          <li>Shareable with household</li>
+        </ul>
+        <a href="NAV_CTA_HREF" class="btn-price btn-price-outline">Buy Pack</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">BUSINESS_NAME</div>
+      <p class="footer-tagline">TAGLINE</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Find Us</div>
+      <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+      <span class="footer-contact-item">ADDRESS</span>
+      <span class="footer-contact-item">HOURS</span>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2025 BUSINESS_NAME. All rights reserved.</span>
+    <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
+  </div>
+</footer>
+
+<script>
+const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

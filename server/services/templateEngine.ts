@@ -94,36 +94,24 @@ const TIER_LEVEL: Record<string, number> = {
 export function stripPackageSections(html: string, packageTier: string): string {
   const level = TIER_LEVEL[packageTier.toLowerCase()] ?? 0;
 
-  // Strip growth-gated sections if below growth tier
   if (level < 1) {
-    html = html.replace(
-      /<!-- IF_GROWTH_PLUS_START -->[\s\S]*?<!-- IF_GROWTH_PLUS_END -->/g,
-      "",
-    );
+    html = html.replace(/<!-- IF_GROWTH_PLUS_START -->[\s\S]*?<!-- IF_GROWTH_PLUS_END -->/g, "");
   } else {
     html = html
       .replace(/<!-- IF_GROWTH_PLUS_START -->/g, "")
       .replace(/<!-- IF_GROWTH_PLUS_END -->/g, "");
   }
 
-  // Strip premium-gated sections if below premium tier
   if (level < 2) {
-    html = html.replace(
-      /<!-- IF_PREMIUM_PLUS_START -->[\s\S]*?<!-- IF_PREMIUM_PLUS_END -->/g,
-      "",
-    );
+    html = html.replace(/<!-- IF_PREMIUM_PLUS_START -->[\s\S]*?<!-- IF_PREMIUM_PLUS_END -->/g, "");
   } else {
     html = html
       .replace(/<!-- IF_PREMIUM_PLUS_START -->/g, "")
       .replace(/<!-- IF_PREMIUM_PLUS_END -->/g, "");
   }
 
-  // Strip enterprise-gated sections if below enterprise tier
   if (level < 3) {
-    html = html.replace(
-      /<!-- IF_ENTERPRISE_START -->[\s\S]*?<!-- IF_ENTERPRISE_END -->/g,
-      "",
-    );
+    html = html.replace(/<!-- IF_ENTERPRISE_START -->[\s\S]*?<!-- IF_ENTERPRISE_END -->/g, "");
   } else {
     html = html
       .replace(/<!-- IF_ENTERPRISE_START -->/g, "")
@@ -131,6 +119,133 @@ export function stripPackageSections(html: string, packageTier: string): string 
   }
 
   return html;
+}
+
+// ── Page list per industry ────────────────────────────────────────────────────
+
+const INDUSTRY_PAGES: Record<string, string[]> = {
+  contractor: ["services", "gallery", "about", "quote", "contact"],
+  restaurant:  ["menu", "reservations", "about"],
+  gym:         ["classes", "about"],
+  salon:       ["services", "gallery", "about"],
+  coffee:      ["menu", "about"],
+  boutique:    ["about"],
+  service:     ["services", "quote", "about"],
+};
+
+function getIndustryDir(templatePath: string): string {
+  return templatePath.split("/")[0] ?? "service";
+}
+
+export function getPagesForTemplate(templatePath: string, packageTier: string): string[] {
+  const dir = getIndustryDir(templatePath);
+  const tierLevel = TIER_LEVEL[packageTier.toLowerCase()] ?? 0;
+  const allPages = INDUSTRY_PAGES[dir] ?? INDUSTRY_PAGES.service;
+
+  // starter: home + contact (privacy always)
+  if (tierLevel < 1) return ["contact"];
+  // growth: all industry pages
+  return allPages;
+}
+
+// ── Nav helpers ───────────────────────────────────────────────────────────────
+
+const PAGE_LABELS: Record<string, string> = {
+  index:        "Home",
+  services:     "Services",
+  gallery:      "Gallery",
+  about:        "About",
+  quote:        "Get a Quote",
+  contact:      "Contact",
+  menu:         "Menu",
+  reservations: "Reservations",
+  classes:      "Classes",
+  privacy:      "Privacy",
+};
+
+const INDUSTRY_CTA: Record<string, { href: string; text: string }> = {
+  contractor: { href: "quote.html",        text: "Get a Quote" },
+  restaurant: { href: "reservations.html", text: "Reserve a Table" },
+  gym:        { href: "classes.html",      text: "Book a Class" },
+  salon:      { href: "contact.html",      text: "Book Now" },
+  coffee:     { href: "menu.html",         text: "View Menu" },
+  boutique:   { href: "contact.html",      text: "Shop Now" },
+  service:    { href: "quote.html",        text: "Get a Quote" },
+};
+
+function buildNavLinks(dir: string, pages: string[]): string {
+  const allPages = ["index", ...pages];
+  return allPages.map(page => {
+    const href = page === "index" ? "index.html" : `${page}.html`;
+    const label = PAGE_LABELS[page] ?? capitalize(page);
+    return `<li><a href="${href}">${label}</a></li>`;
+  }).join("\n");
+}
+
+function buildFooterLinks(dir: string, pages: string[]): string {
+  const allPages = ["index", ...pages, "privacy"];
+  return allPages.map(page => {
+    const href = page === "index" ? "index.html" : page === "privacy" ? "privacy.html" : `${page}.html`;
+    const label = PAGE_LABELS[page] ?? capitalize(page);
+    return `<li><a href="${href}">${label}</a></li>`;
+  }).join("\n");
+}
+
+// ── Image pre-resolution ──────────────────────────────────────────────────────
+
+const IMAGE_TOKEN_MAP: Array<[string, string, string | number]> = [
+  ["HERO_IMAGE",      "hero",    "hero"],
+  ["GALLERY_IMAGE_1", "gallery", 1],
+  ["GALLERY_IMAGE_2", "gallery", 2],
+  ["GALLERY_IMAGE_3", "gallery", 3],
+  ["ABOUT_IMAGE",     "about",   "about"],
+  ["TEAM_IMAGE_1",    "team",    1],
+] as const;
+
+async function resolveAllImages(
+  brief: SiteBrief,
+): Promise<Record<string, string>> {
+  const { getBestImage } = await import("./imageService");
+  const dir = brief.imageDirection;
+  const resolved: Record<string, string> = {};
+
+  await Promise.all(
+    IMAGE_TOKEN_MAP.map(async ([token, imageType, slot]) => {
+      try {
+        resolved[token] = await getBestImage(
+          brief.businessType,
+          String(slot),
+          brief.primaryColor,
+          undefined,
+          brief.subNiche,
+          dir,
+        );
+      } catch {
+        resolved[token] = "";
+      }
+    }),
+  );
+
+  return resolved;
+}
+
+// ── Template file resolution ──────────────────────────────────────────────────
+
+function findPageTemplate(
+  dir: string,
+  pageName: string,
+): string | null {
+  const templatesRoot = path.join(process.cwd(), "server", "templates");
+
+  // Industry-specific first
+  const specific = path.join(templatesRoot, dir, `${pageName}.html`);
+  if (fs.existsSync(specific)) return path.join(dir, `${pageName}.html`);
+
+  // Shared fallback
+  const shared = path.join(templatesRoot, "shared", `${pageName}.html`);
+  if (fs.existsSync(shared)) return path.join("shared", `${pageName}.html`);
+
+  return null;
 }
 
 // ── Claude copy generation ────────────────────────────────────────────────────
@@ -190,7 +305,6 @@ Return this exact JSON structure:
 
   const raw = data?.content?.[0]?.text ?? "{}";
 
-  // Extract JSON if wrapped in code fences
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return {};
 
@@ -203,22 +317,15 @@ Return this exact JSON structure:
 
 // ── Content injection ─────────────────────────────────────────────────────────
 
-const IMAGE_TOKEN_MAP: Array<[string, string, string | number]> = [
-  ["HERO_IMAGE", "hero", "hero"],
-  ["GALLERY_IMAGE_1", "gallery", 1],
-  ["GALLERY_IMAGE_2", "gallery", 2],
-  ["GALLERY_IMAGE_3", "gallery", 3],
-  ["ABOUT_IMAGE", "about", "about"],
-  ["TEAM_IMAGE_1", "team", 1],
-] as const;
-
-type ImageSlot = string | number;
-
 export async function injectContentIntoTemplate(
   templatePath: string,
   brief: SiteBrief,
   copy: Record<string, string>,
-  imageDirection?: string,
+  resolvedImages: Record<string, string>,
+  navLinks: string,
+  navCtaHref: string,
+  navCtaText: string,
+  footerLinks: string,
 ): Promise<string> {
   const fullPath = path.join(process.cwd(), "server", "templates", templatePath);
 
@@ -229,22 +336,27 @@ export async function injectContentIntoTemplate(
 
   // Build the full token map
   const tokens: Record<string, string> = {
-    BUSINESS_NAME: brief.businessName,
-    PHONE: brief.phone,
-    EMAIL: brief.email,
-    ADDRESS: brief.address,
-    HOURS: brief.hours,
-    SERVICE_AREA: brief.serviceArea,
-    YEARS_IN_BUSINESS: brief.yearsInBusiness,
-    OWNER_NAME: brief.ownerName,
-    LICENSE_NUMBER: brief.licenseNumber ?? "",
-    PACKAGE_TIER: capitalizeFirst(brief.packageTier),
+    BUSINESS_NAME:       brief.businessName,
+    PHONE:               brief.phone,
+    EMAIL:               brief.email,
+    ADDRESS:             brief.address,
+    HOURS:               brief.hours,
+    SERVICE_AREA:        brief.serviceArea,
+    YEARS_IN_BUSINESS:   brief.yearsInBusiness,
+    OWNER_NAME:          brief.ownerName,
+    LICENSE_NUMBER:      brief.licenseNumber ?? "",
+    PACKAGE_TIER:        capitalizeFirst(brief.packageTier),
     APP_URL_PLACEHOLDER: brief.appUrl ?? "#",
-    PRIMARY_COLOR: brief.primaryColor,
-    SECONDARY_COLOR: brief.secondaryColor,
-    SERVICE_1_DESC: brief.servicesOffered[0] ?? "",
-    SERVICE_2_DESC: brief.servicesOffered[1] ?? "",
-    SERVICE_3_DESC: brief.servicesOffered[2] ?? "",
+    PRIMARY_COLOR:       brief.primaryColor,
+    SECONDARY_COLOR:     brief.secondaryColor,
+    SERVICE_1_DESC:      brief.servicesOffered[0] ?? "",
+    SERVICE_2_DESC:      brief.servicesOffered[1] ?? "",
+    SERVICE_3_DESC:      brief.servicesOffered[2] ?? "",
+    NAV_LINKS:           navLinks,
+    NAV_CTA_HREF:        navCtaHref,
+    NAV_CTA_TEXT:        navCtaText,
+    NAV_FOOTER_LINKS:    footerLinks,
+    ...resolvedImages,
     ...copy,
   };
 
@@ -252,27 +364,6 @@ export async function injectContentIntoTemplate(
   const sortedKeys = Object.keys(tokens).sort((a, b) => b.length - a.length);
   for (const key of sortedKeys) {
     html = html.replaceAll(key, tokens[key] ?? "");
-  }
-
-  // Resolve image tokens
-  const { getBestImage } = await import("./imageService");
-  const dir = imageDirection ?? brief.imageDirection;
-
-  for (const [token, imageType, slot] of IMAGE_TOKEN_MAP) {
-    if (!html.includes(token)) continue;
-    try {
-      const url = await getBestImage(
-        brief.businessType,
-        String(slot),
-        brief.primaryColor,
-        undefined,
-        brief.subNiche,
-        dir,
-      );
-      html = html.replaceAll(token, url);
-    } catch {
-      html = html.replaceAll(token, "");
-    }
   }
 
   return html;
@@ -283,15 +374,89 @@ export async function injectContentIntoTemplate(
 export async function generateSiteFromTemplate(
   brief: SiteBrief,
 ): Promise<Record<string, string>> {
-  const templatePath = selectTemplate(brief.businessType, brief.brandTone);
-  const copy = await generateCopyForTemplate(brief);
-  const html = await injectContentIntoTemplate(templatePath, brief, copy, brief.imageDirection);
-  return { index: html };
+  const indexTemplatePath = selectTemplate(brief.businessType, brief.brandTone);
+  const dir = getIndustryDir(indexTemplatePath);
+
+  // Get additional pages for this tier
+  const additionalPages = getPagesForTemplate(indexTemplatePath, brief.packageTier);
+
+  // Build nav and CTA tokens once
+  const navLinks    = buildNavLinks(dir, additionalPages);
+  const footerLinks = buildFooterLinks(dir, additionalPages);
+  const cta         = INDUSTRY_CTA[dir] ?? INDUSTRY_CTA.service;
+
+  // Generate copy and images once, shared across all pages
+  const [copy, resolvedImages] = await Promise.all([
+    generateCopyForTemplate(brief),
+    resolveAllImages(brief),
+  ]);
+
+  const pages: Record<string, string> = {};
+
+  // Inject index page
+  pages["index"] = await injectContentIntoTemplate(
+    indexTemplatePath,
+    brief,
+    copy,
+    resolvedImages,
+    navLinks,
+    cta.href,
+    cta.text,
+    footerLinks,
+  );
+
+  // Inject additional pages
+  await Promise.all(
+    additionalPages.map(async (pageName) => {
+      const pagePath = findPageTemplate(dir, pageName);
+      if (!pagePath) return;
+
+      try {
+        pages[pageName] = await injectContentIntoTemplate(
+          pagePath,
+          brief,
+          copy,
+          resolvedImages,
+          navLinks,
+          cta.href,
+          cta.text,
+          footerLinks,
+        );
+      } catch (err) {
+        console.error(`Failed to render page '${pageName}':`, err);
+      }
+    }),
+  );
+
+  // Always include privacy page (shared)
+  const privacyPath = findPageTemplate("shared", "privacy");
+  if (privacyPath) {
+    try {
+      pages["privacy"] = await injectContentIntoTemplate(
+        privacyPath,
+        brief,
+        copy,
+        resolvedImages,
+        navLinks,
+        cta.href,
+        cta.text,
+        footerLinks,
+      );
+    } catch {
+      // privacy page optional
+    }
+  }
+
+  return pages;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function capitalizeFirst(s: string): string {
   if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }

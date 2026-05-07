@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Services — BUSINESS_NAME</title>
+<meta name="description" content="META_DESCRIPTION">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: PRIMARY_COLOR;
+  --secondary: SECONDARY_COLOR;
+  --bg: #0d0d0d;
+  --surface: #1a1a1a;
+  --text: #f0f0f0;
+  --muted: rgba(240,240,240,0.5);
+  --border: rgba(240,240,240,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;line-height:1.7}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 5%;background:rgba(13,13,13,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'Barlow Condensed',sans-serif;font-size:1.375rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;color:var(--primary)}
+.nav-links{display:flex;gap:2.5rem;list-style:none}
+.nav-links a{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:500;color:var(--muted);transition:color 0.2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text)}
+.nav-cta{background:var(--primary);color:#fff;padding:0.75rem 1.5rem;font-size:0.75rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;transition:opacity 0.2s}
+.nav-cta:hover{opacity:0.85}
+.page-hero{position:relative;min-height:45vh;display:flex;align-items:flex-end;padding:0 5% 4rem;overflow:hidden;padding-top:100px;background:var(--surface)}
+.page-hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0.25}
+.page-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.9) 0%,rgba(0,0,0,0.4) 100%);z-index:1}
+.page-hero-content{position:relative;z-index:2}
+.breadcrumb{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+.breadcrumb a{color:var(--primary)}
+.page-hero h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2.5rem,5vw,5rem);font-weight:900;text-transform:uppercase;line-height:0.95;color:#fff}
+.section-label{font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem}
+.section-label::before{content:'';display:block;width:2rem;height:1px;background:var(--primary)}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:900;text-transform:uppercase;line-height:0.95;letter-spacing:-0.01em;margin-bottom:2rem}
+.btn-primary{background:var(--primary);color:#fff;padding:1rem 2rem;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;display:inline-block;transition:opacity 0.2s}
+.btn-primary:hover{opacity:0.85}
+.btn-ghost{border:1px solid rgba(255,255,255,0.25);color:#fff;padding:1rem 2rem;font-size:0.875rem;font-weight:500;display:inline-flex;align-items:center;gap:0.5rem;transition:border-color 0.2s}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.6)}
+.form-input{background:transparent;border:1px solid var(--border);padding:1rem 1.25rem;color:var(--text);font-size:0.9375rem;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.2s;width:100%}
+.form-input:focus{border-color:var(--primary)}
+.form-input::placeholder{color:rgba(240,240,240,0.3)}
+.form-textarea{resize:none;min-height:120px}
+.form-submit{background:var(--primary);color:#fff;padding:1.125rem;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;border:none;cursor:pointer;transition:opacity 0.2s;width:100%}
+.form-submit:hover{opacity:0.85}
+
+/* SERVICES PAGE */
+.services-list{padding:6rem 5%}
+.services-list-inner{max-width:1200px;margin:0 auto}
+.service-block{display:grid;grid-template-columns:1fr 1fr;gap:5rem;align-items:center;padding:5rem 0;border-top:1px solid var(--border)}
+.service-block:first-child{border-top:none;padding-top:0}
+.service-block.reverse .service-content{order:2}
+.service-block.reverse .service-media{order:1}
+.service-media{aspect-ratio:4/3;overflow:hidden;background:var(--surface)}
+.service-media img{width:100%;height:100%;object-fit:cover;transition:transform 0.6s}
+.service-media:hover img{transform:scale(1.03)}
+.service-tag{font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--primary);font-weight:600;margin-bottom:1rem}
+.service-block h2{font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.875rem,3vw,2.75rem);font-weight:900;text-transform:uppercase;line-height:0.95;margin-bottom:1rem}
+.service-block p{color:var(--muted);line-height:1.8;margin-bottom:1.5rem;font-weight:300}
+.service-includes{list-style:none;margin-bottom:1.5rem;display:flex;flex-direction:column;gap:0.5rem}
+.service-includes li{font-size:0.9rem;color:var(--muted);display:flex;align-items:baseline;gap:0.625rem}
+.service-includes li::before{content:'✓';color:var(--primary);font-weight:700;flex-shrink:0}
+.service-meta{display:flex;gap:2rem;padding-top:1.5rem;border-top:1px solid var(--border);margin-top:1.5rem}
+.service-meta-item{font-size:0.8rem;color:var(--muted)}
+.service-meta-item strong{display:block;font-family:'Barlow Condensed',sans-serif;font-size:1rem;color:var(--primary);font-weight:700;letter-spacing:0.05em;margin-bottom:0.2rem}
+
+/* FAQ */
+.faq{padding:6rem 5%;background:var(--surface)}
+.faq-inner{max-width:800px;margin:0 auto}
+.faq-list{margin-top:3rem;display:flex;flex-direction:column;gap:0}
+.faq-item{border-top:1px solid var(--border)}
+.faq-item:last-child{border-bottom:1px solid var(--border)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:1.5rem 0;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.125rem;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;gap:1rem;user-select:none}
+.faq-icon{color:var(--primary);font-size:1.25rem;flex-shrink:0;transition:transform 0.3s}
+.faq-a{max-height:0;overflow:hidden;transition:max-height 0.4s ease,padding 0.3s}
+.faq-a p{padding-bottom:1.5rem;color:var(--muted);line-height:1.75;font-size:0.9375rem;font-weight:300}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+.faq-item.open .faq-a{max-height:300px}
+
+/* CTA SECTION */
+.cta-section{padding:6rem 5%;text-align:center;background:var(--primary)}
+.cta-section h2{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:900;text-transform:uppercase;color:#fff;line-height:0.95;margin-bottom:1rem}
+.cta-section p{color:rgba(255,255,255,0.8);font-size:1.0625rem;margin-bottom:2.5rem;max-width:540px;margin-left:auto;margin-right:auto}
+.btn-white{background:#fff;color:var(--primary);padding:1rem 2.5rem;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;display:inline-block;transition:opacity 0.2s}
+.btn-white:hover{opacity:0.9}
+
+/* FOOTER */
+footer{background:#080808;padding:5rem 5% 2rem;border-top:1px solid var(--border)}
+.footer-inner{max-width:1200px;margin:0 auto}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;margin-bottom:4rem}
+.footer-brand{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem}
+.footer-tagline{font-size:0.875rem;color:var(--muted);line-height:1.7;max-width:240px}
+.footer-col-title{font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:rgba(240,240,240,0.35);margin-bottom:1.25rem;font-weight:600}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:0.75rem}
+.footer-links a{font-size:0.875rem;color:var(--muted);transition:color 0.2s}
+.footer-links a:hover{color:var(--text)}
+.footer-contact-item{font-size:0.875rem;color:var(--muted);display:block;margin-bottom:0.75rem;transition:color 0.2s}
+.footer-contact-item:hover{color:var(--text)}
+.footer-bottom{border-top:1px solid var(--border);padding-top:2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem}
+.footer-copy{font-size:0.775rem;color:rgba(240,240,240,0.3)}
+.footer-mini{font-size:0.7rem;color:rgba(240,240,240,0.25)}
+.footer-mini a{color:var(--primary);opacity:0.7}
+[data-animate]{opacity:0;transform:translateY(24px);transition:opacity 0.65s ease,transform 0.65s ease}
+[data-animate].visible{opacity:1;transform:translateY(0)}
+@media(max-width:900px){
+  .nav-links{display:none}
+  .service-block{grid-template-columns:1fr}
+  .service-block.reverse .service-content{order:1}
+  .service-block.reverse .service-media{order:2}
+  .footer-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">BUSINESS_NAME</a>
+  <ul class="nav-links">NAV_LINKS</ul>
+  <a href="NAV_CTA_HREF" class="nav-cta">NAV_CTA_TEXT</a>
+</nav>
+
+<section class="page-hero">
+  <img src="HERO_IMAGE" alt="BUSINESS_NAME services" class="page-hero-bg">
+  <div class="page-hero-overlay"></div>
+  <div class="page-hero-content">
+    <div class="breadcrumb"><a href="index.html">Home</a> › Services</div>
+    <h1>Our<br>Services</h1>
+  </div>
+</section>
+
+<section class="services-list">
+  <div class="services-list-inner">
+    <div style="margin-bottom:4rem;" data-animate>
+      <div class="section-label">What We Do</div>
+      <h2 class="section-title">Expert Work.<br>Every Time.</h2>
+      <p style="color:var(--muted);max-width:600px;font-weight:300;line-height:1.8">Every project we take on in SERVICE_AREA gets our full attention from day one. We handle permits, coordinate every trade, and communicate every step so you're never left wondering.</p>
+    </div>
+
+    <div class="service-block" data-animate>
+      <div class="service-content">
+        <div class="service-tag">01 — SERVICE_1_DESC</div>
+        <h2>SERVICE_1_DESC</h2>
+        <p>Our most requested service. We handle every element — layout planning, demo, rough-in, finish work, and final punch list — so you have a single accountable team from start to finish.</p>
+        <ul class="service-includes">
+          <li>Full design consultation and layout planning</li>
+          <li>Permit acquisition and inspection management</li>
+          <li>Demolition and debris removal</li>
+          <li>All trades coordinated (plumbing, electrical, tile)</li>
+          <li>Custom cabinetry, countertops, fixtures</li>
+          <li>Final walkthrough and punch-list guarantee</li>
+        </ul>
+        <div class="service-meta">
+          <div class="service-meta-item"><strong>Typical Timeline</strong>3–6 weeks</div>
+          <div class="service-meta-item"><strong>Starting From</strong>Request Quote</div>
+        </div>
+      </div>
+      <div class="service-media">
+        <img src="GALLERY_IMAGE_1" alt="SERVICE_1_DESC" loading="lazy">
+      </div>
+    </div>
+
+    <div class="service-block reverse" data-animate>
+      <div class="service-content">
+        <div class="service-tag">02 — SERVICE_2_DESC</div>
+        <h2>SERVICE_2_DESC</h2>
+        <p>Complete renovation from the studs out. Waterproofing, tile, custom showers, soaking tubs, dual vanities. We build bathrooms that still look great a decade later.</p>
+        <ul class="service-includes">
+          <li>Full waterproofing and moisture barrier installation</li>
+          <li>Custom tile work and wet area finishing</li>
+          <li>Walk-in showers and soaking tub installation</li>
+          <li>Plumbing rough-in and fixture installation</li>
+          <li>Exhaust, lighting, and electrical updates</li>
+          <li>Glass enclosures and hardware selection</li>
+        </ul>
+        <div class="service-meta">
+          <div class="service-meta-item"><strong>Typical Timeline</strong>2–4 weeks</div>
+          <div class="service-meta-item"><strong>Starting From</strong>Request Quote</div>
+        </div>
+      </div>
+      <div class="service-media">
+        <img src="GALLERY_IMAGE_2" alt="SERVICE_2_DESC" loading="lazy">
+      </div>
+    </div>
+
+    <div class="service-block" data-animate>
+      <div class="service-content">
+        <div class="service-tag">03 — SERVICE_3_DESC</div>
+        <h2>SERVICE_3_DESC</h2>
+        <p>Structural additions, room expansions, and second-story additions. We coordinate structural engineering, permits, and every subcontractor under one roof.</p>
+        <ul class="service-includes">
+          <li>Structural engineering and architectural drawings</li>
+          <li>Full permit acquisition and inspection management</li>
+          <li>Foundation work and framing</li>
+          <li>Exterior matching (siding, roofing, trim)</li>
+          <li>Interior rough-in and finish work</li>
+          <li>Seamless integration with existing home</li>
+        </ul>
+        <div class="service-meta">
+          <div class="service-meta-item"><strong>Typical Timeline</strong>2–4 months</div>
+          <div class="service-meta-item"><strong>Starting From</strong>Request Quote</div>
+        </div>
+      </div>
+      <div class="service-media">
+        <img src="GALLERY_IMAGE_3" alt="SERVICE_3_DESC" loading="lazy">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq">
+  <div class="faq-inner">
+    <div class="section-label">Common Questions</div>
+    <h2 class="section-title">FAQ_1_Q</h2>
+    <div class="faq-list">
+      <div class="faq-item open">
+        <div class="faq-q">FAQ_1_Q <span class="faq-icon">+</span></div>
+        <div class="faq-a"><p>FAQ_1_A</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do you handle permits? <span class="faq-icon">+</span></div>
+        <div class="faq-a"><p>Yes — every project we take on includes full permit management. We pull the permits, schedule all required inspections, and ensure your project is code-compliant from start to finish. You never have to worry about chasing permits yourself.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What is your warranty? <span class="faq-icon">+</span></div>
+        <div class="faq-a"><p>We stand behind our work with a 3-year workmanship warranty on all projects. If something we built fails due to workmanship, we fix it at no charge. Material warranties vary by manufacturer and we'll walk you through those at project kickoff.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Are you licensed and insured? <span class="faq-icon">+</span></div>
+        <div class="faq-a"><p>Yes. License #LICENSE_NUMBER. We carry general liability insurance and workers' comp on all crew members. We're happy to provide proof of insurance before any project starts — just ask.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How do you handle unexpected issues mid-project? <span class="faq-icon">+</span></div>
+        <div class="faq-a"><p>We contact you the same day we discover an issue and explain exactly what happened, what the options are, and what it might affect in terms of timeline or cost. We never proceed with additional work without your approval. Surprises are part of construction — how you handle them is what separates good contractors from the rest.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Ready to Start?</h2>
+  <p>Tell us what you're thinking. We'll come out, take a look, and give you a clear honest estimate. No pressure, no obligation.</p>
+  <a href="NAV_CTA_HREF" class="btn-white">Get Your Free Estimate →</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">BUSINESS_NAME</div>
+        <div class="footer-tagline">TAGLINE · Serving SERVICE_AREA. Licensed, insured, and built on reputation.</div>
+      </div>
+      <div>
+        <div class="footer-col-title">Services</div>
+        <ul class="footer-links">
+          <li><a href="services.html">SERVICE_1_DESC</a></li>
+          <li><a href="services.html">SERVICE_2_DESC</a></li>
+          <li><a href="services.html">SERVICE_3_DESC</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">NAV_FOOTER_LINKS</ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <a href="tel:PHONE" class="footer-contact-item">PHONE</a>
+        <a href="mailto:EMAIL" class="footer-contact-item">EMAIL</a>
+        <span class="footer-contact-item" style="cursor:default">SERVICE_AREA</span>
+        <span class="footer-contact-item" style="cursor:default;font-size:0.8rem;opacity:0.6">HOURS</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 BUSINESS_NAME. All rights reserved. License #LICENSE_NUMBER</div>
+      <div class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://www.minimorphstudios.net">MiniMorph Studios</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('.faq-q').forEach(function(q){
+  q.addEventListener('click',function(){
+    var item=q.parentElement;
+    var wasOpen=item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(function(i){i.classList.remove('open')});
+    if(!wasOpen)item.classList.add('open');
+  });
+});
+var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:0.1});
+document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
+</script>
+</body>
+</html>
