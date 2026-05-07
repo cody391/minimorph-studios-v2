@@ -3012,38 +3012,59 @@ const dashboardRouter = router({
 
 async function scrapeWebsite(url: string): Promise<string> {
   try {
-    const response = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; MiniMorph/1.0)" },
+    const fullUrl = url.startsWith("http") ? url : `https://${url}`;
+    const response = await fetch(fullUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; MiniMorphBot/1.0)",
+        "Accept": "text/html,application/xhtml+xml",
+      },
       signal: AbortSignal.timeout(8000),
     });
+    if (!response.ok) return `[${fullUrl} returned ${response.status}]`;
     const html = await response.text();
     const text = html
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, " ")
+      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, " ")
+      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, " ")
+      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, " ")
       .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
+      .replace(/&amp;/g, "&").replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#\d+;/g, " ")
+      .replace(/\s{3,}/g, "\n")
       .trim()
-      .slice(0, 4000);
-    return text;
-  } catch {
-    return "";
+      .slice(0, 6000);
+    return text || "[Page loaded but no readable content found]";
+  } catch (e: any) {
+    return `[Could not load: ${e.message}]`;
   }
 }
 
 function extractUrls(messages: Array<{ role: string; content: string }>): string[] {
-  const urlRegex = /https?:\/\/[^\s"'<>)]+/g;
+  // Match full URLs (with or without protocol) and bare domains like burlandsprig.com
+  const fullUrlRegex = /https?:\/\/[^\s"'<>)]+/g;
+  const bareDomainRegex = /(?:^|[\s(,])(?:www\.)?([a-zA-Z0-9][-a-zA-Z0-9]{1,61}[a-zA-Z0-9]\.(?:com|net|org|io|co|us|ca|biz|info|site|online|shop|store|dev|app|me|co\.uk|com\.au)(?:\/[^\s"'<>)]*)?)/g;
   const seen = new Set<string>();
   const urls: string[] = [];
-  // look at last 6 messages
+
   for (const msg of messages.slice(-6)) {
-    const found = msg.content.match(urlRegex) || [];
-    for (const u of found) {
+    // Full URLs first
+    const fullMatches = msg.content.match(fullUrlRegex) || [];
+    for (const u of fullMatches) {
       const clean = u.replace(/[.,;:!?]+$/, "");
-      if (!seen.has(clean)) {
-        seen.add(clean);
-        urls.push(clean);
-        if (urls.length >= 4) return urls;
+      if (!seen.has(clean)) { seen.add(clean); urls.push(clean); }
+      if (urls.length >= 4) return urls;
+    }
+    // Bare domains (no protocol)
+    let m: RegExpExecArray | null;
+    const bareRe = new RegExp(bareDomainRegex.source, "g");
+    while ((m = bareRe.exec(msg.content)) !== null) {
+      const raw = m[0].trim().replace(/[.,;:!?]+$/, "");
+      const withProtocol = raw.startsWith("http") ? raw : `https://${raw.startsWith("www.") ? raw : `www.${raw}`}`;
+      if (!seen.has(withProtocol)) {
+        seen.add(withProtocol);
+        urls.push(withProtocol);
       }
+      if (urls.length >= 4) return urls;
     }
   }
   return urls;
@@ -3313,21 +3334,25 @@ That's it. Short, direct, honest. Get to the first question fast. Do not open wi
 PHASE 1 — EXISTING WEBSITE CHECK (immediately after Phase 0 opening)
 "Before we get into the fun stuff — do you already have a website? If so, drop the URL and I'll pull it up right now."
 
-If URL provided → Analyze scraped content. Comment specifically on what you see. Extract all products/services/pricing mentioned. Ask what to keep and what to change. Ask what they hate about it.
+If URL provided → You will receive the actual scraped content of that page in the conversation (look for [URL] blocks). Read it and reference specific things: actual services listed, pricing mentioned, copy tone, what's above the fold. Ask what to keep and what to change. Ask what they hate about it. Do NOT say "I'm pulling it up" or "let me load that" — just respond with what you see naturally, like a designer who already reviewed it.
+If the scraped content shows an error (e.g. "[Could not load...]") → Say honestly: "I wasn't able to load that one — could be a firewall or the site blocking bots. No worries, just describe what's on there or what you want to change."
 If no website → Get excited about starting fresh. Ask how customers currently find them.
 If vague/unsure → Ask what made them decide they need a website now.
 
 PHASE 2 — INSPIRATION RESEARCH
 "Now show me some sites you love — doesn't even have to be your industry. Drop a URL or two and tell me what catches your eye."
 
-For each URL scraped: Comment specifically on the color palette, layout style, typography feel, photo style, tone of voice. Extract preferences. Also ask what they DON'T want — "Is there anything about that site's style you'd actually hate on your own?"
+For each URL scraped: Read the content in the [URL] block and comment specifically on what you see — color palette, layout style, typography feel, photo style, tone of voice. Extract preferences. Also ask what they DON'T want — "Is there anything about that site's style you'd actually hate on your own?"
+For brand name references without a URL (e.g. "I want it to look like Mount Gay Rum" or "something like Apple's site"): Use your knowledge of that brand's visual identity — colors, typography, photography style, mood board, tone — to give specific creative direction. Don't ask for a URL if you already know the brand well.
 
 Distill everything you learn into: colorMood (e.g. "warm earthy tones"), typography (e.g. "clean modern sans-serif"), layoutStyle (e.g. "minimal whitespace sections"), photoStyle (e.g. "candid real people not stock"), toneOfVoice (e.g. "approachable expert"). Also track any explicit dislikes for avoidPatterns.
 
 PHASE 3 — COMPETITOR TEARDOWN
 "Now give me your biggest competitors. I want to pull them apart — what they're doing right, where they're weak, and exactly how we beat them."
 
-For each competitor scraped, deliver a mini competitive brief:
+For each competitor with a URL: Read the scraped content in the [URL] block and deliver a specific competitive brief based on what you actually see.
+For competitors mentioned by name only: Use your knowledge of their category, typical weaknesses of businesses in that niche, and give a useful competitive brief. Don't ask for URLs for every competitor — only ask if you genuinely don't know the business.
+For each competitor scraped or known, deliver a mini competitive brief:
   - What they do well
   - Where they're weak (slow site, bad mobile, generic copy, missing features, poor SEO)
   - How MiniMorph will beat them specifically
@@ -3535,9 +3560,17 @@ ${answerBankSection}
 
 ${integrationSection}${scrapedSection}`;
 
+      // When scraping succeeded, inject the content as an explicit user-turn context
+      // block immediately before the current message so Claude sees it as fresh input.
+      const scrapedInjection = scrapedSitesContext
+        ? [{ role: "user" as const, content: `[WEBSITE CONTENT RETRIEVED]\n${scrapedSitesContext}\n\nUse the above scraped content when responding to my next message. Reference specific things you can see.` },
+           { role: "assistant" as const, content: "Got it — I've reviewed the site content." }]
+        : [];
+
       const messages = [
         { role: "system" as const, content: systemPrompt },
         ...(input.history || []),
+        ...scrapedInjection,
         { role: "user" as const, content: input.message },
       ];
 
