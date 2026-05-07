@@ -2513,6 +2513,28 @@ const onboardingRouter = router({
       return { projectId: project.id };
     }),
 
+  // Dev utility: delete all self-service projects for the current user so testing can restart
+  resetSelfServiceSession: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const { onboardingProjects, aiChatLogs } = await import("../drizzle/schema");
+      const database = await getDb();
+      if (!database) return { ok: true };
+      const projects = await database
+        .select()
+        .from(onboardingProjects)
+        .where(
+          and(
+            eq((onboardingProjects as any).userId, ctx.user.id),
+            eq((onboardingProjects as any).source, "self_service")
+          )
+        );
+      for (const p of projects) {
+        await database.delete(aiChatLogs).where(eq(aiChatLogs.projectId, p.id));
+        await database.delete(onboardingProjects).where(eq(onboardingProjects.id, p.id));
+      }
+      return { ok: true };
+    }),
+
   // Protected: save Elena conversation progress incrementally (called after every message)
   saveProgress: protectedProcedure
     .input(

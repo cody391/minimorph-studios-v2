@@ -89,6 +89,10 @@ function generateTempPassword(): string {
 /* ═══════════════════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════ */
+
+// TEMP — set to false to disable dev shortcuts for real customers
+const DEV_MODE = true;
+
 type Stage = "capture" | "creating" | "chat";
 type CaptureSubState = "email" | "password";
 
@@ -125,6 +129,7 @@ export default function GetStarted() {
   const registerMutation = trpc.localAuth.register.useMutation();
   const loginMutation = trpc.localAuth.login.useMutation();
   const createProjectMutation = trpc.onboarding.createSelfServiceProject.useMutation();
+  const resetSessionMutation = trpc.onboarding.resetSelfServiceSession.useMutation();
   const chatMutation = trpc.ai.onboardingChat.useMutation();
   const saveProgressMutation = trpc.onboarding.saveProgress.useMutation();
   const createCheckoutMutation = trpc.onboarding.createCheckoutAfterElena.useMutation();
@@ -152,6 +157,23 @@ export default function GetStarted() {
       setStage("chat");
     }
   }, [user, authLoading, selfServiceProjectQuery.isLoading, selfServiceProjectQuery.data, stage]);
+
+  // DEV_MODE: auto-create project and skip email capture when logged in with no existing project
+  useEffect(() => {
+    if (!DEV_MODE) return;
+    if (authLoading || stage !== "capture") return;
+    if (!user) return;
+    if (selfServiceProjectQuery.isLoading) return;
+    if (selfServiceProjectQuery.data?.id) return; // existing project handled by resume effect above
+    setStage("creating");
+    createProjectMutation.mutateAsync()
+      .then(({ projectId: newId }) => {
+        setProjectId(newId);
+        setStage("chat");
+      })
+      .catch(() => setStage("capture"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, selfServiceProjectQuery.isLoading, selfServiceProjectQuery.data?.id, stage]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -523,6 +545,23 @@ export default function GetStarted() {
           <span className="text-xs text-gray-500 hidden sm:block">
             {user?.email}
           </span>
+          {DEV_MODE && (
+            <button
+              onClick={async () => {
+                await resetSessionMutation.mutateAsync();
+                setStage("capture");
+                setProjectId(null);
+                setMessages([]);
+                hasSentInit.current = false;
+                setPaymentReady(null);
+                setAddonsInSummary([]);
+              }}
+              disabled={resetSessionMutation.isPending}
+              className="text-xs text-red-400/50 hover:text-red-400 border border-red-400/20 rounded px-2 py-1 transition-colors"
+            >
+              ↺ Reset
+            </button>
+          )}
         </div>
       </header>
 
