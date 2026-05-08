@@ -210,4 +210,33 @@ export const devAccessRouter = router({
       .where(eq(customers.userId, ctx.user.id));
     return { success: true };
   }),
+
+  /** Delete a user and all their associated data by email — admin dev utility */
+  purgeUserByEmail: adminProcedure
+    .input(z.object({ email: z.string().email() }))
+    .mutation(async ({ input }) => {
+      const { users: usersTable, reps: repsTable, onboardingProjects: projectsTable, aiChatLogs: logsTable, customers: customersTable, contracts: contractsTable } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      const [user] = await database.select().from(usersTable).where(eqFn(usersTable.email, input.email)).limit(1);
+      if (!user) return { deleted: false, reason: "User not found" };
+
+      const custRows = await database.select({ id: customersTable.id }).from(customersTable).where(eqFn(customersTable.userId, user.id));
+      for (const c of custRows) {
+        await database.delete(contractsTable).where(eqFn(contractsTable.customerId, c.id));
+      }
+      await database.delete(customersTable).where(eqFn(customersTable.userId, user.id));
+
+      const projRows = await database.select({ id: projectsTable.id }).from(projectsTable).where(eqFn(projectsTable.userId, user.id));
+      for (const p of projRows) {
+        await database.delete(logsTable).where(eqFn(logsTable.projectId, p.id));
+      }
+      await database.delete(projectsTable).where(eqFn(projectsTable.userId, user.id));
+      await database.delete(repsTable).where(eqFn(repsTable.userId, user.id));
+      await database.delete(usersTable).where(eqFn(usersTable.id, user.id));
+
+      return { deleted: true, email: input.email, userId: user.id };
+    }),
 });
