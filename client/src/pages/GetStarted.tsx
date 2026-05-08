@@ -90,20 +90,24 @@ function generateTempPassword(): string {
    MAIN COMPONENT
    ═══════════════════════════════════════════════════════ */
 
-// TEMP — set to false to disable dev shortcuts for real customers
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 const SUGGESTED_QUESTIONS = [
-  "Can you look up my competitors?",
-  "What plan do you recommend for me?",
-  "What addons would help my business?",
-  "Can you pull up my current website?",
+  "Can you search my competitors?",
+  "What plan do you recommend?",
+  "What add-ons fit my business?",
+  "Can you pull up my current site?",
   "What's included in every plan?",
-  "How long will it take to build?",
-  "Can you generate images for my site?",
+  "How long does it take to build?",
+  "Do you write all my content?",
+  "How do I rank on Google?",
+  "Can you generate images for me?",
   "What happens after I pay?",
-  "Can you write all my content for me?",
-  "How do I get found on Google?",
+  "Do you handle legal compliance?",
+  "What's your QA process?",
+  "Can you check competitor sites?",
+  "What industries do you work with?",
+  "How do add-ons work?",
 ];
 
 type Stage = "capture" | "creating" | "chat";
@@ -633,7 +637,7 @@ export default function GetStarted() {
       {/* Main layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Chat panel */}
-        <div className="flex flex-col w-full md:w-[65%] border-r border-[#1e1e30]">
+        <div className="flex flex-col flex-1">
           {/* Elena header */}
           <div className="flex-none px-6 py-4 border-b border-[#1e1e30] bg-[#0d0d1a] flex items-center gap-3">
             <div className="relative">
@@ -770,27 +774,28 @@ export default function GetStarted() {
             <div ref={messagesEndRef} />
           </div>
 
-          {messages.length <= 2 && (
-            <div className="hidden lg:flex flex-col w-56 shrink-0 gap-3 pt-4 overflow-y-auto border-l border-[#1e1e30] px-3 pb-4">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">
-                Ask Elena about...
-              </p>
-              <div className="flex flex-col gap-2">
-                {SUGGESTED_QUESTIONS.map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => {
+          <div className="hidden lg:flex flex-col w-52 shrink-0 pt-4 pb-4 px-3 border-l border-white/[0.06] overflow-y-auto max-h-full gap-2">
+            <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wider px-1 sticky top-0 bg-[#0d0d1a] py-1">
+              {messages.length === 0 ? "Ask Elena anything" : "Try asking..."}
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {SUGGESTED_QUESTIONS.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => {
+                    if (!isLoading) {
                       setInput(q);
                       setTimeout(() => sendMessage(q), 100);
-                    }}
-                    className="text-left text-xs text-gray-500 hover:text-gray-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.06] hover:border-[#4a9eff]/25 rounded-lg px-3 py-2.5 transition-all duration-200 leading-snug"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
+                    }
+                  }}
+                  disabled={isLoading}
+                  className="text-left text-[11px] text-gray-500 hover:text-gray-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.06] hover:border-blue-500/25 rounded-lg px-2.5 py-2 transition-all duration-200 leading-snug disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {q}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
           </div>
 
           {/* Input area */}
@@ -830,78 +835,6 @@ export default function GetStarted() {
           </div>
         </div>
 
-        {/* Right panel — info sidebar (hidden on mobile) */}
-        <div className="hidden md:flex flex-col w-[35%] overflow-y-auto bg-[#0d0d1a]">
-          <div className="p-6 border-b border-[#1e1e30]">
-            <h3 className="font-semibold text-white text-sm mb-1">How this works</h3>
-            <p className="text-xs text-gray-400">Elena collects everything — you pay only when you're ready</p>
-          </div>
-
-          <div className="flex-1 p-6 space-y-5">
-            {/* Steps */}
-            {[
-              { icon: <Sparkles className="w-4 h-4 text-[#4a9eff]" />, title: "1. Talk to Elena", desc: "She learns your business, recommends a plan, and pitches relevant add-ons." },
-              { icon: <Globe className="w-4 h-4 text-[#7c5cfc]" />, title: "2. She builds your brief", desc: "Every detail — colors, style, competitors, services — captured automatically." },
-              { icon: <CreditCard className="w-4 h-4 text-green-400" />, title: "3. You pay & we build", desc: "After Elena wraps up, you pay securely via Stripe. Preview delivered in 2–3 business days." },
-            ].map((step, i) => (
-              <div key={i} className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#13131f] border border-[#1e1e30] flex items-center justify-center flex-shrink-0">
-                  {step.icon}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">{step.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{step.desc}</p>
-                </div>
-              </div>
-            ))}
-
-            <div className="border-t border-[#1e1e30]" />
-
-            {/* What's included */}
-            <div>
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Every plan includes</p>
-              <ul className="space-y-2">
-                {[
-                  "Custom website design & development",
-                  "Mobile-responsive design",
-                  "High-performance hosting & CDN",
-                  "SSL certificate (auto-renewed)",
-                  "Up to 3 revision rounds",
-                  "Customer portal access",
-                  "Monthly performance reports",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-xs text-gray-400">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Add-ons selected so far */}
-            {addonsInSummary.length > 0 && (
-              <>
-                <div className="border-t border-[#1e1e30]" />
-                <div>
-                  <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Add-ons selected</p>
-                  <div className="space-y-1.5">
-                    {addonsInSummary.map((addon, i) => (
-                      <div key={i} className="flex items-center justify-between bg-green-500/5 border border-green-500/20 rounded-lg px-3 py-2">
-                        <span className="text-xs text-green-300">{addon.product}</span>
-                        <span className="text-xs text-gray-400">{addon.price}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="border-t border-[#1e1e30]" />
-            <p className="text-xs text-gray-600 leading-relaxed">
-              12-month commitment billed monthly. No setup fees. Cancel with 30 days notice after your first year.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
