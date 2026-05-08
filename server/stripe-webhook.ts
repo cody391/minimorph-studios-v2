@@ -394,6 +394,124 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   TEST BYPASS — simulate a completed checkout without Stripe
+   ═══════════════════════════════════════════════════════ */
+export async function simulateCheckoutCompleted({
+  projectId,
+  userId,
+  packageTier,
+}: {
+  projectId: number;
+  userId: number;
+  packageTier: string;
+}) {
+  const database = await getDb();
+  if (!database) {
+    console.error("[Bypass] Database not available");
+    return;
+  }
+
+  const project = await db.getOnboardingProjectById(projectId);
+  if (!project) {
+    console.error("[Bypass] Project not found:", projectId);
+    return;
+  }
+
+  const q = (project.questionnaire || {}) as Record<string, unknown>;
+  const customerEmail = project.contactEmail || (q.email as string) || "";
+  const customerName = project.contactName || (q.contactName as string) || "Customer";
+  const businessName = project.businessName !== "Pending"
+    ? project.businessName || (q.businessName as string) || customerName
+    : (q.businessName as string) || customerName;
+  const tier = (packageTier || "starter") as PackageKey;
+  const monthlyPrice = PACKAGES[tier]?.monthlyPrice ?? 195;
+
+  // Create customer (idempotent)
+  let customerId: number | null = null;
+  const existingCustomers = await database
+    .select()
+    .from(customers)
+    .where(eq(customers.userId, userId))
+    .limit(1);
+
+  if (existingCustomers.length > 0) {
+    customerId = existingCustomers[0].id;
+  } else {
+    const newCustomer = await db.createCustomer({
+      userId,
+      businessName,
+      contactName: customerName,
+      email: customerEmail,
+      status: "active",
+    });
+    customerId = newCustomer.id;
+  }
+  console.log(`[Bypass] Customer: ${customerId}`);
+
+  // Create contract (idempotent)
+  let contractId: number | null = null;
+  const existingContracts = await database
+    .select()
+    .from(contracts)
+    .where(eq(contracts.customerId, customerId))
+    .orderBy(desc(contracts.createdAt))
+    .limit(1);
+
+  const sixtySecondsAgo = new Date(Date.now() - 60_000);
+  const recentContract = existingContracts[0];
+  if (recentContract && recentContract.createdAt >= sixtySecondsAgo) {
+    contractId = recentContract.id;
+  } else {
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setFullYear(endDate.getFullYear() + 1);
+    const newContract = await db.createContract({
+      customerId,
+      repId: 0,
+      packageTier: tier,
+      monthlyPrice: monthlyPrice.toFixed(2),
+      startDate,
+      endDate,
+      notes: "Test bypass checkout",
+    });
+    contractId = newContract.id;
+  }
+  console.log(`[Bypass] Contract: ${contractId}`);
+
+  // Link onboarding project
+  if (!project.customerId) {
+    await db.updateOnboardingProject(projectId, {
+      customerId,
+      contractId: contractId || undefined,
+      stage: "questionnaire",
+    });
+  }
+
+  // Welcome email
+  try {
+    if (customerEmail) {
+      await sendWelcomeEmail({ to: customerEmail, customerName, packageTier: tier, businessName });
+    }
+  } catch (e) {
+    console.error("[Bypass] Welcome email failed:", e);
+  }
+
+  // Trigger site generation if Elena has filled in the data
+  if (q.businessName && q.businessType && project.generationStatus !== "generating" && project.generationStatus !== "complete") {
+    await db.updateOnboardingProject(projectId, {
+      stage: "assets_upload",
+      generationStatus: "generating",
+      generationLog: "Bypass payment confirmed — building your site...",
+    });
+    const { generateSiteForProject } = await import("./services/siteGenerator");
+    generateSiteForProject(projectId).catch(err =>
+      console.error(`[Bypass] Generation failed for project ${projectId}:`, err)
+    );
+    console.log(`[Bypass] Site generation queued for project ${projectId}`);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
    INVOICE.PAID
    Fires on every successful subscription payment (including first).
    We skip the first invoice (handled by checkout.session.completed)

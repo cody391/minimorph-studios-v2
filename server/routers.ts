@@ -2804,13 +2804,21 @@ const onboardingRouter = router({
       const project = await db.getOnboardingProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
 
+      const q = (project.questionnaire || {}) as Record<string, unknown>;
+      const packageTier = (q.packageTier as string || project.packageTier || "starter").toLowerCase();
+
+      // STRIPE_TEST_BYPASS: skip Stripe and simulate a completed checkout locally
+      if (ENV.stripeTestBypass) {
+        const { simulateCheckoutCompleted } = await import("./stripe-webhook");
+        const origin = ctx.req.headers.origin || ENV.appUrl || "http://localhost:3000";
+        await simulateCheckoutCompleted({ projectId: input.projectId, userId: ctx.user.id, packageTier });
+        return { checkoutUrl: `${origin}/portal?payment=success`, sessionId: "test_bypass" };
+      }
+
       const Stripe = (await import("stripe")).default;
       const stripeKey = ENV.stripeSecretKey;
       if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
       const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
-
-      const q = (project.questionnaire || {}) as Record<string, unknown>;
-      const packageTier = (q.packageTier as string || project.packageTier || "starter").toLowerCase();
       const { PACKAGES } = await import("../shared/pricing");
       const pkg = PACKAGES[packageTier as keyof typeof PACKAGES] ?? PACKAGES.starter;
       const monthlyPrice = pkg.monthlyPrice;

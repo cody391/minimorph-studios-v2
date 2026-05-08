@@ -8,8 +8,9 @@ import { ENV } from "../_core/env";
 // Pages project name. The template engine handles image generation, copy, page
 // assembly, and nav link generation — all pages get .html extension hrefs.
 
-const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string }> = [
+const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string; subdomain: string }> = [
   {
+    subdomain: "hammerstone",
     brief: {
       businessName: "Hammerstone Builds",
       businessType: "contractor",
@@ -61,6 +62,7 @@ const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string }> = [
   },
 
   {
+    subdomain: "driftwood",
     brief: {
       businessName: "Driftwood Kitchen & Bar",
       businessType: "restaurant",
@@ -110,6 +112,7 @@ const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string }> = [
   },
 
   {
+    subdomain: "gritmill",
     brief: {
       businessName: "Gritmill Fitness",
       businessType: "gym",
@@ -160,6 +163,7 @@ const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string }> = [
   },
 
   {
+    subdomain: "velvetandvine",
     brief: {
       businessName: "Velvet & Vine Studio",
       businessType: "salon",
@@ -211,6 +215,7 @@ const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string }> = [
   },
 
   {
+    subdomain: "cloverandthistle",
     brief: {
       businessName: "Clover & Thistle Boutique",
       businessType: "boutique",
@@ -261,6 +266,7 @@ const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string }> = [
   },
 
   {
+    subdomain: "emberandoak",
     brief: {
       businessName: "Ember & Oak Coffee Co.",
       businessType: "coffee",
@@ -311,6 +317,7 @@ const SHOWROOM_SITES: Array<{ brief: SiteBrief; cloudflareProject: string }> = [
   },
 
   {
+    subdomain: "thornwood",
     brief: {
       businessName: "Thornwood Goods",
       businessType: "ecommerce",
@@ -398,7 +405,7 @@ async function generateAndDeployAll(): Promise<SiteResult[]> {
     : SHOWROOM_SITES.length;
 
   for (let i = siteStart; i < siteLimit; i++) {
-    const { brief, cloudflareProject } = SHOWROOM_SITES[i];
+    const { brief, cloudflareProject, subdomain } = SHOWROOM_SITES[i];
 
     console.log("\n" + "━".repeat(56));
     console.log(`[${i + 1}/${SHOWROOM_SITES.length}] ${brief.businessName}`);
@@ -434,10 +441,10 @@ async function generateAndDeployAll(): Promise<SiteResult[]> {
       // ── Step 4: Attach custom subdomain if configured ─────────────────────
       const domain = (ENV as any).minimorphSitesDomain as string | undefined;
       if (domain) {
-        const subdomain = `${cloudflareProject}.${domain}`;
+        const customDomain = `${subdomain}.${domain}`;
         try {
-          const domainResult = await addCustomDomain({ projectName: cloudflareProject, domain: subdomain });
-          console.log(`  ✅ Domain: ${subdomain} (${domainResult.status})`);
+          const domainResult = await addCustomDomain({ projectName: cloudflareProject, domain: customDomain });
+          console.log(`  ✅ Domain: ${customDomain} (${domainResult.status})`);
         } catch (err: any) {
           console.warn(`  ⚠ Domain attach failed (non-fatal): ${err.message?.slice(0, 80)}`);
         }
@@ -446,7 +453,7 @@ async function generateAndDeployAll(): Promise<SiteResult[]> {
       results.push({
         cloudflareProject,
         businessName: brief.businessName,
-        liveUrl: `https://${cloudflareProject}.pages.dev`,
+        liveUrl: `https://${subdomain}.minimorphstudios.net`,
         deployUrl: deployment.deploymentUrl,
         pageCount: pageNames.length,
         pages: pageNames,
