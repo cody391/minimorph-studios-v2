@@ -86,6 +86,11 @@ function validateEnv(): void {
   if (missingOptional.length > 0) {
     console.warn(`[Startup] WARNING — missing optional env vars: ${missingOptional.join(", ")}. Some features will be disabled.`);
   }
+
+  if (process.env.NODE_ENV === "production" && process.env.STRIPE_TEST_BYPASS === "true") {
+    console.error("[Startup] FATAL — STRIPE_TEST_BYPASS=true is forbidden in production. Remove this Railway variable or set it to false.");
+    process.exit(1);
+  }
 }
 
 async function startServer() {

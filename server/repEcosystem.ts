@@ -821,7 +821,7 @@ export const repApplicationRouter = router({
       <li style="margin-bottom:8px;"><strong style="color:#eaeaf0;">Set up your service area</strong> — tell us where you'll be selling so we can route leads to you.</li>
       <li style="margin-bottom:8px;"><strong style="color:#eaeaf0;">Review the playbook</strong> — everything you need to close your first deal is in the academy.</li>
     </ol>
-    <a href="${process.env.APP_URL || "https://minimorphstudios.net"}/rep" style="display:inline-block;background:#22c55e;color:#fff;padding:14px 28px;border-radius:999px;text-decoration:none;font-weight:600;font-size:15px;">Go to My Dashboard</a>
+    <a href="${process.env.APP_URL || "https://www.minimorphstudios.net"}/rep" style="display:inline-block;background:#22c55e;color:#fff;padding:14px 28px;border-radius:999px;text-decoration:none;font-weight:600;font-size:15px;">Go to My Dashboard</a>
   </div>
   <div style="background:#151526;padding:20px 32px;border-top:1px solid #2d2d45;">
     <p style="margin:0;font-size:12px;color:#7a7a90;">MiniMorph Studios — Beautiful websites for growing businesses</p>

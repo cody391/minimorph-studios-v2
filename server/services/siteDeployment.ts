@@ -110,7 +110,7 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
           customerName: project.contactName,
           businessName,
           liveUrl,
-          portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+          portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
         });
       } catch (emailErr) {
         console.error("[Deploy] Live email failed:", emailErr);

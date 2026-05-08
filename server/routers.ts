@@ -387,7 +387,7 @@ const repsRouter = router({
             <p>Your rep account has been created. Here are your login credentials:</p>
             <p><strong>Email:</strong> ${input.email}<br/>
             <strong>Temporary Password:</strong> ${tempPassword}</p>
-            <p>Please log in and complete your onboarding at <a href="${envVars.appUrl || "https://minimorphstudios.net"}/rep">${envVars.appUrl || "https://minimorphstudios.net"}/rep</a></p>
+            <p>Please log in and complete your onboarding at <a href="${envVars.appUrl || "https://www.minimorphstudios.net"}/rep">${envVars.appUrl || "https://www.minimorphstudios.net"}/rep</a></p>
             <p>Change your password after your first login.</p>
           </div>`,
         });
@@ -874,7 +874,7 @@ const leadsRouter = router({
       // 11. Send portal access email — customer logs in to meet Elena, pays after
       try {
         const { sendPortalAccessEmail } = await import("./services/customerEmails");
-        const portalUrl = `${ENV.appUrl || "https://minimorphstudios.net"}/portal`;
+        const portalUrl = `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`;
         await sendPortalAccessEmail({
           to: lead.email,
           customerName: lead.contactName,
@@ -1038,7 +1038,7 @@ const leadsRouter = router({
       try {
         const { Resend } = await import("resend");
         const resend = new Resend(process.env.RESEND_API_KEY);
-        const siteUrl = ENV.appUrl || "https://minimorphstudios.net";
+        const siteUrl = ENV.appUrl || "https://www.minimorphstudios.net";
         await resend.emails.send({
           from: ENV.resendFromEmail,
           to: input.email,
@@ -1356,7 +1356,7 @@ const contractsRouter = router({
       const initialCommission = existingCommissions.find((c: any) => c.type === "initial_sale");
       const isSelfSourced = initialCommission?.selfSourced ?? false;
 
-      const origin = ctx.req.headers.origin || ctx.req.headers.referer || "https://minimorphstudios.net";
+      const origin = ctx.req.headers.origin || ctx.req.headers.referer || "https://www.minimorphstudios.net";
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer_email: customer.email,
@@ -2703,7 +2703,7 @@ const onboardingRouter = router({
         await sendChangesReceivedEmail({
           to: project.contactEmail,
           customerName: project.contactName,
-          portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+          portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
         });
       } catch {}
       try {
@@ -2857,7 +2857,7 @@ const onboardingRouter = router({
       }
 
       const isRepClosed = !!project.customerId;
-      const origin = ctx.req.headers.origin || ENV.appUrl || "https://minimorphstudios.net";
+      const origin = ctx.req.headers.origin || ENV.appUrl || "https://www.minimorphstudios.net";
 
       // Build metadata based on source
       let sessionMeta: Record<string, string>;
@@ -3047,7 +3047,7 @@ const onboardingRouter = router({
             customerName: project.contactName,
             businessName: project.businessName,
             liveUrl: input.liveUrl,
-            portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+            portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
           });
         } catch (emailErr) {
           console.error("[onboarding.markSiteLive] Live email failed:", emailErr);
@@ -3662,11 +3662,11 @@ ${pkgSection}
 
 All plans: 12-month commitment billed monthly. No setup fee. Hosting, SSL, backups included.
 Revisions: 3 rounds included on all projects. $149/round after that.
-Domain: Free first year on Growth+, $15/year on Starter. All renewals $15/yr (managed by MiniMorph).
+Domain: Coordinated during onboarding. If you own a domain, we connect it. If you need a new one, your project manager will help you choose the best setup path before launch.
 
 == WHAT MINIMORPH HANDLES 100% IN-HOUSE (use naturally, position as differentiator) ==
 
-Everything is handled in-house — domain registration (via Namecheap), website hosting (enterprise-grade CDN, 99.9% uptime), SSL certificates (included, auto-renewed), DNS management, security monitoring, malware scanning, daily backups, software updates, SEO optimization, monthly performance reports, payment processing integration, email marketing integration, and social media integration.
+Everything is handled in-house — website hosting (enterprise-grade CDN, 99.9% uptime), SSL certificates (included, auto-renewed), DNS management, security monitoring, malware scanning, daily backups, software updates, SEO optimization, monthly performance reports, payment processing integration, email marketing integration, and social media integration.
 
 Elena's one-stop-shop pitch (use naturally): "Everything is handled in-house — domain, hosting, SSL, security, backups, updates. You never have to worry about the technical side. We handle it all so you can focus on running your business."
 
@@ -3678,7 +3678,7 @@ Hosting/security pitch (use when relevant): "Your site is hosted on our enterpri
 
 2. If YES: "Perfect — we'll connect it to your new site. What's the domain?" Then: "We'll handle all the DNS setup and SSL certificate on our end — you don't need to do anything technical. Just point it at us and we take it from there."
 
-3. If NO: "No problem at all — we'll register one for you as part of your setup. Any ideas for a domain name? Usually it's just [businessname].com or something close. I can suggest a few options based on your business name." Suggest 3-4 options. Ask what feels right. Then: "Since you're on [Growth/Pro], your domain is included free for the first year — we register it, set up DNS, SSL, everything. After year one it's just $15/yr."
+3. If NO: "No problem at all — your project manager will help you get that sorted before launch. Any ideas for a domain name? Usually it's just [businessname].com or something close. I can suggest a few options based on your business name." Suggest 3-4 options. Ask what feels right. Then: "We'll coordinate the domain setup during onboarding — DNS, SSL, everything will be handled so you don't have to touch anything technical."
 
 4. If UNSURE: "No worries — we'll brainstorm that together during the build. Usually it's just your business name dot com, or something clever. We'll lock it in before we launch."
 
@@ -4768,7 +4768,7 @@ const retentionRouter = router({
         await sendReferralInviteEmail({
           to: input.referredEmail,
           referrerName: custs[0].contactName,
-          referralUrl: "https://minimorphstudios.net/get-started",
+          referralUrl: "https://www.minimorphstudios.net/get-started",
         });
       } catch (e) { console.error("[Retention] Failed to send referral email:", e); }
       return { success: true };
@@ -4875,7 +4875,7 @@ const supportRouter = router({
           await db.updateCustomerSupportTicket(input.ticketId, { ratingToken: token });
           const customer = await db.getCustomerById(ticket.customerId);
           if (customer?.email) {
-            const siteUrl = ENV.appUrl || "https://minimorphstudios.net";
+            const siteUrl = ENV.appUrl || "https://www.minimorphstudios.net";
             const rateUrl = `${siteUrl}/api/rate-support?ticketId=${ticket.id}&token=${token}`;
             try {
               const { Resend } = await import("resend");
@@ -5799,7 +5799,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user.email) throw new TRPCError({ code: "BAD_REQUEST", message: "No email on account" });
         const { sendCredentialEmail } = await import("./services/customerEmails");
-        const origin = ctx.req.headers.origin || "https://minimorphstudios.net";
+        const origin = ctx.req.headers.origin || "https://www.minimorphstudios.net";
         await sendCredentialEmail({
           to: ctx.user.email,
           name: ctx.user.name || ctx.user.email,

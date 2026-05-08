@@ -580,7 +580,7 @@ function generateAuditHTML(params: {
     <div style="background:#151526;padding:32px;text-align:center;border-top:1px solid #2d2d45;">
       <h3 style="color:#eaeaf0;margin:0 0 12px 0;font-size:20px;">Ready to fix these issues?</h3>
       <p style="color:#9898a8;margin:0 0 20px 0;font-size:14px;">MiniMorph Studios specializes in building modern, high-performing websites for businesses like yours.</p>
-      <a href="https://minimorphstudios.net/get-started" style="display:inline-block;background:#4a9eff;color:#111122;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:16px;">Get Your Free Consultation</a>
+      <a href="https://www.minimorphstudios.net/get-started" style="display:inline-block;background:#4a9eff;color:#111122;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:16px;">Get Your Free Consultation</a>
       <p style="color:#7a7a90;margin:16px 0 0 0;font-size:12px;">No commitment required. We'll show you exactly how we can help.</p>
     </div>
 

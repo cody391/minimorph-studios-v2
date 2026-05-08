@@ -126,7 +126,7 @@ MISSING CONTACT FORM = AUTOMATIC FAILURE.
 
 MINIMORPH BANNER (top of every page):
 <div style='background:#0a0a12;color:#fff;padding:10px 20px;text-align:center;font-size:14px;position:sticky;top:0;z-index:9999'>
-MiniMorph Studios Demo — [Business Name] | Built on the [Package] plan | <a href='https://minimorphstudios.net/get-started' style='color:#3b82f6;font-weight:600'>Start Your Build</a>
+MiniMorph Studios Demo — [Business Name] | Built on the [Package] plan | <a href='https://www.minimorphstudios.net/get-started' style='color:#3b82f6;font-weight:600'>Start Your Build</a>
 </div>`;
 
 // ─── Quality scoring — run before deployment, retry if score < 70 ─────────────
@@ -426,7 +426,7 @@ function ensureRequiredStructure(
     </div>
     <div class="border-t border-gray-800 mt-10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
       <p class="text-sm">© ${year} ${businessName}. All rights reserved.</p>
-      <p class="text-xs text-gray-600">Powered by <a href="https://minimorphstudios.net" class="hover:text-gray-400 transition-colors">MiniMorph Studios</a></p>
+      <p class="text-xs text-gray-600">Powered by <a href="https://www.minimorphstudios.net" class="hover:text-gray-400 transition-colors">MiniMorph Studios</a></p>
     </div>
   </div>
 </footer>`;
@@ -637,7 +637,7 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
       to: project.contactEmail,
       customerName: project.contactName,
       businessName: project.businessName,
-      portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+      portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
     });
   } catch (emailErr) {
     console.error("[SiteGenerator] Build started email failed:", emailErr);
@@ -947,7 +947,7 @@ ${assetSummary}`;
           testimonials,
           competitiveIntel: competitiveIntel ?? undefined,
           imageDirection,
-          appUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+          appUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
           subNiche,
           // Elena-sourced fields — wire every field she collects
           addonsSelected: addonsSelectedRaw,
@@ -1280,7 +1280,7 @@ ${Object.keys(pages)
         customerName: project.contactName,
         businessName: resolvedBusinessName,
         pageNames: Object.keys(pages),
-        portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+        portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
         revisionsRemaining,
       });
     } catch (emailErr) {

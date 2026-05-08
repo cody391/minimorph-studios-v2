@@ -140,7 +140,7 @@ Only return pages that are in the input — do not invent new pages.`;
         to: project.contactEmail,
         customerName: project.contactName,
         businessName: project.businessName,
-        portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
+        portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
         revisionsRemaining,
       });
     } catch (emailErr) {

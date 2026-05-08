@@ -4,6 +4,7 @@
  * All emails use the MiniMorph dark premium brand template.
  */
 import { sendEmail } from "./email";
+import { ENV } from "../_core/env";
 import { PACKAGES, type PackageKey } from "../../shared/pricing";
 
 /* ─── Dark Premium Brand HTML wrapper ─── */
@@ -43,7 +44,7 @@ export async function sendWelcomeEmail(params: {
   portalUrl?: string;
 }) {
   const pkg = PACKAGES[params.packageTier];
-  const portalUrl = params.portalUrl || "https://minimorphstudios.net/portal";
+  const portalUrl = params.portalUrl || `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`;
 
   const credentialBlock = params.tempPassword ? `
     <div style="margin:24px 0;padding:20px;background:#1a2a1a;border-radius:8px;border-left:4px solid #22c55e;">
@@ -163,7 +164,7 @@ export async function sendCredentialEmail(params: {
   tempPassword: string;
   portalUrl?: string;
 }) {
-  const portalUrl = params.portalUrl || "https://minimorphstudios.net/portal";
+  const portalUrl = params.portalUrl || `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`;
   const html = brandWrap(`
     <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Welcome aboard</h2>
     <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.name},</p>
@@ -715,7 +716,7 @@ export async function sendWebsiteAuditEmail(params: {
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
         <strong style="color:#eaeaf0;">Want help fixing these issues?</strong><br/>
         Our team specializes in building modern, high-performing websites. Reply to this email or
-        <a href="https://minimorphstudios.net/get-started" style="color:#4a9eff;font-weight:600;">get a free consultation</a>.
+        <a href="https://www.minimorphstudios.net/get-started" style="color:#4a9eff;font-weight:600;">get a free consultation</a>.
       </p>
     </div>
     <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
@@ -752,7 +753,7 @@ export async function sendAuditReceivedEmail(params: {
     <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #d4a853;">
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
         <strong style="color:#eaeaf0;">In the meantime:</strong> If you'd like to get started right away, you can
-        <a href="https://minimorphstudios.net/get-started" style="color:#4a9eff;font-weight:600;">explore our packages</a>
+        <a href="https://www.minimorphstudios.net/get-started" style="color:#4a9eff;font-weight:600;">explore our packages</a>
         or reply to this email with any questions.
       </p>
     </div>
@@ -838,7 +839,7 @@ export async function sendMonthlyReportEmail(params: {
     <h3 style="color:#eaeaf0;margin:0 0 12px;font-size:18px;">Analytics</h3>
     <p style="margin:0 0 24px;color:#c8c8d8;">
       Your full analytics &mdash; traffic, conversions, and performance trends &mdash; are always available in your
-      <a href="https://minimorphstudios.net/portal" style="color:#4a9eff;">Customer Portal</a> under the Insights tab.
+      <a href="https://www.minimorphstudios.net/portal" style="color:#4a9eff;">Customer Portal</a> under the Insights tab.
     </p>
 
     <h3 style="color:#eaeaf0;margin:0 0 12px;font-size:18px;">Competitive Intelligence</h3>

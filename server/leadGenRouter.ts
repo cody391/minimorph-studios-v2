@@ -515,7 +515,7 @@ export const leadGenRouter = router({
               businessName: input.businessName || input.websiteUrl || "Your Business",
               contactName: input.contactName || undefined,
               websiteUrl: input.websiteUrl,
-              auditUrl: audit.storageUrl ? `https://minimorphstudios.net${audit.storageUrl}` : undefined,
+              auditUrl: audit.storageUrl ? `https://www.minimorphstudios.net${audit.storageUrl}` : undefined,
               score: audit.overallScore,
               grade: audit.overallGrade,
             });
