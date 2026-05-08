@@ -452,12 +452,77 @@ async function checkSecurity(ctx: QAContext, reporter: BuildReporter): Promise<Q
   return issues;
 }
 
+/* ── AI Rule Discovery ─────────────────────────────────────────────────── */
+async function discoverMissingRules(
+  industry: string,
+  state: string,
+  db: any,
+  reporter: BuildReporter
+): Promise<void> {
+  try {
+    const { regulatoryRules } = await import("../../drizzle/schema");
+    const { eq, or } = await import("drizzle-orm");
+
+    const existing = await db.select().from(regulatoryRules)
+      .where(or(eq(regulatoryRules.industry, industry), eq(regulatoryRules.industry, "all")));
+
+    const stateSpecific = existing.filter(
+      (r: any) => r.appliesTo === "all" || (r.appliesTo && r.appliesTo.includes(state))
+    );
+
+    if (stateSpecific.length >= 5) return; // enough coverage already
+
+    await reporter.info("qa_layer5", `Discovering rules for ${industry} in ${state}...`);
+
+    const { invokeLLM } = await import("../_core/llm");
+    const result = await invokeLLM({
+      messages: [{ role: "user", content:
+        `Research website advertising and disclosure requirements for a ${industry} business in ${state}.
+Find all applicable: 1) Federal agency requirements 2) ${state}-specific requirements 3) Industry association rules.
+For each requirement, provide the governing agency, what the rule requires, severity (critical/warning), and whether it can be auto-fixed by adding text/disclaimers to the site.
+Return ONLY a JSON array with no other text:
+[{"agency":"AGENCY","ruleKey":"unique_snake_case_key","ruleDescription":"clear description","checkPrompt":"Check if site has [specific element]. Flag if [condition].","severity":"critical|warning","autoFixable":false,"autoFixAction":null}]
+Focus on rules that affect website content, disclaimers, required disclosures, and prohibited claims. Max 10 rules.` }],
+      maxTokens: 2000,
+      nativeTools: [{ type: "web_search_20250305", name: "web_search" }],
+    });
+
+    const rawText = extractLLMText(result);
+    const newRules = parseJsonFromLLM(rawText);
+
+    for (const rule of newRules) {
+      if (!rule.ruleKey || !rule.agency) continue;
+      await db.insert(regulatoryRules).values({
+        industry,
+        agency: rule.agency,
+        ruleKey: `${industry}_${state.toLowerCase()}_${rule.ruleKey}`,
+        ruleDescription: rule.ruleDescription || "",
+        checkPrompt: rule.checkPrompt || "",
+        severity: rule.severity || "warning",
+        autoFixable: rule.autoFixable || false,
+        autoFixAction: rule.autoFixAction || null,
+        appliesTo: state,
+        active: false, // pending admin review before enforcing
+      }).catch(() => {}); // skip duplicates
+    }
+
+    await reporter.info("qa_layer5", `Discovered ${newRules.length} candidate rules for ${industry}/${state} — pending admin review`);
+  } catch (e: any) {
+    // Non-fatal — rule discovery is best-effort
+    await reporter.warn("qa_layer5", `Rule discovery skipped: ${e.message}`);
+  }
+}
+
 /* ── Layer 5: Regulatory ───────────────────────────────────────────────── */
 async function checkRegulatory(ctx: QAContext, reporter: BuildReporter, db: any): Promise<QAIssue[]> {
   const issues: QAIssue[] = [];
   if (!db) {
     await reporter.warn("qa_layer5", "No DB available for regulatory checks — skipping");
     return issues;
+  }
+  // Auto-discover missing state-specific rules (non-blocking, best effort)
+  if (ctx.state && ctx.industry) {
+    discoverMissingRules(mapIndustry(ctx.industry || ctx.businessType), ctx.state, db, reporter).catch(() => {});
   }
   try {
     const { regulatoryRules } = await import("../../drizzle/schema");
@@ -654,12 +719,23 @@ function calculateLayerScore(issues: QAIssue[], maxScore: number): number {
 
 function mapIndustry(businessType: string): string {
   const bt = businessType.toLowerCase();
-  if (/distillery|brewery|winery|bar|tavern|spirits|alcohol|beer|wine|liquor/.test(bt)) return "alcohol";
-  if (/restaurant|cafe|coffee|food|dining|pizza|burger/.test(bt)) return "food";
-  if (/law|lawyer|attorney|legal|firm/.test(bt)) return "legal";
-  if (/doctor|medical|clinic|hospital|dental|dentist|therapy|therapist|healthcare/.test(bt)) return "medical";
-  if (/real estate|realtor|realty|property|broker/.test(bt)) return "real_estate";
-  if (/contractor|plumber|electrician|roofer|hvac|builder|construction|landscaper/.test(bt)) return "contractor";
-  if (/financial|finance|investment|insurance|accounting|bank/.test(bt)) return "financial";
+  if (/distillery|brewery|winery|bar|tavern|spirits|alcohol|beer|wine|liquor|taproom/.test(bt)) return "alcohol";
+  if (/cannabis|dispensary|marijuana|weed|thc|cbd dispensary/.test(bt)) return "cannabis";
+  if (/restaurant|cafe|coffee|food|dining|pizza|burger|catering|bakery|deli|diner/.test(bt)) return "food";
+  if (/law|lawyer|attorney|legal|firm|litigat|counsel/.test(bt)) return "legal";
+  if (/doctor|physician|clinic|hospital|dentist|dental|therapy|therapist|healthcare|chiropractic|optometr|psychiatr|psycholog|telehealth/.test(bt)) return "medical";
+  if (/real estate|realtor|realty|property manager|broker|mortgage|lending|home loan/.test(bt)) return "real_estate";
+  if (/insurance agent|insurance broker|insurance company|insurer/.test(bt)) return "insurance";
+  if (/financial advisor|investment|wealth management|broker.dealer|securities|hedge fund|fintech|cryptocurrency|crypto exchange/.test(bt)) return "financial";
+  if (/supplement|vitamin|nutraceutical|protein powder|herbal|nootropic|probiotic/.test(bt)) return "supplements";
+  if (/contractor|plumber|electrician|roofer|hvac|builder|construction|landscaper|remodeler|handyman/.test(bt)) return "contractor";
+  if (/daycare|childcare|preschool|child care|nursery|after.?school|tutoring|private school|youth|kids academy/.test(bt)) return "childcare";
+  if (/auto dealer|car dealer|used car|car lot|auto sales|automobile dealer/.test(bt)) return "automotive";
+  if (/salon|spa|beauty|cosmetolog|esthetician|nail|lash|waxing|haircut|barber/.test(bt)) return "beauty";
+  if (/veterinar|animal hospital|pet clinic|vet clinic|pet care/.test(bt)) return "veterinary";
+  if (/nonprofit|non.?profit|501.?c|charity|foundation|association|org/.test(bt)) return "nonprofit";
+  if (/gym|fitness|yoga|martial arts|crossfit|personal trainer|bootcamp|pilates/.test(bt)) return "fitness";
+  if (/accountant|cpa|bookkeeper|tax preparer|accounting firm|auditor/.test(bt)) return "accounting";
+  if (/pharmacy|pharmacist|compounding|drugstore/.test(bt)) return "pharmacy";
   return "general";
 }

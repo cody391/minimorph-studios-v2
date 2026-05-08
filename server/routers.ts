@@ -5571,6 +5571,112 @@ const adminRouter = router({
       return { deleted: testUsers.length, emails: testUsers.map(u => u.email) };
     }),
 
+  // ── Regulatory Rules Management ────────────────────────────────────────
+  getRegulatoryRules: adminProcedure
+    .input(z.object({
+      industry: z.string().optional(),
+      active: z.boolean().optional(),
+      pendingReview: z.boolean().optional(),
+    }))
+    .query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) return [];
+      const { regulatoryRules } = await import("../drizzle/schema");
+      const { and, eq: eqFn } = await import("drizzle-orm");
+      const conditions: any[] = [];
+      if (input.industry) conditions.push(eqFn(regulatoryRules.industry, input.industry));
+      if (input.active !== undefined) conditions.push(eqFn(regulatoryRules.active, input.active));
+      const rows = conditions.length > 0
+        ? await database.select().from(regulatoryRules).where(and(...conditions))
+        : await database.select().from(regulatoryRules);
+      if (input.pendingReview) return rows.filter((r: any) => !r.active);
+      return rows;
+    }),
+
+  getPendingRegulatoryRules: adminProcedure.query(async () => {
+    const database = await getDb();
+    if (!database) return [];
+    const { regulatoryRules } = await import("../drizzle/schema");
+    const { eq: eqFn } = await import("drizzle-orm");
+    return database.select().from(regulatoryRules).where(eqFn(regulatoryRules.active, false));
+  }),
+
+  approveRegulatoryRule: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { regulatoryRules } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      await database.update(regulatoryRules).set({ active: true }).where(eqFn(regulatoryRules.id, input.id));
+      return { ok: true };
+    }),
+
+  addRegulatoryRule: adminProcedure
+    .input(z.object({
+      industry: z.string(),
+      agency: z.string(),
+      ruleKey: z.string(),
+      ruleDescription: z.string(),
+      checkPrompt: z.string(),
+      severity: z.enum(["critical", "warning", "info"]),
+      autoFixable: z.boolean().default(false),
+      autoFixAction: z.string().optional(),
+      appliesTo: z.string().default("all"),
+    }))
+    .mutation(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { regulatoryRules } = await import("../drizzle/schema");
+      await database.insert(regulatoryRules).values({
+        industry: input.industry,
+        agency: input.agency,
+        ruleKey: input.ruleKey,
+        ruleDescription: input.ruleDescription,
+        checkPrompt: input.checkPrompt,
+        severity: input.severity,
+        autoFixable: input.autoFixable,
+        autoFixAction: input.autoFixAction ?? null,
+        appliesTo: input.appliesTo,
+        active: true,
+      });
+      return { ok: true };
+    }),
+
+  updateRegulatoryRule: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      ruleDescription: z.string().optional(),
+      checkPrompt: z.string().optional(),
+      severity: z.enum(["critical", "warning", "info"]).optional(),
+      autoFixable: z.boolean().optional(),
+      autoFixAction: z.string().optional(),
+      appliesTo: z.string().optional(),
+      active: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { regulatoryRules } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const { id, ...updates } = input;
+      const filteredUpdates = Object.fromEntries(Object.entries(updates).filter(([, v]) => v !== undefined));
+      if (Object.keys(filteredUpdates).length === 0) return { ok: true };
+      await database.update(regulatoryRules).set(filteredUpdates as any).where(eqFn(regulatoryRules.id, id));
+      return { ok: true };
+    }),
+
+  deleteRegulatoryRule: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { regulatoryRules } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      await database.delete(regulatoryRules).where(eqFn(regulatoryRules.id, input.id));
+      return { ok: true };
+    }),
+
   // QA escalation: list all sites needing manual review
   getEscalatedSites: adminProcedure.query(async () => {
     const database = await getDb();
