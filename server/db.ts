@@ -1778,11 +1778,11 @@ export async function bootstrapAdminUser(): Promise<void> {
         needsUpdate = true;
         console.log("[AdminBootstrap] Updated existing user to admin role:", ENV.adminEmail);
       }
-      if (!existing.passwordHash && ENV.adminPassword) {
+      if (ENV.adminPassword) {
         updates.passwordHash = await bcrypt.hash(ENV.adminPassword, 12);
         updates.loginMethod = "email_password";
         needsUpdate = true;
-        console.log("[AdminBootstrap] Set password for existing admin:", ENV.adminEmail);
+        console.log("[AdminBootstrap] Synced password for admin from ADMIN_PASSWORD env var:", ENV.adminEmail);
       }
       if (needsUpdate) await upsertUser(updates as any);
       return;
