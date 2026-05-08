@@ -3187,6 +3187,63 @@ async function scrapeWebsite(url: string, crawl = false): Promise<string> {
   return `[Could not load ${fullUrl} — site may be blocking outside requests]`;
 }
 
+async function searchAndScrape(query: string): Promise<string> {
+  const firecrawlKey = ENV.firecrawlApiKey || process.env.FIRECRAWL_API_KEY || "";
+
+  if (!firecrawlKey) {
+    return "[Search not available]";
+  }
+
+  try {
+    console.log(`[Search] Searching: ${query}`);
+
+    const res = await fetch("https://api.firecrawl.dev/v1/search", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${firecrawlKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        limit: 5,
+        scrapeOptions: {
+          formats: ["markdown"],
+          onlyMainContent: true,
+        },
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!res.ok) {
+      console.log(`[Search] Failed: ${res.status}`);
+      return "[Search returned no results]";
+    }
+
+    const data = await res.json();
+    const results: any[] = data?.data || data?.results || [];
+
+    if (!results.length) {
+      return "[No search results found]";
+    }
+
+    const formatted = results
+      .slice(0, 5)
+      .map((r: any, i: number) => {
+        const title = r.metadata?.title || r.title || "Unknown";
+        const url = r.url || r.metadata?.url || "";
+        const content = r.markdown || r.content || "";
+        return `Result ${i + 1}: ${title}\nURL: ${url}\n${content.slice(0, 500)}`;
+      })
+      .join("\n\n---\n\n");
+
+    console.log(`[Search] Found ${results.length} results`);
+    return formatted;
+  } catch (e: any) {
+    console.log(`[Search] Error: ${e.message}`);
+    return "[Search failed]";
+  }
+}
+
 function extractUrls(messages: Array<{ role: string; content: string }>): string[] {
   // Match full URLs (with or without protocol) and bare domains like burlandsprig.com
   const fullUrlRegex = /https?:\/\/[^\s"'<>)]+/g;
@@ -3324,6 +3381,60 @@ Always end with a helpful question or a specific suggestion.`;
         }
       }
 
+      // Detect competitor search requests and auto-search via Firecrawl
+      const searchPatterns = [
+        /search for (.+)/i,
+        /find (.+) in (.+)/i,
+        /look up (.+competitors|.+firms|.+businesses)/i,
+        /who are.*(competitors|firms|businesses)/i,
+        /research.*competitors/i,
+        /competitor.*research/i,
+      ];
+      const isSearchRequest = searchPatterns.some(p => p.test(input.message));
+      const recentConvText = (input.history || [])
+        .slice(-4)
+        .map((m: any) => m.content)
+        .join(" ")
+        .toLowerCase();
+      const lastMsg = input.message.toLowerCase();
+
+      let searchContext = "";
+      if (
+        isSearchRequest ||
+        (recentConvText.includes("competitor") && (
+          lastMsg.includes("search") ||
+          lastMsg.includes("find") ||
+          lastMsg.includes("look up")
+        ))
+      ) {
+        const allText = [...(input.history || []), { role: "user", content: input.message }]
+          .map((m: any) => m.content)
+          .join(" ");
+
+        const businessTypeMatch = allText.match(
+          /(?:law firm|restaurant|gym|salon|contractor|medical|dental|dentist|attorney|lawyer|doctor|plumber|electrician|roofer|landscaper|realtor|real estate|[a-z]+ firm|[a-z]+ studio)/i
+        );
+        const businessType = businessTypeMatch?.[0] || "business";
+
+        const locationMatch = allText.match(/(?:in |near |around )([A-Z][a-z]+(?:,?\s+[A-Z]{2})?)/);
+        const location = locationMatch?.[1] || "";
+
+        if (location) {
+          const searchQuery = `${businessType} ${location}`;
+          console.log(`[Chat] Auto-searching: "${searchQuery}"`);
+          searchContext = await searchAndScrape(searchQuery);
+        } else {
+          const directQuery = input.message
+            .replace(/^(search for|look up|find)\s+/i, "")
+            .trim()
+            .slice(0, 100);
+          if (directQuery && directQuery !== input.message.trim()) {
+            console.log(`[Chat] Searching from message: "${directQuery}"`);
+            searchContext = await searchAndScrape(directQuery);
+          }
+        }
+      }
+
       const scrapedSection = scrapedSitesContext
         ? `\n\n== SITES ANALYZED ==\n${scrapedSitesContext}\n\nReference these naturally in conversation. Don't announce you scraped them — just talk about what you see like a designer who did their homework.`
         : "";
@@ -3376,7 +3487,25 @@ When a customer mentions a well-known brand by name (like "I want it to feel lik
 - Draw on your knowledge of that brand's visual identity — colors, typography, photography style, mood, tone — and give specific creative direction
 - Do not ask for a URL if you already know the brand
 
+== SEARCH CAPABILITY ==
+
+You CAN search for businesses, competitors, and local firms. When a customer asks you to find their competitors or search for businesses in their area, the system will automatically perform a web search and inject the results as [SEARCH RESULTS] blocks in the conversation.
+
+When you see [SEARCH RESULTS]:
+- Read each result carefully
+- Extract business names, websites, and what they offer
+- Give the customer a specific competitive analysis: who the competitors are, what their sites look like, where they're weak, and how to beat them
+- Reference specific details from the results — actual business names, URLs, what their sites say
+
+When a customer asks "can you search for my competitors" or "find law firms in [city]" — respond confidently that you can and will. Do NOT say you cannot search the internet.
+
+If no [SEARCH RESULTS] block appears, use your training knowledge about that industry and location to give useful competitive context.
+
 CRITICAL RULE — NEVER STALL: Every single message you send must end with either a question OR a clear next direction. Never end on a statement alone. If you're mid-explanation, end with "What do you think?" or "Does that make sense?" or the next natural question. The customer should always know exactly what to do next.
+
+CRITICAL — NO REPETITION: Never repeat information you have already stated in this conversation. If you have already mentioned a specific fact (like a domain name, a price, an address, a business name), do not repeat it again unless the customer asks you to confirm it. Move the conversation forward. Each message should add new information or ask the next question — never restate what has already been established.
+
+If you catch yourself about to say something you already said, skip it and move to the next logical question instead.
 
 == MINIMORPH STUDIOS — BASE PACKAGES ==
 
@@ -3764,10 +3893,18 @@ ${integrationSection}${scrapedSection}`;
            { role: "assistant" as const, content: "Got it — I've reviewed the site content." }]
         : [];
 
+      const searchInjection = searchContext
+        ? [
+            { role: "user" as const, content: `[SEARCH RESULTS]\n${searchContext}\n\nUse these search results to answer the question about competitors or local businesses.` },
+            { role: "assistant" as const, content: "I've pulled up the search results." },
+          ]
+        : [];
+
       const messages = [
         { role: "system" as const, content: systemPrompt },
         ...(input.history || []),
         ...scrapedInjection,
+        ...searchInjection,
         { role: "user" as const, content: input.message },
       ];
 

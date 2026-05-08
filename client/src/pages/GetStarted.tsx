@@ -93,6 +93,19 @@ function generateTempPassword(): string {
 // TEMP — set to false to disable dev shortcuts for real customers
 const DEV_MODE = true;
 
+const SUGGESTED_QUESTIONS = [
+  "Can you look up my competitors?",
+  "What plan do you recommend for me?",
+  "What addons would help my business?",
+  "Can you pull up my current website?",
+  "What's included in every plan?",
+  "How long will it take to build?",
+  "Can you generate images for my site?",
+  "What happens after I pay?",
+  "Can you write all my content for me?",
+  "How do I get found on Google?",
+];
+
 type Stage = "capture" | "creating" | "chat";
 type CaptureSubState = "email" | "password";
 
@@ -635,7 +648,8 @@ export default function GetStarted() {
             </div>
           </div>
 
-          {/* Messages */}
+          {/* Messages + Suggestions */}
+          <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
             {/* Initial loading dots */}
             {messages.length === 0 && isLoading && (
@@ -754,6 +768,29 @@ export default function GetStarted() {
             )}
 
             <div ref={messagesEndRef} />
+          </div>
+
+          {messages.length <= 2 && (
+            <div className="hidden lg:flex flex-col w-56 shrink-0 gap-3 pt-4 overflow-y-auto border-l border-[#1e1e30] px-3 pb-4">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider px-1">
+                Ask Elena about...
+              </p>
+              <div className="flex flex-col gap-2">
+                {SUGGESTED_QUESTIONS.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => {
+                      setInput(q);
+                      setTimeout(() => sendMessage(q), 100);
+                    }}
+                    className="text-left text-xs text-gray-500 hover:text-gray-200 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.06] hover:border-[#4a9eff]/25 rounded-lg px-3 py-2.5 transition-all duration-200 leading-snug"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           </div>
 
           {/* Input area */}
