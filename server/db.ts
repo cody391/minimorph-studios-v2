@@ -476,6 +476,50 @@ export async function repairSchema(): Promise<void> {
       console.log(`[SchemaRepair] Password reset skipped: ${e.message.substring(0, 80)}`);
     }
 
+    // ── Agent 4 tables ────────────────────────────────────────────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`site_build_reports\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY,
+      \`customerId\` int NOT NULL,
+      \`projectId\` int NOT NULL,
+      \`status\` varchar(32) NOT NULL DEFAULT 'building',
+      \`qaScore\` int DEFAULT NULL,
+      \`qaAttempts\` int NOT NULL DEFAULT 0,
+      \`scoreContent\` int DEFAULT NULL,
+      \`scoreSeo\` int DEFAULT NULL,
+      \`scoreTechnical\` int DEFAULT NULL,
+      \`scoreSecurity\` int DEFAULT NULL,
+      \`scoreDesign\` int DEFAULT NULL,
+      \`scoreRegulatory\` int DEFAULT NULL,
+      \`scoreCopyright\` int DEFAULT NULL,
+      \`issuesFound\` json DEFAULT NULL,
+      \`issuesAutoFixed\` json DEFAULT NULL,
+      \`issuesPersistent\` json DEFAULT NULL,
+      \`issuesEscalated\` json DEFAULT NULL,
+      \`buildLog\` json DEFAULT NULL,
+      \`buildStartedAt\` timestamp NULL DEFAULT (now()),
+      \`buildCompletedAt\` timestamp NULL,
+      \`qaStartedAt\` timestamp NULL,
+      \`qaCompletedAt\` timestamp NULL,
+      \`commissionedAt\` timestamp NULL,
+      \`sbr_createdAt\` timestamp NOT NULL DEFAULT (now()),
+      \`sbr_updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE (now())
+    )`);
+
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`regulatory_rules\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY,
+      \`industry\` varchar(64) NOT NULL,
+      \`agency\` varchar(128) NOT NULL,
+      \`ruleKey\` varchar(128) NOT NULL,
+      \`ruleDescription\` text NOT NULL,
+      \`checkPrompt\` text NOT NULL,
+      \`severity\` varchar(16) NOT NULL DEFAULT 'warning',
+      \`autoFixable\` boolean NOT NULL DEFAULT false,
+      \`autoFixAction\` text DEFAULT NULL,
+      \`appliesTo\` varchar(512) DEFAULT 'all',
+      \`active\` boolean NOT NULL DEFAULT true,
+      \`rr_createdAt\` timestamp NOT NULL DEFAULT (now())
+    )`);
+
     // ── Clean up stale product keys from old catalog versions ─────────────
     await safe(`DELETE FROM \`product_catalog\` WHERE \`productKey\` IN ('content_addon', 'seo_addon', 'priority_support_old', 'extra_revision_block_old')`);
     // Reset v3 flag so catalog re-seeds on next startup with correct pitch scripts
@@ -2311,4 +2355,168 @@ export async function seedProductCatalog() {
   }).onDuplicateKeyUpdate({ set: { settingValue: "true" } });
 
   console.log("[ProductCatalog] Seeded v3 catalog:", seed.length, "products");
+}
+
+/* ═══════════════════════════════════════════════════════
+   REGULATORY RULES SEED
+   ═══════════════════════════════════════════════════════ */
+export async function seedRegulatoryRules(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const flagRows = await db.select().from(systemSettings).where(eq(systemSettings.settingKey, "regulatory_rules_v1")).limit(1);
+  if (flagRows[0]) return; // already seeded
+
+  const { regulatoryRules } = await import("../drizzle/schema");
+
+  const rules: Array<{
+    industry: string; agency: string; ruleKey: string; ruleDescription: string;
+    checkPrompt: string; severity: string; autoFixable: boolean; autoFixAction?: string; appliesTo?: string;
+  }> = [
+    // ── Universal ───────────────────────────────────────────────────────
+    { industry: "all", agency: "FTC", ruleKey: "no_fake_reviews", severity: "critical", autoFixable: false,
+      ruleDescription: "No fake or unverifiable testimonials",
+      checkPrompt: "Check all testimonials and reviews on this site. Flag any that appear fabricated, use placeholder names (John D., Jane S.), or make exceptional claims without disclaimers. Look for: generic names, suspiciously perfect language, no dates." },
+    { industry: "all", agency: "FTC", ruleKey: "accurate_pricing", severity: "warning", autoFixable: false,
+      ruleDescription: "All pricing must be accurate and complete",
+      checkPrompt: "Check all pricing displayed on the site. Flag any prices that seem like placeholders ($0.00, $999, $XXX), missing prices where services are listed, or language suggesting hidden fees without disclosure." },
+    { industry: "all", agency: "ADA", ruleKey: "accessibility_alt_text", severity: "warning", autoFixable: true, autoFixAction: "generate_alt_text",
+      ruleDescription: "All images need descriptive alt text",
+      checkPrompt: "Check all img tags in the HTML. Flag any with empty alt text, generic alt text like 'image' or 'photo', or missing alt attributes entirely." },
+    { industry: "all", agency: "GDPR/CCPA", ruleKey: "cookie_consent", severity: "warning", autoFixable: true, autoFixAction: "inject_cookie_banner",
+      ruleDescription: "Cookie consent banner required",
+      checkPrompt: "Check if the site has a cookie consent or privacy notice banner. Flag if absent." },
+    { industry: "all", agency: "FTC", ruleKey: "privacy_policy", severity: "critical", autoFixable: true, autoFixAction: "generate_privacy_policy",
+      ruleDescription: "Privacy policy required for data collection",
+      checkPrompt: "Check if the site has a privacy policy page. Flag if absent or if it contains placeholder text like COMPANY NAME or YOUR EMAIL." },
+    { industry: "all", agency: "FTC", ruleKey: "terms_of_service", severity: "warning", autoFixable: true, autoFixAction: "generate_terms",
+      ruleDescription: "Terms of service required",
+      checkPrompt: "Check if the site has a terms of service or terms and conditions page. Flag if absent or contains placeholder text." },
+    { industry: "all", agency: "CAN-SPAM", ruleKey: "email_signup_disclosure", severity: "warning", autoFixable: true, autoFixAction: "add_email_disclosure",
+      ruleDescription: "Email signup forms need disclosure about how email will be used",
+      checkPrompt: "Check all email signup or newsletter forms. Flag if they don't include text explaining how the email will be used or a link to the privacy policy." },
+    { industry: "all", agency: "FTC", ruleKey: "deceptive_urgency", severity: "warning", autoFixable: false,
+      ruleDescription: "No false scarcity or urgency claims",
+      checkPrompt: "Check for false urgency language: 'only X left', 'limited time', 'expires soon' — flag these unless they appear to be for a specific dated promotion." },
+
+    // ── Copyright ────────────────────────────────────────────────────────
+    { industry: "all", agency: "COPYRIGHT", ruleKey: "copyright_footer", severity: "warning", autoFixable: true, autoFixAction: "fix_copyright_year",
+      ruleDescription: "Copyright notice required in footer",
+      checkPrompt: "Check the footer for a copyright notice. It should include the current year and the business name. Flag if absent or if the year is wrong." },
+    { industry: "all", agency: "COPYRIGHT", ruleKey: "stock_photo_attribution", severity: "critical", autoFixable: false,
+      ruleDescription: "Stock photos must be licensed or attributed",
+      checkPrompt: "Check all images on the site. Flag any that appear to be stock photos without proper licensing — look for watermarks, obvious stock photo styling, or filenames like gettyimages or shutterstock." },
+    { industry: "all", agency: "COPYRIGHT", ruleKey: "no_competitor_content", severity: "critical", autoFixable: false,
+      ruleDescription: "No copied content from competitor sites",
+      checkPrompt: "Check all page copy for signs of copied content: references to a different business name, descriptions that don't match this business, generic boilerplate that appears verbatim on many sites." },
+    { industry: "all", agency: "COPYRIGHT", ruleKey: "trademark_misuse", severity: "critical", autoFixable: false,
+      ruleDescription: "No unauthorized use of trademarked brand names",
+      checkPrompt: "Check the site for unauthorized use of trademarked brand names — claiming to be an official partner without authorization, or using competitor brand names in a misleading way." },
+
+    // ── Alcohol ─────────────────────────────────────────────────────────
+    { industry: "alcohol", agency: "TTB", ruleKey: "age_gate_required", severity: "critical", autoFixable: true, autoFixAction: "inject_age_gate",
+      ruleDescription: "Age verification gate required on entry",
+      checkPrompt: "Check if the site has an age verification gate or age confirmation on entry. Flag if absent for any alcohol brand, brewery, winery, or distillery website." },
+    { industry: "alcohol", agency: "TTB", ruleKey: "no_health_claims", severity: "critical", autoFixable: false,
+      ruleDescription: "No health claims about alcohol",
+      checkPrompt: "Check all content for health claims about alcohol: 'good for your heart', 'healthy', 'medicinal', 'reduces stress', 'antioxidants', 'wellness'. Flag any such claims as TTB violations." },
+    { industry: "alcohol", agency: "TTB", ruleKey: "responsible_drinking", severity: "warning", autoFixable: true, autoFixAction: "add_drink_responsibly",
+      ruleDescription: "Responsible drinking message required",
+      checkPrompt: "Check if the site includes a responsible drinking message or 'Drink Responsibly' statement. Flag if absent." },
+    { industry: "alcohol", agency: "TTB", ruleKey: "no_minor_targeting", severity: "critical", autoFixable: false,
+      ruleDescription: "No content targeting minors",
+      checkPrompt: "Check all content and imagery for anything that could appeal primarily to minors: cartoon characters, children's language, candy-like descriptions, school themes. Flag anything suspicious." },
+    { industry: "alcohol", agency: "MLCC", ruleKey: "michigan_price_advertising", severity: "warning", autoFixable: false, appliesTo: "MI",
+      ruleDescription: "Michigan restricts price advertising for alcohol",
+      checkPrompt: "If this business is in Michigan, check if prices are displayed for alcohol products. Flag specific price promotions like 'buy one get one' or '$X off' on alcohol." },
+
+    // ── Legal ────────────────────────────────────────────────────────────
+    { industry: "legal", agency: "ABA", ruleKey: "attorney_advertising", severity: "critical", autoFixable: true, autoFixAction: "add_attorney_disclaimer",
+      ruleDescription: "Attorney Advertising disclaimer required",
+      checkPrompt: "Check if this law firm website includes an 'Attorney Advertising' disclaimer. Most state bar rules require this. Flag if absent." },
+    { industry: "legal", agency: "ABA", ruleKey: "no_outcome_guarantee", severity: "critical", autoFixable: false,
+      ruleDescription: "No guaranteed outcome language",
+      checkPrompt: "Check all content for guaranteed outcome language: 'we will win your case', 'guaranteed results', 'we never lose', '100% success rate'. Flag any such claims as ABA Rule 7.1 violations." },
+    { industry: "legal", agency: "ABA", ruleKey: "past_results_disclaimer", severity: "critical", autoFixable: true, autoFixAction: "add_results_disclaimer",
+      ruleDescription: "Past results disclaimer required near case outcomes",
+      checkPrompt: "Check if case results or success stories are listed. If so, verify there is a disclaimer that past results do not guarantee future outcomes. Flag if absent." },
+    { industry: "legal", agency: "ABA", ruleKey: "not_legal_advice", severity: "warning", autoFixable: true, autoFixAction: "add_legal_advice_disclaimer",
+      ruleDescription: "Content disclaimers required on legal info",
+      checkPrompt: "Check if the site provides any legal information or articles. If so, verify there is a disclaimer that this is not legal advice. Flag if absent." },
+    { industry: "legal", agency: "STATE_BAR", ruleKey: "attorney_client_form", severity: "critical", autoFixable: true, autoFixAction: "add_attorney_client_disclaimer",
+      ruleDescription: "Contact forms need attorney-client disclaimer",
+      checkPrompt: "Check the contact form on this law firm site. Verify it includes language that submitting the form does not create an attorney-client relationship. Flag if absent." },
+
+    // ── Medical / Dental ─────────────────────────────────────────────────
+    { industry: "medical", agency: "FTC", ruleKey: "no_cure_claims", severity: "critical", autoFixable: false,
+      ruleDescription: "No guaranteed cure or treatment claims",
+      checkPrompt: "Check all content for guaranteed cure or treatment claims: 'we will cure', 'guaranteed recovery', 'eliminates', 'cures'. Flag any unqualified medical outcome claims." },
+    { industry: "medical", agency: "HIPAA", ruleKey: "hipaa_notice", severity: "critical", autoFixable: true, autoFixAction: "add_hipaa_notice",
+      ruleDescription: "HIPAA Notice of Privacy Practices required",
+      checkPrompt: "Check if this medical practice website has a HIPAA Notice of Privacy Practices. Flag if absent." },
+    { industry: "medical", agency: "FTC", ruleKey: "testimonial_disclaimer", severity: "critical", autoFixable: true, autoFixAction: "add_results_may_vary",
+      ruleDescription: "Patient testimonials need results-may-vary disclaimer",
+      checkPrompt: "Check all patient testimonials and before/after content. Verify each has a 'results may vary' or 'individual results may vary' disclaimer. Flag if absent." },
+    { industry: "medical", agency: "FDA", ruleKey: "no_fda_unapproved_claims", severity: "critical", autoFixable: false,
+      ruleDescription: "No FDA-unapproved treatment claims",
+      checkPrompt: "Check for claims about treatments that appear unproven or experimental. Flag anything that suggests FDA-unapproved treatments or curing chronic diseases without qualification." },
+
+    // ── Real Estate ──────────────────────────────────────────────────────
+    { industry: "real_estate", agency: "HUD", ruleKey: "fair_housing", severity: "critical", autoFixable: false,
+      ruleDescription: "Fair Housing Act compliance required",
+      checkPrompt: "Check all content for Fair Housing Act violations: language that discriminates based on race, color, national origin, religion, sex, familial status, or disability. Flag any language that could be interpreted as exclusionary." },
+    { industry: "real_estate", agency: "NAR", ruleKey: "equal_housing_logo", severity: "critical", autoFixable: true, autoFixAction: "add_equal_housing",
+      ruleDescription: "Equal Housing Opportunity logo or statement required",
+      checkPrompt: "Check if the site displays the Equal Housing Opportunity logo or statement. Flag if absent on any real estate professional website." },
+    { industry: "real_estate", agency: "STATE_RE_COMMISSION", ruleKey: "license_number_displayed", severity: "critical", autoFixable: false,
+      ruleDescription: "Real estate license number must be displayed",
+      checkPrompt: "Check if the real estate agent or broker's license number is displayed on the site. Most state commissions require this. Flag if absent." },
+
+    // ── Food Service ─────────────────────────────────────────────────────
+    { industry: "food", agency: "FDA", ruleKey: "allergen_disclosure", severity: "warning", autoFixable: true, autoFixAction: "add_allergen_disclaimer",
+      ruleDescription: "Major allergens must be disclosed on menus",
+      checkPrompt: "Check the menu page if present. If menu items are listed, check if common allergens are disclosed or if there is a general allergen disclaimer. Flag if absent." },
+    { industry: "food", agency: "FDA", ruleKey: "no_misleading_health_claims", severity: "warning", autoFixable: false,
+      ruleDescription: "Food health claims must meet FDA definitions",
+      checkPrompt: "Check for unsubstantiated food health claims: 'superfood', 'detox', 'cleanse', 'cures', 'prevents disease' applied to food items. Flag any that don't meet FDA standards." },
+
+    // ── Contractor ───────────────────────────────────────────────────────
+    { industry: "contractor", agency: "STATE_CONTRACTOR_BOARD", ruleKey: "license_number_displayed", severity: "critical", autoFixable: false,
+      ruleDescription: "Contractor license number must be displayed",
+      checkPrompt: "Check if the contractor's license number is displayed on the site. Most states require this for licensed contractors. Flag if absent." },
+    { industry: "contractor", agency: "FTC", ruleKey: "no_misleading_warranty", severity: "warning", autoFixable: false,
+      ruleDescription: "Warranty claims must be specific and accurate",
+      checkPrompt: "Check for warranty or guarantee claims: 'lifetime warranty', 'guaranteed forever', '100% satisfaction guaranteed'. Flag any that don't include specific terms or conditions." },
+
+    // ── Financial ────────────────────────────────────────────────────────
+    { industry: "financial", agency: "SEC", ruleKey: "no_guaranteed_returns", severity: "critical", autoFixable: false,
+      ruleDescription: "No guaranteed investment return claims",
+      checkPrompt: "Check for guaranteed return claims: 'guaranteed X% return', 'risk-free investment', 'guaranteed profit'. Flag any such claims as SEC violations." },
+    { industry: "financial", agency: "FINRA", ruleKey: "past_performance_disclaimer", severity: "critical", autoFixable: true, autoFixAction: "add_past_performance_disclaimer",
+      ruleDescription: "Past performance disclaimer required",
+      checkPrompt: "Check if any investment performance data is shown. If so, verify 'past performance does not guarantee future results' disclaimer is present. Flag if absent." },
+  ];
+
+  for (const rule of rules) {
+    await db.insert(regulatoryRules).values({
+      industry: rule.industry,
+      agency: rule.agency,
+      ruleKey: rule.ruleKey,
+      ruleDescription: rule.ruleDescription,
+      checkPrompt: rule.checkPrompt,
+      severity: rule.severity,
+      autoFixable: rule.autoFixable,
+      autoFixAction: rule.autoFixAction ?? null,
+      appliesTo: rule.appliesTo ?? "all",
+      active: true,
+    }).onDuplicateKeyUpdate({ set: { active: true } });
+  }
+
+  await db.insert(systemSettings).values({
+    settingKey: "regulatory_rules_v1",
+    settingValue: "true",
+    description: "Regulatory rules v1 — 37 rules across 8 industries (FTC, TTB, ABA, HIPAA, HUD, FDA, SEC, FINRA)",
+  }).onDuplicateKeyUpdate({ set: { settingValue: "true" } });
+
+  console.log("[RegulatoryRules] Seeded", rules.length, "rules");
 }

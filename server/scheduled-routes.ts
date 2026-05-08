@@ -1266,6 +1266,55 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     })
   );
 
+  // Weekly QA sweep — runs QA inspector on all active customer sites
+  app.post("/api/scheduled/weekly-qa-sweep", (req, res) =>
+    runJob(req, res, "weekly-qa-sweep", async () => {
+      const database = await getDb();
+      if (!database) return { error: "DB unavailable" };
+
+      const { customers: cTable, onboardingProjects: pTable } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const { BuildReporter } = await import("./services/buildReporter");
+      const { runQAInspector } = await import("./services/qaInspector");
+
+      const activeCustomers = await database.select().from(cTable).where(eqFn(cTable.status, "active"));
+
+      let checked = 0;
+      let issues = 0;
+
+      for (const customer of activeCustomers.slice(0, 20)) {
+        try {
+          const projects = await database.select().from(pTable).where(eqFn(pTable.customerId, customer.id)).limit(1);
+          const project = projects[0];
+          if (!project?.generatedSiteUrl) continue;
+
+          const q = (project.questionnaire as any) || {};
+          const reporter = await BuildReporter.create(customer.id, project.id, database);
+          const result = await runQAInspector(
+            {
+              customerId: customer.id, projectId: project.id,
+              siteUrl: project.generatedSiteUrl, businessName: customer.businessName || "",
+              businessType: q.industry || "", industry: q.industry || "",
+              state: q.state || "", phone: (customer as any).phone || q.phone || "",
+              email: customer.email || "", address: q.address || "",
+              domain: (project as any).domainName || "", purchasedAddons: [],
+              questionnaire: q,
+            },
+            reporter, database, [], 1
+          );
+
+          checked++;
+          if (!result.passed) issues++;
+          await new Promise(r => setTimeout(r, 3000));
+        } catch (e: any) {
+          console.error(`[WeeklyQA] Failed for customer ${customer.id}:`, e.message);
+        }
+      }
+
+      return { ok: true, checked, issuesFound: issues };
+    })
+  );
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -1276,5 +1325,5 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     });
   });
 
-  console.log("[Scheduled] Registered 23 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 24 scheduled job endpoints at /api/scheduled/*");
 }

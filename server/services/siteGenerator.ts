@@ -1315,6 +1315,47 @@ ${Object.keys(pages)
         });
       } catch {}
     }
+
+    // Fire Agent 4 — QA Inspector (fire-and-forget, does not block site delivery)
+    if (project.customerId) {
+      try {
+        const { runQAWithSafeguards } = await import("./qaOrchestrator");
+        const { BuildReporter } = await import("./buildReporter");
+        const { getDb } = await import("../db");
+        const database = await getDb();
+        if (database) {
+          const reporter = await BuildReporter.create(project.customerId, projectId, database);
+          await reporter.success("site_generation", `Site generated: ${cfProjectName}`, `Pages: ${Object.keys(pages).join(", ")}`);
+          await reporter.info("agent3", "Addon orchestration triggered", `Addons: ${addonsSelectedRaw.map((a: any) => a.product || a).join(", ") || "none"}`);
+
+          const qaCtx = {
+            customerId: project.customerId,
+            projectId,
+            siteUrl: project.generatedSiteUrl || `https://${cfProjectName}.pages.dev`,
+            businessName: project.businessName || "",
+            businessType: (q.industry as string) || websiteType || "",
+            industry: (q.industry as string) || websiteType || "",
+            state: (q.state as string) || "",
+            phone: (q.phone as string) || project.contactPhone || "",
+            email: project.contactEmail || "",
+            address: (q.address as string) || "",
+            domain: project.domainName || "",
+            purchasedAddons: addonsSelectedRaw.map((a: any) =>
+              (a.product || "").toLowerCase().replace(/\s+/g, "_")
+            ),
+            questionnaire: q as Record<string, any>,
+          };
+
+          runQAWithSafeguards(qaCtx, reporter, database).then(result => {
+            console.log("[Agent4] QA complete:", `${result.score}/100`, result.commissioned ? "COMMISSIONED" : "ESCALATED");
+          }).catch((e: Error) => {
+            console.error("[Agent4] QA failed:", e.message);
+          });
+        }
+      } catch (e: any) {
+        console.error("[Agent4] Failed to start QA:", e.message);
+      }
+    }
   } catch (err) {
     console.error(`[SiteGenerator] Project ${projectId} generation failed:`, err);
     await db.updateOnboardingProject(projectId, {

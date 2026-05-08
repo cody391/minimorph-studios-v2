@@ -1850,3 +1850,58 @@ export const coupons = mysqlTable("coupons", {
 });
 export type Coupon = typeof coupons.$inferSelect;
 export type InsertCoupon = typeof coupons.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   SITE_BUILD_REPORTS — Live build log from Elena → QA → commission
+   ═══════════════════════════════════════════════════════ */
+export const siteBuildReports = mysqlTable("site_build_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  projectId: int("projectId").notNull(),
+  status: varchar("status", { length: 32 }).default("building").notNull(),
+  // building | qa_pending | qa_failed | qa_passed | commissioned | commissioned_with_warnings | escalated
+  qaScore: int("qaScore"),
+  qaAttempts: int("qaAttempts").default(0).notNull(),
+  scoreContent: int("scoreContent"),
+  scoreSeo: int("scoreSeo"),
+  scoreTechnical: int("scoreTechnical"),
+  scoreSecurity: int("scoreSecurity"),
+  scoreDesign: int("scoreDesign"),
+  scoreRegulatory: int("scoreRegulatory"),
+  scoreCopyright: int("scoreCopyright"),
+  issuesFound: json("issuesFound"),
+  issuesAutoFixed: json("issuesAutoFixed"),
+  issuesPersistent: json("issuesPersistent"),
+  issuesEscalated: json("issuesEscalated"),
+  buildLog: json("buildLog"),
+  buildStartedAt: timestamp("buildStartedAt").defaultNow(),
+  buildCompletedAt: timestamp("buildCompletedAt"),
+  qaStartedAt: timestamp("qaStartedAt"),
+  qaCompletedAt: timestamp("qaCompletedAt"),
+  commissionedAt: timestamp("commissionedAt"),
+  createdAt: timestamp("sbr_createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("sbr_updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SiteBuildReport = typeof siteBuildReports.$inferSelect;
+
+/* ═══════════════════════════════════════════════════════
+   REGULATORY_RULES — Industry-specific compliance rules
+   Updateable without code changes
+   ═══════════════════════════════════════════════════════ */
+export const regulatoryRules = mysqlTable("regulatory_rules", {
+  id: int("id").autoincrement().primaryKey(),
+  industry: varchar("industry", { length: 64 }).notNull(),
+  // alcohol | medical | legal | financial | food | real_estate | contractor | all
+  agency: varchar("agency", { length: 128 }).notNull(),
+  ruleKey: varchar("ruleKey", { length: 128 }).notNull(),
+  ruleDescription: text("ruleDescription").notNull(),
+  checkPrompt: text("checkPrompt").notNull(),
+  severity: varchar("severity", { length: 16 }).default("warning").notNull(),
+  // critical | warning | info
+  autoFixable: boolean("autoFixable").default(false).notNull(),
+  autoFixAction: text("autoFixAction"),
+  appliesTo: varchar("appliesTo", { length: 512 }).default("all"),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("rr_createdAt").defaultNow().notNull(),
+});
+export type RegulatoryRule = typeof regulatoryRules.$inferSelect;

@@ -19,7 +19,7 @@ import { registerStripeWebhook } from "../stripe-webhook";
 import { registerTwilioWebhooks } from "../twilio-webhooks";
 import { registerResendWebhooks } from "../resend-webhooks";
 import { registerScheduledRoutes } from "../scheduled-routes";
-import { bootstrapAdminUser, seedProductCatalog, getSupportTicketByRatingToken, updateSupportTicketRating, repairSchema, createContactSubmission } from "../db";
+import { bootstrapAdminUser, seedProductCatalog, seedRegulatoryRules, getSupportTicketByRatingToken, updateSupportTicketRating, repairSchema, createContactSubmission } from "../db";
 import { notifyOwner } from "./notification";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -254,6 +254,8 @@ async function startServer() {
   await bootstrapAdminUser();
   // Seed product catalog with default pricing (idempotent upsert)
   await seedProductCatalog().catch(err => console.error("[Startup] Product catalog seed failed:", err));
+  // Seed regulatory rules (idempotent — gated by regulatory_rules_v1 flag)
+  await seedRegulatoryRules().catch(err => console.error("[Startup] Regulatory rules seed failed:", err));
   // Catalog health check — logs any addons missing pitch scripts
   try {
     const { listProductCatalog } = await import("../db");

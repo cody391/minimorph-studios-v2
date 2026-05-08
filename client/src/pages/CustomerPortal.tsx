@@ -106,6 +106,11 @@ export default function CustomerPortal() {
     { enabled: isAuthenticated }
   );
 
+  const { data: buildReport } = trpc.customers.getBuildReport.useQuery(
+    undefined,
+    { enabled: isAuthenticated, refetchInterval: 15000 }
+  );
+
   const pendingChecklistItems = (checklist ?? []).filter((item: any) => item.status !== "completed");
 
   // Auto-select "setup" tab when there are pending checklist items and user hasn't navigated yet
@@ -241,6 +246,9 @@ export default function CustomerPortal() {
             <TabsTrigger value="insights" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Insights</TabsTrigger>
             <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">
               <Bot className="h-3 w-3 mr-1" /> AI Assistant
+            </TabsTrigger>
+            <TabsTrigger value="build-report" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">
+              <Shield className="h-3 w-3 mr-1" /> QA Report
             </TabsTrigger>
           </TabsList>
           </div>
@@ -550,6 +558,11 @@ export default function CustomerPortal() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* BUILD REPORT TAB */}
+          <TabsContent value="build-report" className="space-y-6">
+            <BuildReportTab report={buildReport ?? null} />
           </TabsContent>
         </Tabs>
       </div>
@@ -2028,6 +2041,191 @@ function ChecklistItemCard({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   BUILD REPORT TAB — Live QA build log
+   ═══════════════════════════════════════════════════════ */
+const PHASE_LABELS: Record<string, string> = {
+  site_generation: "Site Generation", agent3: "Addon Setup", qa_inspector: "QA Inspector",
+  qa_layer1: "Content & Legal", qa_layer2: "SEO", qa_layer3: "Technical",
+  qa_layer4: "Security", qa_layer5: "Regulatory", qa_layer6: "Copyright",
+  auto_fix: "Auto-Fix", rebuild: "Rebuild", qa_orchestrator: "QA Orchestrator", commissioned: "Commission",
+};
+
+const STATUS_CONFIG = {
+  success: { icon: "✅", color: "text-emerald-400" },
+  warning: { icon: "⚠️", color: "text-amber-400" },
+  error: { icon: "❌", color: "text-red-400" },
+  fix: { icon: "🔧", color: "text-blue-400" },
+  info: { icon: "ℹ️", color: "text-soft-gray/60" },
+} as const;
+
+const COMMISSIONED_STATUS: Record<string, { label: string; color: string }> = {
+  commissioned: { label: "Site Commissioned", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
+  commissioned_with_warnings: { label: "Commissioned with Warnings", color: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+  escalated: { label: "Under Manual Review", color: "bg-red-500/10 text-red-400 border-red-500/30" },
+  qa_passed: { label: "QA Passed", color: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
+  qa_failed: { label: "QA Failed — Fixing", color: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+  qa_pending: { label: "QA In Progress", color: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+  building: { label: "Building", color: "bg-electric/10 text-electric border-electric/30" },
+};
+
+function ScoreBar({ label, score, max }: { label: string; score: number | null | undefined; max: number }) {
+  const pct = score != null ? Math.round((score / max) * 100) : 0;
+  const color = pct >= 90 ? "bg-emerald-500" : pct >= 70 ? "bg-amber-400" : "bg-red-400";
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs text-soft-gray font-sans w-32 flex-shrink-0">{label}</span>
+      <div className="flex-1 h-1.5 bg-graphite rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs text-soft-gray/60 font-sans w-12 text-right">{score ?? "—"}/{max}</span>
+    </div>
+  );
+}
+
+function BuildReportTab({ report }: { report: any | null }) {
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+
+  if (!report) {
+    return (
+      <Card className="border-border/50">
+        <CardContent className="py-16 text-center">
+          <Shield className="h-10 w-10 text-soft-gray/20 mx-auto mb-3" />
+          <p className="text-sm text-soft-gray font-sans">No build report yet.</p>
+          <p className="text-xs text-soft-gray/40 font-sans mt-1">Your QA report will appear here once your site is built.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const log: any[] = Array.isArray(report.buildLog) ? report.buildLog : [];
+  const issuesFound: any[] = Array.isArray(report.issuesFound) ? report.issuesFound : [];
+  const autoFixed: any[] = Array.isArray(report.issuesAutoFixed) ? report.issuesAutoFixed : [];
+  const escalated: any[] = Array.isArray(report.issuesEscalated) ? report.issuesEscalated : [];
+  const score = report.qaScore ?? 0;
+  const statusInfo = COMMISSIONED_STATUS[report.status] ?? { label: report.status, color: "bg-graphite text-soft-gray border-border/30" };
+  const scoreColor = score >= 90 ? "text-emerald-400" : score >= 75 ? "text-amber-400" : "text-red-400";
+
+  return (
+    <div className="space-y-6">
+      {/* Score card */}
+      <Card className="border-border/50">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h3 className="text-base font-serif text-off-white mb-1">QA Score</h3>
+              <span className={`inline-flex items-center gap-1.5 text-xs font-sans px-2.5 py-1 rounded-full border ${statusInfo.color}`}>
+                {statusInfo.label}
+              </span>
+            </div>
+            <span className={`text-4xl font-serif ${scoreColor}`}>{score > 0 ? score : "—"}/100</span>
+          </div>
+          {score > 0 && (
+            <div className="space-y-2.5">
+              <ScoreBar label="Content & Legal" score={report.scoreContent} max={25} />
+              <ScoreBar label="SEO" score={report.scoreSeo} max={20} />
+              <ScoreBar label="Technical" score={report.scoreTechnical} max={15} />
+              <ScoreBar label="Security" score={report.scoreSecurity} max={20} />
+              <ScoreBar label="Regulatory" score={report.scoreRegulatory} max={15} />
+              <ScoreBar label="Copyright" score={report.scoreCopyright} max={5} />
+            </div>
+          )}
+          {report.qaAttempts > 0 && (
+            <p className="text-xs text-soft-gray/40 font-sans mt-4">
+              Inspection attempts: {report.qaAttempts} · Last updated: {report.updatedAt ? new Date(report.updatedAt).toLocaleString() : "—"}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Issues summary */}
+      {(issuesFound.length > 0 || autoFixed.length > 0) && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Issues Found", value: issuesFound.length, color: "text-amber-400" },
+            { label: "Auto-Fixed", value: autoFixed.length, color: "text-emerald-400" },
+            { label: "Needs Review", value: escalated.length, color: escalated.length > 0 ? "text-red-400" : "text-soft-gray/40" },
+          ].map(stat => (
+            <Card key={stat.label} className="border-border/50">
+              <CardContent className="p-4 text-center">
+                <div className={`text-2xl font-serif ${stat.color} mb-1`}>{stat.value}</div>
+                <div className="text-[10px] text-soft-gray/60 font-sans">{stat.label}</div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Items needing review */}
+      {escalated.length > 0 && (
+        <Card className="border-red-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-serif text-off-white flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-400" /> Items Flagged for Review
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {escalated.map((issue: any, i: number) => (
+              <div key={i} className="flex items-start gap-2 text-xs font-sans py-1.5 border-b border-border/20 last:border-0">
+                <Badge className={`text-[9px] flex-shrink-0 ${issue.severity === "critical" ? "bg-red-500/20 text-red-400" : "bg-amber-500/20 text-amber-400"}`}>
+                  {issue.severity}
+                </Badge>
+                <span className="text-soft-gray">{issue.description}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Live build log */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-serif text-off-white">Live Build Log</CardTitle>
+          <p className="text-xs text-soft-gray/60 font-sans">{log.length} steps recorded</p>
+        </CardHeader>
+        <CardContent>
+          {log.length === 0 ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-6 w-6 text-electric animate-spin mx-auto mb-2" />
+              <p className="text-xs text-soft-gray font-sans">Build in progress…</p>
+            </div>
+          ) : (
+            <div className="space-y-1 max-h-96 overflow-y-auto pr-1">
+              {log.map((entry: any, i: number) => {
+                const cfg = STATUS_CONFIG[entry.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.info;
+                return (
+                  <div key={i}>
+                    <button
+                      onClick={() => setExpandedIdx(expandedIdx === i ? null : i)}
+                      className="w-full flex items-start gap-2 py-1.5 text-left hover:bg-graphite/40 rounded px-2 -mx-2 transition-colors"
+                    >
+                      <span className="text-xs w-4 flex-shrink-0 mt-0.5">{cfg.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-soft-gray/40 font-sans flex-shrink-0">
+                            {PHASE_LABELS[entry.phase] ?? entry.phase}
+                          </span>
+                          <span className={`text-xs font-sans truncate ${cfg.color}`}>{entry.message}</span>
+                        </div>
+                      </div>
+                      <span className="text-[9px] text-soft-gray/30 font-sans flex-shrink-0">
+                        {entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : ""}
+                      </span>
+                    </button>
+                    {expandedIdx === i && entry.detail && (
+                      <div className="text-[10px] text-soft-gray/50 font-sans px-8 pb-1.5">{entry.detail}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

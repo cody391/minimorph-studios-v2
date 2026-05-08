@@ -19,7 +19,7 @@ import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
 import { devAccessRouter } from "./devAccessRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
-import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users, launchChecklist } from "../drizzle/schema";
+import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users, launchChecklist, siteBuildReports } from "../drizzle/schema";
 import { getDb } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
@@ -1223,6 +1223,22 @@ const customersRouter = router({
       await database.update(customers).set({ bookingHours: input as any }).where(eq(customers.id, customer.id));
       return { success: true };
     }),
+
+  // Latest build report for the logged-in customer
+  getBuildReport: protectedProcedure.query(async ({ ctx }) => {
+    const database = await getDb();
+    if (!database) return null;
+    const custRows = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+    if (!custRows[0]) return null;
+    const { desc } = await import("drizzle-orm");
+    const reports = await database
+      .select()
+      .from(siteBuildReports)
+      .where(eq(siteBuildReports.customerId, custRows[0].id))
+      .orderBy(desc(siteBuildReports.createdAt))
+      .limit(1);
+    return reports[0] ?? null;
+  }),
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -5479,6 +5495,31 @@ const adminRouter = router({
         await database.delete(usersTable).where(eqFn(usersTable.id, u.id));
       }
       return { deleted: testUsers.length, emails: testUsers.map(u => u.email) };
+    }),
+
+  // QA escalation: list all sites needing manual review
+  getEscalatedSites: adminProcedure.query(async () => {
+    const database = await getDb();
+    if (!database) return [];
+    const { or } = await import("drizzle-orm");
+    return database
+      .select()
+      .from(siteBuildReports)
+      .where(or(eq(siteBuildReports.status, "escalated"), eq(siteBuildReports.status, "commissioned_with_warnings")))
+      .orderBy(siteBuildReports.createdAt);
+  }),
+
+  // QA override: admin manually commissions an escalated site
+  overrideQAAndCommission: adminProcedure
+    .input(z.object({ reportId: z.number(), note: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await database
+        .update(siteBuildReports)
+        .set({ status: "commissioned", commissionedAt: new Date() } as any)
+        .where(eq(siteBuildReports.id, input.reportId));
+      return { ok: true };
     }),
 });
 
