@@ -235,6 +235,21 @@ async function startServer() {
   await bootstrapAdminUser();
   // Seed product catalog with default pricing (idempotent upsert)
   await seedProductCatalog().catch(err => console.error("[Startup] Product catalog seed failed:", err));
+  // Catalog health check — logs any addons missing pitch scripts
+  try {
+    const { listProductCatalog } = await import("../db");
+    const catalogItems = await listProductCatalog(true);
+    const withPitch = catalogItems.filter((p: any) => !p.isFree && p.pitchScript);
+    const withoutPitch = catalogItems.filter((p: any) => !p.isFree && !p.pitchScript && p.category === "addon");
+    console.log(
+      `[ProductCatalog] Health check: ${withPitch.length} addons with pitch scripts,`,
+      withoutPitch.length > 0
+        ? `WARN: ${withoutPitch.length} missing pitch scripts: ${withoutPitch.map((p: any) => p.productKey).join(", ")}`
+        : "all pitch scripts present",
+    );
+  } catch (err) {
+    console.error("[ProductCatalog] Health check failed:", err);
+  }
   // Sync product catalog to Stripe (non-fatal — server continues if Stripe is unavailable)
   import("../services/stripePriceSync").then(({ syncAllProductsToStripe }) =>
     syncAllProductsToStripe().then(result => {

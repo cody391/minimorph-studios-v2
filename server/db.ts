@@ -460,6 +460,11 @@ export async function repairSchema(): Promise<void> {
       console.log(`[SchemaRepair] Password reset skipped: ${e.message.substring(0, 80)}`);
     }
 
+    // ── Clean up stale product keys from old catalog versions ─────────────
+    await safe(`DELETE FROM \`product_catalog\` WHERE \`productKey\` IN ('content_addon', 'seo_addon', 'priority_support_old', 'extra_revision_block_old')`);
+    // Reset v3 flag so catalog re-seeds on next startup with correct pitch scripts
+    await safe(`DELETE FROM \`system_settings\` WHERE \`settingKey\` = 'product_catalog_v3'`);
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);
