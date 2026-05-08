@@ -60,6 +60,7 @@ export type ToolChoice =
 export type InvokeParams = {
   messages: Message[];
   tools?: Tool[];
+  nativeTools?: Record<string, unknown>[];
   toolChoice?: ToolChoice;
   tool_choice?: ToolChoice;
   maxTokens?: number;
@@ -295,12 +296,21 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     }
   }
 
+  // Native Anthropic tools (e.g. web_search_20250305) — passed through as-is, takes precedence over tools
+  const nativeTools = params.nativeTools;
+  if (nativeTools && nativeTools.length > 0) {
+    body.tools = nativeTools;
+  }
+
+  const hasWebSearch = nativeTools?.some((t: any) => t.type === "web_search_20250305");
+
   const response = await fetch(ANTHROPIC_API_URL, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "x-api-key": ENV.anthropicApiKey,
       "anthropic-version": "2023-06-01",
+      ...(hasWebSearch ? { "anthropic-beta": "web-search-2025-03-05" } : {}),
     },
     body: JSON.stringify(body),
   });
