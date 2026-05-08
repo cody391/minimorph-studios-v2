@@ -4329,6 +4329,23 @@ ${integrationSection}${scrapedSection}${silentResearchContext}`;
           } catch {}
         }
 
+        // Persist questionnaire_data server-side when Elena emits the full data block
+        if (extractedData) {
+          if (saveUpdates.questionnaire) {
+            saveUpdates.questionnaire = { ...(saveUpdates.questionnaire as Record<string, unknown>), ...extractedData };
+          } else {
+            try {
+              const currentProject = await db.getOnboardingProjectById(input.projectId);
+              const existing = (currentProject?.questionnaire as Record<string, unknown> | null) ?? {};
+              saveUpdates.questionnaire = { ...existing, ...extractedData };
+            } catch {}
+          }
+          const ed = extractedData as Record<string, unknown>;
+          if (ed.businessName) saveUpdates.businessName = ed.businessName;
+          if (ed.contactEmail) saveUpdates.contactEmail = ed.contactEmail;
+          if (ed.phone) saveUpdates.contactPhone = ed.phone;
+        }
+
         db.updateOnboardingProject(input.projectId, saveUpdates as any).catch((err) =>
           console.error("[onboardingChat] History auto-save failed:", err)
         );

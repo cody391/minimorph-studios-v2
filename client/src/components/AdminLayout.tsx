@@ -135,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               Sign in with your admin account to access the MiniMorph Studios platform.
             </p>
           </div>
-          <Button onClick={() => setLocation("/login?next=/admin")} size="lg" className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans">
+          <Button onClick={() => { window.location.href = "/login?next=/admin"; }} size="lg" className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans">
             Sign in
           </Button>
         </div>

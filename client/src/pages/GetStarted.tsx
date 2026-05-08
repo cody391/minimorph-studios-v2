@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useLocation, Link } from "wouter";
+import { useLocation, useSearch, Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Loader2, Send, Upload, CheckCircle2, ArrowRight,
@@ -115,6 +115,7 @@ type CaptureSubState = "email" | "password";
 
 export default function GetStarted() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const { user, loading: authLoading } = useAuth();
 
   const [stage, setStage] = useState<Stage>("capture");
@@ -140,7 +141,10 @@ export default function GetStarted() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasSentInit = useRef(false);
+  const scenarioSent = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const utils = trpc.useUtils();
 
   // tRPC mutations
   const registerMutation = trpc.localAuth.register.useMutation();
@@ -265,6 +269,16 @@ export default function GetStarted() {
     hasSentInit.current = true;
     sendMessage("INIT");
   }, [stage, isLoading, messages.length, sendMessage]);
+
+  // Auto-send ?scenario= message after INIT response lands (admin testing)
+  useEffect(() => {
+    if (stage !== "chat" || scenarioSent.current || isLoading || messages.length === 0) return;
+    const params = new URLSearchParams(search);
+    const scenario = params.get("scenario");
+    if (!scenario) return;
+    scenarioSent.current = true;
+    sendMessage(scenario);
+  }, [stage, isLoading, messages.length, search, sendMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -598,31 +612,24 @@ export default function GetStarted() {
           <span className="text-xs text-gray-500 hidden sm:block">
             {user?.email}
           </span>
-          {DEV_MODE && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
-                className="text-xs text-yellow-400/50 hover:text-yellow-400 border border-yellow-400/20 rounded px-2 py-1 transition-colors"
-              >
-                ↪ Switch Account
-              </button>
-              <button
-                onClick={async () => {
-                  await resetSessionMutation.mutateAsync();
-                  setStage("capture");
-                  setProjectId(null);
-                  setMessages([]);
-                  hasSentInit.current = false;
-                  setPaymentReady(null);
-                  setAddonsInSummary([]);
-                }}
-                disabled={resetSessionMutation.isPending}
-                className="text-xs text-red-400/50 hover:text-red-400 border border-red-400/20 rounded px-2 py-1 transition-colors"
-              >
-                ↺ Reset
-              </button>
-            </div>
+          {user?.role === "admin" && (
+            <button
+              onClick={async () => {
+                await resetSessionMutation.mutateAsync();
+                setProjectId(null);
+                setMessages([]);
+                hasSentInit.current = false;
+                scenarioSent.current = false;
+                setPaymentReady(null);
+                setAddonsInSummary([]);
+                await utils.onboarding.mySelfServiceProject.invalidate();
+                setStage("creating");
+              }}
+              disabled={resetSessionMutation.isPending}
+              className="text-xs text-red-400/50 hover:text-red-400 border border-red-400/20 rounded px-2 py-1 transition-colors"
+            >
+              ↺ Reset
+            </button>
           )}
         </div>
       </header>

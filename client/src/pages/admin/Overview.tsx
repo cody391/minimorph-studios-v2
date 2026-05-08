@@ -168,7 +168,50 @@ export default function Overview() {
 
       {/* Test Accounts */}
       <TestAccountsPanel />
+
+      {/* Test Scenarios */}
+      <TestScenariosPanel />
     </div>
+  );
+}
+
+const TEST_SCENARIOS = [
+  { label: "Plumber (Phoenix)", message: "I need a website for my plumbing business in Phoenix, Arizona. We do emergency repairs and water heater installations." },
+  { label: "Dental Office", message: "I run a dental office and need a modern website to attract new patients and allow online booking." },
+  { label: "Wedding Photographer", message: "I'm a wedding photographer based in Nashville. I need a portfolio site to showcase my work and get inquiries." },
+  { label: "Restaurant", message: "I own a restaurant and need a website with our menu, hours, and eventually online ordering." },
+  { label: "Law Firm", message: "I have a small law firm specializing in personal injury. I need a professional site that builds credibility and generates leads." },
+  { label: "Personal Trainer", message: "I'm a certified personal trainer and want to get more clients online. I do both in-person and virtual coaching." },
+  { label: "Real Estate Agent", message: "I'm a real estate agent in Austin looking for a lead generation website that showcases my listings and captures buyer/seller leads." },
+  { label: "Cleaning Company", message: "I own a residential cleaning company and need a website with online booking so customers can schedule cleanings directly." },
+  { label: "Hair Salon", message: "I have a hair salon in Chicago and want to attract new clients, show our stylists' portfolios, and allow appointment booking." },
+  { label: "Financial Advisor", message: "I'm an independent financial advisor and need a credibility-building website that shows my expertise and generates consultation requests." },
+];
+
+function TestScenariosPanel() {
+  return (
+    <Card className="bg-charcoal border-border/30">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-sans text-off-white flex items-center gap-2">
+          <FlaskConical className="w-4 h-4 text-electric" />
+          Test Scenarios
+        </CardTitle>
+        <p className="text-xs text-soft-gray font-sans">Open Elena chat with a pre-loaded customer scenario for QA testing.</p>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          {TEST_SCENARIOS.map((s) => (
+            <button
+              key={s.label}
+              onClick={() => window.open(`/get-started?scenario=${encodeURIComponent(s.message)}`, "_blank")}
+              className="text-xs text-left px-3 py-2 rounded-lg border border-border/30 bg-midnight hover:border-electric/40 hover:text-electric text-soft-gray transition-colors font-sans"
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
