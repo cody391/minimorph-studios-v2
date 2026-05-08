@@ -5541,10 +5541,35 @@ const adminRouter = router({
       const bcrypt = await import("bcryptjs");
       const hash = await bcrypt.hash(password, 10);
       const openId = `test_customer_${Date.now()}`;
-      await db.upsertUser({ openId, email, name, passwordHash: hash, loginMethod: "email", role: "user", lastSignedIn: new Date() });
+      await db.upsertUser({ openId, email, name, passwordHash: hash, loginMethod: "email_password", role: "user", lastSignedIn: new Date() });
       const user = await db.getUserByEmail(email);
       if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create test user" });
-      return { email, password, name, userId: user.id, loginUrl: "/get-started", note: "Use these credentials to test the customer flow at /get-started" };
+
+      // Create a Customer record linked to this user so /portal works immediately
+      const { id: customerId } = await db.createCustomer({
+        userId: user.id,
+        businessName: "Test Business (Demo)",
+        contactName: name,
+        email,
+        status: "active",
+      });
+
+      // Create an active contract so the portal shows real content (repId: 0 = house/unassigned)
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setFullYear(endDate.getFullYear() + 1);
+      await db.createContract({
+        customerId,
+        repId: 0,
+        packageTier: "starter",
+        monthlyPrice: "199.00",
+        startDate,
+        endDate,
+        status: "active",
+        notes: "Test account — auto-created by admin",
+      });
+
+      return { email, password, name, userId: user.id, customerId, loginUrl: "/login", note: "Log in at /login — will land directly in /portal" };
     }),
 
   createTestRep: adminProcedure
@@ -5578,15 +5603,22 @@ const adminRouter = router({
     .mutation(async () => {
       const database = await getDb();
       if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
-      const { users: usersTable, reps: repsTable, onboardingProjects: projectsTable, aiChatLogs: logsTable } = await import("../drizzle/schema");
+      const { users: usersTable, reps: repsTable, onboardingProjects: projectsTable, aiChatLogs: logsTable, customers: customersTable, contracts: contractsTable } = await import("../drizzle/schema");
       const { like: likeFn, eq: eqFn } = await import("drizzle-orm");
       const testUsers = await database.select().from(usersTable).where(likeFn(usersTable.email, "%@minimorph-test.com"));
       for (const u of testUsers) {
+        // Clean up onboarding projects + chat logs
         const projects = await database.select({ id: projectsTable.id }).from(projectsTable).where(eqFn(projectsTable.userId, u.id));
         for (const p of projects) {
           await database.delete(logsTable).where(eqFn(logsTable.projectId, p.id));
         }
         await database.delete(projectsTable).where(eqFn(projectsTable.userId, u.id));
+        // Clean up customer record + its contracts
+        const custRows = await database.select({ id: customersTable.id }).from(customersTable).where(eqFn(customersTable.userId, u.id));
+        for (const c of custRows) {
+          await database.delete(contractsTable).where(eqFn(contractsTable.customerId, c.id));
+        }
+        await database.delete(customersTable).where(eqFn(customersTable.userId, u.id));
         await database.delete(repsTable).where(eqFn(repsTable.userId, u.id));
         await database.delete(usersTable).where(eqFn(usersTable.id, u.id));
       }
