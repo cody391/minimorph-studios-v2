@@ -5545,29 +5545,53 @@ const adminRouter = router({
       const user = await db.getUserByEmail(email);
       if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create test user" });
 
-      // Create a Customer record linked to this user so /portal works immediately
-      const { id: customerId } = await db.createCustomer({
-        userId: user.id,
-        businessName: "Test Business (Demo)",
-        contactName: name,
-        email,
-        status: "active",
-      });
+      // Create Customer + Contract atomically — clean up both if either fails
+      let customerId: number;
+      try {
+        const { id } = await db.createCustomer({
+          userId: user.id,
+          businessName: "Test Business (Demo)",
+          contactName: name,
+          email,
+          status: "active",
+        });
+        customerId = id;
+      } catch (err) {
+        console.error("[createTestCustomer] Customer insert failed:", err);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Couldn't create test customer record" });
+      }
 
-      // Create an active contract so the portal shows real content (repId: 0 = house/unassigned)
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setFullYear(endDate.getFullYear() + 1);
-      await db.createContract({
-        customerId,
-        repId: 0,
-        packageTier: "starter",
-        monthlyPrice: "199.00",
-        startDate,
-        endDate,
-        status: "active",
-        notes: "Test account — auto-created by admin",
-      });
+      try {
+        // Strip milliseconds — plain timestamp columns don't store fractional seconds
+        const startDate = new Date();
+        startDate.setMilliseconds(0);
+        const endDate = new Date(startDate);
+        endDate.setFullYear(endDate.getFullYear() + 1);
+        // Omit status/renewalStatus/websitePages — let DB defaults apply (same pattern as simulateCheckoutCompleted)
+        await db.createContract({
+          customerId,
+          repId: 0,
+          packageTier: "starter",
+          monthlyPrice: "199.00",
+          startDate,
+          endDate,
+          notes: "Test account - auto-created by admin",
+        });
+      } catch (err) {
+        console.error("[createTestCustomer] Contract insert failed (cause):", (err as any)?.cause ?? err);
+        // Roll back the customer row so we don't leave orphans
+        try {
+          const database = await getDb();
+          if (database) {
+            const { customers: cTable } = await import("../drizzle/schema");
+            const { eq: eqFn } = await import("drizzle-orm");
+            await database.delete(cTable).where(eqFn(cTable.id, customerId));
+          }
+        } catch (cleanupErr) {
+          console.error("[createTestCustomer] Cleanup also failed:", cleanupErr);
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Couldn't create test contract — customer row rolled back" });
+      }
 
       return { email, password, name, userId: user.id, customerId, loginUrl: "/login", note: "Log in at /login — will land directly in /portal" };
     }),
@@ -5581,7 +5605,7 @@ const adminRouter = router({
       const bcrypt = await import("bcryptjs");
       const hash = await bcrypt.hash(password, 10);
       const openId = `test_rep_${Date.now()}`;
-      await db.upsertUser({ openId, email, name, passwordHash: hash, loginMethod: "email", role: "user", lastSignedIn: new Date() });
+      await db.upsertUser({ openId, email, name, passwordHash: hash, loginMethod: "email_password", role: "user", lastSignedIn: new Date() });
       const user = await db.getUserByEmail(email);
       if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create test user" });
       const database = await getDb();

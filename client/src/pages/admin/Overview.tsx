@@ -488,8 +488,8 @@ function SystemHealthPanel() {
 function TestAccountsPanel() {
   const [result, setResult] = useState<any>(null);
 
-  const createCustomer = trpc.admin.createTestCustomer.useMutation({ onSuccess: setResult, onError: (e) => toast.error(e.message) });
-  const createRep = trpc.admin.createTestRep.useMutation({ onSuccess: setResult, onError: (e) => toast.error(e.message) });
+  const createCustomer = trpc.admin.createTestCustomer.useMutation({ onSuccess: setResult, onError: (e) => toast.error(e.message.startsWith("Failed query") ? "Couldn't create test account — check server logs" : e.message) });
+  const createRep = trpc.admin.createTestRep.useMutation({ onSuccess: setResult, onError: (e) => toast.error(e.message.startsWith("Failed query") ? "Couldn't create test rep — check server logs" : e.message) });
   const deleteAll = trpc.admin.deleteTestAccounts.useMutation({
     onSuccess: (d) => { setResult(null); toast.success(`Deleted ${d.deleted} test account${d.deleted !== 1 ? "s" : ""}`); },
     onError: (e) => toast.error(e.message),
