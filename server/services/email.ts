@@ -120,7 +120,8 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     };
     if (htmlContent) options.html = htmlContent;
     if (params.text) options.text = params.text;
-    if (params.replyTo) options.replyTo = params.replyTo;
+    // Default Reply-To for all mail — callers can override via params.replyTo
+    options.replyTo = params.replyTo || "hello@minimorphstudios.net";
     if (params.attachments?.length) options.attachments = params.attachments;
 
     const { data, error } = await resend.emails.send(options as any);
