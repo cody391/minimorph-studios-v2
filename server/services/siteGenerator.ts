@@ -667,7 +667,27 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
 
     // ── Questionnaire extraction ─────────────────────────────────────────────
     const q = questionnaire || {};
-    const websiteType = (q.websiteType as string) || "other";
+
+    // Warn and resolve fallbacks when questionnaire is sparse
+    const hasQuestionnaireData = !!(q.businessName || q.businessType || q.websiteType);
+    if (!hasQuestionnaireData) {
+      console.warn(
+        `[SiteGen] ⚠️ Project ${projectId} has no questionnaire data — generating with fallbacks.` +
+        ` businessName="${project.businessName}" contactName="${project.contactName}" email="${project.contactEmail}"`
+      );
+    }
+
+    // businessName: "Pending" is the placeholder from createSelfServiceProject — treat as missing
+    const resolvedBusinessName =
+      (project.businessName && project.businessName !== "Pending")
+        ? project.businessName
+        : ((q.businessName as string) || project.contactName || "Your Business");
+
+    const websiteType =
+      (q.websiteType as string) ||
+      (q.businessType as string) ||
+      (q.industry as string) ||
+      "other";
 
     // Build asset summary for prompt
     const assetSummary = assets.length > 0
@@ -712,9 +732,9 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     const mustHaveFeatures = mergedFeatures.join(", ") || "Standard";
 
     // ── New explicit contact/business fields (Fix 2 additions) ───────────────
-    const phone = (q.phone as string) || (q.phoneNumber as string) || "";
+    const phone = (q.phone as string) || (q.phoneNumber as string) || project.contactPhone || "";
     const email = (q.email as string) || project.contactEmail || "";
-    const address = (q.address as string) || (q.serviceArea as string) || "";
+    const address = (q.address as string) || (q.serviceArea as string) || (q.city ? `${q.city}${q.state ? `, ${q.state}` : ""}` : "") || "your area";
     const hours = (q.hours as string) || "";
     const licenseNumber = (q.licenseNumber as string) || "";
     const yearsInBusiness = (q.yearsInBusiness as string) || "";
@@ -744,7 +764,7 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     await db.updateOnboardingProject(projectId, {
       generationLog: "Phase 0: Researching competitive landscape...",
     });
-    const competitiveIntel = await researchCompetitors(websiteType, project.businessName);
+    const competitiveIntel = await researchCompetitors(websiteType, resolvedBusinessName);
     if (competitiveIntel) {
       recordCost({
         costType: "ai_generation",
@@ -854,7 +874,7 @@ Output ONLY raw HTML starting with <!DOCTYPE html> — no JSON, no markdown, no 
       .map((p) => (p === "index" ? "/" : `/${p}`))
       .join(", ");
 
-    const sharedContext = `BUSINESS: ${project.businessName}
+    const sharedContext = `BUSINESS: ${resolvedBusinessName}
 CONTACT: ${project.contactName} (${project.contactEmail})
 OWNER: ${ownerName}
 PACKAGE: ${project.packageTier}
@@ -907,7 +927,7 @@ ${assetSummary}`;
           : [];
 
         const brief = {
-          businessName: project.businessName,
+          businessName: resolvedBusinessName,
           businessType: websiteType,
           brandTone: brandTone,
           packageTier: project.packageTier,
@@ -1045,10 +1065,10 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
 
       // Guarantee footer, phone-in-nav, and contact form regardless of LLM output
       html = ensureRequiredStructure(html, {
-        businessName: project.businessName,
-        phone: (q.phone as string) || (q.phoneNumber as string) || "",
-        email: (q.email as string) || project.contactEmail || "",
-        address: (q.address as string) || (q.serviceArea as string) || "",
+        businessName: resolvedBusinessName,
+        phone,
+        email,
+        address,
       });
 
       pages[pageName] = html;
@@ -1111,7 +1131,7 @@ Remember: output ONLY raw HTML starting with <!DOCTYPE html>.`,
         pages[pageName] = injectPremiumFeatures(
           pages[pageName],
           pageName,
-          project.businessName,
+          resolvedBusinessName,
           primaryColor,
           phone,
           email,
@@ -1178,7 +1198,7 @@ ${Object.keys(pages)
     }
 
     // Store the cloudflare project name so siteDeployment can reuse it
-    const cfProjectName = getProjectName(project.businessName, projectId);
+    const cfProjectName = getProjectName(resolvedBusinessName, projectId);
 
     await db.updateOnboardingProject(projectId, {
       generationStatus: "complete",
@@ -1258,7 +1278,7 @@ ${Object.keys(pages)
       await sendPreviewReadyEmail({
         to: project.contactEmail,
         customerName: project.contactName,
-        businessName: project.businessName,
+        businessName: resolvedBusinessName,
         pageNames: Object.keys(pages),
         portalUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal`,
         revisionsRemaining,
@@ -1272,7 +1292,7 @@ ${Object.keys(pages)
       const { notifyOwner } = await import("../_core/notification");
       await notifyOwner({
         title: "Site Preview Ready for QA",
-        content: `${project.businessName} (#${projectId}) site preview is ready. Pages: ${Object.keys(pages).join(", ")}. Awaiting customer review.`,
+        content: `${resolvedBusinessName} (#${projectId}) site preview is ready. Pages: ${Object.keys(pages).join(", ")}. Awaiting customer review.`,
       });
     } catch {}
 
@@ -1287,7 +1307,7 @@ ${Object.keys(pages)
           projectId,
           email: project.contactEmail,
           contactName: project.contactName,
-          businessName: project.businessName,
+          businessName: resolvedBusinessName,
           businessType: (q.industry as string) || websiteType,
           phone: (q.phone as string) || (q.phoneNumber as string) || project.contactPhone || "",
           address: (q.address as string) || (q.serviceArea as string) || "",
@@ -1332,7 +1352,7 @@ ${Object.keys(pages)
             customerId: project.customerId,
             projectId,
             siteUrl: project.generatedSiteUrl || `https://${cfProjectName}.pages.dev`,
-            businessName: project.businessName || "",
+            businessName: resolvedBusinessName,
             businessType: (q.industry as string) || websiteType || "",
             industry: (q.industry as string) || websiteType || "",
             state: (q.state as string) || "",

@@ -439,22 +439,38 @@ export default function OnboardingProjects() {
                     </Select>
 
                     {/* Trigger generation */}
-                    {project.generationStatus !== "complete" && project.generationStatus !== "generating" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleTriggerGeneration(project.id)}
-                        disabled={triggerGenerationMutation.isPending}
-                        className="border-purple-400 text-purple-600 hover:bg-purple-50 h-8"
-                      >
-                        {triggerGenerationMutation.isPending ? (
-                          <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                        ) : (
-                          <Zap className="w-3 h-3 mr-1" />
-                        )}
-                        Generate
-                      </Button>
-                    )}
+                    {project.generationStatus !== "complete" && project.generationStatus !== "generating" && (() => {
+                      const pq = (project.questionnaire as Record<string, unknown>) || {};
+                      const hasData = !!(pq.businessName || pq.businessType || pq.websiteType) ||
+                        (!!project.businessName && project.businessName !== "Pending");
+                      if (!hasData) {
+                        return (
+                          <span
+                            title="No questionnaire data — customer must complete Elena chat first"
+                            className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-300 rounded px-2 py-1 cursor-not-allowed"
+                          >
+                            <AlertTriangle className="w-3 h-3" />
+                            No data
+                          </span>
+                        );
+                      }
+                      return (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleTriggerGeneration(project.id)}
+                          disabled={triggerGenerationMutation.isPending}
+                          className="border-purple-400 text-purple-600 hover:bg-purple-50 h-8"
+                        >
+                          {triggerGenerationMutation.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                          ) : (
+                            <Zap className="w-3 h-3 mr-1" />
+                          )}
+                          Generate
+                        </Button>
+                      );
+                    })()}
 
                     {/* Re-generate (when already complete) */}
                     {project.generationStatus === "complete" && (
