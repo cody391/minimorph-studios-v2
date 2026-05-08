@@ -160,7 +160,7 @@ export default function GetStarted() {
     enabled: !!user && !authLoading,
   });
 
-  // Resume existing project if the user is already logged in
+  // Logged-in users always skip email capture and go straight to Elena chat
   useEffect(() => {
     if (authLoading || stage !== "capture") return;
     if (!user) return;
@@ -175,25 +175,18 @@ export default function GetStarted() {
         hasSentInit.current = true;
       }
       setStage("chat");
+    } else {
+      // No existing project — auto-create and skip email capture for any logged-in user
+      setStage("creating");
+      createProjectMutation.mutateAsync()
+        .then(({ projectId: newId }) => {
+          setProjectId(newId);
+          setStage("chat");
+        })
+        .catch(() => setStage("capture"));
     }
-  }, [user, authLoading, selfServiceProjectQuery.isLoading, selfServiceProjectQuery.data, stage]);
-
-  // DEV_MODE: auto-create project and skip email capture when logged in with no existing project
-  useEffect(() => {
-    if (!DEV_MODE) return;
-    if (authLoading || stage !== "capture") return;
-    if (!user) return;
-    if (selfServiceProjectQuery.isLoading) return;
-    if (selfServiceProjectQuery.data?.id) return; // existing project handled by resume effect above
-    setStage("creating");
-    createProjectMutation.mutateAsync()
-      .then(({ projectId: newId }) => {
-        setProjectId(newId);
-        setStage("chat");
-      })
-      .catch(() => setStage("capture"));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, selfServiceProjectQuery.isLoading, selfServiceProjectQuery.data?.id, stage]);
+  }, [user, authLoading, selfServiceProjectQuery.isLoading, selfServiceProjectQuery.data, stage]);
 
   const sendMessage = useCallback(
     async (text: string) => {
