@@ -302,6 +302,22 @@ export async function repairSchema(): Promise<void> {
     // ── Columns from Agent 3 (addon orchestrator results) ─────────────────
     await safe("ALTER TABLE `customers` ADD COLUMN `addonSetupResults` json DEFAULT NULL");
     await safe("ALTER TABLE `customers` ADD COLUMN `addonSetupCompletedAt` timestamp NULL");
+    await safe("ALTER TABLE `customers` ADD COLUMN `bookingHours` json DEFAULT NULL");
+
+    // ── Launch checklist table ────────────────────────────────────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`launch_checklist\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`customerId\` int NOT NULL,
+      \`addonKey\` varchar(64) NOT NULL,
+      \`title\` varchar(255) NOT NULL,
+      \`description\` text,
+      \`instructions\` text,
+      \`actionUrl\` varchar(512),
+      \`actionLabel\` varchar(128),
+      \`status\` varchar(32) NOT NULL DEFAULT 'pending',
+      \`completedAt\` timestamp NULL,
+      \`createdAt\` timestamp NOT NULL DEFAULT (now())
+    )`);
 
     await safe("ALTER TABLE `contracts` ADD COLUMN `originalPriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `effectivePriceCents` int DEFAULT NULL");

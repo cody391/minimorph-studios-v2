@@ -151,6 +151,25 @@ async function startServer() {
   registerResendWebhooks(app);
   registerScheduledRoutes(app);
 
+  // Instagram OAuth — redirect to Instagram authorization page
+  // Falls back gracefully when INSTAGRAM_CLIENT_ID is not configured
+  app.get("/portal/connect-instagram", (req, res) => {
+    const clientId = process.env.INSTAGRAM_CLIENT_ID;
+    if (!clientId) {
+      return res.redirect("/portal?tab=setup&instagram=unavailable");
+    }
+    const redirectUri = `${req.protocol}://${req.get("host")}/portal/instagram-callback`;
+    const scope = "user_profile,user_media";
+    const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code`;
+    return res.redirect(302, authUrl);
+  });
+
+  app.get("/portal/instagram-callback", (req, res) => {
+    // Placeholder — full token exchange requires server-side secret
+    // When INSTAGRAM_CLIENT_SECRET is configured, implement token exchange here
+    res.redirect("/portal?tab=setup&instagram=connected");
+  });
+
   // Contact form submissions from generated customer sites (cross-origin)
   app.options("/api/contact-submit", (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");

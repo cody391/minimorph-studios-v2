@@ -19,7 +19,7 @@ import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
 import { devAccessRouter } from "./devAccessRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
-import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users } from "../drizzle/schema";
+import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users, launchChecklist } from "../drizzle/schema";
 import { getDb } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
@@ -1171,6 +1171,57 @@ const customersRouter = router({
         lastEconomicsUpdate: customer?.lastEconomicsUpdate ?? null,
         costs: costs ?? [],
       };
+    }),
+
+  // Launch checklist for the logged-in customer
+  getChecklist: protectedProcedure.query(async ({ ctx }) => {
+    const database = await getDb();
+    if (!database) return [];
+    const custRows = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+    const customer = custRows[0];
+    if (!customer) return [];
+    return database
+      .select()
+      .from(launchChecklist)
+      .where(eq(launchChecklist.customerId, customer.id))
+      .orderBy(launchChecklist.createdAt);
+  }),
+
+  // Mark a checklist item complete (must belong to the logged-in customer)
+  completeChecklistItem: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await getDb();
+      if (!database) return { success: false };
+      const custRows = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+      const customer = custRows[0];
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND" });
+      const item = await database.select().from(launchChecklist).where(and(eq(launchChecklist.id, input.id), eq(launchChecklist.customerId, customer.id))).limit(1);
+      if (!item[0]) throw new TRPCError({ code: "NOT_FOUND" });
+      await database.update(launchChecklist).set({ status: "completed", completedAt: new Date() }).where(eq(launchChecklist.id, input.id));
+      return { success: true };
+    }),
+
+  // Save booking availability hours (stored as JSON on the customer row)
+  setBookingHours: protectedProcedure
+    .input(z.object({
+      hours: z.array(z.object({
+        day: z.enum(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]),
+        enabled: z.boolean(),
+        start: z.string(),
+        end: z.string(),
+      })),
+      appointmentDuration: z.number().min(15).max(240).optional(),
+      bufferTime: z.number().min(0).max(60).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await getDb();
+      if (!database) return { success: false };
+      const custRows = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
+      const customer = custRows[0];
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND" });
+      await database.update(customers).set({ bookingHours: input as any }).where(eq(customers.id, customer.id));
+      return { success: true };
     }),
 });
 

@@ -11,6 +11,7 @@ import {
   Calendar, TrendingUp, Eye, Users as UsersIcon,
   Clock, CheckCircle, AlertCircle, Shield, Rocket,
   Gift, Send, Mail, MessageSquare, Download, X,
+  ListChecks, ChevronDown, ChevronUp, Link as LinkIcon,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -99,6 +100,24 @@ export default function CustomerPortal() {
     undefined,
     { enabled: isAuthenticated, refetchInterval: false }
   );
+
+  const { data: checklist } = trpc.customers.getChecklist.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
+  const pendingChecklistItems = (checklist ?? []).filter((item: any) => item.status !== "completed");
+
+  // Auto-select "setup" tab when there are pending checklist items and user hasn't navigated yet
+  useEffect(() => {
+    const tabFromUrl = new URLSearchParams(window.location.search).get("tab");
+    if (tabFromUrl) {
+      setActiveTab(tabFromUrl);
+    } else if (pendingChecklistItems.length > 0 && activeTab === "overview") {
+      setActiveTab("setup");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingChecklistItems.length]);
 
   const activeContract = contracts?.find((c: any) => c.status === "active" || c.status === "expiring_soon");
   const pendingPaymentContract = contracts?.find((c: any) => c.status === "pending_payment");
@@ -203,6 +222,15 @@ export default function CustomerPortal() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 sm:mb-8">
           <TabsList className="bg-midnight-dark/30 rounded-full p-1 w-max sm:w-auto">
+            <TabsTrigger value="setup" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4 relative">
+              <ListChecks className="h-3 w-3 mr-1" />
+              Setup
+              {pendingChecklistItems.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-black text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {pendingChecklistItems.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="overview" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Overview</TabsTrigger>
             <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Reports</TabsTrigger>
             <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Support</TabsTrigger>
@@ -216,6 +244,11 @@ export default function CustomerPortal() {
             </TabsTrigger>
           </TabsList>
           </div>
+
+          {/* SETUP TAB */}
+          <TabsContent value="setup" className="space-y-6">
+            <LaunchChecklistTab customerId={customer.id} checklist={checklist ?? []} />
+          </TabsContent>
 
           {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-6">
@@ -1711,6 +1744,290 @@ function ReferralsTab() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAUNCH CHECKLIST TAB — Setup steps + booking hours
+   ═══════════════════════════════════════════════════════ */
+const DAYS = [
+  { key: "mon", label: "Monday" },
+  { key: "tue", label: "Tuesday" },
+  { key: "wed", label: "Wednesday" },
+  { key: "thu", label: "Thursday" },
+  { key: "fri", label: "Friday" },
+  { key: "sat", label: "Saturday" },
+  { key: "sun", label: "Sunday" },
+] as const;
+
+type DayKey = typeof DAYS[number]["key"];
+
+function LaunchChecklistTab({ customerId, checklist }: { customerId: number; checklist: any[] }) {
+  const utils = trpc.useUtils();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const completeItem = trpc.customers.completeChecklistItem.useMutation({
+    onSuccess: () => {
+      toast.success("Step marked complete!");
+      utils.customers.getChecklist.invalidate();
+    },
+    onError: (err) => toast.error(err.message || "Failed to mark complete."),
+  });
+
+  const completed = checklist.filter((i: any) => i.status === "completed");
+  const pending = checklist.filter((i: any) => i.status !== "completed");
+  const total = checklist.length;
+  const pct = total > 0 ? Math.round((completed.length / total) * 100) : 100;
+
+  // Booking hours state
+  const [bookingHours, setBookingHours] = useState<Record<DayKey, { enabled: boolean; start: string; end: string }>>({
+    mon: { enabled: true, start: "09:00", end: "17:00" },
+    tue: { enabled: true, start: "09:00", end: "17:00" },
+    wed: { enabled: true, start: "09:00", end: "17:00" },
+    thu: { enabled: true, start: "09:00", end: "17:00" },
+    fri: { enabled: true, start: "09:00", end: "17:00" },
+    sat: { enabled: false, start: "10:00", end: "14:00" },
+    sun: { enabled: false, start: "10:00", end: "14:00" },
+  });
+  const [apptDuration, setApptDuration] = useState(60);
+  const [bufferTime, setBufferTime] = useState(15);
+
+  const setBookingHoursMutation = trpc.customers.setBookingHours.useMutation({
+    onSuccess: () => toast.success("Availability saved!"),
+    onError: (err) => toast.error(err.message || "Failed to save availability."),
+  });
+
+  const saveBookingHours = () => {
+    setBookingHoursMutation.mutate({
+      hours: DAYS.map(d => ({ day: d.key, ...bookingHours[d.key] })),
+      appointmentDuration: apptDuration,
+      bufferTime,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Progress header */}
+      <Card className="border-border/50">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-base font-serif text-off-white">Launch Setup</h3>
+              <p className="text-xs text-soft-gray font-sans mt-0.5">
+                {pending.length === 0
+                  ? "All steps complete — your site is fully configured!"
+                  : `${pending.length} step${pending.length !== 1 ? "s" : ""} remaining`}
+              </p>
+            </div>
+            <span className="text-2xl font-serif text-electric">{pct}%</span>
+          </div>
+          <Progress value={pct} className="h-2" />
+        </CardContent>
+      </Card>
+
+      {/* Pending steps */}
+      {pending.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-xs text-soft-gray/60 font-sans uppercase tracking-wide">Needs Your Attention</h4>
+          {pending.map((item: any) => (
+            <ChecklistItemCard
+              key={item.id}
+              item={item}
+              expanded={expandedId === item.id}
+              onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+              onComplete={() => completeItem.mutate({ id: item.id })}
+              completing={completeItem.isPending}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Completed steps */}
+      {completed.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-xs text-soft-gray/60 font-sans uppercase tracking-wide">Completed</h4>
+          {completed.map((item: any) => (
+            <ChecklistItemCard
+              key={item.id}
+              item={item}
+              expanded={expandedId === item.id}
+              onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+              onComplete={() => {}}
+              completing={false}
+            />
+          ))}
+        </div>
+      )}
+
+      {checklist.length === 0 && (
+        <Card className="border-border/50">
+          <CardContent className="py-16 text-center">
+            <CheckCircle className="h-10 w-10 text-emerald-500/40 mx-auto mb-3" />
+            <p className="text-sm text-soft-gray font-sans">No setup steps yet.</p>
+            <p className="text-xs text-soft-gray/40 font-sans mt-1">Steps will appear here when your site is being built.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Booking Hours */}
+      <Card className="border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-serif text-off-white flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-electric" />
+            Booking Availability
+          </CardTitle>
+          <p className="text-xs text-soft-gray font-sans mt-1">
+            Set your weekly availability so customers can book appointments through your site.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            {DAYS.map(d => (
+              <div key={d.key} className="flex items-center gap-3 py-1.5">
+                <button
+                  onClick={() => setBookingHours(prev => ({ ...prev, [d.key]: { ...prev[d.key], enabled: !prev[d.key].enabled } }))}
+                  className={`w-10 h-5 rounded-full transition-colors ${bookingHours[d.key].enabled ? "bg-electric" : "bg-graphite border border-border/50"} relative flex-shrink-0`}
+                >
+                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${bookingHours[d.key].enabled ? "translate-x-5" : "translate-x-0.5"}`} />
+                </button>
+                <span className={`text-sm font-sans w-24 ${bookingHours[d.key].enabled ? "text-off-white" : "text-soft-gray/40"}`}>{d.label}</span>
+                {bookingHours[d.key].enabled && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={bookingHours[d.key].start}
+                      onChange={e => setBookingHours(prev => ({ ...prev, [d.key]: { ...prev[d.key], start: e.target.value } }))}
+                      className="text-xs font-sans rounded border border-border/40 bg-graphite text-off-white px-2 py-1 focus:outline-none focus:ring-1 focus:ring-electric/40"
+                    />
+                    <span className="text-xs text-soft-gray/40">–</span>
+                    <input
+                      type="time"
+                      value={bookingHours[d.key].end}
+                      onChange={e => setBookingHours(prev => ({ ...prev, [d.key]: { ...prev[d.key], end: e.target.value } }))}
+                      className="text-xs font-sans rounded border border-border/40 bg-graphite text-off-white px-2 py-1 focus:outline-none focus:ring-1 focus:ring-electric/40"
+                    />
+                  </div>
+                )}
+                {!bookingHours[d.key].enabled && (
+                  <span className="text-xs text-soft-gray/40 font-sans">Closed</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/20">
+            <div>
+              <label className="text-xs text-soft-gray font-sans block mb-1.5">Appointment Duration</label>
+              <select
+                value={apptDuration}
+                onChange={e => setApptDuration(Number(e.target.value))}
+                className="w-full text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-electric/40"
+              >
+                {[15, 30, 45, 60, 90, 120].map(m => (
+                  <option key={m} value={m}>{m} min</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-soft-gray font-sans block mb-1.5">Buffer Between Appointments</label>
+              <select
+                value={bufferTime}
+                onChange={e => setBufferTime(Number(e.target.value))}
+                className="w-full text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-electric/40"
+              >
+                {[0, 5, 10, 15, 30].map(m => (
+                  <option key={m} value={m}>{m === 0 ? "None" : `${m} min`}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <Button
+            onClick={saveBookingHours}
+            disabled={setBookingHoursMutation.isPending}
+            className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-6 text-sm"
+          >
+            {setBookingHoursMutation.isPending ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-spin w-3 h-3 border-2 border-midnight border-t-transparent rounded-full" />
+                Saving...
+              </span>
+            ) : "Save Availability"}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ChecklistItemCard({
+  item,
+  expanded,
+  onToggle,
+  onComplete,
+  completing,
+}: {
+  item: any;
+  expanded: boolean;
+  onToggle: () => void;
+  onComplete: () => void;
+  completing: boolean;
+}) {
+  const done = item.status === "completed";
+  return (
+    <div className={`rounded-xl border transition-colors ${done ? "border-emerald-500/20 bg-emerald-500/5" : "border-amber-500/30 bg-amber-500/5"}`}>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-4 text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${done ? "border-emerald-500 bg-emerald-500" : "border-amber-500"}`}>
+            {done && <CheckCircle className="h-3.5 w-3.5 text-white" />}
+          </div>
+          <div>
+            <p className={`text-sm font-medium font-sans ${done ? "text-emerald-400 line-through" : "text-off-white"}`}>{item.title}</p>
+            {item.description && <p className="text-xs text-soft-gray/60 font-sans mt-0.5">{item.description}</p>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {done && item.completedAt && (
+            <span className="text-[10px] text-soft-gray/40 font-sans">{new Date(item.completedAt).toLocaleDateString()}</span>
+          )}
+          {expanded ? <ChevronUp className="h-4 w-4 text-soft-gray/40" /> : <ChevronDown className="h-4 w-4 text-soft-gray/40" />}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4 border-t border-border/20 pt-3 space-y-3">
+          {item.instructions && (
+            <p className="text-xs text-soft-gray font-sans leading-relaxed whitespace-pre-wrap">{item.instructions}</p>
+          )}
+          <div className="flex items-center gap-3">
+            {item.actionUrl && item.actionLabel && (
+              <a
+                href={item.actionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-sans text-electric hover:text-electric-light font-medium"
+              >
+                <LinkIcon className="h-3.5 w-3.5" />
+                {item.actionLabel}
+              </a>
+            )}
+            {!done && (
+              <Button
+                size="sm"
+                disabled={completing}
+                onClick={onComplete}
+                className="ml-auto bg-emerald-600 hover:bg-emerald-500 text-white font-sans text-xs rounded-full px-4"
+              >
+                {completing ? "Marking..." : "Mark Complete"}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

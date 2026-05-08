@@ -149,12 +149,33 @@ export const customers = mysqlTable("customers", {
   nurtureAddonsSent: json("nurtureAddonsSent"),
   addonSetupResults: json("addonSetupResults"),
   addonSetupCompletedAt: timestamp("addonSetupCompletedAt"),
+  bookingHours: json("bookingHours"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = typeof customers.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   LAUNCH_CHECKLIST — Post-setup action items for customers
+   ═══════════════════════════════════════════════════════ */
+export const launchChecklist = mysqlTable("launch_checklist", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  addonKey: varchar("addonKey", { length: 64 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  instructions: text("instructions"),
+  actionUrl: varchar("actionUrl", { length: 512 }),
+  actionLabel: varchar("actionLabel", { length: 128 }),
+  status: varchar("status", { length: 32 }).default("pending").notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LaunchChecklistItem = typeof launchChecklist.$inferSelect;
+export type InsertLaunchChecklistItem = typeof launchChecklist.$inferInsert;
 
 /* ═══════════════════════════════════════════════════════
    CONTRACTS — 12-month service agreements
