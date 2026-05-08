@@ -1277,6 +1277,44 @@ ${Object.keys(pages)
     } catch {}
 
     console.log(`[SiteGenerator] Project ${projectId} generated successfully. Pages: ${Object.keys(pages).join(", ")}`);
+
+    // Fire addon orchestrator (fire-and-forget — does not block or affect site delivery)
+    if (project.customerId) {
+      try {
+        const { runAddonOrchestrator } = await import("./addonOrchestrator");
+        const addonCtx = {
+          customerId: project.customerId,
+          projectId,
+          email: project.contactEmail,
+          contactName: project.contactName,
+          businessName: project.businessName,
+          businessType: (q.industry as string) || websiteType,
+          phone: (q.phone as string) || (q.phoneNumber as string) || project.contactPhone || "",
+          address: (q.address as string) || (q.serviceArea as string) || "",
+          city: (q.city as string) || "",
+          state: (q.state as string) || "",
+          hours: (q.hours as string) || "",
+          domain: project.domainName || project.existingDomain || "",
+          siteUrl: project.generatedSiteUrl || `https://${cfProjectName}.pages.dev`,
+          googleBusinessUrl: (q.googleBusinessUrl as string) || undefined,
+          instagramHandle: (q.instagramHandle as string) || (q.instagram as string) || undefined,
+          facebookHandle: (q.facebookHandle as string) || (q.facebook as string) || undefined,
+          services: Array.isArray(q.services)
+            ? (q.services as string[])
+            : typeof q.services === "string"
+              ? [q.services as string]
+              : [],
+          packageTier: project.packageTier,
+          purchasedAddons: addonsSelectedRaw.map((a: any) =>
+            (a.product || "").toLowerCase().replace(/\s+/g, "_"),
+          ),
+          questionnaire: q as Record<string, any>,
+        };
+        runAddonOrchestrator(addonCtx).catch((e: Error) => {
+          console.error("[SiteGen] Addon orchestration failed:", e.message);
+        });
+      } catch {}
+    }
   } catch (err) {
     console.error(`[SiteGenerator] Project ${projectId} generation failed:`, err);
     await db.updateOnboardingProject(projectId, {

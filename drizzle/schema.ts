@@ -147,6 +147,8 @@ export const customers = mysqlTable("customers", {
   nurtureMonth: int("nurtureMonth").default(0).notNull(),
   lastNurtureEmailAt: timestamp("lastNurtureEmailAt"),
   nurtureAddonsSent: json("nurtureAddonsSent"),
+  addonSetupResults: json("addonSetupResults"),
+  addonSetupCompletedAt: timestamp("addonSetupCompletedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -299,6 +299,10 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `customers` ADD COLUMN `lastNurtureEmailAt` timestamp NULL");
     await safe("ALTER TABLE `customers` ADD COLUMN `nurtureAddonsSent` json DEFAULT NULL");
 
+    // ── Columns from Agent 3 (addon orchestrator results) ─────────────────
+    await safe("ALTER TABLE `customers` ADD COLUMN `addonSetupResults` json DEFAULT NULL");
+    await safe("ALTER TABLE `customers` ADD COLUMN `addonSetupCompletedAt` timestamp NULL");
+
     await safe("ALTER TABLE `contracts` ADD COLUMN `originalPriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `effectivePriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `contractDiscountPercent` decimal(5,2) DEFAULT NULL");
