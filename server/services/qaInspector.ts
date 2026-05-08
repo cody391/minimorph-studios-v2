@@ -455,6 +455,10 @@ async function checkSecurity(ctx: QAContext, reporter: BuildReporter): Promise<Q
 /* ── Layer 5: Regulatory ───────────────────────────────────────────────── */
 async function checkRegulatory(ctx: QAContext, reporter: BuildReporter, db: any): Promise<QAIssue[]> {
   const issues: QAIssue[] = [];
+  if (!db) {
+    await reporter.warn("qa_layer5", "No DB available for regulatory checks — skipping");
+    return issues;
+  }
   try {
     const { regulatoryRules } = await import("../../drizzle/schema");
     const { or, eq } = await import("drizzle-orm");

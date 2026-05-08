@@ -42,6 +42,37 @@ interface OrchestrationContext {
   deployedSiteHtml?: string;
 }
 
+/* ─── Context builder (exported for testing) ───────────────────────────── */
+export function buildOrchestrationContext(
+  customer: { id: number; email: string; contactName?: string; businessName?: string; phone?: string; packageTier?: string; status?: string },
+  project: { id: number; customerId?: number; questionnaire?: Record<string, any> }
+): OrchestrationContext {
+  const q = (project.questionnaire ?? {}) as Record<string, any>;
+  const addonsRaw: any[] = Array.isArray(q.addonsSelected) ? q.addonsSelected : [];
+  return {
+    customerId: customer.id,
+    projectId: project.id,
+    email: customer.email,
+    contactName: customer.contactName ?? "",
+    businessName: customer.businessName ?? "",
+    businessType: (q.businessType as string) || (q.industry as string) || "",
+    phone: customer.phone ?? (q.phone as string) ?? "",
+    address: (q.address as string) ?? "",
+    city: (q.city as string) ?? "",
+    state: (q.state as string) ?? "",
+    hours: (q.hours as string) ?? "",
+    domain: (q.domain as string) ?? "",
+    siteUrl: (q.siteUrl as string) ?? "",
+    googleBusinessUrl: (q.googleBusinessUrl as string) ?? undefined,
+    instagramHandle: (q.instagramHandle as string) ?? undefined,
+    facebookHandle: (q.facebookHandle as string) ?? undefined,
+    services: Array.isArray(q.services) ? (q.services as string[]) : typeof q.services === "string" ? [q.services as string] : [],
+    packageTier: customer.packageTier ?? "starter",
+    purchasedAddons: addonsRaw.map((a: any) => (a.product || "").toLowerCase().replace(/\s+/g, "_")).filter(Boolean),
+    questionnaire: q,
+  };
+}
+
 /* ─── Checklist builder ─────────────────────────────────────────────────── */
 
 async function createChecklistItem(
