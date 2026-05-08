@@ -38,15 +38,34 @@ export async function sendWelcomeEmail(params: {
   customerName: string;
   packageTier: PackageKey;
   businessName?: string;
+  /** Plaintext temp password — include only at account-creation time, never log */
+  tempPassword?: string;
+  portalUrl?: string;
 }) {
   const pkg = PACKAGES[params.packageTier];
+  const portalUrl = params.portalUrl || "https://minimorphstudios.net/portal";
+
+  const credentialBlock = params.tempPassword ? `
+    <div style="margin:24px 0;padding:20px;background:#1a2a1a;border-radius:8px;border-left:4px solid #22c55e;">
+      <p style="margin:0 0 10px;font-size:15px;color:#eaeaf0;font-weight:600;">Your login credentials</p>
+      <p style="margin:4px 0;font-size:14px;color:#c8c8d8;">Email: <strong style="color:#eaeaf0;">${params.to}</strong></p>
+      <p style="margin:4px 0;font-size:14px;color:#c8c8d8;">Temporary password: <strong style="color:#eaeaf0;font-family:monospace;font-size:16px;letter-spacing:1px;">${params.tempPassword}</strong></p>
+      <p style="margin:12px 0 0;font-size:12px;color:#7a7a90;">Log in and change your password from your portal account settings.</p>
+    </div>
+    <div style="text-align:center;margin:20px 0;">
+      <a href="${portalUrl}" style="display:inline-block;padding:14px 32px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;">
+        Log In to Your Portal →
+      </a>
+    </div>` : "";
+
   const html = brandWrap(`
     <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Welcome to MiniMorph Studios!</h2>
     <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
     <p style="margin:0 0 16px;color:#c8c8d8;">
-      Thank you for choosing the <strong style="color:#eaeaf0;">${pkg.name}</strong> plan${params.businessName ? ` for ${params.businessName}` : ""}. 
+      Thank you for choosing the <strong style="color:#eaeaf0;">${pkg.name}</strong> plan${params.businessName ? ` for ${params.businessName}` : ""}.
       We're excited to start building your new website.
     </p>
+    ${credentialBlock}
     <h3 style="color:#4a9eff;margin:24px 0 12px;font-size:18px;">What Happens Next</h3>
     <table style="width:100%;border-collapse:collapse;">
       <tr>
@@ -101,6 +120,44 @@ export async function sendWelcomeEmail(params: {
   return sendEmail({
     to: params.to,
     subject: `Welcome to MiniMorph Studios — Let's build your website!`,
+    html,
+    transactional: true,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   1b. STANDALONE CREDENTIAL EMAIL
+   Sent on-demand when the customer clicks "Email me a copy"
+   ═══════════════════════════════════════════════════════ */
+export async function sendCredentialEmail(params: {
+  to: string;
+  name: string;
+  tempPassword: string;
+  portalUrl?: string;
+}) {
+  const portalUrl = params.portalUrl || "https://minimorphstudios.net/portal";
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Your MiniMorph Login Details</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.name},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      Here are your portal login credentials. Keep this email somewhere safe.
+    </p>
+    <div style="margin:24px 0;padding:20px;background:#1a2a1a;border-radius:8px;border-left:4px solid #22c55e;">
+      <p style="margin:0 0 10px;font-size:15px;color:#eaeaf0;font-weight:600;">Your login credentials</p>
+      <p style="margin:4px 0;font-size:14px;color:#c8c8d8;">Email: <strong style="color:#eaeaf0;">${params.to}</strong></p>
+      <p style="margin:4px 0;font-size:14px;color:#c8c8d8;">Temporary password: <strong style="color:#eaeaf0;font-family:monospace;font-size:16px;letter-spacing:1px;">${params.tempPassword}</strong></p>
+      <p style="margin:12px 0 0;font-size:12px;color:#7a7a90;">You can change your password from your account settings after logging in.</p>
+    </div>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${portalUrl}" style="display:inline-block;padding:14px 32px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;">
+        Log In to Your Portal →
+      </a>
+    </div>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: "Your MiniMorph Studios login details",
     html,
     transactional: true,
   });

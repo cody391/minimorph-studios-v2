@@ -15,8 +15,8 @@ export default function CheckoutSuccess() {
           Payment Successful!
         </h1>
         <p className="text-soft-gray font-sans text-lg leading-relaxed mb-8">
-          Thank you for choosing MiniMorph Studios. Your website project is now being set up. 
-          Our team will reach out within 24 hours to begin the onboarding process.
+          Thank you for choosing MiniMorph Studios. Your website project is now being set up.
+          Check your inbox — we've sent your portal login credentials and a welcome guide.
         </p>
         <div className="bg-graphite/80 rounded-2xl p-6 border border-electric/10 mb-8">
           <div className="flex items-center gap-3 mb-3">
@@ -26,7 +26,7 @@ export default function CheckoutSuccess() {
           <ol className="text-left text-soft-gray font-sans text-sm space-y-2">
             <li className="flex gap-2">
               <span className="font-medium text-off-white">1.</span>
-              You'll receive a confirmation email with your order details
+              Check your email for your portal login details and welcome guide
             </li>
             <li className="flex gap-2">
               <span className="font-medium text-off-white">2.</span>

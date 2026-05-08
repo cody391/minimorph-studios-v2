@@ -305,16 +305,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     }
   }
 
-  // ── 7. Send welcome email ──────────────────────────────────────────
+  // ── 7. Send welcome email (with credentials if available) ─────────
   try {
     if (customerEmail) {
+      const tempPw = session.metadata?.temp_password || undefined;
+      const origin = ENV.appUrl || "https://minimorphstudios.net";
       await sendWelcomeEmail({
         to: customerEmail,
         customerName,
         packageTier,
         businessName: businessName || undefined,
+        tempPassword: tempPw,
+        portalUrl: `${origin}/portal`,
       });
-      console.log(`[Stripe] Welcome email sent to ${customerEmail}`);
+      // Log recipient and whether credentials were included — never log the password itself
+      console.log(`[Stripe] Welcome email queued — recipient=${customerEmail}, credentials=${tempPw ? "included" : "omitted"}`);
     }
   } catch (emailErr) {
     console.error("[Stripe] Failed to send welcome email:", emailErr);

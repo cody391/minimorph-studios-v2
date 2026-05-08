@@ -2798,7 +2798,7 @@ const onboardingRouter = router({
   // Protected: create Stripe checkout after Elena finishes (new payment-last flow)
   // Customer pays after talking to Elena — addons are included in the session
   createCheckoutAfterElena: protectedProcedure
-    .input(z.object({ projectId: z.number(), couponCode: z.string().optional() }))
+    .input(z.object({ projectId: z.number(), couponCode: z.string().optional(), tempPassword: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
       const project = await db.getOnboardingProjectById(input.projectId);
@@ -2889,6 +2889,7 @@ const onboardingRouter = router({
           package_tier: packageTier,
           business_name: project.businessName !== "Pending" ? project.businessName || "" : ((q.businessName as string) || ""),
           source: "self_service",
+          ...(input.tempPassword ? { temp_password: input.tempPassword } : {}),
         };
       }
 
@@ -5793,6 +5794,21 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    resendCredentialEmail: protectedProcedure
+      .input(z.object({ tempPassword: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.email) throw new TRPCError({ code: "BAD_REQUEST", message: "No email on account" });
+        const { sendCredentialEmail } = await import("./services/customerEmails");
+        const origin = ctx.req.headers.origin || "https://minimorphstudios.net";
+        await sendCredentialEmail({
+          to: ctx.user.email,
+          name: ctx.user.name || ctx.user.email,
+          tempPassword: input.tempPassword,
+          portalUrl: `${origin}/portal`,
+        });
+        console.log(`[Auth] Credential email queued for user=${ctx.user.id}, email=${ctx.user.email}`);
+        return { success: true };
+      }),
   }),
   reps: repsRouter,
   leads: leadsRouter,

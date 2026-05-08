@@ -9,6 +9,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Loader2, Send, Upload, CheckCircle2, ArrowRight,
   Sparkles, CreditCard, Lock, Globe, Paperclip,
+  Copy, X, Mail,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 
@@ -122,6 +123,7 @@ export default function GetStarted() {
   const [email, setEmail] = useState("");
   const [projectId, setProjectId] = useState<number | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [credentialCardDismissed, setCredentialCardDismissed] = useState(false);
 
   // Email-capture sub-states
   const [captureSubState, setCaptureSubState] = useState<CaptureSubState>("email");
@@ -158,6 +160,7 @@ export default function GetStarted() {
   const saveProgressMutation = trpc.onboarding.saveProgress.useMutation();
   const createCheckoutMutation = trpc.onboarding.createCheckoutAfterElena.useMutation();
   const uploadAssetMutation = trpc.onboarding.uploadAsset.useMutation();
+  const resendCredentialMutation = trpc.auth.resendCredentialEmail.useMutation();
 
   // Check if the user already has an in-progress self-service project
   const selfServiceProjectQuery = trpc.onboarding.mySelfServiceProject.useQuery(undefined, {
@@ -362,11 +365,8 @@ export default function GetStarted() {
       // New account created — go straight to Elena
       const { projectId: newId } = await createProjectMutation.mutateAsync();
       setProjectId(newId);
+      setCredentialCardDismissed(false);
       setStage("chat");
-      toast.success(`Account created! Save your password: ${pw}`, {
-        duration: 12000,
-        description: "You can change it in your portal settings.",
-      });
     } catch (err: any) {
       const isConflict =
         err?.data?.code === "CONFLICT" ||
@@ -603,8 +603,8 @@ export default function GetStarted() {
           </div>
         </Link>
         <div className="flex items-center gap-3">
-          {tempPassword && (
-            <div className="hidden sm:flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-full px-3 py-1">
+          {tempPassword && !credentialCardDismissed && (
+            <div className="hidden sm:flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full px-3 py-1">
               <span className="text-xs text-amber-400">Save your password:</span>
               <code className="text-xs font-mono text-amber-300">{tempPassword}</code>
             </div>
@@ -655,6 +655,68 @@ export default function GetStarted() {
           {/* Messages + Suggestions */}
           <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+
+            {/* ── Persistent credential card ── */}
+            {tempPassword && !credentialCardDismissed && (
+              <div className="bg-[#0f1f0f] border border-green-500/30 rounded-2xl p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-semibold text-green-300">Account created — save your login details</p>
+                  <button
+                    onClick={() => setCredentialCardDismissed(true)}
+                    aria-label="Dismiss"
+                    className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-2 text-sm">
+                  <div className="flex items-center justify-between bg-[#1a2a1a] rounded-lg px-3 py-2">
+                    <span className="text-gray-400 text-xs">Email</span>
+                    <div className="flex items-center gap-2">
+                      <code className="text-green-200 text-xs">{user?.email ?? email}</code>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(user?.email ?? email); toast.success("Email copied"); }}
+                        aria-label="Copy email"
+                        className="text-gray-500 hover:text-green-400 transition-colors"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between bg-[#1a2a1a] rounded-lg px-3 py-2">
+                    <span className="text-gray-400 text-xs">Password</span>
+                    <div className="flex items-center gap-2">
+                      <code className="text-green-200 font-mono text-xs tracking-wider">{tempPassword}</code>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(tempPassword); toast.success("Password copied"); }}
+                        aria-label="Copy password"
+                        className="text-gray-500 hover:text-green-400 transition-colors"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      await resendCredentialMutation.mutateAsync({ tempPassword });
+                      toast.success("Credentials emailed — check your inbox");
+                    } catch {
+                      toast.error("Couldn't send email — copy your password above");
+                    }
+                  }}
+                  disabled={resendCredentialMutation.isPending}
+                  className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50 self-start"
+                >
+                  {resendCredentialMutation.isPending
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <Mail className="w-3.5 h-3.5" />}
+                  Email me a copy
+                </button>
+              </div>
+            )}
+
             {/* Initial loading dots */}
             {messages.length === 0 && isLoading && (
               <div className="flex items-start gap-3">
@@ -761,6 +823,7 @@ export default function GetStarted() {
                     const result = await createCheckoutMutation.mutateAsync({
                       projectId,
                       couponCode: couponCode.trim() || undefined,
+                      tempPassword: tempPassword || undefined,
                     });
                     window.location.href = result.checkoutUrl;
                   } catch (err) {
