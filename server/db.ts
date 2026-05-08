@@ -322,6 +322,13 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `contracts` ADD COLUMN `originalPriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `effectivePriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `contractDiscountPercent` decimal(5,2) DEFAULT NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `contractText` longtext");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `contractSignedAt` timestamp NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `contractSignedIp` varchar(64)");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `nurturingActive` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `anniversaryDay` int");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `contractEndDate` timestamp NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `autoRenew` boolean NOT NULL DEFAULT true");
 
     // ── Columns from 0048 (Elena progress save) ────────────────────────
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `elenaConversationHistory` json NULL");
