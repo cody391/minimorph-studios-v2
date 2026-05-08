@@ -94,6 +94,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const { loading, user } = useAuth();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
@@ -134,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               Sign in with your admin account to access the MiniMorph Studios platform.
             </p>
           </div>
-          <Button onClick={() => { window.location.href = "/login"; }} size="lg" className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans">
+          <Button onClick={() => setLocation("/login?next=/admin")} size="lg" className="w-full bg-electric hover:bg-electric-light text-midnight shadow-lg hover:shadow-xl transition-all font-sans">
             Sign in
           </Button>
         </div>
