@@ -43,6 +43,8 @@ const CustomerPortal = lazy(() => import("./pages/CustomerPortal"));
 const GetStarted = lazy(() => import("./pages/GetStarted"));
 const BecomeRep = lazy(() => import("./pages/BecomeRep"));
 const Login = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const EmbeddedCheckout = lazy(() => import("./pages/EmbeddedCheckout"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
@@ -90,6 +92,14 @@ function Router() {
       {/* Login */}
       <Route path="/login">
         <LazyPage><Login /></LazyPage>
+      </Route>
+
+      {/* Password reset */}
+      <Route path="/forgot-password">
+        <LazyPage><ForgotPassword /></LazyPage>
+      </Route>
+      <Route path="/reset-password">
+        <LazyPage><ResetPassword /></LazyPage>
       </Route>
 
       {/* Values & Ethics Gate (shown before application) */}

@@ -12,6 +12,18 @@ import {
 } from "drizzle-orm/mysql-core";
 
 /* ═══════════════════════════════════════════════════════
+   PASSWORD RESET TOKENS
+   ═══════════════════════════════════════════════════════ */
+export const passwordResetTokens = mysqlTable("password_reset_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* ═══════════════════════════════════════════════════════
    USERS — Core auth table (extended with rep fields)
    ═══════════════════════════════════════════════════════ */
 export const users = mysqlTable("users", {

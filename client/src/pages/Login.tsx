@@ -134,6 +134,16 @@ export default function Login() {
               </div>
             </div>
 
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setLocation("/forgot-password")}
+                className="text-xs text-soft-gray hover:text-off-white font-sans transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
+
             <Button
               onClick={handleLogin}
               disabled={loginMutation.isPending}

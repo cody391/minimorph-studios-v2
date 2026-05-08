@@ -164,6 +164,34 @@ export async function sendCredentialEmail(params: {
 }
 
 /* ═══════════════════════════════════════════════════════
+   1b. PASSWORD RESET EMAIL
+   ═══════════════════════════════════════════════════════ */
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  name: string;
+  resetUrl: string;
+}) {
+  const html = brandWrap(`
+    <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#eaeaf0;">Reset your password</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.name || "there"},</p>
+    <p style="margin:0 0 24px;color:#c8c8d8;">We received a request to reset your MiniMorph Studios password. Click the button below to choose a new one. This link expires in <strong style="color:#eaeaf0;">1 hour</strong>.</p>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="${params.resetUrl}" style="display:inline-block;padding:14px 32px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;">
+        Reset My Password →
+      </a>
+    </div>
+    <p style="margin:0 0 8px;font-size:13px;color:#7a7a90;">If you didn't request this, you can safely ignore this email — your password won't change.</p>
+    <p style="margin:0;font-size:12px;color:#555568;">Or paste this link into your browser:<br>${params.resetUrl}</p>
+  `);
+  return sendEmail({
+    to: params.to,
+    subject: "Reset your MiniMorph Studios password",
+    html,
+    transactional: true,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
    2. ONBOARDING STAGE TRANSITION EMAILS
    Sent when the project moves between stages
    ═══════════════════════════════════════════════════════ */
