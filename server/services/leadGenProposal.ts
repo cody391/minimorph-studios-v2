@@ -354,7 +354,7 @@ function generateProposalHTML(params: {
       <h2 style="color:#eaeaf0;font-size:28px;margin:0 0 4px 0;">${params.recommendedPackage}</h2>
       <p style="color:#4a9eff;font-size:36px;font-weight:800;margin:0;">$${params.packagePrice}/mo</p>
       <p style="color:#7a7a90;font-size:13px;margin:8px 0 24px 0;">12-month commitment &middot; no setup fees</p>
-      <a href="https://minimorphstudios.net/get-started" style="display:inline-block;background:#4a9eff;color:#111122;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;font-size:17px;">Let's Get Started</a>
+      <a href="https://www.minimorphstudios.net/get-started" style="display:inline-block;background:#4a9eff;color:#111122;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:700;font-size:17px;">Let's Get Started</a>
       <p style="color:#7a7a90;font-size:12px;margin:16px 0 0 0;">Questions? Reply to this email or call us anytime.</p>
     </div>
 

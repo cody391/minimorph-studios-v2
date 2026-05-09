@@ -150,7 +150,7 @@ export const localAuthRouter = router({
         expiresAt,
       });
 
-      const origin = (ctx.req.headers.origin as string) || "https://minimorphstudios.net";
+      const origin = (ctx.req.headers.origin as string) || "https://www.minimorphstudios.net";
       const resetUrl = `${origin}/reset-password?token=${rawToken}`;
 
       const { sendPasswordResetEmail } = await import("./services/customerEmails");

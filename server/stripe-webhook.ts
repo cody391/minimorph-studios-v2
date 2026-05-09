@@ -309,7 +309,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   try {
     if (customerEmail) {
       const tempPw = session.metadata?.temp_password || undefined;
-      const origin = ENV.appUrl || "https://minimorphstudios.net";
+      const origin = ENV.appUrl || "https://www.minimorphstudios.net";
       await sendWelcomeEmail({
         to: customerEmail,
         customerName,

@@ -144,12 +144,12 @@ export async function runAddonOrchestrator(ctx: OrchestrationContext): Promise<A
 
 Your pixel will be active on your site within 10 minutes. This lets you run
 Facebook and Instagram ads that target people who visited your site.`,
-      `${ENV.appUrl || "https://minimorphstudios.net"}/portal?tab=setup`,
+      `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal?tab=setup`,
       "Add Pixel ID",
     );
     pendingChecklistItems.push({
       title: "Add your Facebook Pixel ID",
-      actionUrl: `${ENV.appUrl || "https://minimorphstudios.net"}/portal?tab=setup`,
+      actionUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal?tab=setup`,
       actionLabel: "Add Pixel ID",
     });
     logResult("facebook_pixel", true, "Checklist item created — customer will add pixel ID");
@@ -291,7 +291,7 @@ async function registerDomain(
   const namecheapKey = ENV.namecheapApiKey;
   const namecheapUser = ENV.namecheapApiUser;
   const namecheapIp = ENV.namecheapClientIp;
-  const portalUrl = `${ENV.appUrl || "https://minimorphstudios.net"}/portal?tab=setup`;
+  const portalUrl = `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal?tab=setup`;
 
   const checklistInstructions = `Here's how to connect ${ctx.domain} to your new site:
 
@@ -574,7 +574,7 @@ async function setupBookingWidget(
   pending: Array<{ title: string; actionUrl: string; actionLabel: string }>,
 ): Promise<void> {
   try {
-    const portalUrl = `${ENV.appUrl || "https://minimorphstudios.net"}/portal?tab=setup`;
+    const portalUrl = `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal?tab=setup`;
     await createChecklistItem(
       ctx.customerId,
       "booking_widget",
@@ -672,7 +672,7 @@ async function setupOnlineStore(
       } catch { /* skip invalid products */ }
     }
 
-    const portalUrl = `${ENV.appUrl || "https://minimorphstudios.net"}/portal?tab=setup`;
+    const portalUrl = `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal?tab=setup`;
     await createChecklistItem(
       ctx.customerId,
       "online_store",
@@ -708,7 +708,7 @@ async function setupSocialFeed(
 ): Promise<void> {
   try {
     const handle = ctx.instagramHandle || ctx.questionnaire.instagramHandle || ctx.questionnaire.instagram;
-    const portalUrl = `${ENV.appUrl || "https://minimorphstudios.net"}/portal?tab=setup`;
+    const portalUrl = `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal?tab=setup`;
 
     if (!handle) {
       // No handle — create checklist for Instagram connection
@@ -818,7 +818,7 @@ async function sendYoureLiveEmail(
 
     const succeeded = results.filter(r => r.success);
     const failed = results.filter(r => !r.success);
-    const portalUrl = `${ENV.appUrl || "https://minimorphstudios.net"}/portal?tab=setup`;
+    const portalUrl = `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal?tab=setup`;
 
     const successRows = succeeded
       .map(r => `<tr>

@@ -118,20 +118,20 @@ export async function repairSchema(): Promise<void> {
       \`priority\` enum('low','medium','high','urgent') NOT NULL DEFAULT 'medium',
       \`category\` enum('billing','technical','website_change','general','other') NOT NULL DEFAULT 'general',
       \`customerRating\` int, \`ratingToken\` varchar(64),
-      \`createdAt\` timestamp NOT NULL DEFAULT (now()),
-      \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )`);
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`support_ticket_replies\` (
       \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
       \`ticketId\` int NOT NULL, \`authorId\` int NOT NULL,
       \`authorRole\` enum('customer','admin') NOT NULL, \`body\` text NOT NULL,
-      \`createdAt\` timestamp NOT NULL DEFAULT (now())
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`rep_messages\` (
       \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
       \`repId\` int NOT NULL, \`senderRole\` enum('rep','admin') NOT NULL,
       \`body\` text NOT NULL, \`readAt\` timestamp,
-      \`createdAt\` timestamp NOT NULL DEFAULT (now())
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
     // product_catalog: create with ALL columns (including 0049 additions)
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`product_catalog\` (
@@ -152,8 +152,8 @@ export async function repairSchema(): Promise<void> {
       \`stripeProductId\` varchar(100) DEFAULT NULL,
       \`stripeDiscountPriceId\` varchar(100) DEFAULT NULL,
       \`active\` boolean NOT NULL DEFAULT true,
-      \`createdAt\` timestamp NOT NULL DEFAULT (now()),
-      \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )`);
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`broadcasts\` (
       \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
@@ -161,7 +161,7 @@ export async function repairSchema(): Promise<void> {
       \`audience\` enum('all_customers','active_contracts','all_reps','all_leads') NOT NULL,
       \`body\` text NOT NULL, \`recipientCount\` int NOT NULL DEFAULT 0,
       \`status\` enum('draft','sending','sent','failed') NOT NULL DEFAULT 'draft',
-      \`sentAt\` timestamp, \`createdAt\` timestamp NOT NULL DEFAULT (now())
+      \`sentAt\` timestamp, \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
 
     // ── Columns from 0043 ─────────────────────────────────────────────
@@ -174,7 +174,7 @@ export async function repairSchema(): Promise<void> {
       \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
       \`modelVersion\` varchar(64) NOT NULL, \`weights\` json NOT NULL,
       \`trainingSize\` int NOT NULL DEFAULT 0, \`accuracy\` decimal(5,4),
-      \`createdAt\` timestamp NOT NULL DEFAULT (now())
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
 
     // ── Columns from 0044 ─────────────────────────────────────────────
@@ -198,7 +198,7 @@ export async function repairSchema(): Promise<void> {
       \`ci_category\` enum('objection_handling','closing','rapport','discovery','product_knowledge','tone','follow_up','listening','urgency','personalization') NOT NULL,
       \`ci_status\` enum('pending_review','published','rejected') NOT NULL DEFAULT 'pending_review',
       \`publishedAt\` timestamp, \`publishedBy\` int,
-      \`ci_createdAt\` timestamp NOT NULL DEFAULT (now())
+      \`ci_createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`rep_availability\` (
       \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
@@ -206,14 +206,14 @@ export async function repairSchema(): Promise<void> {
       \`startTime\` varchar(5) NOT NULL, \`endTime\` varchar(5) NOT NULL,
       \`isAvailable\` boolean NOT NULL DEFAULT true,
       \`timezone\` varchar(64) NOT NULL DEFAULT 'America/Chicago',
-      \`ra_createdAt\` timestamp NOT NULL DEFAULT (now()),
-      \`ra_updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP
+      \`ra_createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`ra_updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )`);
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`system_settings\` (
       \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
       \`settingKey\` varchar(128) NOT NULL, \`settingValue\` text NOT NULL,
       \`description\` text,
-      \`ss_updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+      \`ss_updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       \`updatedBy\` int,
       UNIQUE KEY \`system_settings_key_unique\` (\`settingKey\`)
     )`);
@@ -316,7 +316,7 @@ export async function repairSchema(): Promise<void> {
       \`actionLabel\` varchar(128),
       \`status\` varchar(32) NOT NULL DEFAULT 'pending',
       \`completedAt\` timestamp NULL,
-      \`createdAt\` timestamp NOT NULL DEFAULT (now())
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
 
     await safe("ALTER TABLE `contracts` ADD COLUMN `originalPriceCents` int DEFAULT NULL");
@@ -362,78 +362,9 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `contracts` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
     await safe("ALTER TABLE `onboarding_projects` MODIFY COLUMN `packageTier` enum('starter','growth','premium') NOT NULL");
 
-    // ── One-time customer data purge (v2 — re-runs to catch accounts created during broken period) ──
-    // Flag key bumped to _v2 so it re-runs even if _v1 flag exists.
-    try {
-      const [flagRows] = await conn.execute<any[]>(
-        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'customer_purge_2026_05_v2' LIMIT 1"
-      );
-      if (!(flagRows as any[])[0]) {
-        console.log("[SchemaRepair] Running one-time customer data purge...");
-        const purgeTables = [
-          "support_ticket_replies",
-          "project_assets",
-          "ai_chat_logs",
-          "nurture_logs",
-          "nps_surveys",
-          "customer_referrals",
-          "monthly_reports",
-          "reports",
-          "upsell_opportunities",
-          "support_tickets",
-          "contact_submissions",
-          "commissions",
-          "onboarding_projects",
-          "orders",
-          "contracts",
-          "customers",
-        ];
-        for (const t of purgeTables) {
-          try {
-            const [[r]] = await conn.execute<any[]>(`SELECT COUNT(*) AS c FROM \`${t}\``);
-            const count = (r as any).c;
-            if (count > 0) await conn.execute(`DELETE FROM \`${t}\``);
-            console.log(`[SchemaRepair]   ✓ ${t}: ${count} rows deleted`);
-          } catch (e: any) {
-            console.log(`[SchemaRepair]   skip ${t}: ${e.message.substring(0, 80)}`);
-          }
-        }
-        // Delete customer user accounts (role=user) — preserve rep accounts
-        try {
-          const [repRows] = await conn.execute<any[]>("SELECT userId FROM `reps`");
-          const repIds: number[] = (repRows as any[]).map((r: any) => r.userId).filter(Boolean);
-          if (repIds.length > 0) {
-            const ph = repIds.map(() => "?").join(",");
-            const [[cr]] = await conn.execute<any[]>(
-              `SELECT COUNT(*) AS c FROM \`users\` WHERE role='user' AND id NOT IN (${ph})`,
-              repIds
-            );
-            const count = (cr as any).c;
-            if (count > 0) {
-              await conn.execute(
-                `DELETE FROM \`users\` WHERE role='user' AND id NOT IN (${ph})`,
-                repIds
-              );
-            }
-            console.log(`[SchemaRepair]   ✓ users (non-rep): ${count} rows deleted`);
-          } else {
-            const [[cr]] = await conn.execute<any[]>("SELECT COUNT(*) AS c FROM `users` WHERE role='user'");
-            const count = (cr as any).c;
-            if (count > 0) await conn.execute("DELETE FROM `users` WHERE role='user'");
-            console.log(`[SchemaRepair]   ✓ users: ${count} rows deleted`);
-          }
-        } catch (e: any) {
-          console.log(`[SchemaRepair]   skip users: ${e.message.substring(0, 80)}`);
-        }
-        // Mark purge as done so it never runs again
-        await conn.execute(
-          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('customer_purge_2026_05_v2', 'true', 'One-time customer data purge — May 2026 v2')"
-        );
-        console.log("[SchemaRepair] Customer data purge complete.");
-      }
-    } catch (e: any) {
-      console.log(`[SchemaRepair] Purge check skipped: ${e.message.substring(0, 80)}`);
-    }
+    // Customer data purge was a one-time production cleanup and must never run during normal startup.
+    // Removed from repairSchema to prevent accidental customer data loss if system_settings flags are missing.
+    // If a future purge is needed, create an explicit manual script with backup + confirmation.
 
     // ── Clean up orphaned test rep records left by v2 account purge ──────
     // The v2 purge deleted test user accounts. The reps linked to those
@@ -462,26 +393,7 @@ export async function repairSchema(): Promise<void> {
       console.log(`[SchemaRepair] Orphaned rep cleanup skipped: ${e.message.substring(0, 80)}`);
     }
 
-    // ── One-time admin password reset ─────────────────────────────────────
-    try {
-      const [flagRows] = await conn.execute<any[]>(
-        "SELECT settingValue FROM `system_settings` WHERE settingKey = 'reset_admin_pw_v1' LIMIT 1"
-      );
-      if (!(flagRows as any[])[0]) {
-        const newPassword = "MiniMorph2026!";
-        const hash = await bcrypt.hash(newPassword, 10);
-        await conn.execute(
-          "UPDATE `users` SET passwordHash = ? WHERE email = 'cody@wmrum.com'",
-          [hash]
-        );
-        await conn.execute(
-          "INSERT IGNORE INTO `system_settings` (settingKey, settingValue, description) VALUES ('reset_admin_pw_v1', 'true', 'One-time admin password reset')"
-        );
-        console.log("[SchemaRepair] Admin password reset to MiniMorph2026!");
-      }
-    } catch (e: any) {
-      console.log(`[SchemaRepair] Password reset skipped: ${e.message.substring(0, 80)}`);
-    }
+    // Hardcoded admin password reset removed. bootstrapAdminUser() handles admin password sync from ADMIN_PASSWORD env var.
 
     // ── Agent 4 tables ────────────────────────────────────────────────────
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`site_build_reports\` (
@@ -503,13 +415,13 @@ export async function repairSchema(): Promise<void> {
       \`issuesPersistent\` json DEFAULT NULL,
       \`issuesEscalated\` json DEFAULT NULL,
       \`buildLog\` json DEFAULT NULL,
-      \`buildStartedAt\` timestamp NULL DEFAULT (now()),
+      \`buildStartedAt\` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
       \`buildCompletedAt\` timestamp NULL,
       \`qaStartedAt\` timestamp NULL,
       \`qaCompletedAt\` timestamp NULL,
       \`commissionedAt\` timestamp NULL,
-      \`sbr_createdAt\` timestamp NOT NULL DEFAULT (now()),
-      \`sbr_updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE (now())
+      \`sbr_createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`sbr_updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )`);
 
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`regulatory_rules\` (
@@ -524,7 +436,7 @@ export async function repairSchema(): Promise<void> {
       \`autoFixAction\` text DEFAULT NULL,
       \`appliesTo\` varchar(512) DEFAULT 'all',
       \`active\` boolean NOT NULL DEFAULT true,
-      \`rr_createdAt\` timestamp NOT NULL DEFAULT (now())
+      \`rr_createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
 
     // ── Clean up stale product keys from old catalog versions ─────────────
