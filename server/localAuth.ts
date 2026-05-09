@@ -109,7 +109,7 @@ export const localAuthRouter = router({
 
       // Create session token and set cookie
       const sessionToken = await sdk.createSessionToken(user.openId, {
-        name: user.name || "",
+        name: user.name || user.email || "user",
         expiresInMs: ONE_YEAR_MS,
       });
 
@@ -218,7 +218,7 @@ export const localAuthRouter = router({
 
       // Auto-login
       const sessionToken = await sdk.createSessionToken(user.openId, {
-        name: user.name || "",
+        name: user.name || user.email || "user",
         expiresInMs: ONE_YEAR_MS,
       });
       const cookieOptions = getSessionCookieOptions(ctx.req);
