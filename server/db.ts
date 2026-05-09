@@ -273,6 +273,30 @@ export async function repairSchema(): Promise<void> {
       \`cp_updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )`);
 
+    // ── Missing tables: password_reset_tokens + monthly_reports ──────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`password_reset_tokens\` (
+      \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+      \`userId\` INT NOT NULL,
+      \`token\` VARCHAR(128) NOT NULL,
+      \`expiresAt\` TIMESTAMP NOT NULL,
+      \`usedAt\` TIMESTAMP NULL,
+      \`createdAt\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+      UNIQUE KEY \`uq_token\` (\`token\`),
+      KEY \`idx_userId\` (\`userId\`)
+    )`);
+
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`monthly_reports\` (
+      \`id\` INT AUTO_INCREMENT NOT NULL,
+      \`customerId\` INT NOT NULL,
+      \`contractId\` INT,
+      \`reportMonth\` VARCHAR(7) NOT NULL,
+      \`competitiveReport\` TEXT,
+      \`isRenewalMonth\` BOOLEAN NOT NULL DEFAULT false,
+      \`emailSentAt\` TIMESTAMP NULL,
+      \`createdAt\` TIMESTAMP NOT NULL DEFAULT (now()),
+      CONSTRAINT \`monthly_reports_id\` PRIMARY KEY(\`id\`)
+    )`);
+
     // ── Columns from 0047 ─────────────────────────────────────────────
     await safe("ALTER TABLE `leads` ADD COLUMN `totalCostCents` int NOT NULL DEFAULT 0");
     await safe("ALTER TABLE `leads` ADD COLUMN `totalRevenueCents` int NOT NULL DEFAULT 0");
