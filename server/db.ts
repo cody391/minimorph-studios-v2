@@ -470,6 +470,24 @@ export async function repairSchema(): Promise<void> {
     // Reset regulatory rules flags so expanded ruleset re-seeds on every deploy
     await safe(`DELETE FROM \`system_settings\` WHERE \`settingKey\` IN ('regulatory_rules_v1', 'regulatory_rules_v2')`);
 
+    // ── Columns from 0051 (attribution schema) ────────────────────────
+    await safe("ALTER TABLE `leads` ADD COLUMN `acquisitionChannel` varchar(128) DEFAULT NULL");
+    await safe("ALTER TABLE `leads` ADD COLUMN `enrichmentStatus` varchar(32) NOT NULL DEFAULT 'pending'");
+    await safe("ALTER TABLE `leads` ADD COLUMN `needsHumanCloser` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `leads` ADD COLUMN `escalationReason` text DEFAULT NULL");
+    await safe("ALTER TABLE `leads` ADD COLUMN `elenaHandoffAt` timestamp NULL DEFAULT NULL");
+    await safe("ALTER TABLE `customers` ADD COLUMN `acquisitionSource` varchar(128) DEFAULT NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `salesSource` varchar(64) DEFAULT NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `couponCode` varchar(64) DEFAULT NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `campaignName` varchar(128) DEFAULT NULL");
+    await safe("ALTER TABLE `contracts` ADD COLUMN `leadId` int DEFAULT NULL");
+    await safe("ALTER TABLE `commissions` ADD COLUMN `basisAmountCents` int DEFAULT NULL");
+    await safe("ALTER TABLE `commissions` ADD COLUMN `requiresPayment` boolean NOT NULL DEFAULT true");
+    await safe("ALTER TABLE `coupons` ADD COLUMN `duration` varchar(16) NOT NULL DEFAULT 'once'");
+    await safe("ALTER TABLE `coupons` ADD COLUMN `durationMonths` int DEFAULT NULL");
+    await safe("ALTER TABLE `coupons` ADD COLUMN `packageRestriction` varchar(64) NOT NULL DEFAULT 'all'");
+    await safe("ALTER TABLE `coupons` ADD COLUMN `campaignName` varchar(128) DEFAULT NULL");
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);

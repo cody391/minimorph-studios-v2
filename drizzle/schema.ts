@@ -130,6 +130,11 @@ export const leads = mysqlTable("leads", {
   totalCostCents: int("totalCostCents").default(0).notNull(),
   totalRevenueCents: int("totalRevenueCents").default(0).notNull(),
   lastCostUpdate: timestamp("lastCostUpdate"),
+  acquisitionChannel: varchar("acquisitionChannel", { length: 128 }),
+  enrichmentStatus: varchar("enrichmentStatus", { length: 32 }).default("pending").notNull(),
+  needsHumanCloser: boolean("needsHumanCloser").default(false).notNull(),
+  escalationReason: text("escalationReason"),
+  elenaHandoffAt: timestamp("elenaHandoffAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -162,6 +167,7 @@ export const customers = mysqlTable("customers", {
   addonSetupResults: json("addonSetupResults"),
   addonSetupCompletedAt: timestamp("addonSetupCompletedAt"),
   bookingHours: json("bookingHours"),
+  acquisitionSource: varchar("acquisitionSource", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -222,6 +228,10 @@ export const contracts = mysqlTable("contracts", {
   originalPriceCents: int("originalPriceCents"),
   effectivePriceCents: int("effectivePriceCents"),
   contractDiscountPercent: decimal("contractDiscountPercent", { precision: 5, scale: 2 }),
+  salesSource: varchar("salesSource", { length: 64 }),
+  couponCode: varchar("couponCode", { length: 64 }),
+  campaignName: varchar("campaignName", { length: 128 }),
+  leadId: int("leadId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -242,6 +252,8 @@ export const commissions = mysqlTable("commissions", {
   selfSourced: boolean("selfSourced").default(false).notNull(),
   rateApplied: decimal("rateApplied", { precision: 5, scale: 2 }),
   paidAt: timestamp("paidAt"),
+  basisAmountCents: int("basisAmountCents"),
+  requiresPayment: boolean("requiresPayment").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -1857,6 +1869,10 @@ export const coupons = mysqlTable("coupons", {
   stripePromotionCodeId: varchar("stripePromotionCodeId", { length: 128 }),
   stripeCouponId: varchar("stripeCouponId", { length: 128 }),
   active: boolean("active").default(true).notNull(),
+  duration: varchar("duration", { length: 16 }).default("once").notNull(),
+  durationMonths: int("durationMonths"),
+  packageRestriction: varchar("packageRestriction", { length: 64 }).default("all").notNull(),
+  campaignName: varchar("campaignName", { length: 128 }),
   createdAt: timestamp("cp_createdAt").defaultNow().notNull(),
   updatedAt: timestamp("cp_updatedAt").defaultNow().onUpdateNow().notNull(),
 });
