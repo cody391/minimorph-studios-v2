@@ -1902,13 +1902,25 @@ Channel: ${log.channel}\n\n${log.content || "No content"}`,
         sentAt: new Date(),
       });
 
+      // Owner alert — wrapped so a notification failure cannot break the customer request
+      try {
+        const typeLabel = input.type === "update_request" ? "Update Request" : "Support Request";
+        const preview = input.message.length > 200 ? input.message.slice(0, 200) + "…" : input.message;
+        await notifyOwner({
+          title: `New Customer ${typeLabel}`,
+          content: `From: ${cust.contactName || cust.email} (Customer #${cust.id})\nSubject: ${input.subject}\n\n${preview}\n\nReview in Admin → Nurture.`,
+        });
+      } catch (notifyErr: any) {
+        console.warn("[support] Owner notification failed (non-fatal):", notifyErr?.message);
+      }
+
       // Auto-acknowledgment email
       try {
         const { sendEmail } = await import("./services/email");
         await sendEmail({
           to: cust.email,
           subject: `We received your ${input.type === "update_request" ? "update request" : "support request"}: ${input.subject}`,
-          html: `<p>Hi ${cust.contactName || "there"},</p><p>We've received your request and our team will review it within 1 business day. You can track the status in your Customer Portal.</p><p><strong>Subject:</strong> ${input.subject}</p><p>— The MiniMorph Studios Team</p>`,
+          html: `<p>Hi ${cust.contactName || "there"},</p><p>We received your request and logged it for review. You can check your Customer Portal for updates.</p><p><strong>Subject:</strong> ${input.subject}</p><p>— The MiniMorph Studios Team</p>`,
           transactional: true,
         });
       } catch (emailErr) {
