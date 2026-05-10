@@ -1328,6 +1328,49 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     })
   );
 
+  // Stuck build check — notify owner of projects stuck in "generating" for > 30 min
+  app.post("/api/scheduled/stuck-build-check", async (req, res) => {
+    await runJob(req, res, "stuck-build-check", async () => {
+      const database = await getDb();
+      if (!database) return { checked: true, stuckCount: 0, notified: 0 };
+
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const stuckProjects = await database
+        .select({
+          id: onboardingProjects.id,
+          businessName: onboardingProjects.businessName,
+          updatedAt: onboardingProjects.updatedAt,
+        })
+        .from(onboardingProjects)
+        .where(
+          and(
+            eq(onboardingProjects.generationStatus, "generating"),
+            lte(onboardingProjects.updatedAt, thirtyMinutesAgo)
+          )
+        );
+
+      let notified = 0;
+      for (const project of stuckProjects) {
+        const minutesStuck = Math.round(
+          (Date.now() - new Date(project.updatedAt).getTime()) / 60000
+        );
+        try {
+          const { notifyOwner } = await import("./_core/notification");
+          await notifyOwner({
+            title: "Stuck Website Build Detected",
+            content: `Project #${project.id} (${project.businessName}) has been generating for ${minutesStuck} minutes without completing. Check Admin → Onboarding Projects for details.`,
+          });
+          notified++;
+        } catch (notifyErr: any) {
+          console.error(`[StuckBuildCheck] Failed to notify for project ${project.id}:`, notifyErr.message);
+        }
+      }
+
+      console.log(`[StuckBuildCheck] Found ${stuckProjects.length} stuck build(s), notified owner for ${notified}.`);
+      return { checked: true, stuckCount: stuckProjects.length, notified };
+    });
+  });
+
   // Health check — returns status of all jobs
   app.get("/api/scheduled/status", (req, res) => {
     if (!verifySchedulerSecret(req, res)) return;
@@ -1338,5 +1381,5 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
     });
   });
 
-  console.log("[Scheduled] Registered 24 scheduled job endpoints at /api/scheduled/*");
+  console.log("[Scheduled] Registered 25 scheduled job endpoints at /api/scheduled/*");
 }

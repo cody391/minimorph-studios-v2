@@ -15,6 +15,9 @@ interface CronJob {
 }
 
 const jobs: CronJob[] = [
+  // ── Every hour ────────────────────────────────────────────────────────────
+  { endpoint: "/api/scheduled/stuck-build-check", schedule: "0 * * * *", description: "Detect stuck site builds" },
+
   // ── Every 6 hours ──────────────────────────────────────────────────────────
   { endpoint: "/api/scheduled/outreach",         schedule: "0 */6 * * *", description: "Lead outreach sequences" },
   { endpoint: "/api/scheduled/scoring",          schedule: "0 */6 * * *", description: "Re-score leads" },

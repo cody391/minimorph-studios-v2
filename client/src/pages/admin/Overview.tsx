@@ -19,6 +19,10 @@ import {
   Activity,
   FlaskConical,
   Trash2,
+  AlertTriangle,
+  Clock,
+  MessageSquare,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -159,6 +163,9 @@ export default function Overview() {
 
       {/* Economics Dashboard */}
       <EconomicsDashboardPanel />
+
+      {/* Operations Action Center */}
+      <OperationsActionCenterPanel />
 
       {/* Part 4: Academy Promotions */}
       <AcademyPromotionsPanel />
@@ -335,6 +342,172 @@ function EconomicsDashboardPanel() {
             {totalCost === 0 && (data?.expensiveLeads?.length ?? 0) === 0 && (
               <p className="text-xs text-soft-gray/60 font-sans text-center py-2">No economics data for this month yet</p>
             )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* Operations Action Center — read-only visibility panel, no destructive actions */
+function OperationsActionCenterPanel() {
+  const { data: tickets } = trpc.support.listAllTickets.useQuery();
+  const { data: contracts } = trpc.contracts.list.useQuery();
+  const { data: commissions } = trpc.commissions.list.useQuery();
+  const { data: projects } = trpc.onboarding.list.useQuery(undefined);
+  const [, nav] = useLocation();
+
+  const now = Date.now();
+  const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+  const thirtyMinutesAgo = now - 30 * 60 * 1000;
+
+  const openTickets = (tickets ?? []).filter(
+    (t: any) => t.status === "open" || t.status === "in_progress"
+  );
+  const cancellationTickets = openTickets.filter((t: any) =>
+    (t.subject ?? "").toLowerCase().includes("cancel")
+  );
+
+  const pendingPayments = (contracts ?? []).filter(
+    (c: any) => c.status === "pending_payment"
+  );
+  const oldPendingPayments = pendingPayments.filter(
+    (c: any) => c.createdAt && new Date(c.createdAt).getTime() < twentyFourHoursAgo
+  );
+
+  const pendingCommissions = (commissions ?? []).filter(
+    (c: any) => c.status === "pending"
+  );
+  const approvedCommissions = (commissions ?? []).filter(
+    (c: any) => c.status === "approved"
+  );
+
+  const failedBuilds = (projects ?? []).filter(
+    (p: any) => p.generationStatus === "failed"
+  );
+  const stuckBuilds = (projects ?? []).filter(
+    (p: any) =>
+      p.generationStatus === "generating" &&
+      p.updatedAt &&
+      new Date(p.updatedAt).getTime() < thirtyMinutesAgo
+  );
+
+  type Tone = "red" | "amber";
+  interface ActionItem {
+    key: string;
+    icon: React.ElementType;
+    label: string;
+    sub: string | null;
+    tone: Tone;
+    path: string;
+  }
+
+  const items: ActionItem[] = (
+    [
+      openTickets.length > 0 && {
+        key: "tickets",
+        icon: MessageSquare,
+        label: `${openTickets.length} open support ticket${openTickets.length !== 1 ? "s" : ""}`,
+        sub: cancellationTickets.length > 0
+          ? `${cancellationTickets.length} may be a cancellation request — check subjects`
+          : null,
+        tone: cancellationTickets.length > 0 ? "red" : "amber",
+        path: "/admin/support",
+      },
+      pendingPayments.length > 0 && {
+        key: "payments",
+        icon: CreditCard,
+        label: `${pendingPayments.length} contract${pendingPayments.length !== 1 ? "s" : ""} awaiting payment`,
+        sub: oldPendingPayments.length > 0
+          ? `${oldPendingPayments.length} over 24 hours old — checkout link may be expired`
+          : null,
+        tone: oldPendingPayments.length > 0 ? "red" : "amber",
+        path: "/admin/contracts",
+      },
+      pendingCommissions.length > 0 && {
+        key: "pending-comm",
+        icon: DollarSign,
+        label: `${pendingCommissions.length} commission${pendingCommissions.length !== 1 ? "s" : ""} pending approval`,
+        sub: null,
+        tone: "amber" as Tone,
+        path: "/admin/commissions",
+      },
+      approvedCommissions.length > 0 && {
+        key: "approved-comm",
+        icon: TrendingUp,
+        label: `${approvedCommissions.length} commission${approvedCommissions.length !== 1 ? "s" : ""} approved, payout not yet initiated`,
+        sub: null,
+        tone: "amber" as Tone,
+        path: "/admin/commissions",
+      },
+      failedBuilds.length > 0 && {
+        key: "failed-builds",
+        icon: AlertTriangle,
+        label: `${failedBuilds.length} site build${failedBuilds.length !== 1 ? "s" : ""} failed`,
+        sub: "Review logs and regenerate from Onboarding Projects",
+        tone: "red" as Tone,
+        path: "/admin/onboarding",
+      },
+      stuckBuilds.length > 0 && {
+        key: "stuck-builds",
+        icon: Clock,
+        label: `${stuckBuilds.length} site build${stuckBuilds.length !== 1 ? "s" : ""} stuck — generating for over 30 minutes`,
+        sub: null,
+        tone: "amber" as Tone,
+        path: "/admin/onboarding",
+      },
+    ] as (ActionItem | false)[]
+  ).filter((x): x is ActionItem => Boolean(x));
+
+  const totalIssues = items.length;
+
+  return (
+    <Card className={totalIssues > 0 ? "border-amber-500/20" : "border-border/50"}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-off-white font-serif flex items-center gap-2">
+          <AlertCircle
+            className={`w-5 h-5 ${totalIssues > 0 ? "text-amber-400" : "text-emerald-400"}`}
+          />
+          Operations
+          {totalIssues > 0 && (
+            <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-xs">
+              {totalIssues}
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {items.length === 0 ? (
+          <div className="flex items-center gap-2 text-sm text-soft-gray font-sans py-1">
+            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            No urgent operations issues right now.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => nav(item.path)}
+                className={`w-full flex items-start justify-between p-3 rounded-lg border text-left transition-colors ${
+                  item.tone === "red"
+                    ? "bg-red-500/5 border-red-500/20 hover:border-red-500/40"
+                    : "bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40"
+                }`}
+              >
+                <div className="flex items-start gap-2 min-w-0">
+                  <item.icon
+                    className={`w-4 h-4 shrink-0 mt-0.5 ${item.tone === "red" ? "text-red-400" : "text-amber-400"}`}
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-off-white font-sans">{item.label}</p>
+                    {item.sub && (
+                      <p className="text-xs text-soft-gray font-sans mt-0.5">{item.sub}</p>
+                    )}
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-soft-gray shrink-0 ml-2 mt-0.5" />
+              </button>
+            ))}
           </div>
         )}
       </CardContent>
