@@ -383,14 +383,14 @@ export async function sendRenewalReminderEmail(params: {
     <div style="margin:24px 0;padding:16px;background:#1a2a1a;border-radius:8px;border-left:4px solid #22c55e;">
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
         <strong style="color:#eaeaf0;">No action needed.</strong> Your plan will auto-renew for another 12 months at the same rate.
-        If you'd like to upgrade, downgrade, or cancel before renewal, visit the Upgrades tab in your Customer Portal.
+        If you'd like to upgrade, downgrade, or cancel before renewal, visit the Support tab in your Customer Portal or reply to this email.
       </p>
     </div>` : ""}
     ${isThirtyDay ? `
     <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
         <strong style="color:#eaeaf0;">Auto-renewal:</strong> Your plan will automatically renew for another 12 months unless you cancel before the renewal date.
-        If you'd like to make any changes, visit the Upgrades tab in your Customer Portal.
+        If you'd like to make any changes, visit the Support tab in your Customer Portal or reply to this email.
       </p>
     </div>` : ""}
     ${isSixtyDay ? `
@@ -401,8 +401,7 @@ export async function sendRenewalReminderEmail(params: {
       </p>
     </div>` : ""}
     <p style="margin:0 0 16px;color:#c8c8d8;">
-      Want to upgrade your plan or have questions? Reply to this email or visit the
-      Upgrades tab in your Customer Portal.
+      Want to upgrade your plan or have questions? Visit the Support tab in your Customer Portal or reply to this email.
     </p>
     <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
   `);

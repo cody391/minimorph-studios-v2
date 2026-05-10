@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { PACKAGES } from "@shared/pricing";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,9 +43,9 @@ const tempMeta: Record<string, { icon: any; color: string; bg: string }> = {
 };
 
 const PACKAGE_PRICES: Record<string, string> = {
-  starter: "195",
-  growth: "295",
-  premium: "395",
+  starter: String(PACKAGES.starter.monthlyPrice),
+  growth: String(PACKAGES.growth.monthlyPrice),
+  premium: String(PACKAGES.premium.monthlyPrice),
 };
 
 /* ─── Types ─── */

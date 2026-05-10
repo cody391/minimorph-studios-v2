@@ -766,6 +766,9 @@ function OnboardingProjectTab({
             <span className="w-2 h-2 bg-electric rounded-full animate-bounce [animation-delay:300ms]" />
           </div>
           <p className="text-xs text-soft-gray/50">Auto-refreshing every 15 seconds</p>
+          <p className="text-xs text-soft-gray/40 max-w-sm mx-auto">
+            Your site is still being prepared. Builds can take time after onboarding, revisions, and quality checks. We'll keep updating this page as progress continues.
+          </p>
           <Button
             variant="ghost"
             size="sm"

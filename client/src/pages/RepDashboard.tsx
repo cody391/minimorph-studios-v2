@@ -189,6 +189,23 @@ export default function RepDashboard() {
 
   return (
     <div className="min-h-screen bg-midnight">
+      {/* Stripe Connect payout setup banner */}
+      {repProfile?.stripeConnectOnboarded === false && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+            <span className="text-sm text-amber-200 font-sans">Complete your payout setup to receive commissions.</span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setLocation("/become-rep/payout-setup")}
+            className="border-amber-500/30 text-amber-200 hover:bg-amber-500/10 font-sans text-xs rounded-full shrink-0"
+          >
+            Set Up Payouts
+          </Button>
+        </div>
+      )}
       {/* Part 5: Morning training gate overlay — non-dismissable */}
       {showTrainingGate && (
         <div className="fixed inset-0 z-50 bg-midnight/95 backdrop-blur-sm flex items-center justify-center px-4">

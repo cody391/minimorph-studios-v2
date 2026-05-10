@@ -340,6 +340,22 @@ export async function handleConversation(params: {
     content: params.content,
   });
 
+  // Opt-out guard — must run before any AI call
+  const OPT_OUT_PATTERN = /\b(stop|unsubscribe|opt[\s-]?out|remove me|do not contact|take me off|no more (emails?|messages?|texts?))\b/i;
+  if (OPT_OUT_PATTERN.test(params.content)) {
+    await db.update(leads).set({
+      stage: "closed_lost",
+      temperature: "cold",
+      lastTouchAt: new Date(),
+    }).where(eq(leads.id, params.leadId));
+    console.log(`[ConversationAI] Opt-out detected for lead ${params.leadId} — marked closed_lost, no AI called`);
+    return {
+      decision: "mark_not_interested",
+      confidenceScore: 100,
+      shouldFollowUp: false,
+    };
+  }
+
   // Detect objections
   const detectedObjection = detectObjection(params.content);
 

@@ -68,7 +68,7 @@ const DEFAULT_WEIGHTS: ScoringWeights = {
 // In-memory cache of learned weights
 let cachedWeights: ScoringWeights | null = null;
 let lastTrainingSampleSize = 0;
-const RETRAIN_THRESHOLD = 5; // Retrain after 5 new closed leads
+const RETRAIN_THRESHOLD = 50; // Retrain after 50 new closed leads (statistically meaningful sample)
 
 // Accuracy tracking
 interface AccuracyRecord {

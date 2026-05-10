@@ -34,11 +34,11 @@ export default function CheckoutSuccess() {
             </li>
             <li className="flex gap-2">
               <span className="font-medium text-off-white">3.</span>
-              A dedicated account manager will contact you within 24 hours
+              Complete your onboarding questionnaire in the Customer Portal to kick off your site
             </li>
             <li className="flex gap-2">
               <span className="font-medium text-off-white">4.</span>
-              Your website design process begins with a personalized brief
+              Our AI build system reviews your answers and prepares your custom website
             </li>
           </ol>
         </div>
