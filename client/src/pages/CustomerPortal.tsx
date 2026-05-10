@@ -882,6 +882,13 @@ function OnboardingProjectTab({
                 </p>
               </div>
 
+              {revisionsLeft === 0 && (
+                <div className="p-3 rounded-lg bg-graphite border border-border/40 text-xs text-soft-gray font-sans leading-relaxed">
+                  Need more changes? Extra revision rounds are available for <strong className="text-off-white">$149/round</strong>.
+                  Submit a Support Request with the subject <strong className="text-off-white">"Extra Revision Request"</strong> and we'll add another round to your project.
+                </div>
+              )}
+
               {revisionsLeft > 0 && (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">

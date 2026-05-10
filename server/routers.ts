@@ -2712,7 +2712,7 @@ const onboardingRouter = router({
         const customerPhone = (q?.phone as string) || project.contactPhone;
         await sendCustomerSms(
           customerPhone,
-          `We received your changes for ${project.businessName}! Our team will have your updated preview ready shortly. — MiniMorph Studios`,
+          `Your change request for ${project.businessName} was received. We'll notify you when your updated preview is ready. — MiniMorph Studios`,
         );
       } catch {}
       // Notify admin

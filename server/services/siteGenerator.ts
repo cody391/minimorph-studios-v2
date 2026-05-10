@@ -1382,6 +1382,13 @@ ${Object.keys(pages)
       generationStatus: "failed",
       generationLog: `Generation failed: ${err instanceof Error ? err.message : String(err)}`,
     }).catch(() => {});
+    try {
+      const { notifyOwner } = await import("../_core/notification");
+      await notifyOwner({
+        title: "Site Generation Failed",
+        content: `Project #${projectId} (${project?.businessName || "unknown"}) failed to generate.\nError: ${err instanceof Error ? err.message : String(err)}\n\nCheck Admin → Onboarding Projects or Sites for details.`,
+      });
+    } catch {}
   }
 }
 

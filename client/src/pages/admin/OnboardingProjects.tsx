@@ -283,7 +283,11 @@ export default function OnboardingProjects() {
             const nextStage = currentStageIndex < ALL_STAGES.length - 1 ? ALL_STAGES[currentStageIndex + 1] : null;
             const pages = getPages(project.generatedSiteHtml);
             const isGenerating = project.generationStatus === "generating";
+            const isFailed = project.generationStatus === "failed";
             const logExpanded = expandedLogs[project.id];
+            const generatingMinutes = isGenerating && project.createdAt
+              ? Math.round((Date.now() - new Date(project.createdAt).getTime()) / 60000)
+              : null;
 
             return (
               <Card key={project.id} className="border-electric/10">
@@ -302,6 +306,16 @@ export default function OnboardingProjects() {
                         {stageConfig.icon}
                         <span className="ml-1">{stageConfig.label}</span>
                       </Badge>
+                      {isFailed && (
+                        <Badge className="bg-red-100 text-red-700 border border-red-300">
+                          <AlertTriangle className="w-3 h-3 mr-1" /> Failed
+                        </Badge>
+                      )}
+                      {isGenerating && generatingMinutes !== null && generatingMinutes > 15 && (
+                        <Badge className="bg-amber-100 text-amber-700 border border-amber-300">
+                          <AlertTriangle className="w-3 h-3 mr-1" /> {generatingMinutes}m
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="capitalize">{project.packageTier}</Badge>
                     </div>
                   </div>
@@ -320,9 +334,11 @@ export default function OnboardingProjects() {
                   {project.generationLog && (
                     <div
                       className={`mb-4 rounded-lg border px-3 py-2 text-xs cursor-pointer ${
-                        isGenerating
-                          ? "border-purple-200 bg-purple-50 text-purple-700"
-                          : "border-gray-200 bg-gray-50 text-gray-600"
+                        isFailed
+                          ? "border-red-300 bg-red-50 text-red-700"
+                          : isGenerating
+                            ? "border-purple-200 bg-purple-50 text-purple-700"
+                            : "border-gray-200 bg-gray-50 text-gray-600"
                       }`}
                       onClick={() => setExpandedLogs(prev => ({ ...prev, [project.id]: !prev[project.id] }))}
                     >

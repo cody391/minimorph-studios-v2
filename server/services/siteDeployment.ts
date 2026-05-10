@@ -23,6 +23,13 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
 
   if (!ENV.cloudflareApiToken || !ENV.cloudflareAccountId) {
     console.log(`[Deploy] Cloudflare not configured — project ${projectId} stays at final_approval for manual launch`);
+    try {
+      const { notifyOwner } = await import("../_core/notification");
+      await notifyOwner({
+        title: "Cloudflare Deployment Not Configured",
+        content: `Project #${projectId} (${businessName}) is approved but cannot be deployed — Cloudflare API token or account ID is missing.\n\nProject is stuck at final_approval. Configure Cloudflare env vars or deploy manually via Admin → Onboarding Projects.`,
+      });
+    } catch {}
     return;
   }
 
@@ -133,6 +140,13 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
       generationLog: `Deployment failed: ${err instanceof Error ? err.message : String(err)}`,
       stage: "final_approval",
     }).catch(() => {});
+    try {
+      const { notifyOwner } = await import("../_core/notification");
+      await notifyOwner({
+        title: "Site Deployment Failed",
+        content: `Project #${projectId} (${businessName}) failed to deploy to Cloudflare Pages.\nError: ${err instanceof Error ? err.message : String(err)}\n\nProject is back at final_approval. Check Admin → Onboarding Projects for details.`,
+      });
+    } catch {}
     throw err;
   }
 }
