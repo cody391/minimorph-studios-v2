@@ -498,6 +498,7 @@ Respond in JSON:
       lastTouchAt: new Date(),
       checkoutUrl,
       checkoutSentAt: new Date(),
+      elenaHandoffAt: new Date(),
     } as any).where(eq(leads.id, params.leadId));
 
   } else if (aiDecision.decision === "assign_to_rep") {

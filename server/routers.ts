@@ -2761,7 +2761,11 @@ const onboardingRouter = router({
 
   // Protected: create a self-service onboarding project (called immediately after email capture + registration)
   createSelfServiceProject: protectedProcedure
-    .mutation(async ({ ctx }) => {
+    .input(z.object({
+      leadId: z.number().int().positive().optional(),
+      acquisitionSource: z.string().max(64).optional(),
+    }).optional())
+    .mutation(async ({ ctx, input }) => {
       const project = await db.createOnboardingProject({
         customerId: null as any,
         businessName: "Pending",
@@ -2771,6 +2775,8 @@ const onboardingRouter = router({
         stage: "intake",
         userId: ctx.user.id,
         source: "self_service",
+        leadId: input?.leadId ?? null,
+        acquisitionSource: input?.acquisitionSource ?? "self_service",
       } as any);
       return { projectId: project.id };
     }),
@@ -3085,6 +3091,7 @@ const onboardingRouter = router({
           business_name: project.businessName !== "Pending" ? project.businessName || "" : ((q.businessName as string) || ""),
           source: "self_service",
           ...(input.tempPassword ? { temp_password: input.tempPassword } : {}),
+          ...((project as any).leadId ? { lead_id: String((project as any).leadId), acquisition_source: (project as any).acquisitionSource || "self_service" } : {}),
         };
       }
 

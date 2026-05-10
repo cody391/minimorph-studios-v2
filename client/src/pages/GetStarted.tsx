@@ -119,6 +119,16 @@ export default function GetStarted() {
   const search = useSearch();
   const { user, loading: authLoading } = useAuth();
 
+  // Parse AI-drip attribution from URL — ?leadId=X&source=ai_close
+  const _urlParams = new URLSearchParams(search);
+  const _rawLeadId = parseInt(_urlParams.get("leadId") || "", 10);
+  const _urlLeadId = Number.isFinite(_rawLeadId) && _rawLeadId > 0 ? _rawLeadId : undefined;
+  const _rawSource = _urlParams.get("source") || undefined;
+  const _urlSource = _rawSource ? _rawSource.slice(0, 64) : undefined;
+  const attrPayload = _urlLeadId || _urlSource
+    ? { leadId: _urlLeadId, acquisitionSource: _urlSource }
+    : {};
+
   const [stage, setStage] = useState<Stage>("capture");
   const [email, setEmail] = useState("");
   const [projectId, setProjectId] = useState<number | null>(null);
@@ -185,7 +195,7 @@ export default function GetStarted() {
     } else {
       // No existing project — auto-create and skip email capture for any logged-in user
       setStage("creating");
-      createProjectMutation.mutateAsync()
+      createProjectMutation.mutateAsync(attrPayload)
         .then(({ projectId: newId }) => {
           setProjectId(newId);
           setStage("chat");
@@ -363,7 +373,7 @@ export default function GetStarted() {
         name: email.split("@")[0],
       });
       // New account created — go straight to Elena
-      const { projectId: newId } = await createProjectMutation.mutateAsync();
+      const { projectId: newId } = await createProjectMutation.mutateAsync(attrPayload);
       setProjectId(newId);
       setCredentialCardDismissed(false);
       setStage("chat");
@@ -395,7 +405,7 @@ export default function GetStarted() {
     try {
       await loginMutation.mutateAsync({ email: email.trim(), password });
       // Authenticated — create a fresh project and start Elena
-      const { projectId: newId } = await createProjectMutation.mutateAsync();
+      const { projectId: newId } = await createProjectMutation.mutateAsync(attrPayload);
       setProjectId(newId);
       setStage("chat");
     } catch (err: any) {
@@ -549,7 +559,7 @@ export default function GetStarted() {
                 onClick={async () => {
                   setStage("creating");
                   try {
-                    const { projectId: newId } = await createProjectMutation.mutateAsync();
+                    const { projectId: newId } = await createProjectMutation.mutateAsync(attrPayload);
                     setProjectId(newId);
                     setStage("chat");
                   } catch (err: any) {
