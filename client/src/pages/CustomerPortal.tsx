@@ -669,7 +669,7 @@ function OnboardingProjectTab({
     if (!project?.id) return;
     try {
       await approveMutation.mutateAsync({ projectId: project.id });
-      toast.success("Approved for launch! Our team will take it live soon.");
+      toast.success("Approved for launch. Deployment has started — you'll receive an email when your site is live.");
       onRefetch();
     } catch {
       toast.error("Failed to approve. Please try again.");
@@ -736,7 +736,7 @@ function OnboardingProjectTab({
             <CheckCircle className="h-12 w-12 text-electric mx-auto" />
             <h3 className="text-lg font-serif text-off-white">Approved — Going Live Soon</h3>
             <p className="text-sm text-soft-gray max-w-md mx-auto">
-              Your site has been approved. Our team is handling DNS setup and final checks. You'll receive an email when it's live.
+              Your site has been approved. Your DNS setup instructions have been emailed to you. We'll keep your launch status updated here.
             </p>
           </CardContent>
         </Card>
@@ -1227,7 +1227,7 @@ function InsightsTab({ project }: { project: any }) {
 function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
   const { data: widgets, isLoading } = trpc.widgetCatalog.list.useQuery();
   const requestWidget = trpc.upsells.requestWidget.useMutation({
-    onSuccess: (data) => toast.success(`Interest registered for ${data.widgetName}! Our team will reach out with details.`),
+    onSuccess: (data) => toast.success(`Interest registered for ${data.widgetName}! We've noted your interest. You can request this anytime through the Support tab.`),
     onError: () => toast.error("Something went wrong. Please try again."),
   });
 

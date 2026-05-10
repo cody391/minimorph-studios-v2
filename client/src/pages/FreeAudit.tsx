@@ -65,7 +65,7 @@ export default function FreeAudit() {
               {responseMessage.includes("on the way") ? (
                 <>Our AI is analyzing {websiteUrl || businessName} right now. You'll receive a detailed report at <span className="text-primary font-medium">{email}</span> within the next few minutes.</>
               ) : (
-                <>We received your request for <strong>{businessName || "your business"}</strong>. A team member will review it and reach out to <span className="text-primary font-medium">{email}</span> within 1 business day.</>
+                <>We'll analyze <strong>{businessName || "your business"}</strong> and send the full report to <span className="text-primary font-medium">{email}</span> shortly.</>
               )}
             </p>
             <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2 border border-border">

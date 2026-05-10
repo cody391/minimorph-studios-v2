@@ -229,7 +229,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // ── 5. Create contract (idempotent — one per checkout session) ─────
   let contractId: number | null = null;
 
-  if (customerId && session.id) {
+  // Rep-closed sessions carry an existing contract created by closeDeal.
+  // Step 9 activates it — creating a second generic repId=0 contract here would
+  // produce a duplicate. Skip generic creation for any rep-closed session.
+  const isRepClosedSession =
+    session.metadata?.rep_closed === "true" && !!session.metadata?.contract_id;
+
+  if (isRepClosedSession) {
+    contractId = parseInt(session.metadata!.contract_id!);
+    if (isNaN(contractId)) contractId = null;
+    console.log(
+      `[Stripe] Rep-closed session — skipping generic contract creation, ` +
+      `existing contract=${contractId} will be activated in step 9`
+    );
+  } else if (customerId && session.id) {
     const existingContracts = await database
       .select()
       .from(contracts)
