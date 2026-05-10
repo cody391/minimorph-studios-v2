@@ -94,8 +94,8 @@ Open your portal: ${portalUrl}
           <span style="display:inline-block;width:28px;height:28px;border-radius:50%;background:#4a9eff;color:#111122;text-align:center;line-height:28px;font-size:14px;font-weight:700;">2</span>
         </td>
         <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;">
-          <strong style="color:#eaeaf0;">Design Mockup</strong> (Week 1-2)<br/>
-          <span style="color:#9898a8;font-size:14px;">Our team creates your custom design based on your answers.</span>
+          <strong style="color:#eaeaf0;">Site Build</strong><br/>
+          <span style="color:#9898a8;font-size:14px;">Our AI build system creates your custom website based on your answers.</span>
         </td>
       </tr>
       <tr>
@@ -103,8 +103,8 @@ Open your portal: ${portalUrl}
           <span style="display:inline-block;width:28px;height:28px;border-radius:50%;background:#4a9eff;color:#111122;text-align:center;line-height:28px;font-size:14px;font-weight:700;">3</span>
         </td>
         <td style="padding:12px 16px;border-bottom:1px solid #2d2d45;">
-          <strong style="color:#eaeaf0;">Review & Revisions</strong> (Week 2-3)<br/>
-          <span style="color:#9898a8;font-size:14px;">You review the design and request any changes &mdash; up to ${params.packageTier === "premium" ? "unlimited" : "3"} rounds.</span>
+          <strong style="color:#eaeaf0;">Review & Revisions</strong><br/>
+          <span style="color:#9898a8;font-size:14px;">You review the site and request any changes &mdash; up to 3 revision rounds before launch.</span>
         </td>
       </tr>
       <tr>
@@ -112,7 +112,7 @@ Open your portal: ${portalUrl}
           <span style="display:inline-block;width:28px;height:28px;border-radius:50%;background:#d4a853;color:#111122;text-align:center;line-height:28px;font-size:14px;font-weight:700;">4</span>
         </td>
         <td style="padding:12px 16px;">
-          <strong style="color:#eaeaf0;">Launch!</strong> (Week 3-4)<br/>
+          <strong style="color:#eaeaf0;">Launch</strong><br/>
           <span style="color:#9898a8;font-size:14px;">Your new website goes live. We handle everything.</span>
         </td>
       </tr>
@@ -136,9 +136,9 @@ ${credentialTextBlock}
 What happens next:
 
 1. Onboarding questionnaire (today) — log in and tell us about your brand, audience, and vision.
-2. Design mockup (week 1–2) — our team builds your custom design based on your answers.
-3. Review & revisions (week 2–3) — you review and request changes.
-4. Launch (week 3–4) — your site goes live. We handle everything.
+2. Site build begins after onboarding — our AI build system creates your custom website based on your answers.
+3. Review & revisions — you review the site and request up to 3 revision rounds before launch.
+4. Launch — once approved, your site goes live.
 
 If you have any questions, just reply to this email or use the Support tab in your portal.
 

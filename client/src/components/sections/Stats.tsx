@@ -11,7 +11,7 @@ const trustItems = [
   { icon: BarChart3, label: "Monthly Reports" },
   { icon: Users, label: "You Own Your Site" },
   { icon: Shield, label: "No Surprise Fees" },
-  { icon: CheckCircle, label: "Human Support" },
+  { icon: CheckCircle, label: "Responsive Support" },
   { icon: Bot, label: "AI-Powered Recommendations" },
   { icon: Zap, label: "Domain Management Included" },
   { icon: RefreshCw, label: "12-Month Partnership" },

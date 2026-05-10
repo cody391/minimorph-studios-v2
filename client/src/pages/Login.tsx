@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLocation, useSearch } from "wouter";
+import { useLocation, useSearch, Link } from "wouter";
 import { toast } from "sonner";
 import { Eye, EyeOff, Lock, Mail, ArrowLeft, Sparkles } from "lucide-react";
 
@@ -170,7 +170,10 @@ export default function Login() {
                 Apply as a Sales Rep
               </Button>
               <p className="text-center text-[11px] text-soft-gray/60 font-sans">
-                Customers: Your account is created during the checkout process.
+                New customer?{" "}
+                <Link href="/get-started" className="text-electric hover:underline">
+                  Start your website here.
+                </Link>
               </p>
             </div>
           </CardContent>

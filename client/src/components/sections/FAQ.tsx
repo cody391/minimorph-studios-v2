@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     q: "What does \"AI-assisted\" actually mean?",
-    a: "It means our AI tools analyze your site performance, spot broken links, flag slow pages, and suggest improvements. But a real human reviews everything before it touches your site. Think of it as a really diligent intern that never sleeps.",
+    a: "It means our AI tools analyze your site performance, spot broken links, flag slow pages, and suggest improvements — and flag anything that needs a closer look before it touches your site.",
   },
   {
     q: "How long until I see my first draft?",
@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: "Do you work with businesses outside the US?",
-    a: "Yes — MiniMorph Studios works with businesses worldwide. Our process is fully remote and digital from day one. You'll have a dedicated portal, direct communication with your team, and regular check-ins no matter where you're located.",
+    a: "Yes — MiniMorph Studios works with businesses worldwide. Our process is fully remote and digital from day one. You'll have a dedicated portal, direct access to support, and regular progress updates no matter where you're located.",
   },
   {
     q: "Do you guarantee results?",
@@ -44,7 +44,7 @@ const faqs = [
   },
   {
     q: "How is this different from Wix or Squarespace?",
-    a: "Wix and Squarespace give you a tool and leave you to figure it out. We give you a team. We build the site for you, maintain it every month, provide real analytics, AI recommendations, and actual human support. You never touch a template — we handle everything.",
+    a: "Wix and Squarespace give you a tool and leave you to figure it out. We handle it for you. We build the site, maintain it every month, provide real analytics, AI recommendations, and responsive support. You never touch a template — we handle everything.",
   },
   {
     q: "What happens when my 12-month agreement ends?",

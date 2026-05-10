@@ -159,7 +159,7 @@ export default function Pricing() {
             transition={{ delay: 0.2 }}
             className="text-lg text-off-white/50 font-sans leading-relaxed"
           >
-            Every plan includes a custom build, your own portal, monthly reports, and a team that actually answers when you reach out.
+            Every plan includes a custom build, your own portal, monthly reports, and support when you need it.
           </motion.p>
         </div>
 

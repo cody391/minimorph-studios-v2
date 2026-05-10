@@ -50,7 +50,7 @@ export default function Contact() {
           >
             You've read this far, which means your current website situation probably
             isn't cutting it. Pick a plan, answer some questions, and let us handle the
-            rest. First draft in 48–72 hours. Monthly support forever after.
+            rest. Your first draft begins after onboarding is complete. Monthly support forever after.
           </motion.p>
 
           <motion.div

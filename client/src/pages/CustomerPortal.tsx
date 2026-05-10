@@ -214,7 +214,11 @@ export default function CustomerPortal() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-lg sm:text-xl font-serif mb-1">{customer.businessName}</h1>
-            <p className="text-xs sm:text-sm text-off-white/50 font-sans">Your MiniMorph website dashboard</p>
+            <p className="text-xs sm:text-sm text-off-white/50 font-sans capitalize">
+              {activeContract
+                ? `${activeContract.packageTier} Plan · ${activeContract.status.replace(/_/g, " ")}`
+                : "Your MiniMorph website dashboard"}
+            </p>
           </div>
           <Button variant="outline" onClick={() => setLocation("/")} className="text-off-white border-off-white/20 hover:bg-off-white/10 font-sans text-sm rounded-full w-fit">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -248,7 +252,7 @@ export default function CustomerPortal() {
               <Bot className="h-3 w-3 mr-1" /> AI Assistant
             </TabsTrigger>
             <TabsTrigger value="build-report" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">
-              <Shield className="h-3 w-3 mr-1" /> QA Report
+              <Shield className="h-3 w-3 mr-1" /> Build Report
             </TabsTrigger>
           </TabsList>
           </div>
@@ -404,7 +408,7 @@ export default function CustomerPortal() {
                 {!reportsData?.length ? (
                   <div className="text-center py-12">
                     <BarChart3 className="h-10 w-10 text-soft-gray/20 mx-auto mb-3" />
-                    <p className="text-sm text-soft-gray font-sans">No reports generated yet. Your first monthly report will appear here.</p>
+                    <p className="text-sm text-soft-gray font-sans">Your first monthly report will appear here after your site is live and has started collecting performance data.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -793,7 +797,7 @@ function OnboardingProjectTab({
           <p className="text-sm text-soft-gray max-w-md mx-auto">
             {project.generationLog || "Something went wrong during site generation."}
           </p>
-          <p className="text-xs text-soft-gray/50">Our team has been notified and will resolve this shortly.</p>
+          <p className="text-xs text-soft-gray/50">Use the Support tab to submit a request and we'll get it moving.</p>
         </CardContent>
       </Card>
     );
@@ -1123,7 +1127,7 @@ function InsightsTab({ project }: { project: any }) {
   const [requested, setRequested] = useState(false);
   const requestAnalysis = trpc.onboarding.requestCompetitiveAnalysis.useMutation({
     onSuccess: () => {
-      toast.success("Request sent! Our team will run your competitive analysis shortly.");
+      toast.success("Request sent! Your competitive analysis has been queued.");
       setRequested(true);
     },
     onError: (err) => toast.error(err.message || "Unable to submit request. Please try again."),
@@ -1267,7 +1271,7 @@ function WidgetCatalogBrowser({ customerId }: { customerId?: number }) {
                     if (customerId) {
                       requestWidget.mutate({ customerId, widgetId: widget.id });
                     } else {
-                      toast.info("Interested! We'll have your account manager reach out with details.");
+                      toast.info("Interested! Submit a support request and we'll get this set up for you.");
                     }
                   }}
                 >
@@ -1468,6 +1472,23 @@ function SupportTab({ customerId }: { customerId: number }) {
         </CardContent>
       </Card>
 
+      {/* Cancellation Instructions */}
+      <Card className="border-border/50">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Shield className="h-5 w-5 text-soft-gray shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-sm font-medium text-off-white font-sans mb-1">Cancellation & Early Termination</h4>
+              <p className="text-xs text-soft-gray font-sans leading-relaxed">
+                Plans are 12-month agreements. After your term, you may cancel with 30 days' written notice — no penalty.
+                Early cancellation requires payment of the remaining months in your agreement.
+                To request cancellation, submit a support ticket below with the subject "Cancellation Request" and we'll walk you through the process.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Support Request Form */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
@@ -1518,7 +1539,7 @@ function SupportTab({ customerId }: { customerId: number }) {
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Provide details about your request..."
+                placeholder="Tell us what you need changed, where it appears, and any deadline or priority."
                 required
                 rows={4}
                 className="w-full px-3 py-2 text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white placeholder:text-soft-gray/40 focus:outline-none focus:ring-2 focus:ring-electric/30 focus:border-electric/50 resize-none"

@@ -528,9 +528,9 @@ export default function GetStarted() {
                 </button>
                 <span className="text-gray-600">
                   Forgot password?{" "}
-                  <a href="mailto:hello@minimorphstudios.net" className="text-[#4a9eff] hover:underline">
-                    Contact us
-                  </a>
+                  <Link href="/forgot-password" className="text-[#4a9eff] hover:underline">
+                    Reset it here
+                  </Link>
                 </span>
               </div>
             </form>

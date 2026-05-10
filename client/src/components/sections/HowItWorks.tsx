@@ -31,7 +31,7 @@ const steps = [
     number: "03",
     title: "We Build It",
     description: "We combine professionally designed industry templates with AI that writes copy specific to your business — your services, your story, your voice. The result looks custom because the content is custom.",
-    aside: "First draft in 48–72 hours",
+    aside: "First draft after onboarding is complete",
   },
   {
     icon: MessageSquare,
@@ -51,7 +51,7 @@ const steps = [
     icon: BarChart3,
     number: "06",
     title: "Monthly Care Begins",
-    description: "Monthly performance reports, change requests handled in 48 hours, and AI recommendations for what to improve next. This is where most agencies disappear. We don't.",
+    description: "Monthly performance reports, ongoing change requests via your portal, and AI recommendations for what to improve next. This is where most agencies disappear. We don't.",
     aside: "Every month, for real",
   },
 ];

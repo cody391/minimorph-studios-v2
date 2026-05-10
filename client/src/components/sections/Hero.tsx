@@ -57,7 +57,7 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-lg lg:text-xl text-off-white/60 font-sans leading-relaxed mb-10 max-w-lg"
             >
-              Most agencies disappear after launch. We don't. Every plan includes a dedicated specialist, AI-assisted build, monthly reports, and support that actually responds — starting at $195/mo.
+              Most agencies disappear after launch. We don't. Every plan includes an AI-assisted build, monthly reports, and support that actually responds — starting at $195/mo.
             </motion.p>
 
             <motion.div
@@ -120,7 +120,7 @@ export default function Hero() {
               </div>
               <div className="flex items-center gap-2">
                 <Zap size={14} className="text-electric/60" />
-                <span>First draft in 48–72 hours</span>
+                <span>First draft after onboarding is complete</span>
               </div>
               <div className="flex items-center gap-2">
                 <BarChart3 size={14} className="text-electric/60" />
