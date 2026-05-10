@@ -199,6 +199,35 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const packageTier = (session.metadata?.package_tier || orderRow?.packageTier || "starter") as PackageKey;
   const monthlyPrice = PACKAGES[packageTier].monthlyPrice;
 
+  // ── Attribution metadata from AI-drip flow ──────────────────────────
+  const isRepClosedSession =
+    session.metadata?.rep_closed === "true" && !!session.metadata?.contract_id;
+
+  const _rawLeadId = session.metadata?.lead_id;
+  const _leadIdString = typeof _rawLeadId === "string" ? _rawLeadId.trim() : "";
+  const _parsedLeadId = /^\d+$/.test(_leadIdString) ? Number(_leadIdString) : NaN;
+  const metaLeadId = Number.isSafeInteger(_parsedLeadId) && _parsedLeadId > 0 ? _parsedLeadId : null;
+  const _rawSource = session.metadata?.acquisition_source || session.metadata?.source || "self_service";
+  const metaSource = String(_rawSource).trim().slice(0, 64) || "self_service";
+
+  // Validate lead attribution — skip if not found or already rep-owned
+  let attributionLeadId = metaLeadId;
+  if (!isRepClosedSession && attributionLeadId) {
+    try {
+      const attributionLead = await db.getLeadById(attributionLeadId);
+      if (!attributionLead) {
+        attributionLeadId = null;
+        console.warn("[Stripe] Skipping lead attribution: lead not found", { leadId: metaLeadId });
+      } else if ((attributionLead as any).assignedRepId) {
+        attributionLeadId = null;
+        console.warn("[Stripe] Skipping self-service attribution for rep-owned lead", { leadId: metaLeadId });
+      }
+    } catch (err) {
+      attributionLeadId = null;
+      console.warn("[Stripe] Skipping lead attribution after lead lookup failure", err instanceof Error ? err.message : String(err));
+    }
+  }
+
   // ── 4. Create customer record (idempotent) ─────────────────────────
   let customerId: number | null = null;
 
@@ -220,6 +249,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         email: customerEmail || "",
         phone: session.metadata?.phone || undefined,
         status: "active",
+        ...(!isRepClosedSession ? { acquisitionSource: metaSource } : {}),
       });
       customerId = newCustomer.id;
       console.log(`[Stripe] Customer created: customer=${customerId}, user=${userId}`);
@@ -232,9 +262,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Rep-closed sessions carry an existing contract created by closeDeal.
   // Step 9 activates it — creating a second generic repId=0 contract here would
   // produce a duplicate. Skip generic creation for any rep-closed session.
-  const isRepClosedSession =
-    session.metadata?.rep_closed === "true" && !!session.metadata?.contract_id;
-
   if (isRepClosedSession) {
     contractId = parseInt(session.metadata!.contract_id!);
     if (isNaN(contractId)) contractId = null;
@@ -274,6 +301,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         endDate,
         stripeSubscriptionId: stripeSubscriptionId || undefined,
         notes: "Self-service checkout via Stripe",
+        salesSource: metaSource,
+        ...(attributionLeadId ? { leadId: attributionLeadId } : {}),
       });
       contractId = newContract.id;
       console.log(`[Stripe] Contract created: contract=${contractId}, customer=${customerId}, package=${packageTier}, sub=${stripeSubscriptionId}`);
@@ -315,6 +344,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         });
         console.log(`[Stripe] Onboarding project created: project=${newProject.id}, customer=${customerId}`);
       }
+    }
+  }
+
+  // ── 6b. Mark lead as self-closed after successful checkout ──────────
+  if (!isRepClosedSession && attributionLeadId) {
+    try {
+      await db.updateLead(attributionLeadId, { selfClosed: true } as any);
+      console.log(`[Stripe] Lead ${attributionLeadId} marked selfClosed after checkout`);
+    } catch (err) {
+      console.warn(`[Stripe] Failed to mark lead ${attributionLeadId} selfClosed:`, err instanceof Error ? err.message : String(err));
     }
   }
 
