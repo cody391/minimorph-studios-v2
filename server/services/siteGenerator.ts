@@ -661,7 +661,9 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     });
   } catch {}
 
-  try {
+  let generationTimedOut = false;
+
+  const _generationBody = async () => {
     const assets = await db.listProjectAssets(projectId);
     const questionnaire = project.questionnaire as Record<string, unknown> | null;
 
@@ -1200,6 +1202,11 @@ ${Object.keys(pages)
     // Store the cloudflare project name so siteDeployment can reuse it
     const cfProjectName = getProjectName(resolvedBusinessName, projectId);
 
+    if (generationTimedOut) {
+      console.warn(`[SiteGenerator] Project ${projectId} completed after timeout; skipping late success updates`);
+      return;
+    }
+
     await db.updateOnboardingProject(projectId, {
       generationStatus: "complete",
       generationLog: `Generated ${Object.keys(pages).length} pages: ${Object.keys(pages).join(", ")}`,
@@ -1364,6 +1371,7 @@ ${Object.keys(pages)
               (a.product || "").toLowerCase().replace(/\s+/g, "_")
             ),
             questionnaire: q as Record<string, any>,
+            htmlContent: pages["index"],
           };
 
           runQAWithSafeguards(qaCtx, reporter, database).then(result => {
@@ -1376,6 +1384,14 @@ ${Object.keys(pages)
         console.error("[Agent4] Failed to start QA:", e.message);
       }
     }
+  };
+  try {
+    await Promise.race([
+      _generationBody(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => { generationTimedOut = true; reject(new Error("Generation timed out after 25 minutes")); }, 25 * 60 * 1000)
+      ),
+    ]);
   } catch (err) {
     console.error(`[SiteGenerator] Project ${projectId} generation failed:`, err);
     await db.updateOnboardingProject(projectId, {

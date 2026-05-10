@@ -39,6 +39,7 @@ export interface QAContext {
   domain: string;
   purchasedAddons: string[];
   questionnaire: Record<string, any>;
+  htmlContent?: string;
 }
 
 function extractLLMText(result: any): string {
@@ -177,7 +178,7 @@ export async function runQAInspector(
 async function checkContentAndLegal(ctx: QAContext, reporter: BuildReporter): Promise<QAIssue[]> {
   const issues: QAIssue[] = [];
   try {
-    const siteContent = await fetchSiteContent(ctx.siteUrl);
+    const siteContent = await fetchSiteContent(ctx.siteUrl, ctx.htmlContent);
     if (!siteContent) {
       issues.push({ layer: "content", severity: "critical", ruleKey: "site_not_accessible",
         description: "Site is not accessible for QA inspection", autoFixable: false,
@@ -535,7 +536,7 @@ async function checkRegulatory(ctx: QAContext, reporter: BuildReporter, db: any)
 
     await reporter.info("qa_layer5", `Checking ${rules.length} rules for industry: ${industry}`);
 
-    const siteContent = await fetchSiteContent(ctx.siteUrl);
+    const siteContent = await fetchSiteContent(ctx.siteUrl, ctx.htmlContent);
     if (!siteContent || rules.length === 0) return issues;
 
     const { invokeLLM } = await import("../_core/llm");
@@ -583,7 +584,7 @@ Only include actual violations. Return [] if all rules pass.` }],
 async function checkCopyright(ctx: QAContext, reporter: BuildReporter): Promise<QAIssue[]> {
   const issues: QAIssue[] = [];
   try {
-    const siteContent = await fetchSiteContent(ctx.siteUrl);
+    const siteContent = await fetchSiteContent(ctx.siteUrl, ctx.htmlContent);
     if (!siteContent) return issues;
 
     const { invokeLLM } = await import("../_core/llm");
@@ -687,7 +688,8 @@ async function applyAutoFix(issue: QAIssue, ctx: QAContext, reporter: BuildRepor
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────────── */
-async function fetchSiteContent(url: string): Promise<string | null> {
+async function fetchSiteContent(url: string, htmlContent?: string): Promise<string | null> {
+  if (htmlContent) return htmlContent;
   try {
     const firecrawlKey = ENV.firecrawlApiKey || "";
     if (firecrawlKey) {

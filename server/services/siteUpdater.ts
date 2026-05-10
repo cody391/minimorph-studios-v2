@@ -153,6 +153,8 @@ Only return pages that are in the input — do not invent new pages.`;
     await db.updateOnboardingProject(projectId, {
       generationStatus: "failed",
       generationLog: `Change request failed: ${err instanceof Error ? err.message : String(err)}`,
+      revisionsCount: Math.max(0, (project.revisionsCount || 1) - 1),
+      revisionsRemaining: (project.revisionsRemaining ?? 0) + 1,
     }).catch(() => {});
   }
 }
