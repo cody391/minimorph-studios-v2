@@ -619,7 +619,7 @@ export async function sendPaymentLinkEmail(params: {
       </a>
     </div>
     <p style="margin:0 0 16px;font-size:14px;color:#9898a8;">
-      Once payment is confirmed, your onboarding portal will activate and our team will begin your custom website build.
+      Once payment is confirmed, your onboarding portal will activate and your custom website build will begin automatically.
     </p>
     <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
   `);
@@ -651,8 +651,8 @@ export async function sendPaymentLinkReminderEmail(params: {
       hasn't been completed yet. Your original payment link may have expired.
     </p>
     <p style="margin:0 0 16px;color:#c8c8d8;">
-      No worries &mdash; our team will send you a fresh payment link shortly. If you have any questions
-      about your package or need to make changes, just reply to this email.
+      No worries &mdash; your payment is still pending. Reply to this email if you need a fresh secure
+      checkout link, or if you have any questions about your package.
     </p>
     <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
@@ -746,8 +746,8 @@ export async function sendAuditReceivedEmail(params: {
       Thank you for your interest in a website audit for <strong style="color:#eaeaf0;">${params.businessName}</strong>.
     </p>
     <p style="margin:0 0 16px;color:#c8c8d8;">
-      Since we didn't receive a website URL, one of our team members will review your request
-      and reach out within 1 business day with personalized recommendations for your online presence.
+      Since we didn't receive a website URL, we've logged your request and will use the information
+      provided to prepare personalized recommendations for your online presence.
     </p>
     <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #d4a853;">
       <p style="margin:0;font-size:14px;color:#c8c8d8;">

@@ -324,7 +324,7 @@ export function QuestionnaireWizard({
         questionnaire: buildPayload(),
       });
       if (result.needsCustomQuote) {
-        toast.info("Questionnaire saved! Your project has been flagged for a custom quote. Our team will review your requirements and reach out within 1 business day.", { duration: 8000 });
+        toast.info("Questionnaire saved! Your requirements have been logged for a custom quote. We'll use them to prepare tailored pricing.", { duration: 8000 });
       } else {
         toast.success("Questionnaire saved!");
       }
@@ -872,7 +872,7 @@ export function QuestionnaireWizard({
                     <div className="rounded-lg border border-amber-300 bg-amber-500/10 p-3 flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
                       <p className="text-xs text-amber-800">
-                        <strong>Ecommerce projects require a custom Commerce quote.</strong> Please fill out the details below so we can scope your project accurately. Our team will follow up with tailored pricing.
+                        <strong>Ecommerce projects require a custom Commerce quote.</strong> Please fill out the details below so we can scope your project accurately. These details help us prepare tailored pricing.
                       </p>
                     </div>
                     <div className="space-y-2">
