@@ -488,6 +488,10 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `coupons` ADD COLUMN `packageRestriction` varchar(64) NOT NULL DEFAULT 'all'");
     await safe("ALTER TABLE `coupons` ADD COLUMN `campaignName` varchar(128) DEFAULT NULL");
 
+    // ── Columns from 0052 (onboarding project attribution) ───────────────
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `leadId` int DEFAULT NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `acquisitionSource` varchar(64) DEFAULT NULL");
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);

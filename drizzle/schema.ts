@@ -489,6 +489,10 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   userId: int("userId"),
   source: varchar("source", { length: 50 }).default("rep_closed"),
 
+  // Attribution — links project back to the originating lead and acquisition channel
+  leadId: int("leadId"),
+  acquisitionSource: varchar("acquisitionSource", { length: 64 }),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
