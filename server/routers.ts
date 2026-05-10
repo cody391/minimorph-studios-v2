@@ -21,7 +21,7 @@ import { devAccessRouter } from "./devAccessRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
 import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users, launchChecklist, siteBuildReports } from "../drizzle/schema";
 import { getDb } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, or } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
 import { teamFeedRouter } from "./teamFeedRouter";
 import { invokeLLM } from "./_core/llm";
@@ -1939,6 +1939,18 @@ Channel: ${log.channel}\n\n${log.content || "No content"}`,
     if (!custs.length) return [];
     const allLogs = await db.listNurtureLogsByCustomer(custs[0].id);
     return allLogs.filter((l: any) => l.type === "support_request" || l.type === "update_request");
+  }),
+
+  // Admin: read-only list of portal support/update requests from nurtureLogs
+  listPortalRequests: adminProcedure.query(async () => {
+    const database = await getDb();
+    if (!database) return [];
+    return database
+      .select()
+      .from(nurtureLogs)
+      .where(or(eq(nurtureLogs.type, "support_request"), eq(nurtureLogs.type, "update_request")))
+      .orderBy(desc(nurtureLogs.createdAt))
+      .limit(100);
   }),
 });
 

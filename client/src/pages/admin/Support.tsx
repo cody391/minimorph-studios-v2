@@ -113,6 +113,7 @@ function TicketRow({ ticket, refetch }: { ticket: any; refetch: () => void }) {
 export default function Support() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { data: tickets, refetch } = trpc.support.listAllTickets.useQuery();
+  const { data: portalRequests } = trpc.nurture.listPortalRequests.useQuery();
 
   const filtered = tickets?.filter(t => statusFilter === "all" || t.status === statusFilter) ?? [];
 
@@ -143,6 +144,52 @@ export default function Support() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-white/10 bg-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-orange-400" />
+            Portal Support Requests
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Customer Portal submissions appear here. Full ticket replies/status tools below are for support-ticket records.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {!portalRequests || portalRequests.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-6">No portal support requests yet.</div>
+          ) : (
+            portalRequests.map((req: any) => {
+              const isCancellation =
+                req.subject?.toLowerCase().includes("cancel") ||
+                req.content?.toLowerCase().includes("cancel");
+              return (
+                <div
+                  key={req.id}
+                  className={`rounded-lg border p-3 space-y-1.5 ${isCancellation ? "border-red-500/40 bg-red-500/5" : "border-white/10"}`}
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}
+                    </span>
+                    <span className="text-xs text-muted-foreground">· Customer #{req.customerId}</span>
+                    <Badge className={`text-xs ${req.type === "update_request" ? "bg-purple-500/20 text-purple-400" : "bg-orange-500/20 text-orange-400"}`}>
+                      {req.type === "update_request" ? "Update" : "Support"}
+                    </Badge>
+                    {isCancellation && (
+                      <Badge className="text-xs bg-red-500/20 text-red-400">Cancellation</Badge>
+                    )}
+                  </div>
+                  <div className="text-sm font-medium text-foreground">{req.subject || "(no subject)"}</div>
+                  {req.content && (
+                    <div className="text-xs text-muted-foreground line-clamp-2">{req.content}</div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-white/10 bg-card">
         <CardHeader className="pb-3 flex flex-row items-center justify-between">
