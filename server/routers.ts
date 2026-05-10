@@ -1107,6 +1107,146 @@ const leadsRouter = router({
         roiMultiple: totalCostCents > 0 ? (annualRevCents / totalCostCents) : null,
       };
     }),
+
+  // Rep: generate a Stripe payment link for a closed_won lead with a pending_payment contract
+  generateRepPaymentLink: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      // 1. Confirm requester is a rep
+      const rep = await db.getRepByUserId(ctx.user.id);
+      if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+
+      // 2. Confirm lead belongs to this rep and is closed_won
+      const lead = await db.getLeadById(input.leadId);
+      if (!lead || lead.assignedRepId !== rep.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "This lead is not assigned to you" });
+      }
+      if (lead.stage !== "closed_won") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Payment links can only be sent for closed deals" });
+      }
+
+      // 3. Find the customer and pending_payment contract for this rep
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [customer] = await database
+        .select()
+        .from(customers)
+        .where(eq(customers.leadId, lead.id))
+        .limit(1);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "No customer record found for this lead" });
+
+      const [contract] = await database
+        .select()
+        .from(contracts)
+        .where(and(eq(contracts.customerId, customer.id), eq(contracts.repId, rep.id)))
+        .orderBy(desc(contracts.createdAt))
+        .limit(1);
+      if (!contract) throw new TRPCError({ code: "NOT_FOUND", message: "No contract found for this customer" });
+      if (contract.status !== "pending_payment") {
+        const reason = contract.status === "active"
+          ? "This contract is already active — payment was received."
+          : "No pending payment contract found.";
+        throw new TRPCError({ code: "BAD_REQUEST", message: reason });
+      }
+
+      // 4. Create Stripe checkout session — mirrors resendPaymentLink exactly
+      const Stripe = (await import("stripe")).default;
+      const { PACKAGES } = await import("../shared/pricing");
+      const stripeKey = ENV.stripeSecretKey;
+      if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
+
+      const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
+      const pkg = PACKAGES[contract.packageTier as keyof typeof PACKAGES];
+      if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid package tier" });
+
+      const existingCommissions = await db.getActiveCommissionsByContract(contract.id);
+      const initialCommission = existingCommissions.find((c: any) => c.type === "initial_sale");
+      const isSelfSourced = initialCommission?.selfSourced ?? false;
+
+      const origin = ctx.req.headers.origin || ctx.req.headers.referer || "https://www.minimorphstudios.net";
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer_email: customer.email,
+        client_reference_id: String(customer.id),
+        allow_promotion_codes: true,
+        subscription_data: {
+          metadata: {
+            user_id: customer.userId ? String(customer.userId) : "",
+            package_tier: contract.packageTier,
+            business_name: customer.businessName,
+            contract_id: String(contract.id),
+            lead_id: String(lead.id),
+            rep_id: String(rep.id),
+            customer_id: String(customer.id),
+            rep_closed: "true",
+            self_sourced: isSelfSourced ? "true" : "false",
+          },
+        },
+        metadata: {
+          user_id: customer.userId ? String(customer.userId) : "",
+          customer_email: customer.email,
+          customer_name: customer.contactName,
+          package_tier: contract.packageTier,
+          business_name: customer.businessName,
+          contract_id: String(contract.id),
+          lead_id: String(lead.id),
+          rep_id: String(rep.id),
+          customer_id: String(customer.id),
+          rep_closed: "true",
+          self_sourced: isSelfSourced ? "true" : "false",
+        },
+        line_items: (() => {
+          const priceId = getStripePriceId(contract.packageTier);
+          return priceId
+            ? [{ price: priceId, quantity: 1 }]
+            : [{
+                price_data: {
+                  currency: "usd",
+                  product_data: { name: `${pkg.name} Package`, description: pkg.description },
+                  unit_amount: Math.round(pkg.monthlyPrice * 100),
+                  recurring: { interval: "month" },
+                },
+                quantity: 1,
+              }];
+        })(),
+        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/get-started?cancelled=true`,
+      });
+
+      const paymentUrl = session.url;
+
+      // 5. Send payment link email to customer
+      if (paymentUrl) {
+        const { sendPaymentLinkEmail } = await import("./services/customerEmails");
+        await sendPaymentLinkEmail({
+          to: customer.email,
+          customerName: customer.contactName,
+          businessName: customer.businessName,
+          packageTier: contract.packageTier as any,
+          paymentUrl,
+          repName: rep.fullName,
+        });
+      }
+
+      // 6. Log to nurture logs (mirrors resendPaymentLink)
+      try {
+        await database.insert(nurtureLogs).values({
+          customerId: customer.id,
+          type: "support_request",
+          channel: "email",
+          subject: "Payment link sent by rep",
+          content: `Payment link generated by rep ${rep.fullName} for contract #${contract.id}`,
+          status: "sent",
+          scheduledAt: new Date(),
+          sentAt: new Date(),
+        });
+      } catch (logErr) {
+        console.error("[generateRepPaymentLink] Failed to log nurture entry:", logErr);
+      }
+
+      return { success: true, paymentUrl };
+    }),
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -1310,6 +1450,26 @@ const contractsRouter = router({
       await assertRepOwnership(ctx.user, input.repId);
       return db.listContractsByRep(input.repId);
     }),
+
+  // Self-resolving: returns contracts for the logged-in rep with leadId joined from customers
+  myContracts: protectedProcedure.query(async ({ ctx }) => {
+    const rep = await db.getRepByUserId(ctx.user.id);
+    if (!rep) return [];
+    const database = await getDb();
+    if (!database) return [];
+    const rows = await database
+      .select({
+        id: contracts.id,
+        status: contracts.status,
+        packageTier: contracts.packageTier,
+        customerId: contracts.customerId,
+        leadId: customers.leadId,
+      })
+      .from(contracts)
+      .innerJoin(customers, eq(contracts.customerId, customers.id))
+      .where(eq(contracts.repId, rep.id));
+    return rows;
+  }),
 
   update: adminProcedure
     .input(

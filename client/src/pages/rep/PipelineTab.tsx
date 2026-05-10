@@ -20,6 +20,7 @@ import {
   Target, Flame, Snowflake, Sun, Phone, Mail, FileText, Sparkles,
   GripVertical, ChevronRight, CheckCircle, XCircle, Loader2, Plus,
   ArrowRight, DollarSign, Send, Eye, Handshake, ShieldCheck, MessageSquare,
+  CreditCard, Link,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +49,34 @@ const PACKAGE_PRICES: Record<string, string> = {
   premium: String(PACKAGES.premium.monthlyPrice),
 };
 
+/* ─── Helpers ─── */
+function formatContractStatus(status?: string): { label: string; tone: "green" | "amber" | "gray" } {
+  switch (status) {
+    case "pending_payment":
+      return { label: "Awaiting Payment", tone: "amber" };
+    case "active":
+    case "expiring_soon":
+      return { label: "Paid", tone: "green" };
+    case "cancelled":
+    case "expired":
+      return { label: "Inactive", tone: "gray" };
+    default:
+      return { label: "Status Unknown", tone: "gray" };
+  }
+}
+
+const contractStatusBadgeClass: Record<"green" | "amber" | "gray", string> = {
+  green: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  gray: "bg-soft-gray/10 text-soft-gray border-border/20",
+};
+
+const contractStatusStripClass: Record<"green" | "amber" | "gray", string> = {
+  green: "bg-emerald-500/5 border-emerald-500/20",
+  amber: "bg-amber-500/5 border-amber-500/20",
+  gray: "bg-soft-gray/5 border-border/20",
+};
+
 /* ─── Types ─── */
 type Lead = {
   id: number;
@@ -68,6 +97,46 @@ type Lead = {
   totalCostCents?: number;
 };
 
+/* ─── Payment Status Strip (detail dialog) ─── */
+function PaymentStatusStrip({
+  leadId,
+  contract,
+  isPending,
+  onSend,
+}: {
+  leadId: number;
+  contract?: { id: number; status: string; packageTier: string };
+  isPending: boolean;
+  onSend: () => void;
+}) {
+  const fmt = formatContractStatus(contract?.status);
+  const isPendingPayment = contract?.status === "pending_payment";
+  return (
+    <div className={`rounded-lg p-3 border flex flex-col gap-2 ${contractStatusStripClass[fmt.tone]}`}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-off-white flex items-center gap-1.5">
+          <CreditCard className="h-3.5 w-3.5" /> Payment Status
+        </span>
+        <Badge className={`text-[10px] ${contractStatusBadgeClass[fmt.tone]}`}>{fmt.label}</Badge>
+      </div>
+      {isPendingPayment && (
+        <Button
+          size="sm"
+          className="w-full text-xs font-sans bg-electric hover:bg-electric/90 text-white rounded-full"
+          disabled={isPending}
+          onClick={onSend}
+        >
+          {isPending ? (
+            <span className="flex items-center gap-2"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Sending...</span>
+          ) : (
+            <span className="flex items-center gap-2"><Link className="h-3.5 w-3.5" /> Send Payment Link to Customer</span>
+          )}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════
    PIPELINE TAB — Kanban board for rep leads
    ═══════════════════════════════════════════════════════ */
@@ -75,6 +144,7 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
   const utils = trpc.useUtils();
   const { data: myLeads = [], isLoading } = trpc.leads.myLeads.useQuery(undefined, { enabled: !!repProfile });
   const { data: leadPool = [] } = trpc.leads.leadPool.useQuery(undefined, { enabled: !!repProfile });
+  const { data: myContracts = [] } = trpc.contracts.myContracts.useQuery(undefined, { enabled: !!repProfile });
 
   const updateLead = trpc.leads.updateMyLead.useMutation({
     onSuccess: () => { utils.leads.myLeads.invalidate(); toast.success("Lead updated"); },
@@ -88,7 +158,24 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
     onError: (e) => toast.error(e.message),
   });
   const closeDeal = trpc.leads.closeDeal.useMutation({
-    onSuccess: () => { utils.leads.myLeads.invalidate(); toast.success("Deal closed! Customer, contract, and commission created."); },
+    onSuccess: () => {
+      utils.leads.myLeads.invalidate();
+      utils.contracts.myContracts.invalidate();
+      toast.success("Deal closed! Find the won lead card below to send the payment link.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const generateRepPaymentLink = trpc.leads.generateRepPaymentLink.useMutation({
+    onSuccess: (data) => {
+      if (data.paymentUrl) {
+        navigator.clipboard.writeText(data.paymentUrl).then(
+          () => toast.success("Payment link sent to customer and copied to your clipboard!"),
+          () => toast.success("Payment link sent to customer. Copy to clipboard failed — the email was sent.")
+        );
+      } else {
+        toast.success("Payment link email sent to customer!");
+      }
+    },
     onError: (e) => toast.error(e.message),
   });
   const createMyLead = trpc.leads.createMyLead.useMutation({
@@ -142,6 +229,14 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
     }
     return grouped;
   }, [myLeads]);
+
+  const contractByLeadId = useMemo(() => {
+    const map: Record<number, { id: number; status: string; packageTier: string }> = {};
+    for (const c of myContracts) {
+      if (c.leadId != null) map[c.leadId] = { id: c.id, status: c.status, packageTier: c.packageTier };
+    }
+    return map;
+  }, [myContracts]);
 
   const activeCount = useMemo(() => PIPELINE_STAGES.reduce((sum, s) => sum + (leadsByStage[s.key]?.length || 0), 0), [leadsByStage]);
   const wonCount = leadsByStage["closed_won"]?.length || 0;
@@ -398,13 +493,51 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                 {(leadsByStage[cs.key] || []).length === 0 ? (
                   <p className="text-xs text-soft-gray/60 font-sans">None yet</p>
                 ) : (
-                  <div className="space-y-1.5">
-                    {(leadsByStage[cs.key] || []).slice(0, 5).map((lead) => (
-                      <div key={lead.id} className="flex items-center justify-between text-sm font-sans p-2 rounded border border-border/20">
-                        <span className="text-off-white">{lead.businessName}</span>
-                        <span className="text-xs text-soft-gray/60">{lead.contactName}</span>
-                      </div>
-                    ))}
+                  <div className="space-y-2">
+                    {/* Won: show all (no slice) so every deal has access to payment link.
+                        Lost: cap at 5 — no actions needed there. */}
+                    {(cs.key === "closed_won"
+                      ? leadsByStage[cs.key] || []
+                      : (leadsByStage[cs.key] || []).slice(0, 5)
+                    ).map((lead) => {
+                      const contract = contractByLeadId[lead.id];
+                      const isPendingPayment = contract?.status === "pending_payment";
+                      const fmt = formatContractStatus(contract?.status);
+                      return (
+                        <div
+                          key={lead.id}
+                          className={`p-2.5 rounded border border-border/20 font-sans space-y-2 ${cs.key === "closed_won" ? "cursor-pointer hover:bg-midnight-dark/20 transition-colors" : ""}`}
+                          onClick={cs.key === "closed_won" ? () => { setSelectedLead(lead); setShowDetail(true); } : undefined}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-off-white">{lead.businessName}</span>
+                            {cs.key === "closed_won" && contract && (
+                              <Badge className={`text-[10px] ${contractStatusBadgeClass[fmt.tone]}`}>
+                                {fmt.label}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-soft-gray/60">{lead.contactName}</span>
+                            {cs.key === "closed_won" && isPendingPayment && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[10px] px-2 border-electric/30 text-electric hover:bg-electric/10 font-sans"
+                                disabled={generateRepPaymentLink.isPending}
+                                onClick={(e) => { e.stopPropagation(); generateRepPaymentLink.mutate({ leadId: lead.id }); }}
+                              >
+                                {generateRepPaymentLink.isPending ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <><Link className="h-3 w-3 mr-1" /> Send Payment Link</>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -556,6 +689,14 @@ export default function PipelineTab({ repProfile }: { repProfile: any }) {
                   <span className="text-amber-400 font-medium">${((selectedLead.totalCostCents ?? 0) / 100).toFixed(2)}</span>
                 </div>
               )}
+
+              {/* Payment status strip — shown for closed_won leads */}
+              {selectedLead.stage === "closed_won" && <PaymentStatusStrip
+                leadId={selectedLead.id}
+                contract={contractByLeadId[selectedLead.id]}
+                isPending={generateRepPaymentLink.isPending}
+                onSend={() => generateRepPaymentLink.mutate({ leadId: selectedLead.id })}
+              />}
 
               {/* SMS Opt-In Status */}
               {selectedLead.phone && (
