@@ -339,7 +339,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // ── 8. Auto-create initial commission for the rep (if applicable) ──
-  await createInitialCommission(session);
+  if (!isRepClosedSession) {
+    await createInitialCommission(session, contractId);
+  } else {
+    console.log("[StripeWebhook] Skipping initial commission creation for rep-closed checkout; Step 9 will approve existing pending commission");
+  }
 
   // ── 9. Activate rep-closed contracts upon payment confirmation ──────
   if (session.metadata?.rep_closed === "true" && session.metadata?.contract_id) {
@@ -847,82 +851,81 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
  * Create initial commission on first checkout (called from handleCheckoutCompleted).
  * Renamed from createRecurringCommission to clarify its role.
  */
-async function createInitialCommission(session: Stripe.Checkout.Session) {
+async function createInitialCommission(session: Stripe.Checkout.Session, currentContractId: number | null) {
   try {
     const database = await getDb();
     if (!database) return;
 
-    const customerEmail = session.customer_email || session.metadata?.customer_email;
-    if (!customerEmail) return;
-
-    const customerRows = await database.select().from(users).where(eq(users.email, customerEmail)).limit(1);
-    if (!customerRows.length) return;
-
-    const activeContracts = await database.select().from(contracts)
-      .where(and(eq(contracts.status, "active")))
-      .orderBy(desc(contracts.createdAt));
-
-    for (const contract of activeContracts) {
-      if (!contract.repId || contract.repId === 0) continue;
-
-      const existingCommissions = await db.getActiveCommissionsByContract(contract.id);
-      const hasInitialSale = existingCommissions.some(c => c.type === "initial_sale");
-      if (hasInitialSale) continue; // Already has initial commission
-
-      // This is the first payment — create initial_sale commission
-      const monthlyPrice = parseFloat(contract.monthlyPrice);
-
-      const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, contract.repId)).limit(1);
-      const tierKey = (tierRows[0]?.tier || "bronze") as TierKey;
-      let rate = TIER_CONFIG[tierKey].commissionRate / 100;
-
-      // Self-sourced leads get 2x rate (capped at 40%)
-      // Check if the lead was self-sourced by checking the contract metadata
-      const isSelfSourced = false; // Initial checkout doesn't carry self-sourced flag
-
-      const ratePercent = TIER_CONFIG[tierKey].commissionRate;
-      const commissionAmount = (monthlyPrice * rate).toFixed(2);
-
-      await db.createCommission({
-        repId: contract.repId,
-        contractId: contract.id,
-        amount: commissionAmount,
-        type: "initial_sale",
-        status: "approved",
-        selfSourced: isSelfSourced,
-        rateApplied: ratePercent.toFixed(2),
-      });
-
-      // Auto-transfer to rep's Stripe Connect account if set up
-      try {
-        const [repRow] = await database.select({ stripeConnectAccountId: reps.stripeConnectAccountId, stripeConnectOnboarded: reps.stripeConnectOnboarded })
-          .from(reps).where(eq(reps.id, contract.repId)).limit(1);
-        if (repRow?.stripeConnectAccountId && repRow.stripeConnectOnboarded) {
-          const stripe = new Stripe(ENV.stripeSecretKey || "");
-          const amountCents = Math.round(parseFloat(commissionAmount) * 100);
-          if (amountCents > 0) {
-            await stripe.transfers.create({
-              amount: amountCents,
-              currency: "usd",
-              destination: repRow.stripeConnectAccountId,
-              metadata: { repId: String(contract.repId), contractId: String(contract.id), type: "initial_sale" },
-            });
-          }
-        }
-      } catch (transferErr) {
-        console.error(`[Stripe] Transfer failed for rep=${contract.repId}:`, transferErr);
-      }
-
-      await db.createRepNotification({
-        repId: contract.repId,
-        type: "commission_approved",
-        title: "New Sale Commission!",
-        message: `You earned $${commissionAmount} from a new ${contract.packageTier} sale on contract #${contract.id}. Ready for instant payout!`,
-        metadata: { contractId: contract.id, amount: commissionAmount },
-      });
-
-      console.log(`[Stripe] Initial commission created: rep=${contract.repId}, contract=${contract.id}, amount=$${commissionAmount}`);
+    if (!currentContractId) {
+      console.log("[StripeWebhook] No current contract id for initial commission creation, skipping");
+      return;
     }
+
+    const contractRows = await database.select().from(contracts)
+      .where(eq(contracts.id, currentContractId))
+      .limit(1);
+    const contract = contractRows[0];
+    if (!contract) return;
+
+    if (!contract.repId || contract.repId === 0) return;
+
+    const existingCommissions = await db.getActiveCommissionsByContract(contract.id);
+    const hasInitialSale = existingCommissions.some(c => c.type === "initial_sale");
+    if (hasInitialSale) return; // Already has initial commission
+
+    // This is the first payment — create initial_sale commission
+    const monthlyPrice = parseFloat(contract.monthlyPrice);
+
+    const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, contract.repId)).limit(1);
+    const tierKey = (tierRows[0]?.tier || "bronze") as TierKey;
+    let rate = TIER_CONFIG[tierKey].commissionRate / 100;
+
+    // Self-sourced leads get 2x rate (capped at 40%)
+    // Check if the lead was self-sourced by checking the contract metadata
+    const isSelfSourced = false; // Initial checkout doesn't carry self-sourced flag
+
+    const ratePercent = TIER_CONFIG[tierKey].commissionRate;
+    const commissionAmount = (monthlyPrice * rate).toFixed(2);
+
+    await db.createCommission({
+      repId: contract.repId,
+      contractId: contract.id,
+      amount: commissionAmount,
+      type: "initial_sale",
+      status: "approved",
+      selfSourced: isSelfSourced,
+      rateApplied: ratePercent.toFixed(2),
+    });
+
+    // Auto-transfer to rep's Stripe Connect account if set up
+    try {
+      const [repRow] = await database.select({ stripeConnectAccountId: reps.stripeConnectAccountId, stripeConnectOnboarded: reps.stripeConnectOnboarded })
+        .from(reps).where(eq(reps.id, contract.repId)).limit(1);
+      if (repRow?.stripeConnectAccountId && repRow.stripeConnectOnboarded) {
+        const stripe = new Stripe(ENV.stripeSecretKey || "");
+        const amountCents = Math.round(parseFloat(commissionAmount) * 100);
+        if (amountCents > 0) {
+          await stripe.transfers.create({
+            amount: amountCents,
+            currency: "usd",
+            destination: repRow.stripeConnectAccountId,
+            metadata: { repId: String(contract.repId), contractId: String(contract.id), type: "initial_sale" },
+          });
+        }
+      }
+    } catch (transferErr) {
+      console.error(`[Stripe] Transfer failed for rep=${contract.repId}:`, transferErr);
+    }
+
+    await db.createRepNotification({
+      repId: contract.repId,
+      type: "commission_approved",
+      title: "New Sale Commission!",
+      message: `You earned $${commissionAmount} from a new ${contract.packageTier} sale on contract #${contract.id}. Ready for instant payout!`,
+      metadata: { contractId: contract.id, amount: commissionAmount },
+    });
+
+    console.log(`[Stripe] Initial commission created: rep=${contract.repId}, contract=${contract.id}, amount=$${commissionAmount}`);
   } catch (err) {
     console.error("[Stripe] Error creating initial commission:", err);
   }
