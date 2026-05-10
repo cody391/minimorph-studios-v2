@@ -232,6 +232,9 @@ export default function PayoutSetup() {
 
             {/* Skip option — prominent enough to find on mobile */}
             <div className="mt-6 pt-6 border-t border-border/10">
+              <p className="text-xs text-amber-400/80 font-sans text-center mb-3">
+                Commissions cannot be paid until Stripe Connect setup is complete.
+              </p>
               <Button
                 variant="outline"
                 onClick={() => {

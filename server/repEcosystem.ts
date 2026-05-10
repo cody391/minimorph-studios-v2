@@ -800,6 +800,12 @@ export const repApplicationRouter = router({
       // The AI motivation review runs async and can flag issues later
       await db.updateRep(rep.id, { status: "training" });
       console.log(`[Auto-Onboard] Rep ${rep.id} auto-advanced to training status`);
+      import("./_core/notification").then(({ notifyOwner }) => {
+        notifyOwner({
+          title: "New Rep Application",
+          content: `${rep.fullName} (${rep.email}) submitted a new rep application and has been auto-advanced to training. Review in Admin → Reps.`,
+        }).catch(() => {});
+      }).catch(() => {});
 
       // Send welcome email to the new rep
       if (rep.email) {

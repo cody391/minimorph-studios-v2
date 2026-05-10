@@ -19,7 +19,7 @@ import { scanForEnterpriseLeads } from "./services/leadGenEnterprise";
 import { runMultiSourceScrape, getSourceQuality } from "./services/leadGenMultiSource";
 import { batchEnrichContacts } from "./services/contactEnrichment";
 import { runAdaptiveScaling } from "./services/leadGenAdaptive";
-import { getDb } from "./db";
+import { getDb, createRepNotification } from "./db";
 import { contracts, customers, npsSurveys, nurtureLogs, onboardingProjects, monthlyReports } from "../drizzle/schema";
 import { eq, and, lte, inArray, desc } from "drizzle-orm";
 import { sendNpsSurveyEmail, sendMonthlyReportEmail } from "./services/customerEmails";
@@ -873,6 +873,12 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
           const rep = repRows[0];
           if (!rep?.stripeConnectAccountId || !rep.stripeConnectOnboarded) {
             skipped++;
+            import("./_core/notification").then(({ notifyOwner }) => {
+              notifyOwner({
+                title: "Commission Payout Skipped",
+                content: `Commission #${commission.id} ($${commission.amount}) could not be paid — rep ${rep?.fullName || `#${commission.repId}`} (${rep?.email || "no email"}, rep ID ${commission.repId}) has not completed Stripe Connect payout setup.`,
+              }).catch(() => {});
+            }).catch(() => {});
             continue;
           }
           const StripeLib = (await import("stripe")).default;
@@ -889,6 +895,13 @@ Keep it practical, specific, and action-oriented. Format with clear sections usi
           await database.update(commissionsTable)
             .set({ status: "paid", paidAt: new Date() })
             .where(eqFn(commissionsTable.id, commission.id));
+          createRepNotification({
+            repId: commission.repId,
+            type: "commission_paid",
+            title: "Commission Paid",
+            message: `Your commission payout of $${parseFloat(commission.amount || "0").toLocaleString()} has been sent.`,
+            metadata: { commissionId: commission.id, amount: commission.amount },
+          }).catch(() => {});
           paid++;
         } catch (err: any) {
           errors.push(`Commission #${commission.id}: ${err.message}`);

@@ -227,6 +227,13 @@ const repsRouter = router({
         metadata: { commissionId: String(commission.id), repId: String(rep.id) },
       });
       await db.updateCommission(commission.id, { status: "paid", paidAt: new Date() });
+      db.createRepNotification({
+        repId: commission.repId,
+        type: "commission_paid",
+        title: "Commission Paid",
+        message: `Your commission payout of $${parseFloat(commission.amount || "0").toLocaleString()} has been sent.`,
+        metadata: { commissionId: commission.id, amount: commission.amount },
+      }).catch((e: any) => console.error("[initiatePayout] Notification failed:", e));
       return { success: true, transferId: transfer.id };
     }),
 
@@ -550,22 +557,26 @@ const leadsRouter = router({
   assign: adminProcedure
     .input(z.object({ leadId: z.number(), repId: z.number() }))
     .mutation(async ({ input }) => {
+      const lead = await db.getLeadById(input.leadId);
       await db.updateLead(input.leadId, {
         assignedRepId: input.repId,
         stage: "assigned",
         temperature: "warm",
       });
+      const businessName = lead?.businessName || "a new lead";
       // Notify the rep
       await db.createRepNotification({
         repId: input.repId,
         type: "lead_assigned",
         title: "New Lead Assigned",
-        message: `A new lead has been assigned to you.`,
+        message: lead?.businessName
+          ? `You've been assigned a new lead: ${lead.businessName}. Open your Pipeline to review and take action.`
+          : `A new lead has been assigned to you. Open your Pipeline to review and take action.`,
         metadata: { leadId: input.leadId },
       });
       // Push notification (async, non-blocking)
       import("./services/pushNotification").then(({ notifyNewLead }) => {
-        notifyNewLead(input.repId, "A new lead").catch((e: any) => console.error("[Push] Lead assign push failed:", e));
+        notifyNewLead(input.repId, businessName).catch((e: any) => console.error("[Push] Lead assign push failed:", e));
       });
       return { success: true };
     }),
