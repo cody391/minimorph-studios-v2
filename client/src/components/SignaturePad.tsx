@@ -206,9 +206,7 @@ export function SignaturePad({ onSignatureChange, signerName }: SignaturePadProp
       </Tabs>
 
       <p className="text-[11px] text-muted-foreground leading-relaxed">
-        By signing above, you acknowledge that this electronic signature is legally
-        binding and has the same legal effect as a handwritten signature. Your
-        signature will be recorded with a timestamp and IP address for verification.
+        By signing above, you acknowledge that this electronic signature is intended to have the same effect as a handwritten signature.
       </p>
     </div>
   );
