@@ -3442,6 +3442,10 @@ function cleanHtml(html: string): string {
 }
 
 async function scrapeWebsite(url: string, crawl = false): Promise<string> {
+  if (!isSafePublicUrl(url)) {
+    console.warn(`[Scraper] Blocked unsafe URL (private network / non-http scheme)`);
+    return "";
+  }
   const fullUrl = url.startsWith("http") ? url : `https://${url}`;
   const noWwwUrl = fullUrl.replace("://www.", "://");
   const wwwUrl = fullUrl.includes("://www.") ? fullUrl : fullUrl.replace("://", "://www.");
@@ -3607,6 +3611,64 @@ async function searchAndScrape(query: string): Promise<string> {
   }
 }
 
+// ── URL safety + dedup helpers ──────────────────────────────────────────────
+
+function normalizeDomain(url: string): string {
+  try {
+    const withProto = url.startsWith("http") ? url : `https://${url}`;
+    const host = new URL(withProto).hostname.toLowerCase();
+    return host.startsWith("www.") ? host.slice(4) : host;
+  } catch {
+    const h = url.toLowerCase()
+      .replace(/^https?:\/\//, "").replace(/^www\./, "")
+      .split("/")[0].split("?")[0];
+    return h;
+  }
+}
+
+function isSafePublicUrl(rawUrl: string): boolean {
+  try {
+    const urlStr = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+    let parsed: URL;
+    try { parsed = new URL(urlStr); } catch { return false; }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    if (parsed.username || parsed.password) return false;
+    const host = parsed.hostname.toLowerCase();
+    if (!host || host === "localhost" || host === "0.0.0.0") return false;
+    if (host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".localhost")) return false;
+    const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (ipv4) {
+      const [a, b] = [+ipv4[1], +ipv4[2]];
+      if (a === 0 || a === 10 || a === 127) return false;
+      if (a === 172 && b >= 16 && b <= 31) return false;
+      if (a === 192 && b === 168) return false;
+      if (a === 169 && b === 254) return false;
+    }
+    if (host === "[::1]" || host === "::1") return false;
+    return true;
+  } catch { return false; }
+}
+
+// Extract URLs/bare-domains from a single text string (used for current-message-only extraction)
+function extractUrlsFromText(text: string): string[] {
+  const fullUrlRegex = /https?:\/\/[^\s"'<>)]+/g;
+  const bareDomainRegex = /(?:^|[\s(,])(?:www\.)?([a-zA-Z0-9][-a-zA-Z0-9]{1,61}[a-zA-Z0-9]\.(?:com|net|org|io|co|us|ca|biz|info|site|online|shop|store|dev|app|me|co\.uk|com\.au)(?:\/[^\s"'<>)]*)?)/g;
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  const fullMatches = text.match(fullUrlRegex) || [];
+  for (const u of fullMatches) {
+    const clean = u.replace(/[.,;:!?]+$/, "");
+    if (!seen.has(clean)) { seen.add(clean); urls.push(clean); }
+  }
+  let m: RegExpExecArray | null;
+  while ((m = bareDomainRegex.exec(text)) !== null) {
+    const raw = m[0].trim().replace(/[.,;:!?]+$/, "");
+    const withProto = raw.startsWith("http") ? raw : `https://${raw.startsWith("www.") ? raw : `www.${raw}`}`;
+    if (!seen.has(withProto)) { seen.add(withProto); urls.push(withProto); }
+  }
+  return urls;
+}
+
 function extractUrls(messages: Array<{ role: string; content: string }>): string[] {
   // Match full URLs (with or without protocol) and bare domains like burlandsprig.com
   const fullUrlRegex = /https?:\/\/[^\s"'<>)]+/g;
@@ -3709,38 +3771,69 @@ Always end with a helpful question or a specific suggestion.`;
         return { response: reviewResponse, extractedData: null, addonsSelected: null };
       }
 
-      // ── Detect self-service project ───────────────────────────────────
+      // ── Detect self-service project + load research state ─────────────────
       let projectSource = "rep_closed";
+      let existingQuestionnaire: Record<string, unknown> = {};
+      let scrapedDomains: string[] = [];
+      let websiteResearchBriefs: Record<string, string> = {};
+      let backgroundResearchDone = false;
       if (input.projectId) {
         try {
           const proj = await db.getOnboardingProjectById(input.projectId);
           projectSource = (proj as any)?.source || "rep_closed";
+          existingQuestionnaire = (proj?.questionnaire as Record<string, unknown> | null) ?? {};
+          scrapedDomains = Array.isArray(existingQuestionnaire._scrapedDomains)
+            ? (existingQuestionnaire._scrapedDomains as string[])
+            : [];
+          websiteResearchBriefs = (existingQuestionnaire._websiteResearchBriefs &&
+            typeof existingQuestionnaire._websiteResearchBriefs === "object")
+            ? (existingQuestionnaire._websiteResearchBriefs as Record<string, string>)
+            : {};
+          backgroundResearchDone = !!existingQuestionnaire._backgroundResearchDone;
         } catch {}
       }
 
-      // ── Scrape any URLs from recent conversation ──────────────────────
-      const recentHistory = [
-        ...(input.history || []),
-        { role: "user", content: input.message },
-      ];
+      // ── Scrape URLs from current message only — dedupe against prior scrapes ─
+      // Only URLs explicitly mentioned in this message trigger a scrape.
+      // History is not re-scanned to avoid re-crawling the same site on every message.
+      // Research state is persisted in questionnaire._scrapedDomains / _websiteResearchBriefs.
+      // TODO: Move research briefs to a dedicated DB column in next schema batch.
       console.log(`[Chat] Message received: "${input.message.slice(0, 80)}"`);
-      const urlsToScrape = extractUrls(recentHistory);
-      console.log(`[Chat] URLs detected: ${JSON.stringify(urlsToScrape)}`);
-      // Crawl full site (multi-page) the first time a URL appears; single-page for subsequent refs
-      const isFirstScrape = !(input.history || []).some(
-        (m: any) => m.content?.includes("[WEBSITE CONTENT RETRIEVED]")
-      );
+      const currentMsgUrls = extractUrlsFromText(input.message).slice(0, 2);
+      console.log(`[Chat] URLs in current message: ${JSON.stringify(currentMsgUrls)}`);
+
       let scrapedSitesContext = "";
-      if (urlsToScrape.length > 0) {
-        const scraped = await Promise.all(
-          urlsToScrape.slice(0, 2).map(async (url, idx) => {
-            const text = await scrapeWebsite(url, isFirstScrape && idx === 0);
-            return text ? `[${url}]\n${text}` : null;
-          })
-        );
-        const results = scraped.filter(Boolean);
-        if (results.length > 0) {
-          scrapedSitesContext = results.join("\n\n---\n\n");
+      let hasNewResearch = false;
+
+      for (const url of currentMsgUrls) {
+        if (!isSafePublicUrl(url)) {
+          console.warn(`[Scraper] Skipping unsafe URL from message`);
+          continue;
+        }
+        const domain = normalizeDomain(url);
+        if (scrapedDomains.includes(domain)) {
+          // Already researched this session — reuse brief so Elena stays informed without re-crawling
+          const cached = websiteResearchBriefs[domain];
+          if (cached) {
+            scrapedSitesContext += (scrapedSitesContext ? "\n\n---\n\n" : "") + cached;
+          }
+          // If no brief stored, Elena's prior responses carry the context — skip re-scrape
+          continue;
+        }
+        // First time seeing this domain — full crawl if it's the very first site, single-page after
+        const isFirstDomain = scrapedDomains.length === 0;
+        const text = await scrapeWebsite(url, isFirstDomain);
+        if (text && !text.startsWith("[Could not load")) {
+          const entry = `[${url}]\n${text}`;
+          scrapedSitesContext += (scrapedSitesContext ? "\n\n---\n\n" : "") + entry;
+          if (!scrapedDomains.includes(domain)) scrapedDomains.push(domain);
+          // Store brief capped at 2000 chars to keep questionnaire JSON lean
+          websiteResearchBriefs[domain] = entry.slice(0, 2000);
+          hasNewResearch = true;
+        } else {
+          // Scrape failed — record domain so we don't retry on every future message
+          if (!scrapedDomains.includes(domain)) scrapedDomains.push(domain);
+          hasNewResearch = true;
         }
       }
 
@@ -3799,12 +3892,14 @@ Always end with a helpful question or a specific suggestion.`;
       }
 
       // ── Silent background research ─────────────────────────────────────────
-      // Fires on early messages when we have enough context to make it worthwhile.
-      // Customer never sees this — Elena uses it naturally as if she just knows the market.
+      // Fires once per conversation (guarded by backgroundResearchDone flag persisted in
+      // questionnaire._backgroundResearchDone). Customer never sees this — Elena uses
+      // it naturally as if she just knows the market.
       const isEarlyConversation = (input.history || []).length <= 3;
       let silentResearchContext = "";
+      let backgroundResearchJustRan = false;
 
-      if (isEarlyConversation) {
+      if (isEarlyConversation && !backgroundResearchDone) {
         const allText = [
           ...(input.history || []),
           { role: "user", content: input.message },
@@ -3821,6 +3916,9 @@ Always end with a helpful question or a specific suggestion.`;
           const locMatch = allText.match(/\b([A-Z][a-z]+(?:,?\s*[A-Z]{2})?)\b/);
 
           if (bizMatch && locMatch) {
+            // Mark attempted now — prevents retry even if searches fail
+            backgroundResearchDone = true;
+            backgroundResearchJustRan = true;
             const biz = bizMatch[0];
             const loc = locMatch[1];
             console.log(`[Elena] Background research: ${biz} in ${loc}`);
@@ -4498,12 +4596,19 @@ ${integrationSection}${scrapedSection}${silentResearchContext}`;
         { role: "user" as const, content: input.message },
       ];
 
+      // Gate Anthropic web search: allow when conversation is early, research is sparse,
+      // or the customer is explicitly asking about market/competitors/domains.
+      // After website research is established and conversation is flowing, omit to save cost.
+      const userTurnCount = (input.history || []).filter((m: any) => m.role === "user").length + 1;
+      const isSearchIntent = /\b(competitor|competitors|search|ranking|seo|domain|market|who are|find|look up|similar)\b/i.test(input.message);
+      const enableWebSearch = userTurnCount <= 5 || scrapedDomains.length === 0 || isSearchIntent;
+
       let result: Awaited<ReturnType<typeof invokeLLM>>;
       try {
         result = await invokeLLM({
           messages,
           maxTokens: 16000,
-          nativeTools: [{ type: "web_search_20250305", name: "web_search" }],
+          nativeTools: enableWebSearch ? [{ type: "web_search_20250305", name: "web_search" }] : [],
         });
       } catch (llmErr) {
         console.error("[onboardingChat] LLM call failed:", llmErr);
@@ -4632,6 +4737,19 @@ ${integrationSection}${scrapedSection}${silentResearchContext}`;
           if (ed.businessName) saveUpdates.businessName = ed.businessName;
           if (ed.contactEmail) saveUpdates.contactEmail = ed.contactEmail;
           if (ed.phone) saveUpdates.contactPhone = ed.phone;
+        }
+
+        // Persist research metadata so subsequent messages can dedup without re-crawling.
+        // Stored in questionnaire._scrapedDomains / _websiteResearchBriefs / _backgroundResearchDone
+        // (no schema change — uses existing questionnaire JSON column).
+        if (hasNewResearch || backgroundResearchJustRan) {
+          const baseQ = (saveUpdates.questionnaire as Record<string, unknown> | undefined) ?? existingQuestionnaire;
+          saveUpdates.questionnaire = {
+            ...baseQ,
+            _scrapedDomains: scrapedDomains,
+            _websiteResearchBriefs: websiteResearchBriefs,
+            ...(backgroundResearchDone ? { _backgroundResearchDone: true } : {}),
+          };
         }
 
         db.updateOnboardingProject(input.projectId, saveUpdates as any).catch((err) =>
