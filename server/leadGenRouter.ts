@@ -24,7 +24,7 @@ import { notifyOwner } from "./_core/notification";
 import { runAdaptiveScaling, getAdaptiveScalingSummary, analyzeRepCapacity } from "./services/leadGenAdaptive";
 import { handleConversation, buildBusinessIntelligence } from "./services/leadGenConversationAI";
 import { getDb } from "./db";
-import { scrapeJobs, scrapedBusinesses, outreachSequences, aiConversations, repServiceAreas, enterpriseProspects, leads } from "../drizzle/schema";
+import { scrapeJobs, scrapedBusinesses, outreachSequences, aiConversations, repServiceAreas, enterpriseProspects, leads, systemSettings } from "../drizzle/schema";
 import { eq, desc, sql, and, count, isNull } from "drizzle-orm";
 import { ENV } from "./_core/env";
 
@@ -32,6 +32,35 @@ import { ENV } from "./_core/env";
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+  }
+  return next({ ctx });
+});
+
+// Engine-gated admin procedure — blocks all dangerous mutations when lead engine is paused.
+// Fails CLOSED: any DB error, null DB, or missing/non-"true" setting blocks the action.
+const engineActiveProcedure = adminProcedure.use(async ({ ctx, next }) => {
+  const GATE_BLOCKED =
+    "Lead engine safety gate could not confirm the engine is active. Action blocked.";
+  try {
+    const db = await getDb();
+    if (!db) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: GATE_BLOCKED });
+    }
+    const [row] = await db
+      .select({ v: systemSettings.settingValue })
+      .from(systemSettings)
+      .where(eq(systemSettings.settingKey, "lead_engine_active"))
+      .limit(1);
+    if (row?.v !== "true") {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message:
+          "Lead engine is paused. Enable it in Lead Gen Engine → Engine Controls before running this action.",
+      });
+    }
+  } catch (err) {
+    if (err instanceof TRPCError) throw err;
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: GATE_BLOCKED });
   }
   return next({ ctx });
 });
@@ -48,7 +77,7 @@ export const leadGenRouter = router({
   }),
 
   // ─── Scrape Jobs ───
-  createScrapeJob: adminProcedure
+  createScrapeJob: engineActiveProcedure
     .input(z.object({
       targetArea: z.string().min(1),
       radiusKm: z.number().min(1).max(100).optional(),
@@ -89,21 +118,21 @@ export const leadGenRouter = router({
     }),
 
   // ─── Pipeline Actions ───
-  scoreWebsites: adminProcedure
+  scoreWebsites: engineActiveProcedure
     .input(z.object({ limit: z.number().min(1).max(50).default(20) }))
     .mutation(async ({ input }) => {
       const scored = await scoreUnscrapedWebsites(input.limit);
       return { scored };
     }),
 
-  enrichBusinesses: adminProcedure
+  enrichBusinesses: engineActiveProcedure
     .input(z.object({ limit: z.number().min(1).max(20).default(10) }))
     .mutation(async ({ input }) => {
       const enriched = await enrichQualifiedBusinesses(input.limit);
       return { enriched };
     }),
 
-  convertToLeads: adminProcedure
+  convertToLeads: engineActiveProcedure
     .input(z.object({ limit: z.number().min(1).max(50).default(20) }))
     .mutation(async ({ input }) => {
       const converted = await batchConvertToLeads(input.limit);
@@ -111,19 +140,19 @@ export const leadGenRouter = router({
     }),
 
   // ─── Outreach ───
-  startOutreachForLead: adminProcedure
+  startOutreachForLead: engineActiveProcedure
     .input(z.object({ leadId: z.number() }))
     .mutation(async ({ input }) => {
       const steps = await scheduleOutreachSequence(input.leadId);
       return { stepsScheduled: steps };
     }),
 
-  sendDueOutreach: adminProcedure.mutation(async () => {
+  sendDueOutreach: engineActiveProcedure.mutation(async () => {
     const sent = await sendDueOutreach();
     return { sent };
   }),
 
-  autoStartOutreach: adminProcedure.mutation(async () => {
+  autoStartOutreach: engineActiveProcedure.mutation(async () => {
     const started = await autoStartOutreach();
     return { started };
   }),
@@ -197,7 +226,7 @@ export const leadGenRouter = router({
   }),
 
   // ─── Auto-Feed ───
-  autoFeedReps: adminProcedure.mutation(async () => {
+  autoFeedReps: engineActiveProcedure.mutation(async () => {
     return autoFeedReps();
   }),
 
@@ -220,7 +249,7 @@ export const leadGenRouter = router({
       return { success: true };
     }),
 
-  scanForEnterprise: adminProcedure
+  scanForEnterprise: engineActiveProcedure
     .input(z.object({ limit: z.number().min(1).max(20).default(10) }))
     .mutation(async ({ input }) => {
       const found = await scanForEnterpriseLeads(input.limit);
@@ -228,7 +257,7 @@ export const leadGenRouter = router({
     }),
 
   // ─── Full Pipeline Run ───
-  runFullPipeline: adminProcedure.mutation(async () => {
+  runFullPipeline: engineActiveProcedure.mutation(async () => {
     const results = {
       websitesScored: 0,
       businessesEnriched: 0,
@@ -284,19 +313,19 @@ export const leadGenRouter = router({
       return analyzeLeadBehavior(input.leadId);
     }),
 
-  scheduleBranchedOutreach: adminProcedure
+  scheduleBranchedOutreach: engineActiveProcedure
     .input(z.object({ leadId: z.number() }))
     .mutation(async ({ input }) => {
       const scheduled = await scheduleBranchedOutreach(input.leadId);
       return { scheduled };
     }),
 
-  runReengagement: adminProcedure.mutation(async () => {
+  runReengagement: engineActiveProcedure.mutation(async () => {
     const reengaged = await runReengagementCampaign();
     return { reengaged };
   }),
 
-  recordIntentSignal: adminProcedure
+  recordIntentSignal: engineActiveProcedure
     .input(z.object({
       leadId: z.number(),
       type: z.enum(["email_open", "link_click", "website_visit", "multi_open", "audit_view"]),
@@ -323,7 +352,7 @@ export const leadGenRouter = router({
   }),
 
   // ─── Multi-Source Scraping ───
-  runMultiSourceScrape: adminProcedure
+  runMultiSourceScrape: engineActiveProcedure
     .input(z.object({
       location: z.string().min(1),
       lat: z.number().optional(),
@@ -376,7 +405,7 @@ export const leadGenRouter = router({
     }),
 
   // ─── Enhanced Full Pipeline ───
-  runEnhancedPipeline: adminProcedure.mutation(async () => {
+  runEnhancedPipeline: engineActiveProcedure.mutation(async () => {
     const results = {
       websitesScored: 0,
       businessesEnriched: 0,
@@ -409,14 +438,14 @@ export const leadGenRouter = router({
   // ═══════ Phase 31: AI-First Lead Warming ═══════
 
   // ─── Contact Enrichment (Apollo.io / Hunter.io) ───
-  enrichContacts: adminProcedure
+  enrichContacts: engineActiveProcedure
     .input(z.object({ limit: z.number().min(1).max(50).default(15) }))
     .mutation(async ({ input }) => {
       const result = await batchEnrichContacts(input.limit);
       return result;
     }),
 
-  enrichSingleBusiness: adminProcedure
+  enrichSingleBusiness: engineActiveProcedure
     .input(z.object({ businessId: z.number() }))
     .mutation(async ({ input }) => {
       const result = await enrichBusinessContact(input.businessId);
@@ -428,7 +457,7 @@ export const leadGenRouter = router({
   }),
 
   // ─── Adaptive Scaling ───
-  runAdaptiveScaling: adminProcedure.mutation(async () => {
+  runAdaptiveScaling: engineActiveProcedure.mutation(async () => {
     const report = await runAdaptiveScaling();
     return report;
   }),
@@ -442,7 +471,7 @@ export const leadGenRouter = router({
   }),
 
   // ─── AI Conversation Agent ───
-  triggerConversation: adminProcedure
+  triggerConversation: engineActiveProcedure
     .input(z.object({
       leadId: z.number(),
       channel: z.enum(["email", "sms"]),

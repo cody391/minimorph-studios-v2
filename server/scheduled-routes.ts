@@ -226,6 +226,7 @@ export function registerScheduledRoutes(app: Express) {
   // 10. Adaptive scaling — adjust lead gen capacity based on rep needs
   app.post("/api/scheduled/adaptive-scaling", (req, res) =>
     runJob(req, res, "adaptive-scaling", async () => {
+      if (!(await isJobActive("job_scraper_active"))) return { skipped: true, reason: "paused" };
       const result = await runAdaptiveScaling();
       return {
         repsAnalyzed: result.repsAnalyzed,

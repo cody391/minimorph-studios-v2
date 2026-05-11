@@ -216,6 +216,16 @@ export default function LeadGenEngine() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Engine paused notice */}
+      {!engineActive && (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 flex items-center gap-3">
+          <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+          <p className="text-sm text-red-400 font-sans">
+            Lead engine is paused. Enable it before running lead generation or outreach actions.
+          </p>
+        </div>
+      )}
+
       {/* Stats Grid */}
       {statsLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -280,7 +290,7 @@ export default function LeadGenEngine() {
                   <div key={step.label} className="flex items-center gap-2">
                     <button
                       onClick={step.action}
-                      disabled={isAnyMutationLoading}
+                      disabled={isAnyMutationLoading || !engineActive}
                       className="flex flex-col items-center gap-1 p-3 rounded-xl border border-electric/10 hover:border-electric/30 hover:bg-electric/5 transition-all min-w-[80px]"
                     >
                       <step.icon className="w-5 h-5 text-soft-gray" />
@@ -300,7 +310,7 @@ export default function LeadGenEngine() {
               variant="outline"
               className="h-auto py-3 flex-col gap-1 border-electric/10"
               onClick={() => scoreWebsites.mutate({ limit: 20 })}
-              disabled={isAnyMutationLoading}
+              disabled={isAnyMutationLoading || !engineActive}
             >
               <Search className="w-4 h-4" />
               <span className="text-xs">Score Websites</span>
@@ -309,7 +319,7 @@ export default function LeadGenEngine() {
               variant="outline"
               className="h-auto py-3 flex-col gap-1 border-electric/10"
               onClick={() => enrichBusinesses.mutate({ limit: 10 })}
-              disabled={isAnyMutationLoading}
+              disabled={isAnyMutationLoading || !engineActive}
             >
               <Brain className="w-4 h-4" />
               <span className="text-xs">Enrich Businesses</span>
@@ -318,7 +328,7 @@ export default function LeadGenEngine() {
               variant="outline"
               className="h-auto py-3 flex-col gap-1 border-electric/10"
               onClick={() => sendDueOutreach.mutate()}
-              disabled={isAnyMutationLoading}
+              disabled={isAnyMutationLoading || !engineActive}
             >
               <Mail className="w-4 h-4" />
               <span className="text-xs">Send Outreach</span>
@@ -327,7 +337,7 @@ export default function LeadGenEngine() {
               variant="outline"
               className="h-auto py-3 flex-col gap-1 border-electric/10"
               onClick={() => scanEnterprise.mutate({ limit: 10 })}
-              disabled={isAnyMutationLoading}
+              disabled={isAnyMutationLoading || !engineActive}
             >
               <Building2 className="w-4 h-4" />
               <span className="text-xs">Scan Enterprise</span>
@@ -365,7 +375,7 @@ export default function LeadGenEngine() {
                 />
                 <Button
                   onClick={handleStartScrape}
-                  disabled={createScrapeJob.isPending}
+                  disabled={createScrapeJob.isPending || !engineActive}
                   className="bg-electric hover:bg-electric-light text-white"
                 >
                   {createScrapeJob.isPending ? (
@@ -485,7 +495,7 @@ export default function LeadGenEngine() {
                 <Button
                   variant="outline"
                   onClick={() => sendDueOutreach.mutate()}
-                  disabled={isAnyMutationLoading}
+                  disabled={isAnyMutationLoading || !engineActive}
                   className="border-electric/10"
                 >
                   <Mail className="w-4 h-4 mr-2" />
@@ -502,7 +512,7 @@ export default function LeadGenEngine() {
                 <Button
                   variant="outline"
                   onClick={() => runReengagement.mutate()}
-                  disabled={isAnyMutationLoading}
+                  disabled={isAnyMutationLoading || !engineActive}
                   className="border-electric/10"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
@@ -561,7 +571,7 @@ export default function LeadGenEngine() {
                   variant="outline"
                   size="sm"
                   onClick={() => scanEnterprise.mutate({ limit: 10 })}
-                  disabled={isAnyMutationLoading}
+                  disabled={isAnyMutationLoading || !engineActive}
                   className="border-electric/10"
                 >
                   <Search className="w-4 h-4 mr-1" />
@@ -653,7 +663,7 @@ export default function LeadGenEngine() {
                   variant="outline"
                   size="sm"
                   onClick={() => autoFeedReps.mutate()}
-                  disabled={isAnyMutationLoading}
+                  disabled={isAnyMutationLoading || !engineActive}
                   className="border-electric/10"
                 >
                   <Zap className="w-4 h-4 mr-1" />
