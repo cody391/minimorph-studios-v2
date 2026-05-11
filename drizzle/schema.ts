@@ -136,9 +136,14 @@ export const leads = mysqlTable("leads", {
   needsHumanCloser: boolean("needsHumanCloser").default(false).notNull(),
   escalationReason: text("escalationReason"),
   elenaHandoffAt: timestamp("elenaHandoffAt"),
+  emailOptedOut: boolean("emailOptedOut").default(false).notNull(),
+  optOutToken: varchar("optOutToken", { length: 64 }),
+  timezone: varchar("timezone", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  uqOptOutToken: uniqueIndex("uq_leads_optOutToken").on(table.optOutToken),
+}));
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
 

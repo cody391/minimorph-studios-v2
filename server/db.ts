@@ -502,6 +502,12 @@ export async function repairSchema(): Promise<void> {
       UNIQUE KEY \`uq_session_purpose\` (\`stripeSessionId\`, \`purpose\`)
     )`);
 
+    // ── Columns from 0054 (lead compliance: unsubscribe + timezone) ───────
+    await safe("ALTER TABLE `leads` ADD COLUMN `emailOptedOut` boolean NOT NULL DEFAULT false");
+    await safe("ALTER TABLE `leads` ADD COLUMN `optOutToken` varchar(64) DEFAULT NULL");
+    await safe("ALTER TABLE `leads` ADD COLUMN `timezone` varchar(64) DEFAULT NULL");
+    await safe("ALTER TABLE `leads` ADD UNIQUE KEY `uq_leads_optOutToken` (`optOutToken`)");
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);
