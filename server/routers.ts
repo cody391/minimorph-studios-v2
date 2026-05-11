@@ -19,9 +19,9 @@ import { onboardingDataRouter } from "./onboardingDataRouter";
 import { accountabilityRouter } from "./accountabilityRouter";
 import { devAccessRouter } from "./devAccessRouter";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
-import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users, launchChecklist, siteBuildReports } from "../drizzle/schema";
+import { repTiers, customers, contracts, reps, nurtureLogs, onboardingProjects, users, launchChecklist, siteBuildReports, leads as leadsTable, aiConversations } from "../drizzle/schema";
 import { getDb } from "./db";
-import { eq, and, desc, or } from "drizzle-orm";
+import { eq, and, desc, or, sql } from "drizzle-orm";
 import { sendOnboardingStageEmail } from "./services/customerEmails";
 import { teamFeedRouter } from "./teamFeedRouter";
 import { invokeLLM } from "./_core/llm";
@@ -1246,6 +1246,53 @@ const leadsRouter = router({
       }
 
       return { success: true, paymentUrl };
+    }),
+
+  // Admin: list leads flagged for human review (needsHumanCloser = true)
+  listHumanReview: adminProcedure.query(async () => {
+    const database = (await getDb())!;
+    const flagged = await database
+      .select()
+      .from(leadsTable)
+      .where(eq(leadsTable.needsHumanCloser, true))
+      .orderBy(desc(leadsTable.lastTouchAt))
+      .limit(200);
+
+    const results = await Promise.all(
+      flagged.map(async (lead) => {
+        const [latest] = await database
+          .select({
+            aiDecision: aiConversations.aiDecision,
+            aiConfidence: aiConversations.aiConfidence,
+            aiReasoning: aiConversations.aiReasoning,
+            createdAt: aiConversations.createdAt,
+          })
+          .from(aiConversations)
+          .where(eq(aiConversations.leadId, lead.id))
+          .orderBy(desc(aiConversations.createdAt))
+          .limit(1);
+        return {
+          ...lead,
+          latestAiDecision: latest?.aiDecision ?? null,
+          latestAiConfidence: latest?.aiConfidence ?? null,
+          latestAiReasoning: latest?.aiReasoning ?? null,
+          latestConvoAt: latest?.createdAt ?? null,
+        };
+      })
+    );
+    return results;
+  }),
+
+  // Admin: clear needsHumanCloser flag for a lead
+  clearHumanReviewFlag: adminProcedure
+    .input(z.object({ leadId: z.number() }))
+    .mutation(async ({ input }) => {
+      const database = (await getDb())!;
+      await database
+        .update(leadsTable)
+        .set({ needsHumanCloser: false, escalationReason: null })
+        .where(eq(leadsTable.id, input.leadId));
+      return { success: true };
     }),
 });
 
@@ -5319,16 +5366,20 @@ const broadcastsRouter = router({
    ═══════════════════════════════════════════════════════ */
 const notificationCountsRouter = router({
   admin: adminProcedure.query(async () => {
+    const database = (await getDb())!;
     const [
       openTickets,
       unreadRepMessages,
+      humanReviewRows,
     ] = await Promise.all([
       db.countOpenSupportTickets(),
       db.countUnreadRepMessages(),
+      database.select({ n: sql<number>`count(*)` }).from(leadsTable).where(eq(leadsTable.needsHumanCloser, true)),
     ]);
     return {
       openTickets: Number(openTickets),
       unreadRepMessages: Number(unreadRepMessages),
+      humanReviewCount: Number(humanReviewRows[0]?.n ?? 0),
     };
   }),
 

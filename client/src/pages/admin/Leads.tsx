@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2, ArrowRightLeft, DollarSign, TrendingUp } from "lucide-react";
+import { Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2, ArrowRightLeft, DollarSign, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -174,6 +174,15 @@ export default function Leads() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferFrom, setTransferFrom] = useState("");
   const [transferTo, setTransferTo] = useState("");
+
+  const clearHumanReviewFlag = trpc.leads.clearHumanReviewFlag.useMutation({
+    onSuccess: () => {
+      toast.success("Human review flag cleared");
+      refetch();
+      if (selectedLead) setSelectedLead({ ...selectedLead, needsHumanCloser: false, escalationReason: null });
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const enrichLead = trpc.leads.enrich.useMutation({
     onSuccess: (data) => {
@@ -431,6 +440,28 @@ export default function Leads() {
           </DialogHeader>
           {selectedLead && (
             <div className="space-y-4 font-sans">
+              {/* Human review banner */}
+              {selectedLead.needsHumanCloser && (
+                <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+                    <span className="text-sm font-medium text-amber-400">Human review required</span>
+                  </div>
+                  {selectedLead.escalationReason && (
+                    <p className="text-xs text-soft-gray leading-relaxed">{selectedLead.escalationReason}</p>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs border-green-500/30 text-green-400 hover:bg-green-500/10 hover:border-green-500/50 mt-1"
+                    onClick={() => clearHumanReviewFlag.mutate({ leadId: selectedLead.id })}
+                    disabled={clearHumanReviewFlag.isPending}
+                  >
+                    <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                    Clear Review Flag
+                  </Button>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-soft-gray text-xs">Contact</span><p className="text-off-white">{selectedLead.contactName}</p></div>
                 <div><span className="text-soft-gray text-xs">Email</span><p className="text-off-white">{selectedLead.email}</p></div>

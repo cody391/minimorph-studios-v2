@@ -53,6 +53,7 @@ import {
   Tag,
   ChevronDown,
   ChevronRight,
+  AlertTriangle,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -183,6 +184,7 @@ function AdminLayoutContent({
       label: "SALES",
       items: [
         { icon: Target, label: "Leads", path: "/admin/leads" },
+        { icon: AlertTriangle, label: "Human Review", path: "/admin/human-review", badge: counts?.humanReviewCount },
         { icon: MessageSquare, label: "Submissions", path: "/admin/submissions", badge: 0 },
         { icon: Users, label: "Reps", path: "/admin/reps", badge: counts?.unreadRepMessages },
         { icon: Shield, label: "Governance", path: "/admin/governance" },
