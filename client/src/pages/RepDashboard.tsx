@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, lazy, Suspense } from "react";
+import { useState, useMemo, useRef, useEffect, lazy, Suspense } from "react";
 import NotificationsBell from "./rep/NotificationsBell";
 const PipelineTab = lazy(() => import("./rep/PipelineTab"));
 const PerformanceHub = lazy(() => import("./rep/PerformanceHub"));
@@ -184,10 +184,6 @@ export default function RepDashboard() {
   const currentTier = (accountabilityTier?.tier || "bronze") as string;
   const TierIcon = tierIcons[currentTier] || Shield;
 
-  // Training gate: show overlay when access is blocked, but NOT when user is already on the training tab.
-  // Clicking "Go to Training" sets activeTab="training" which hides the overlay and reveals the tab.
-  const showTrainingGate = accessCheck && !accessCheck.allowed && activeTab !== "training";
-
   // Determine whether this is a first-time certification block or a daily check-in block.
   // "certification" or "academy" in the reason = new/uncertified rep → use academy-focused copy.
   // Anything else = certified rep who hasn't done today's reviews → use daily check-in copy.
@@ -196,10 +192,22 @@ export default function RepDashboard() {
     (accessCheck.reason.toLowerCase().includes("certif") || accessCheck.reason.toLowerCase().includes("academy"))
   );
 
+  // For uncertified reps, auto-route to Training tab immediately once accessCheck loads.
+  // This avoids any full-screen overlay appearing on the default "performance" tab.
+  useEffect(() => {
+    if (isCertificationGate && activeTab !== "training") {
+      setActiveTab("training");
+    }
+  }, [isCertificationGate]);
+
+  // Full-screen overlay is ONLY for certified reps who haven't cleared today's daily check-in.
+  // Uncertified reps are auto-routed to training above — no overlay needed for them.
+  const showTrainingGate = accessCheck && !accessCheck.allowed && !isCertificationGate && activeTab !== "training";
+
   return (
     <div className="min-h-screen bg-midnight">
       {/* Stripe Connect payout setup banner */}
-      {repProfile?.stripeConnectOnboarded === false && (
+      {repProfile && repProfile.stripeConnectOnboarded !== true && (
         <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
@@ -243,7 +251,7 @@ export default function RepDashboard() {
                   <BookOpen className="w-4 h-4 mr-2" />
                   {isCertificationGate ? "Continue Training" : "Go to Training"}
                 </Button>
-                {repProfile?.stripeConnectOnboarded === false && (
+                {repProfile && repProfile.stripeConnectOnboarded !== true && (
                   <Button
                     variant="outline"
                     className="w-full font-sans rounded-full py-4 mb-3 border-amber-500/30 text-amber-300 hover:bg-amber-500/10 text-sm"
@@ -479,6 +487,25 @@ export default function RepDashboard() {
 
           {/* ═══════ TRAINING TAB ═══════ */}
           <TabsContent value="training" className="space-y-6">
+            {/* Persistent payout recovery — visible to all reps who haven't connected Stripe */}
+            {repProfile && repProfile.stripeConnectOnboarded !== true && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-sm text-amber-200 font-sans">
+                    Payout setup is incomplete. Commissions cannot be paid until you connect Stripe.
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setLocation("/become-rep/payout-setup")}
+                  className="border-amber-500/30 text-amber-200 hover:bg-amber-500/10 font-sans text-xs rounded-full shrink-0 whitespace-nowrap"
+                >
+                  Set Up Stripe Payouts
+                </Button>
+              </div>
+            )}
             <Suspense fallback={<div className="flex items-center justify-center py-12"><div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" /></div>}>
               <SalesAcademy />
             </Suspense>
