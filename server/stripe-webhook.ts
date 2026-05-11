@@ -3,8 +3,8 @@ import Stripe from "stripe";
 import { ENV } from "./_core/env";
 import * as db from "./db";
 import { getDb } from "./db";
-import { orders, users, contracts, leads, commissions, customers, onboardingProjects, nurtureLogs, reps } from "../drizzle/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { orders, users, contracts, leads, commissions, customers, onboardingProjects, nurtureLogs, reps, coupons, processedCheckoutSessions } from "../drizzle/schema";
+import { eq, and, desc, or, isNull, lt, sql } from "drizzle-orm";
 import { sendWelcomeEmail, sendPaymentFailedEmail } from "./services/customerEmails";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
 import { repTiers } from "../drizzle/schema";
@@ -210,7 +210,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const _rawSource = session.metadata?.acquisition_source || session.metadata?.source || "self_service";
   const metaSource = String(_rawSource).trim().slice(0, 64) || "self_service";
 
-  // Coupon fields — written to contract after successful payment; usedCount deferred (C5a).
+  // Coupon fields — contract writes done in C5; usedCount increment guarded in C5b (step 6c).
   const metaCouponCode =
     typeof session.metadata?.coupon_code === "string"
       ? session.metadata.coupon_code.trim().toUpperCase().slice(0, 64) || null
@@ -219,6 +219,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     typeof session.metadata?.campaign_name === "string"
       ? session.metadata.campaign_name.trim().slice(0, 128) || null
       : null;
+  const _rawCouponId = session.metadata?.coupon_id;
+  const _couponIdString = typeof _rawCouponId === "string" ? _rawCouponId.trim() : "";
+  const _parsedCouponId = /^\d+$/.test(_couponIdString) ? Number(_couponIdString) : NaN;
+  const metaCouponId = Number.isSafeInteger(_parsedCouponId) && _parsedCouponId > 0 ? _parsedCouponId : null;
 
   // Actual amount collected by Stripe (cents). Zero for fully-discounted checkouts.
   const amountPaidCents = typeof session.amount_total === "number" ? session.amount_total : 0;
@@ -380,6 +384,54 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     } catch (err) {
       console.warn(`[Stripe] Failed to mark lead ${attributionLeadId} selfClosed:`, err instanceof Error ? err.message : String(err));
     }
+  }
+
+  // ── 6c. Increment coupon usedCount once per session (idempotency-guarded) ──
+  if (metaCouponCode && metaCouponId && session.id) {
+    try {
+      const couponDb = await getDb();
+      if (!couponDb) throw new Error("DB unavailable");
+
+      // Atomically insert processed marker. The unique key on (stripeSessionId, purpose)
+      // ensures only the first successful delivery increments usedCount.
+      const guardResult = await couponDb
+        .insert(processedCheckoutSessions)
+        .values({
+          stripeSessionId: session.id,
+          purpose: "coupon_usedCount",
+        })
+        .onDuplicateKeyUpdate({
+          set: { processedAt: sql`processedAt` },
+        });
+
+      const isFirstTime = Array.isArray(guardResult)
+        ? ((guardResult as any)[0]?.insertId ?? 0) > 0
+        : false;
+
+      if (!isFirstTime) {
+        console.log(`[Stripe] Coupon usedCount already processed for session ${session.id}; skipping`);
+      } else {
+        await couponDb
+          .update(coupons)
+          .set({ usedCount: sql`${coupons.usedCount} + 1` })
+          .where(
+            and(
+              eq(coupons.id, metaCouponId),
+              eq(coupons.active, true as any),
+              or(
+                isNull(coupons.maxUses),
+                lt(coupons.usedCount, coupons.maxUses)
+              )
+            )
+          );
+
+        console.log(`[Stripe] Coupon usedCount incremented for coupon ${metaCouponCode} session ${session.id}`);
+      }
+    } catch (err) {
+      console.warn("[Stripe] Failed to increment coupon usedCount:", err instanceof Error ? err.message : String(err));
+    }
+  } else if (metaCouponCode && !metaCouponId) {
+    console.warn("[Stripe] Coupon code present but coupon_id missing/invalid; skipping usedCount increment", { couponCode: metaCouponCode });
   }
 
   // ── 7. Send welcome email (with credentials if available) ─────────
