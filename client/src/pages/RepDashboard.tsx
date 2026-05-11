@@ -82,6 +82,22 @@ export default function RepDashboard() {
   const approvedPayouts = useMemo(() => commissions?.filter((c: any) => c.status === "approved").reduce((sum: number, c: any) => sum + parseFloat(c.amount || "0"), 0) ?? 0, [commissions]);
   const recurringCount = useMemo(() => commissions?.filter((c: any) => c.type === "recurring_monthly" && c.status !== "cancelled").length ?? 0, [commissions]);
 
+  // Determine whether this is a first-time certification block or a daily check-in block.
+  // "certification" or "academy" in the reason = new/uncertified rep → use academy-focused copy.
+  // Anything else = certified rep who hasn't done today's reviews → use daily check-in copy.
+  const isCertificationGate = !!(
+    accessCheck?.reason &&
+    (accessCheck.reason.toLowerCase().includes("certif") || accessCheck.reason.toLowerCase().includes("academy"))
+  );
+
+  // For uncertified reps, auto-route to Training tab immediately once accessCheck loads.
+  // This avoids any full-screen overlay appearing on the default "performance" tab.
+  useEffect(() => {
+    if (isCertificationGate && activeTab !== "training") {
+      setActiveTab("training");
+    }
+  }, [isCertificationGate]);
+
   if (authLoading) return <div className="min-h-screen bg-midnight flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" /></div>;
   if (!isAuthenticated) return (
     <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
@@ -183,22 +199,6 @@ export default function RepDashboard() {
 
   const currentTier = (accountabilityTier?.tier || "bronze") as string;
   const TierIcon = tierIcons[currentTier] || Shield;
-
-  // Determine whether this is a first-time certification block or a daily check-in block.
-  // "certification" or "academy" in the reason = new/uncertified rep → use academy-focused copy.
-  // Anything else = certified rep who hasn't done today's reviews → use daily check-in copy.
-  const isCertificationGate = !!(
-    accessCheck?.reason &&
-    (accessCheck.reason.toLowerCase().includes("certif") || accessCheck.reason.toLowerCase().includes("academy"))
-  );
-
-  // For uncertified reps, auto-route to Training tab immediately once accessCheck loads.
-  // This avoids any full-screen overlay appearing on the default "performance" tab.
-  useEffect(() => {
-    if (isCertificationGate && activeTab !== "training") {
-      setActiveTab("training");
-    }
-  }, [isCertificationGate]);
 
   // Full-screen overlay is ONLY for certified reps who haven't cleared today's daily check-in.
   // Uncertified reps are auto-routed to training above — no overlay needed for them.
