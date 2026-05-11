@@ -355,6 +355,7 @@ function OperationsActionCenterPanel() {
   const { data: contracts } = trpc.contracts.list.useQuery();
   const { data: commissions } = trpc.commissions.list.useQuery();
   const { data: projects } = trpc.onboarding.list.useQuery(undefined);
+  const { data: allCustomers } = trpc.customers.list.useQuery();
   const [, nav] = useLocation();
 
   const now = Date.now();
@@ -382,6 +383,10 @@ function OperationsActionCenterPanel() {
     (c: any) => c.status === "approved"
   );
 
+  const atRiskCustomers = (allCustomers ?? []).filter(
+    (c: any) => c.status === "at_risk"
+  );
+
   const failedBuilds = (projects ?? []).filter(
     (p: any) => p.generationStatus === "failed"
   );
@@ -404,6 +409,14 @@ function OperationsActionCenterPanel() {
 
   const items: ActionItem[] = (
     [
+      atRiskCustomers.length > 0 && {
+        key: "at-risk",
+        icon: AlertTriangle,
+        label: `${atRiskCustomers.length} customer${atRiskCustomers.length !== 1 ? "s" : ""} at risk — payment failed`,
+        sub: "Stripe is retrying. Reach out before they churn.",
+        tone: "red" as Tone,
+        path: "/admin/customers",
+      },
       openTickets.length > 0 && {
         key: "tickets",
         icon: MessageSquare,

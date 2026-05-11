@@ -6,6 +6,7 @@ import { getDb } from "./db";
 import { orders, users, contracts, leads, commissions, customers, onboardingProjects, nurtureLogs, reps, coupons, processedCheckoutSessions } from "../drizzle/schema";
 import { eq, and, desc, or, isNull, lt, sql } from "drizzle-orm";
 import { sendWelcomeEmail, sendPaymentFailedEmail } from "./services/customerEmails";
+import { notifyOwner } from "./_core/notification";
 import { TIER_CONFIG, type TierKey } from "../shared/accountability";
 import { repTiers } from "../drizzle/schema";
 import { PACKAGES, type PackageKey } from "../shared/pricing";
@@ -758,12 +759,29 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
     await db.updateContract(contract.id, { status: "active" });
     console.log(`[Stripe] invoice.paid: contract ${contract.id} status restored to active`);
   }
+
+  // ── 4. Restore customer status if they were at_risk ─────────────────
+  // Payment succeeded — clear the at_risk flag set by invoice.payment_failed.
+  try {
+    const [custRow] = await database
+      .select({ id: customers.id, status: customers.status })
+      .from(customers)
+      .where(eq(customers.id, contract.customerId))
+      .limit(1);
+    if (custRow?.status === "at_risk") {
+      await db.updateCustomer(contract.customerId, { status: "active" });
+      console.log(`[Stripe] invoice.paid: customer ${contract.customerId} status restored from at_risk to active`);
+    }
+  } catch (err) {
+    console.error("[Stripe] Failed to restore customer status after successful payment:", err);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
    INVOICE.PAYMENT_FAILED
    Fires when a subscription payment attempt fails.
-   Flags the customer, creates a nurture log, sends email.
+   Flags the customer, creates a nurture log, sends email,
+   and alerts the admin. Idempotent per invoice ID.
    ═══════════════════════════════════════════════════════ */
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   const database = await getDb();
@@ -792,13 +810,43 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     return;
   }
 
-  // ── 1. Flag customer as at_risk if multiple failures ───────────────
+  // ── 0. Idempotency guard — deduplicate per invoice ID ──────────────
+  // Fail-closed: email, nurture log, and admin alert only run on confirmed
+  // first delivery. Guard failure or missing invoice ID blocks all three.
+  // The at_risk status update (step 1) still runs — it is idempotent.
+  let isFirstDelivery = false;
+  if (!invoice.id) {
+    console.warn("[Stripe] invoice.payment_failed: no invoice ID — cannot verify idempotency, skipping email/log/alert");
+  } else {
+    try {
+      const guard = await database
+        .insert(processedCheckoutSessions)
+        .values({ stripeSessionId: invoice.id, purpose: "payment_failed_notify" })
+        .onDuplicateKeyUpdate({ set: { processedAt: sql`processedAt` } });
+      const insertId = Array.isArray(guard)
+        ? ((guard as any)[0]?.insertId ?? 0)
+        : ((guard as any)?.insertId ?? 0);
+      if (insertId > 0) {
+        isFirstDelivery = true;
+      } else {
+        console.log(`[Stripe] invoice.payment_failed: duplicate delivery for invoice ${invoice.id} — skipping email/log/alert`);
+      }
+    } catch (guardErr) {
+      console.error("[Stripe] invoice.payment_failed: idempotency guard failed — skipping email/log/alert:", guardErr);
+      // isFirstDelivery remains false — fail-closed
+    }
+  }
+
+  // ── 1. Flag customer as at_risk (idempotent — runs on every delivery) ──
   if ((invoice.attempt_count || 0) >= 2) {
     await db.updateCustomer(contract.customerId, { status: "at_risk" });
     console.log(`[Stripe] invoice.payment_failed: customer ${contract.customerId} flagged as at_risk`);
   }
 
-  // ── 2. Create nurture log for tracking ─────────────────────────────
+  // Skip non-idempotent actions on duplicate delivery
+  if (!isFirstDelivery) return;
+
+  // ── 2. Create nurture log for tracking (first delivery only) ────────
   try {
     await db.createNurtureLog({
       customerId: contract.customerId,
@@ -814,25 +862,47 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     console.error("[Stripe] Failed to create nurture log for payment failure:", err);
   }
 
-  // ── 3. Send payment failed email to customer ───────────────────────
-  try {
-    const customerRow = await database
-      .select()
-      .from(customers)
-      .where(eq(customers.id, contract.customerId))
-      .limit(1);
+  // ── 3. Fetch customer for email and admin alert ─────────────────────
+  const customerRow = await database
+    .select()
+    .from(customers)
+    .where(eq(customers.id, contract.customerId))
+    .limit(1);
+  const cust = customerRow[0];
 
-    if (customerRow[0]?.email) {
+  // ── 4. Send payment failed email to customer (first delivery only) ──
+  try {
+    if (cust?.email) {
       await sendPaymentFailedEmail({
-        to: customerRow[0].email,
-        customerName: customerRow[0].contactName || "Customer",
+        to: cust.email,
+        customerName: cust.contactName || "Customer",
         packageTier: contract.packageTier as PackageKey,
         attemptCount: invoice.attempt_count || 1,
       });
-      console.log(`[Stripe] Payment failed email sent to ${customerRow[0].email}`);
+      console.log(`[Stripe] Payment failed email sent to ${cust.email}`);
     }
   } catch (emailErr) {
     console.error("[Stripe] Failed to send payment failed email:", emailErr);
+  }
+
+  // ── 5. Alert admin (first delivery only — non-fatal if fails) ───────
+  try {
+    await notifyOwner({
+      title: `Payment failed — ${cust?.businessName || cust?.contactName || "Customer"}`,
+      content: [
+        `Customer: ${cust?.contactName || "Unknown"}`,
+        `Business: ${cust?.businessName || "Unknown"}`,
+        `Email: ${cust?.email || "—"}`,
+        `Contract: #${contract.id}`,
+        `Invoice: ${invoice.id}`,
+        `Attempt: #${invoice.attempt_count || 1}`,
+        `Amount due: $${((invoice.amount_due || 0) / 100).toFixed(2)}`,
+        `Customer status: ${(invoice.attempt_count || 0) >= 2 ? "flagged at_risk" : "first failure (not yet at_risk)"}`,
+        `Action: Admin → Customers to review`,
+      ].join("\n"),
+    });
+  } catch (alertErr) {
+    console.error("[Stripe] notifyOwner failed for payment_failed alert:", alertErr);
   }
 }
 
