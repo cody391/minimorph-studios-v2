@@ -793,11 +793,11 @@ function OnboardingProjectTab({
       <Card className="border-red-500/20 bg-red-500/5">
         <CardContent className="py-10 text-center space-y-3">
           <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
-          <h3 className="text-base font-serif text-off-white">Generation Encountered an Issue</h3>
+          <h3 className="text-base font-serif text-off-white">We Hit a Build Issue</h3>
           <p className="text-sm text-soft-gray max-w-md mx-auto">
-            {project.generationLog || "Something went wrong during site generation."}
+            Your project is safe and our team has been alerted. You do not need to restart or pay again.
           </p>
-          <p className="text-xs text-soft-gray/50">Use the Support tab to submit a request and we'll get it moving.</p>
+          <p className="text-xs text-soft-gray/50">Use the Support tab if you'd like to add details — we'll recover and restart your build.</p>
         </CardContent>
       </Card>
     );

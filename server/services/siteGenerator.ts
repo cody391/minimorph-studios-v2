@@ -1405,6 +1405,16 @@ ${Object.keys(pages)
         content: `Project #${projectId} (${project?.businessName || "unknown"}) failed to generate.\nError: ${err instanceof Error ? err.message : String(err)}\n\nCheck Admin → Onboarding Projects or Sites for details.`,
       });
     } catch {}
+    // Notify customer — non-fatal, no technical details exposed
+    try {
+      const { sendBuildFailedEmail } = await import("./customerEmails");
+      await sendBuildFailedEmail({
+        to: project.contactEmail,
+        customerName: project.contactName,
+        businessName: project.businessName || "your business",
+        portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
+      });
+    } catch {}
   }
 }
 

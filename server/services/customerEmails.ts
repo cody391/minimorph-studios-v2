@@ -1361,3 +1361,51 @@ export async function sendMonthlyNurtureEmail(customer: {
     return { sent: false };
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   BUILD FAILURE EMAIL
+   Sent when generateSiteForProject catches a terminal error
+   or when stuck-build-check marks a project failed.
+   ═══════════════════════════════════════════════════════ */
+export async function sendBuildFailedEmail(params: {
+  to: string;
+  customerName: string;
+  businessName: string;
+  portalUrl?: string;
+}): Promise<void> {
+  const portalUrl = params.portalUrl || `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`;
+
+  const html = brandWrap(`
+    <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">A quick update on your build</h2>
+    <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      We ran into an issue while generating your ${params.businessName} website.
+      The MiniMorph team has been automatically notified and will review your project.
+    </p>
+    <div style="margin:24px 0;padding:20px;background:#222240;border-radius:8px;border-left:4px solid #d4a853;">
+      <p style="margin:0 0 8px;font-size:15px;color:#eaeaf0;font-weight:600;">What this means for you</p>
+      <ul style="margin:8px 0 0;padding-left:20px;color:#c8c8d8;font-size:14px;line-height:2.0;">
+        <li>Your project has been saved — nothing is lost.</li>
+        <li>You do not need to restart or pay again.</li>
+        <li>Our team will recover and restart your build.</li>
+      </ul>
+    </div>
+    <p style="margin:0 0 16px;color:#c8c8d8;">
+      If you'd like to share additional details or have questions, you can reply directly to this email
+      or use the Support tab in your Customer Portal.
+    </p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${portalUrl}" style="display:inline-block;padding:14px 32px;background:#4a9eff;color:#111122;text-decoration:none;border-radius:8px;font-weight:700;font-size:15px;">
+        Open Your Portal →
+      </a>
+    </div>
+    <p style="margin:0;color:#7a7a90;">&mdash; The MiniMorph Studios Team</p>
+  `);
+
+  await sendEmail({
+    to: params.to,
+    subject: `Update on your ${params.businessName} website build`,
+    html,
+    transactional: true,
+  });
+}

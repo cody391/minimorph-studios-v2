@@ -1329,17 +1329,19 @@ Use hedged, directional language throughout (e.g., "appears to", "may benefit fr
     })
   );
 
-  // Stuck build check — notify owner of projects stuck in "generating" for > 30 min
+  // Stuck build check — mark failed + notify admin + email customer for builds stuck > 30 min
   app.post("/api/scheduled/stuck-build-check", async (req, res) => {
     await runJob(req, res, "stuck-build-check", async () => {
       const database = await getDb();
-      if (!database) return { checked: true, stuckCount: 0, notified: 0 };
+      if (!database) return { checked: true, stuckCount: 0, markedFailed: 0, notified: 0, customerEmailsSent: 0 };
 
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
       const stuckProjects = await database
         .select({
           id: onboardingProjects.id,
           businessName: onboardingProjects.businessName,
+          contactEmail: onboardingProjects.contactEmail,
+          contactName: onboardingProjects.contactName,
           updatedAt: onboardingProjects.updatedAt,
         })
         .from(onboardingProjects)
@@ -1351,24 +1353,58 @@ Use hedged, directional language throughout (e.g., "appears to", "may benefit fr
         );
 
       let notified = 0;
+      let markedFailed = 0;
+      let customerEmailsSent = 0;
+
       for (const project of stuckProjects) {
         const minutesStuck = Math.round(
           (Date.now() - new Date(project.updatedAt).getTime()) / 60000
         );
+
+        // Mark the project failed so the portal exits the infinite build state
+        try {
+          await database
+            .update(onboardingProjects)
+            .set({
+              generationStatus: "failed",
+              generationLog: `Build marked failed after being stuck in generating state for ${minutesStuck} minutes. Admin recovery required.`,
+            })
+            .where(eq(onboardingProjects.id, project.id));
+          markedFailed++;
+        } catch (updateErr: any) {
+          console.error(`[StuckBuildCheck] Failed to mark project ${project.id} as failed:`, updateErr.message);
+        }
+
+        // Notify admin
         try {
           const { notifyOwner } = await import("./_core/notification");
           await notifyOwner({
-            title: "Stuck Website Build Detected",
-            content: `Project #${project.id} (${project.businessName}) has been generating for ${minutesStuck} minutes without completing. Check Admin → Onboarding Projects for details.`,
+            title: "Stuck Website Build — Marked Failed",
+            content: `Project #${project.id} (${project.businessName}) was stuck in generating for ${minutesStuck} minutes. Status set to failed. Check Admin → Onboarding Projects to recover.`,
           });
           notified++;
         } catch (notifyErr: any) {
           console.error(`[StuckBuildCheck] Failed to notify for project ${project.id}:`, notifyErr.message);
         }
+
+        // Notify customer
+        if (project.contactEmail) {
+          try {
+            const { sendBuildFailedEmail } = await import("./services/customerEmails");
+            await sendBuildFailedEmail({
+              to: project.contactEmail,
+              customerName: project.contactName || project.businessName || "there",
+              businessName: project.businessName || "your business",
+            });
+            customerEmailsSent++;
+          } catch (emailErr: any) {
+            console.error(`[StuckBuildCheck] Customer email failed for project ${project.id}:`, emailErr.message);
+          }
+        }
       }
 
-      console.log(`[StuckBuildCheck] Found ${stuckProjects.length} stuck build(s), notified owner for ${notified}.`);
-      return { checked: true, stuckCount: stuckProjects.length, notified };
+      console.log(`[StuckBuildCheck] Found ${stuckProjects.length} stuck build(s). Marked failed: ${markedFailed}. Admin notified: ${notified}. Customer emails: ${customerEmailsSent}.`);
+      return { checked: true, stuckCount: stuckProjects.length, markedFailed, notified, customerEmailsSent };
     });
   });
 
