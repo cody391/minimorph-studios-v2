@@ -24,7 +24,7 @@ const faqs = [
   },
   {
     q: "Can I cancel early?",
-    a: "Plans are 12-month agreements. If something changes, reach out and we'll talk through your options like adults. Setup fees are non-refundable once work begins, and monthly fees are billed in advance.",
+    a: "Plans are 12-month agreements. If something changes, reach out and we'll talk through your options like adults. Your first month's payment is non-refundable once work begins, and monthly fees are billed in advance. You can cancel future monthly service from your Customer Portal.",
   },
   {
     q: "What's the customer portal?",

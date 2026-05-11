@@ -4,7 +4,7 @@
  */
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Star, ExternalLink } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { useLocation } from "wouter";
 import { showroomSites } from "@/data/showroom";
 
@@ -217,20 +217,12 @@ export default function Portfolio() {
 
                 {/* CTAs */}
                 <div className="flex items-center gap-3">
-                  {site.liveUrl ? (
-                    <a
-                      href={site.liveUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-sans text-electric flex items-center gap-1 hover:gap-2 transition-all"
-                    >
-                      See Live Demo <ExternalLink size={12} />
-                    </a>
-                  ) : (
-                    <span className="text-sm font-sans text-off-white/25 italic">
-                      Deploying…
-                    </span>
-                  )}
+                  <button
+                    onClick={() => setLocation(`/showroom/${site.slug}`)}
+                    className="text-sm font-sans text-electric flex items-center gap-1 hover:gap-2 transition-all"
+                  >
+                    View Demo <ArrowRight size={12} />
+                  </button>
                   <button
                     onClick={() => setLocation("/get-started")}
                     className="ml-auto text-sm font-sans text-off-white/50 hover:text-electric flex items-center gap-1 transition-colors"

@@ -48,7 +48,6 @@ export const showroomSites: ShowroomSite[] = [
   {
     slug: "hammerstone-builds",
     subdomain: "hammerstone",
-    liveUrl: "https://hammerstone.minimorphstudios.net",
     name: "Hammerstone Builds",
     tagline: "Built right. Built to last.",
     industry: "General Contractor",
@@ -101,7 +100,6 @@ export const showroomSites: ShowroomSite[] = [
   {
     slug: "driftwood-kitchen",
     subdomain: "driftwood",
-    liveUrl: "https://driftwood.minimorphstudios.net",
     name: "Driftwood Kitchen",
     tagline: "Where every meal tells a story.",
     industry: "Restaurant",
@@ -154,7 +152,6 @@ export const showroomSites: ShowroomSite[] = [
   {
     slug: "velvet-vine-studio",
     subdomain: "velvetandvine",
-    liveUrl: "https://velvetandvine.minimorphstudios.net",
     name: "Velvet & Vine Studio",
     tagline: "Where artistry meets intention.",
     industry: "Salon & Spa",
@@ -212,7 +209,6 @@ export const showroomSites: ShowroomSite[] = [
   {
     slug: "gritmill-fitness",
     subdomain: "gritmill",
-    liveUrl: "https://gritmill.minimorphstudios.net",
     name: "Gritmill Fitness",
     tagline: "No excuses. Just results.",
     industry: "Fitness Studio",
@@ -266,7 +262,6 @@ export const showroomSites: ShowroomSite[] = [
   {
     slug: "clover-and-thistle",
     subdomain: "cloverandthistle",
-    liveUrl: "https://cloverandthistle.minimorphstudios.net",
     name: "Clover & Thistle",
     tagline: "Curated for the way you actually live.",
     industry: "Boutique Retail",
@@ -324,7 +319,6 @@ export const showroomSites: ShowroomSite[] = [
   {
     slug: "ember-oak-coffee",
     subdomain: "emberandoak",
-    liveUrl: "https://emberandoak.minimorphstudios.net",
     name: "Ember & Oak Coffee Co.",
     tagline: "Small batch. Big flavor. No shortcuts.",
     industry: "Coffee Roaster",
@@ -382,7 +376,6 @@ export const showroomSites: ShowroomSite[] = [
   {
     slug: "thornwood-goods",
     subdomain: "thornwood",
-    liveUrl: "https://thornwood.minimorphstudios.net",
     name: "Thornwood Goods",
     tagline: "Handcrafted goods for the well-lived life.",
     industry: "E-Commerce / Artisan Goods",
