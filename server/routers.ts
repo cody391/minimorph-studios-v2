@@ -3095,23 +3095,39 @@ const onboardingRouter = router({
         };
       }
 
-      // Resolve coupon to Stripe promotion code id
+      // Resolve coupon to Stripe promotion code id — validate all rules before creating checkout
       let stripePromoCodeId: string | undefined;
       if (input.couponCode) {
         const couponDb = await getDb();
-        if (couponDb) {
-          const { coupons: couponsTable } = await import("../drizzle/schema");
-          const { and: andFn2, eq: eqFn2 } = await import("drizzle-orm");
-          const couponRows = await couponDb.select().from(couponsTable)
-            .where(andFn2(eqFn2(couponsTable.code, input.couponCode.toUpperCase()), eqFn2(couponsTable.active, true as any)))
-            .limit(1);
-          if (couponRows.length && couponRows[0].stripePromotionCodeId) {
-            stripePromoCodeId = couponRows[0].stripePromotionCodeId;
-            await couponDb.update(couponsTable)
-              .set({ usedCount: (couponRows[0].usedCount ?? 0) + 1 })
-              .where(eqFn2(couponsTable.id, couponRows[0].id));
-          }
+        if (!couponDb) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        const { coupons: couponsTable } = await import("../drizzle/schema");
+        const { eq: eqFn2 } = await import("drizzle-orm");
+        const couponRows = await couponDb.select().from(couponsTable)
+          .where(eqFn2(couponsTable.code, input.couponCode.toUpperCase()))
+          .limit(1);
+
+        const coupon = couponRows[0];
+        if (!coupon) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid coupon code." });
         }
+        if (!coupon.active) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This coupon is no longer active." });
+        }
+        if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This coupon has expired." });
+        }
+        if (coupon.maxUses && (coupon.usedCount ?? 0) >= coupon.maxUses) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This coupon has reached its usage limit." });
+        }
+        if (!coupon.stripePromotionCodeId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This coupon is not configured for checkout." });
+        }
+        const restriction = coupon.packageRestriction || "all";
+        if (restriction !== "all" && restriction !== packageTier) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This coupon is not valid for the selected package." });
+        }
+        stripePromoCodeId = coupon.stripePromotionCodeId;
+        // Coupon usage count is incremented after successful payment in webhook hardening phase.
       }
 
       const sessionParams: Record<string, unknown> = {
