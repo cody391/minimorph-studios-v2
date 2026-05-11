@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
@@ -116,6 +116,63 @@ function SmartField({
   );
 }
 
+function resolveFormData(
+  formType: FormType,
+  data: Record<string, any>,
+  overrides: Record<string, string>
+): Record<string, unknown> {
+  switch (formType) {
+    case "w9_tax":
+      return {
+        name: overrides["w9_name"] ?? data.name ?? "",
+        businessName: overrides["w9_businessName"] ?? data.businessName ?? "",
+        taxClassification: "individual",
+        address: overrides["w9_address"] ?? data.address ?? "",
+        city: overrides["w9_city"] ?? data.city ?? "",
+        state: overrides["w9_state"] ?? data.state ?? "",
+        zipCode: overrides["w9_zip"] ?? data.zipCode ?? "",
+        ssnLast4: overrides["w9_ssn"] ?? data.ssnLast4 ?? "",
+      };
+    case "hr_employment":
+      return {
+        legalFirstName: overrides["hr_firstName"] ?? data.legalFirstName ?? "",
+        legalLastName: overrides["hr_lastName"] ?? data.legalLastName ?? "",
+        dateOfBirth: overrides["hr_dob"] ?? data.dateOfBirth ?? "",
+        email: overrides["hr_email"] ?? data.email ?? "",
+        phone: overrides["hr_phone"] ?? data.phone ?? "",
+        address: overrides["hr_address"] ?? data.address ?? "",
+        city: overrides["hr_city"] ?? data.city ?? "",
+        state: overrides["hr_state"] ?? data.state ?? "",
+        zipCode: overrides["hr_zip"] ?? data.zipCode ?? "",
+        idType: data.idType ?? "",
+        idLast4: data.idLast4 ?? "",
+        emergencyContactName: overrides["hr_emergencyName"] ?? data.emergencyContactName ?? "",
+        emergencyContactPhone: overrides["hr_emergencyPhone"] ?? data.emergencyContactPhone ?? "",
+      };
+    case "payroll_setup":
+      return {
+        legalName: overrides["pay_name"] ?? data.legalName ?? "",
+        email: overrides["pay_email"] ?? data.email ?? "",
+        address: overrides["pay_address"] ?? data.address ?? "",
+        city: overrides["pay_city"] ?? data.city ?? "",
+        state: overrides["pay_state"] ?? data.state ?? "",
+        zipCode: overrides["pay_zip"] ?? data.zipCode ?? "",
+        stripeConnectStatus: data.stripeConnectStatus ?? "not_connected",
+      };
+    case "rep_agreement":
+      return {
+        legalName: overrides["ra_name"] ?? data.legalName ?? "",
+        address: overrides["ra_address"] ?? data.address ?? "",
+        email: overrides["ra_email"] ?? data.email ?? "",
+        phone: overrides["ra_phone"] ?? data.phone ?? "",
+        date: overrides["ra_date"] ?? data.date ?? "",
+        ndaAlreadySigned: data.ndaAlreadySigned ?? false,
+        ndaSignedDate: data.ndaSignedDate ?? null,
+        agreementVersion: "1.0",
+      };
+  }
+}
+
 export default function OnboardingPaperwork() {
   const { user, loading: authLoading } = useAuth();
   const [, navigate] = useLocation();
@@ -153,19 +210,72 @@ export default function OnboardingPaperwork() {
     onError: () => toast.error("Failed to save paperwork completion. Please try again."),
   });
 
-  const handleConfirmForm = () => {
-    const newCompleted = new Set(Array.from(completedForms).concat(currentFormType));
-    setCompletedForms(newCompleted);
-    toast.success(`${config.title} signed & confirmed!`);
-    setSignature(null); // Reset signature for next form
+  const submitFormSignature = trpc.repOnboarding.submitFormSignature.useMutation();
 
-    if (currentFormIndex < FORM_ORDER.length - 1) {
-      setCurrentFormIndex((i) => i + 1);
-    }
+  const { data: existingSubmissions } = trpc.repOnboarding.getMyPaperworkSubmissions.useQuery(
+    undefined,
+    { enabled: !!user }
+  );
 
-    // If this was the last form, mark paperwork as complete in the backend
-    if (newCompleted.size === FORM_ORDER.length) {
+  const submissionsInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!existingSubmissions || submissionsInitialized.current) return;
+    submissionsInitialized.current = true;
+    if (existingSubmissions.length === 0) return;
+    const signedTypes = new Set(existingSubmissions.map((s) => s.formType as FormType));
+    setCompletedForms(signedTypes);
+    if (signedTypes.size === FORM_ORDER.length) {
       completePaperwork.mutate();
+    } else {
+      const firstIncomplete = FORM_ORDER.findIndex((ft) => !signedTypes.has(ft));
+      if (firstIncomplete !== -1) setCurrentFormIndex(firstIncomplete);
+    }
+  }, [existingSubmissions]);
+
+  const handleConfirmForm = async () => {
+    if (!signature || !formData) return;
+
+    const autoFields = formData.autoPopulatedFields as Record<string, any>;
+    const fullNameFromParts = `${autoFields.legalFirstName || ""} ${autoFields.legalLastName || ""}`.trim();
+    const signerDisplayName: string =
+      autoFields.name ||
+      autoFields.legalName ||
+      fullNameFromParts ||
+      autoFields.email ||
+      "";
+    const resolvedSignerName = (
+      signature.type === "typed"
+        ? (signature.name || signature.data || signerDisplayName)
+        : signerDisplayName
+    ).slice(0, 255) || "Rep";
+
+    const resolvedData = resolveFormData(currentFormType, autoFields, formOverrides);
+
+    try {
+      await submitFormSignature.mutateAsync({
+        formType: currentFormType,
+        formTitle: config.title,
+        formVersion: "1.0",
+        formDataJson: resolvedData,
+        signatureType: signature.type,
+        signatureData: signature.data,
+        signerName: resolvedSignerName,
+      });
+
+      const newCompleted = new Set(Array.from(completedForms).concat(currentFormType));
+      setCompletedForms(newCompleted);
+      toast.success(`${config.title} signed & saved!`);
+      setSignature(null);
+
+      if (newCompleted.size === FORM_ORDER.length) {
+        completePaperwork.mutate();
+      } else {
+        const nextIncomplete = FORM_ORDER.findIndex((ft) => !newCompleted.has(ft));
+        if (nextIncomplete !== -1) setCurrentFormIndex(nextIncomplete);
+      }
+    } catch {
+      toast.error(`Failed to save ${config.title}. Please try again.`);
     }
   };
 
@@ -386,13 +496,22 @@ export default function OnboardingPaperwork() {
                 <div className="pt-4">
                   <Button
                     onClick={handleConfirmForm}
-                    disabled={!signature}
+                    disabled={!signature || submitFormSignature.isPending || completePaperwork.isPending}
                     className="w-full bg-electric hover:bg-electric/90 text-white rounded-full py-5 font-sans disabled:opacity-50"
                   >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Sign & Confirm {config.title}
+                    {submitFormSignature.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Sign & Confirm {config.title}
+                      </>
+                    )}
                   </Button>
-                  {!signature && (
+                  {!signature && !submitFormSignature.isPending && (
                     <p className="text-xs text-center text-muted-foreground mt-2">
                       Please provide your signature above to confirm this form
                     </p>
