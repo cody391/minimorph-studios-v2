@@ -1959,3 +1959,29 @@ export const processedCheckoutSessions = mysqlTable("processed_checkout_sessions
 }));
 export type ProcessedCheckoutSession = typeof processedCheckoutSessions.$inferSelect;
 export type InsertProcessedCheckoutSession = typeof processedCheckoutSessions.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   REP_PAPERWORK_SUBMISSIONS — MiniMorph native e-sign
+   One row per rep per form type. Upserted on each re-sign.
+   ═══════════════════════════════════════════════════════ */
+export const repPaperworkSubmissions = mysqlTable("rep_paperwork_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  repId: int("repId").notNull(),
+  userId: int("userId").notNull(),
+  formType: mysqlEnum("formType", ["w9_tax", "hr_employment", "payroll_setup", "rep_agreement"]).notNull(),
+  formTitle: varchar("formTitle", { length: 255 }).notNull(),
+  formVersion: varchar("formVersion", { length: 16 }).notNull().default("1.0"),
+  formDataJson: json("formDataJson").notNull(),
+  signatureType: mysqlEnum("signatureType", ["drawn", "typed"]).notNull(),
+  signatureData: longtext("signatureData").notNull(),
+  signerName: varchar("signerName", { length: 255 }).notNull(),
+  signedAt: timestamp("signedAt").notNull().defaultNow(),
+  signedIpAddress: varchar("signedIpAddress", { length: 64 }),
+  signedUserAgent: varchar("signedUserAgent", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  uqRepPaperwork: uniqueIndex("uq_rep_paperwork_repId_formType").on(t.repId, t.formType),
+}));
+export type RepPaperworkSubmission = typeof repPaperworkSubmissions.$inferSelect;
+export type InsertRepPaperworkSubmission = typeof repPaperworkSubmissions.$inferInsert;

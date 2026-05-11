@@ -9,8 +9,8 @@ import { protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { repOnboardingData, reps, users, repApplications, repAssessments } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { repOnboardingData, reps, users, repApplications, repAssessments, repPaperworkSubmissions } from "../drizzle/schema";
+import { eq, and } from "drizzle-orm";
 
 /* ─── NDA Content ─── */
 
@@ -613,5 +613,175 @@ export const onboardingDataRouter = router({
         paperworkCompletedAt: rep.paperworkCompletedAt ?? null,
         stripeConnectOnboarded: !!rep.stripeConnectOnboarded,
       };
+    }),
+
+  /**
+   * Submit a signed form — upserts by repId + formType.
+   * P0c will call this for each form before calling completePaperwork.
+   */
+  submitFormSignature: protectedProcedure
+    .input(
+      z.object({
+        formType: z.enum(["w9_tax", "hr_employment", "payroll_setup", "rep_agreement"]),
+        formTitle: z.string().min(1).max(255),
+        formVersion: z.string().max(16).default("1.0"),
+        formDataJson: z.record(z.unknown()),
+        signatureType: z.enum(["drawn", "typed"]),
+        signatureData: z.string().min(1).max(500000),
+        signerName: z.string().min(1).max(255),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db)
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const repRecords = await db
+        .select({ id: reps.id })
+        .from(reps)
+        .where(eq(reps.userId, ctx.user.id))
+        .limit(1);
+      if (!repRecords[0])
+        throw new TRPCError({ code: "NOT_FOUND", message: "Rep profile not found" });
+      const repId = repRecords[0].id;
+
+      const ip =
+        ctx.req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
+        ctx.req.socket?.remoteAddress ||
+        "unknown";
+      const rawUa = ctx.req.headers["user-agent"] || "";
+      const ua = rawUa.slice(0, 500);
+
+      const now = new Date();
+
+      const existing = await db
+        .select({ id: repPaperworkSubmissions.id })
+        .from(repPaperworkSubmissions)
+        .where(and(
+          eq(repPaperworkSubmissions.repId, repId),
+          eq(repPaperworkSubmissions.formType, input.formType)
+        ))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .update(repPaperworkSubmissions)
+          .set({
+            formTitle: input.formTitle,
+            formVersion: input.formVersion,
+            formDataJson: input.formDataJson,
+            signatureType: input.signatureType,
+            signatureData: input.signatureData,
+            signerName: input.signerName,
+            signedAt: now,
+            signedIpAddress: ip,
+            signedUserAgent: ua,
+          })
+          .where(eq(repPaperworkSubmissions.id, existing[0].id));
+      } else {
+        await db.insert(repPaperworkSubmissions).values({
+          repId,
+          userId: ctx.user.id,
+          formType: input.formType,
+          formTitle: input.formTitle,
+          formVersion: input.formVersion,
+          formDataJson: input.formDataJson,
+          signatureType: input.signatureType,
+          signatureData: input.signatureData,
+          signerName: input.signerName,
+          signedAt: now,
+          signedIpAddress: ip,
+          signedUserAgent: ua,
+        });
+      }
+
+      return { success: true, signedAt: now.toISOString() };
+    }),
+
+  /**
+   * Get metadata for the current rep's signed forms (no signatureData, no formDataJson).
+   * Used by P0c frontend to resume paperwork after page refresh.
+   */
+  getMyPaperworkSubmissions: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db)
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+    const repRecords = await db
+      .select({ id: reps.id })
+      .from(reps)
+      .where(eq(reps.userId, ctx.user.id))
+      .limit(1);
+    if (!repRecords[0]) return [];
+
+    const rows = await db
+      .select({
+        formType: repPaperworkSubmissions.formType,
+        formTitle: repPaperworkSubmissions.formTitle,
+        formVersion: repPaperworkSubmissions.formVersion,
+        signerName: repPaperworkSubmissions.signerName,
+        signedAt: repPaperworkSubmissions.signedAt,
+      })
+      .from(repPaperworkSubmissions)
+      .where(eq(repPaperworkSubmissions.repId, repRecords[0].id));
+
+    return rows;
+  }),
+
+  /**
+   * Admin: list all paperwork submissions for a rep (no signatureData).
+   */
+  adminGetPaperworkSubmissions: adminProcedure
+    .input(z.object({ repId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db)
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const rows = await db
+        .select({
+          id: repPaperworkSubmissions.id,
+          formType: repPaperworkSubmissions.formType,
+          formTitle: repPaperworkSubmissions.formTitle,
+          formVersion: repPaperworkSubmissions.formVersion,
+          formDataJson: repPaperworkSubmissions.formDataJson,
+          signatureType: repPaperworkSubmissions.signatureType,
+          signerName: repPaperworkSubmissions.signerName,
+          signedAt: repPaperworkSubmissions.signedAt,
+          signedIpAddress: repPaperworkSubmissions.signedIpAddress,
+          signedUserAgent: repPaperworkSubmissions.signedUserAgent,
+        })
+        .from(repPaperworkSubmissions)
+        .where(eq(repPaperworkSubmissions.repId, input.repId));
+
+      return rows;
+    }),
+
+  /**
+   * Admin: fetch signature data for a specific submission (on-demand only).
+   * signatureData is a large PNG data URL or typed name — kept out of list responses.
+   */
+  adminGetPaperworkSignature: adminProcedure
+    .input(z.object({ submissionId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db)
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
+
+      const [row] = await db
+        .select({
+          signatureType: repPaperworkSubmissions.signatureType,
+          signatureData: repPaperworkSubmissions.signatureData,
+          signerName: repPaperworkSubmissions.signerName,
+          signedAt: repPaperworkSubmissions.signedAt,
+        })
+        .from(repPaperworkSubmissions)
+        .where(eq(repPaperworkSubmissions.id, input.submissionId))
+        .limit(1);
+
+      if (!row)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
+
+      return row;
     }),
 });
