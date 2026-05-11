@@ -9,6 +9,11 @@ import { FileText, Clock, CheckCircle, AlertTriangle, CreditCard } from "lucide-
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
+function fmtMoney(val: any) {
+  const n = Number(val);
+  return isNaN(n) || val == null ? "—" : `$${n.toLocaleString()}`;
+}
+
 const statusColors: Record<string, string> = {
   draft: "badge-neutral",
   pending_payment: "badge-pending-payment",
@@ -22,6 +27,15 @@ const statusColors: Record<string, string> = {
 export default function Contracts() {
   const [selected, setSelected] = useState<any>(null);
   const { data: contracts, isLoading, refetch } = trpc.contracts.list.useQuery();
+  const { data: customers } = trpc.customers.list.useQuery();
+
+  const customerMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    for (const c of customers ?? []) {
+      map[(c as any).id] = (c as any).businessName || (c as any).contactName || `Customer #${(c as any).id}`;
+    }
+    return map;
+  }, [customers]);
   const updateContract = trpc.contracts.update.useMutation({
     onSuccess: () => { toast.success("Contract updated"); refetch(); },
     onError: (e) => toast.error(e.message),
@@ -96,9 +110,9 @@ export default function Contracts() {
                 <tbody>
                   {contracts.map((c: any) => (
                     <tr key={c.id} className="border-b border-border/30 hover:bg-midnight-dark/20 transition-colors">
-                      <td className="py-3 px-2 font-medium text-off-white">Customer #{c.customerId}</td>
+                      <td className="py-3 px-2 font-medium text-off-white">{customerMap[c.customerId] ?? `Customer #${c.customerId}`}</td>
                       <td className="py-3 px-2 text-soft-gray capitalize">{c.packageTier}</td>
-                      <td className="py-3 px-2 text-soft-gray">${Number(c.monthlyRate).toLocaleString()}</td>
+                      <td className="py-3 px-2 text-soft-gray">{fmtMoney(c.monthlyPrice)}</td>
                       <td className="py-3 px-2 text-soft-gray text-xs">{formatDate(c.startDate)}</td>
                       <td className="py-3 px-2 text-soft-gray text-xs">{formatDate(c.endDate)}</td>
                       <td className="py-3 px-2"><Badge className={`text-xs font-sans ${statusColors[c.status] ?? ""}`}>{c.status.replace(/_/g, " ")}</Badge></td>
@@ -116,12 +130,12 @@ export default function Contracts() {
 
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle className="font-serif text-off-white">Contract #{selected?.id}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-serif text-off-white">Contract #{selected?.id} — {selected ? (customerMap[selected.customerId] ?? `Customer #${selected.customerId}`) : ""}</DialogTitle></DialogHeader>
           {selected && (
             <div className="space-y-4 font-sans">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-soft-gray text-xs">Package</span><p className="text-off-white capitalize">{selected.packageTier}</p></div>
-                <div><span className="text-soft-gray text-xs">Monthly Rate</span><p className="text-off-white">${Number(selected.monthlyRate).toLocaleString()}</p></div>
+                <div><span className="text-soft-gray text-xs">Monthly Rate</span><p className="text-off-white">{fmtMoney(selected.monthlyPrice)}</p></div>
                 <div><span className="text-soft-gray text-xs">Duration</span><p className="text-off-white">{formatDate(selected.startDate)} — {formatDate(selected.endDate)}</p></div>
               </div>
               <div>

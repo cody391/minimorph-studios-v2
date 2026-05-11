@@ -2370,6 +2370,16 @@ const ordersRouter = router({
     const dbModule = await import("./db");
     return dbModule.listAllOrders();
   }),
+
+  // Admin: list orders for a specific customer (joins via userId)
+  byCustomer: adminProcedure
+    .input(z.object({ customerId: z.number() }))
+    .query(async ({ input }) => {
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer?.userId) return [];
+      const dbModule = await import("./db");
+      return dbModule.listOrdersByUser(customer.userId);
+    }),
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -3378,6 +3388,13 @@ const onboardingRouter = router({
       } catch {}
 
       return { success: true, liveUrl: input.liveUrl };
+    }),
+
+  // Admin: get onboarding project for a specific customer
+  byCustomer: adminProcedure
+    .input(z.object({ customerId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getOnboardingProjectByCustomerId(input.customerId) ?? null;
     }),
 });
 
@@ -5171,6 +5188,13 @@ const supportRouter = router({
         }
       }
       return { success: true };
+    }),
+
+  // Admin: list support tickets for a specific customer
+  byCustomer: adminProcedure
+    .input(z.object({ customerId: z.number() }))
+    .query(async ({ input }) => {
+      return db.listCustomerSupportTickets(input.customerId);
     }),
 });
 
