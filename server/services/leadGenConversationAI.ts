@@ -21,6 +21,24 @@ import type { EnrichmentResult } from "./leadGenEnrichment";
 
 const TIER_KEY_MAP: Record<string, string> = { starter: "Starter", growth: "Growth", premium: "Pro", enterprise: "Enterprise" };
 
+const MIN_AUTO_HIGH_RISK_CONFIDENCE = 85;
+
+async function blockLowConfidenceAction(
+  leadId: number,
+  decision: string,
+  confidence: number,
+  reasoning: string | undefined
+): Promise<void> {
+  const db = (await getDb())!;
+  const reason = `Low-confidence high-risk AI action blocked for human review. Decision attempted: ${decision}. Confidence: ${confidence}/100.${reasoning ? ` AI reasoning: ${reasoning}` : ""}`;
+  await db.update(leads).set({
+    needsHumanCloser: true,
+    escalationReason: reason,
+    lastTouchAt: new Date(),
+  }).where(eq(leads.id, leadId));
+  console.warn(`[ConversationAI] Blocked low-confidence action "${decision}" (confidence=${confidence}) for lead ${leadId}. Flagged for human review.`);
+}
+
 async function getPricingText(): Promise<string> {
   try {
     const catalog = await getProductCatalog();
@@ -524,6 +542,11 @@ Respond in JSON:
   // Handle each decision type
   switch (aiDecision.decision) {
     case "push_for_close": {
+      const confidence = typeof aiDecision.confidence === "number" ? aiDecision.confidence : 0;
+      if (confidence < MIN_AUTO_HIGH_RISK_CONFIDENCE) {
+        await blockLowConfidenceAction(params.leadId, "push_for_close", confidence, aiDecision.reasoning);
+        break;
+      }
       const closeMsg = aiDecision.response || "Ready to get started? Here's your personalized link:";
       await sendResponse(params.channel, lead, closeMsg);
       result.response = closeMsg;
@@ -550,6 +573,11 @@ Respond in JSON:
     }
 
     case "assign_to_owner": {
+      const confidence = typeof aiDecision.confidence === "number" ? aiDecision.confidence : 0;
+      if (confidence < MIN_AUTO_HIGH_RISK_CONFIDENCE) {
+        await blockLowConfidenceAction(params.leadId, "assign_to_owner", confidence, aiDecision.reasoning);
+        break;
+      }
       await db.update(leads).set({
         temperature: "hot",
         stage: "assigned",

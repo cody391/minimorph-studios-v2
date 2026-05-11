@@ -15,6 +15,24 @@ import { ENV } from "../_core/env";
 import type { EnrichmentResult } from "./leadGenEnrichment";
 import { recordCost, calculateAiCost, COSTS } from "./costTracker";
 
+const MIN_AUTO_HIGH_RISK_CONFIDENCE = 85;
+
+async function blockLowConfidenceAction(
+  leadId: number,
+  decision: string,
+  confidence: number,
+  reasoning: string | undefined
+): Promise<void> {
+  const db = (await getDb())!;
+  const reason = `Low-confidence high-risk AI action blocked for human review. Decision attempted: ${decision}. Confidence: ${confidence}/100.${reasoning ? ` AI reasoning: ${reasoning}` : ""}`;
+  await db.update(leads).set({
+    needsHumanCloser: true,
+    escalationReason: reason,
+    lastTouchAt: new Date(),
+  }).where(eq(leads.id, leadId));
+  console.warn(`[Outreach] Blocked low-confidence action "${decision}" (confidence=${confidence}) for lead ${leadId}. Flagged for human review.`);
+}
+
 // Outreach sequence templates (day offsets from lead creation)
 // Email-first strategy: cold SMS is blocked by US carriers without opt-in.
 // SMS is ONLY sent after explicit opt-in (verbal consent on a call, form, etc.).
@@ -510,28 +528,33 @@ Respond in JSON:
   }
 
   if (aiDecision.decision === "push_for_close" && aiDecision.response) {
-    // Self-close: send personalized checkout link
-    const siteUrl = ENV.appUrl || "https://minimorphstudios.com";
-    const checkoutUrl = `${siteUrl}/get-started?leadId=${params.leadId}&source=ai_close`;
-    const closeMessage = aiDecision.response + `\n\nGet started here: ${checkoutUrl}`;
-    if (params.channel === "sms" && lead.phone) {
-      await sendSms({ to: lead.phone, body: closeMessage });
-    } else if (lead.email && (lead as any).emailVerified) {
-      await sendEmail({
-        to: lead.email,
-        subject: "Ready to get started? Here's your link",
-        html: `<div style="font-family: sans-serif;">${closeMessage.replace(/\n/g, "<br/>")}</div>`,
-      });
+    const confidence = typeof aiDecision.confidence === "number" ? aiDecision.confidence : 0;
+    if (confidence < MIN_AUTO_HIGH_RISK_CONFIDENCE) {
+      await blockLowConfidenceAction(params.leadId, "push_for_close", confidence, aiDecision.reasoning);
+    } else {
+      // Self-close: send personalized checkout link
+      const siteUrl = ENV.appUrl || "https://minimorphstudios.com";
+      const checkoutUrl = `${siteUrl}/get-started?leadId=${params.leadId}&source=ai_close`;
+      const closeMessage = aiDecision.response + `\n\nGet started here: ${checkoutUrl}`;
+      if (params.channel === "sms" && lead.phone) {
+        await sendSms({ to: lead.phone, body: closeMessage });
+      } else if (lead.email && (lead as any).emailVerified) {
+        await sendEmail({
+          to: lead.email,
+          subject: "Ready to get started? Here's your link",
+          html: `<div style="font-family: sans-serif;">${closeMessage.replace(/\n/g, "<br/>")}</div>`,
+        });
+      }
+      result.response = closeMessage;
+      await db.update(leads).set({
+        temperature: "hot",
+        stage: "negotiating",
+        lastTouchAt: new Date(),
+        checkoutUrl,
+        checkoutSentAt: new Date(),
+        elenaHandoffAt: new Date(),
+      } as any).where(eq(leads.id, params.leadId));
     }
-    result.response = closeMessage;
-    await db.update(leads).set({
-      temperature: "hot",
-      stage: "negotiating",
-      lastTouchAt: new Date(),
-      checkoutUrl,
-      checkoutSentAt: new Date(),
-      elenaHandoffAt: new Date(),
-    } as any).where(eq(leads.id, params.leadId));
 
   } else if (aiDecision.decision === "assign_to_rep") {
     // Find the nearest available rep
@@ -559,23 +582,28 @@ Respond in JSON:
     }
 
   } else if (aiDecision.decision === "assign_to_owner" || aiDecision.isEnterprise) {
-    // Enterprise lead — send to owner
-    await db.update(leads).set({
-      temperature: "hot",
-      stage: "assigned",
-      lastTouchAt: new Date(),
-    }).where(eq(leads.id, params.leadId));
-    result.assignedToOwner = true;
+    const confidence = typeof aiDecision.confidence === "number" ? aiDecision.confidence : 0;
+    if (confidence < MIN_AUTO_HIGH_RISK_CONFIDENCE) {
+      await blockLowConfidenceAction(params.leadId, "assign_to_owner", confidence, aiDecision.reasoning);
+    } else {
+      // Enterprise lead — send to owner
+      await db.update(leads).set({
+        temperature: "hot",
+        stage: "assigned",
+        lastTouchAt: new Date(),
+      }).where(eq(leads.id, params.leadId));
+      result.assignedToOwner = true;
 
-    // SMS the owner directly
-    if (ENV.ownerPhoneNumber) {
-      try {
-        await sendSms({
-          to: ENV.ownerPhoneNumber,
-          body: `🏢 Enterprise Lead Alert!\n${lead.businessName}\n${lead.phone || lead.email || ""}\nAI: ${aiDecision.reasoning || "High-value prospect"}\n\nThis lead has been assigned to you.`,
-        });
-      } catch (smsErr) {
-        console.error("[Outreach] Failed to SMS owner:", smsErr);
+      // SMS the owner directly
+      if (ENV.ownerPhoneNumber) {
+        try {
+          await sendSms({
+            to: ENV.ownerPhoneNumber,
+            body: `🏢 Enterprise Lead Alert!\n${lead.businessName}\n${lead.phone || lead.email || ""}\nAI: ${aiDecision.reasoning || "High-value prospect"}\n\nThis lead has been assigned to you.`,
+          });
+        } catch (smsErr) {
+          console.error("[Outreach] Failed to SMS owner:", smsErr);
+        }
       }
     }
 
