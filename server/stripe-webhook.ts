@@ -210,6 +210,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const _rawSource = session.metadata?.acquisition_source || session.metadata?.source || "self_service";
   const metaSource = String(_rawSource).trim().slice(0, 64) || "self_service";
 
+  // Coupon fields — written to contract after successful payment; usedCount deferred (C5a).
+  const metaCouponCode =
+    typeof session.metadata?.coupon_code === "string"
+      ? session.metadata.coupon_code.trim().toUpperCase().slice(0, 64) || null
+      : null;
+  const metaCampaignName =
+    typeof session.metadata?.campaign_name === "string"
+      ? session.metadata.campaign_name.trim().slice(0, 128) || null
+      : null;
+
   // Actual amount collected by Stripe (cents). Zero for fully-discounted checkouts.
   const amountPaidCents = typeof session.amount_total === "number" ? session.amount_total : 0;
 
@@ -316,6 +326,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         notes: "Self-service checkout via Stripe",
         salesSource: metaSource,
         ...(attributionLeadId ? { leadId: attributionLeadId } : {}),
+        ...(metaCouponCode ? { couponCode: metaCouponCode } : {}),
+        ...(metaCampaignName ? { campaignName: metaCampaignName } : {}),
       });
       contractId = newContract.id;
       console.log(`[Stripe] Contract created: contract=${contractId}, customer=${customerId}, package=${packageTier}, sub=${stripeSubscriptionId}`);
@@ -405,7 +417,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         // Activate the contract (was pending_payment)
         await database
           .update(contracts)
-          .set({ status: "active", stripeSubscriptionId: (session.subscription as string) || undefined })
+          .set({
+            status: "active",
+            stripeSubscriptionId: (session.subscription as string) || undefined,
+            ...(metaCouponCode ? { couponCode: metaCouponCode } : {}),
+            ...(metaCampaignName ? { campaignName: metaCampaignName } : {}),
+          })
           .where(eq(contracts.id, repContractId));
         console.log(`[Stripe] Rep-closed contract ${repContractId} activated after payment`);
 

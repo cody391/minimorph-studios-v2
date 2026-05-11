@@ -3127,6 +3127,11 @@ const onboardingRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "This coupon is not valid for the selected package." });
         }
         stripePromoCodeId = coupon.stripePromotionCodeId;
+        // Store coupon identity in checkout metadata so the webhook can write
+        // couponCode/campaignName to the contract after successful payment.
+        sessionMeta.coupon_code = coupon.code;
+        sessionMeta.coupon_id = String(coupon.id);
+        sessionMeta.campaign_name = coupon.campaignName || "";
         // Coupon usage count is incremented after successful payment in webhook hardening phase.
       }
 
