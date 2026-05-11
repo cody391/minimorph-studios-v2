@@ -9,6 +9,7 @@ import {
   boolean,
   decimal,
   json,
+  uniqueIndex,
 } from "drizzle-orm/mysql-core";
 
 /* ═══════════════════════════════════════════════════════
@@ -1937,3 +1938,19 @@ export const regulatoryRules = mysqlTable("regulatory_rules", {
   createdAt: timestamp("rr_createdAt").defaultNow().notNull(),
 });
 export type RegulatoryRule = typeof regulatoryRules.$inferSelect;
+
+/* ═══════════════════════════════════════════════════════
+   PROCESSED_CHECKOUT_SESSIONS — Webhook idempotency guard
+   Prevents duplicate side-effects (e.g. coupon usedCount)
+   when Stripe retries checkout.session.completed.
+   ═══════════════════════════════════════════════════════ */
+export const processedCheckoutSessions = mysqlTable("processed_checkout_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  stripeSessionId: varchar("stripeSessionId", { length: 255 }).notNull(),
+  purpose: varchar("purpose", { length: 64 }).notNull().default("coupon_usedCount"),
+  processedAt: timestamp("processedAt").defaultNow().notNull(),
+}, (t) => ({
+  uqSessionPurpose: uniqueIndex("uq_session_purpose").on(t.stripeSessionId, t.purpose),
+}));
+export type ProcessedCheckoutSession = typeof processedCheckoutSessions.$inferSelect;
+export type InsertProcessedCheckoutSession = typeof processedCheckoutSessions.$inferInsert;
