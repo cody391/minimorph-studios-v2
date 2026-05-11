@@ -5633,10 +5633,30 @@ const adminRouter = router({
       discountValue: z.number().int().min(1).max(99).optional(),
       maxUses: z.number().int().min(1).optional(),
       expiresAt: z.string().optional(), // ISO date string
+      duration: z.enum(["once", "repeating", "forever"]).default("once"),
+      durationMonths: z.number().int().positive().optional(),
+      campaignName: z.string().max(128).optional(),
+      packageRestriction: z.string().max(64).optional().default("all"),
     }))
     .mutation(async ({ input }) => {
       const database = await getDb();
       if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+
+      // Block 100%-off forever — creates a subscription that costs the business forever with no revenue
+      if (input.discountType === "free" && input.duration === "forever") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Free (100% off) coupons cannot have duration 'forever'. Use 'once' for a free first month or 'repeating' with a limited number of months.",
+        });
+      }
+
+      // repeating requires durationMonths
+      if (input.duration === "repeating" && !input.durationMonths) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Duration 'repeating' requires durationMonths to be set.",
+        });
+      }
 
       const Stripe = (await import("stripe")).default;
       const stripeKey = ENV.stripeSecretKey;
@@ -5647,8 +5667,11 @@ const adminRouter = router({
       const stripeCouponParams: Record<string, unknown> = {
         name: input.description || input.code,
         currency: "usd",
-        duration: "forever",
+        duration: input.duration,
       };
+      if (input.duration === "repeating") {
+        stripeCouponParams.duration_in_months = input.durationMonths;
+      }
       if (input.discountType === "free") {
         stripeCouponParams.percent_off = 100;
       } else {
@@ -5680,6 +5703,10 @@ const adminRouter = router({
         stripeCouponId: stripeCoupon.id,
         stripePromotionCodeId: stripePromo.id,
         active: true,
+        duration: input.duration,
+        durationMonths: input.duration === "repeating" ? (input.durationMonths ?? null) : null,
+        campaignName: input.campaignName ?? null,
+        packageRestriction: input.packageRestriction ?? "all",
       });
 
       return { success: true, code: input.code };
