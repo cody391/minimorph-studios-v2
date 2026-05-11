@@ -54,8 +54,8 @@ export default function BecomeRep() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   // Step 2: Experience
-  const [availability, setAvailability] = useState<"full_time" | "part_time">("full_time");
-  const [hoursPerWeek, setHoursPerWeek] = useState(40);
+  const [availability, setAvailability] = useState<"full_time" | "part_time">("part_time");
+  const [hoursPerWeek, setHoursPerWeek] = useState(10);
   const [salesExperience, setSalesExperience] = useState<"none" | "1_2_years" | "3_5_years" | "5_plus_years">("none");
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
 
@@ -243,7 +243,7 @@ export default function BecomeRep() {
   };
 
   const handleStep2 = () => {
-    if (hoursPerWeek < 5) { toast.error("Minimum 5 hours per week"); return; }
+    if (hoursPerWeek < 5) { toast.error("Minimum 5 estimated hours per week"); return; }
     setStep(3);
   };
 
@@ -634,19 +634,20 @@ export default function BecomeRep() {
               </CardHeader>
               <CardContent className="space-y-5">
                 <div>
-                  <Label className="text-off-white/80 text-sm">Availability *</Label>
+                  <Label className="text-off-white/80 text-sm">Expected Platform Commitment *</Label>
                   <Select value={availability} onValueChange={(v: any) => setAvailability(v)}>
                     <SelectTrigger className="mt-1 border-border"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="full_time">Full-Time (30-40+ hrs/week)</SelectItem>
-                      <SelectItem value="part_time">Part-Time (10-25 hrs/week)</SelectItem>
+                      <SelectItem value="full_time">High-Output (30+ hrs/week)</SelectItem>
+                      <SelectItem value="part_time">Flexible (5-25 hrs/week)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-off-white/80 text-sm">Hours Per Week: {hoursPerWeek}</Label>
+                  <Label className="text-off-white/80 text-sm">Estimated Weekly Selling Time: {hoursPerWeek} hrs</Label>
                   <input type="range" min={5} max={60} value={hoursPerWeek} onChange={(e) => setHoursPerWeek(Number(e.target.value))} className="w-full mt-2 accent-electric" />
                   <div className="flex justify-between text-[10px] text-soft-gray/60 font-sans"><span>5 hrs</span><span>60 hrs</span></div>
+                  <p className="text-[10px] text-soft-gray/50 font-sans mt-1.5">This is only an estimate. As an independent contractor, you choose when and how much you sell — no required hours or schedule.</p>
                 </div>
                 <div>
                   <Label className="text-off-white/80 text-sm">Sales Experience *</Label>
@@ -786,7 +787,7 @@ export default function BecomeRep() {
                   <div className="grid grid-cols-2 gap-2 text-sm font-sans">
                     <div><span className="text-soft-gray">Name:</span> <span className="text-off-white font-medium">{fullName}</span></div>
                     <div><span className="text-soft-gray">Email:</span> <span className="text-off-white font-medium">{email}</span></div>
-                    <div><span className="text-soft-gray">Availability:</span> <span className="text-off-white font-medium">{availability === "full_time" ? "Full-Time" : "Part-Time"}</span></div>
+                    <div><span className="text-soft-gray">Commitment:</span> <span className="text-off-white font-medium">{availability === "full_time" ? "High-Output" : "Flexible"}</span></div>
                     <div><span className="text-soft-gray">Experience:</span> <span className="text-off-white font-medium">{salesExperience.replace(/_/g, " ")}</span></div>
                   </div>
                 </div>
