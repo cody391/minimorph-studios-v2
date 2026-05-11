@@ -10,6 +10,8 @@ import {
   Shield,
   CheckCircle,
   ArrowRight,
+  ArrowLeft,
+  ChevronRight,
   CreditCard,
   Lock,
   Loader2,
@@ -140,6 +142,28 @@ export default function PayoutSetup() {
   return (
     <div className="min-h-screen bg-midnight">
       <OnboardingProgress currentStep={7} />
+
+      {/* Breadcrumb nav */}
+      <div className="bg-midnight border-b border-border/20 px-4 py-2.5">
+        <div className="max-w-2xl mx-auto flex items-center gap-1.5 text-xs font-sans text-soft-gray/60">
+          <button
+            onClick={() => navigate("/rep")}
+            className="hover:text-electric transition-colors"
+          >
+            Rep Dashboard
+          </button>
+          <ChevronRight className="w-3 h-3 shrink-0" />
+          <button
+            onClick={() => navigate("/rep?tab=training")}
+            className="hover:text-electric transition-colors"
+          >
+            Training
+          </button>
+          <ChevronRight className="w-3 h-3 shrink-0" />
+          <span className="text-off-white/80">Stripe Payout Setup</span>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="bg-charcoal text-off-white py-8 sm:py-10 px-4">
         <div className="max-w-2xl mx-auto text-center">
@@ -282,27 +306,46 @@ export default function PayoutSetup() {
               SSN.
             </p>
 
+            {/* Back navigation */}
+            <div className="flex gap-2 mt-5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/rep?tab=training")}
+                className="flex-1 font-sans text-soft-gray/70 hover:text-off-white text-xs rounded-full"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to Training
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/rep")}
+                className="flex-1 font-sans text-soft-gray/70 hover:text-off-white text-xs rounded-full"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to Dashboard
+              </Button>
+            </div>
+
             {/* Skip option — prominent enough to find on mobile */}
-            <div className="mt-6 pt-6 border-t border-border/10">
+            <div className="mt-4 pt-5 border-t border-border/10">
               <p className="text-xs text-amber-400/80 font-sans text-center mb-3">
-                Commissions cannot be paid until Stripe Connect setup is complete.
+                You can skip for now and continue training, but Stripe Connect is required before commissions can be paid.
               </p>
               <Button
                 variant="outline"
                 onClick={() => {
                   toast.info(
-                    "You can set up payouts later from your dashboard. Heading to the Academy now."
+                    "Heading to Training. You can set up payouts any time from your dashboard."
                   );
-                  // Use window.location for reliable navigation on mobile
                   window.location.href = "/rep?tab=training";
                 }}
                 className="w-full rounded-full py-4 min-h-[48px] text-soft-gray hover:text-off-white border-border/30 hover:border-border/60 font-sans text-sm"
               >
                 <SkipForward className="w-4 h-4 mr-2" />
-                Skip for now — I'll set this up later
+                Skip for now — continue to Training
               </Button>
               <p className="text-[10px] text-soft-gray/40 font-sans text-center mt-2">
-                You can always connect your payout account from Settings in your dashboard.
+                You can connect your payout account any time from Settings or the Training tab.
               </p>
             </div>
           </CardContent>
