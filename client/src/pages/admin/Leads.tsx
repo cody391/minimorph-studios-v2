@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +20,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2, ArrowRightLeft, DollarSign, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
+import {
+  Target, Plus, Flame, Snowflake, Sun, Sparkles, Loader2, ArrowRightLeft,
+  DollarSign, TrendingUp, AlertTriangle, CheckCircle, Phone, Globe,
+  User, Clock, Brain, ShieldCheck, MessageCircle, Inbox,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+// ─── Constants ───
 
 const tempIcons: Record<string, any> = {
   cold: { icon: Snowflake, color: "text-blue-500", bg: "bg-blue-50" },
@@ -42,12 +49,6 @@ const stageColors: Record<string, string> = {
   closed_lost: "badge-danger",
 };
 
-function fmtCents(cents: number) {
-  if (cents === 0) return "$0";
-  if (cents < 100) return `¢${cents}`;
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
 const COST_TYPE_LABELS: Record<string, string> = {
   scraping: "Scraping",
   enrichment: "Enrichment",
@@ -64,6 +65,42 @@ const COST_TYPE_LABELS: Record<string, string> = {
   commission_recurring: "Commission (rec.)",
   phone_number: "Phone #",
 };
+
+const CHANNEL_LABELS: Record<string, string> = {
+  email: "Email",
+  sms: "SMS",
+  rep_call_reminder: "Call reminder",
+};
+
+const OUTREACH_STATUS_COLORS: Record<string, string> = {
+  scheduled: "bg-blue-500/10 text-blue-400 border-blue-400/20",
+  sent: "bg-green-500/10 text-green-400 border-green-400/20",
+  delivered: "bg-green-500/10 text-green-400 border-green-400/20",
+  opened: "bg-electric/10 text-electric border-electric/20",
+  replied: "bg-purple-500/10 text-purple-400 border-purple-400/20",
+  bounced: "bg-red-500/10 text-red-400 border-red-400/20",
+  cancelled: "bg-soft-gray/10 text-soft-gray border-border/30",
+};
+
+// ─── Helpers ───
+
+function fmtCents(cents: number) {
+  if (cents === 0) return "$0";
+  if (cents < 100) return `¢${cents}`;
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function fmtDate(d: string | Date | null | undefined) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function fmtDateShort(d: string | Date | null | undefined) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+// ─── Sub-components ───
 
 function LeadEconomicsPanel({ leadId }: { leadId: number }) {
   const { data: econ, isLoading: econLoading } = trpc.leads.getEconomics.useQuery({ leadId });
@@ -109,7 +146,6 @@ function LeadEconomicsPanel({ leadId }: { leadId: number }) {
           <p className="text-xs text-soft-gray/60">No costs recorded yet</p>
         )}
       </div>
-
       {proj && (
         <div className="border border-green-500/20 rounded-xl p-4 bg-green-500/5">
           <div className="flex items-center gap-2 mb-3">
@@ -117,31 +153,13 @@ function LeadEconomicsPanel({ leadId }: { leadId: number }) {
             <span className="text-sm font-medium text-off-white">If We Close This</span>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span className="text-soft-gray text-xs">Package</span>
-              <p className="text-off-white capitalize">{proj.packageName}</p>
-            </div>
-            <div>
-              <span className="text-soft-gray text-xs">Monthly Rev</span>
-              <p className="text-green-400 font-medium">{fmtCents(proj.monthlyRevCents)}/mo</p>
-            </div>
-            <div>
-              <span className="text-soft-gray text-xs">Annual Contract</span>
-              <p className="text-green-400 font-medium">{fmtCents(proj.annualRevCents)}</p>
-            </div>
-            <div>
-              <span className="text-soft-gray text-xs">Rep Commission (10%)</span>
-              <p className="text-off-white font-medium">{fmtCents(proj.commissionCents)}</p>
-            </div>
-            <div>
-              <span className="text-soft-gray text-xs">Net ROI</span>
-              <p className={proj.roiCents >= 0 ? "text-green-400 font-medium" : "text-red-400 font-medium"}>{fmtCents(proj.roiCents)}</p>
-            </div>
+            <div><span className="text-soft-gray text-xs">Package</span><p className="text-off-white capitalize">{proj.packageName}</p></div>
+            <div><span className="text-soft-gray text-xs">Monthly Rev</span><p className="text-green-400 font-medium">{fmtCents(proj.monthlyRevCents)}/mo</p></div>
+            <div><span className="text-soft-gray text-xs">Annual Contract</span><p className="text-green-400 font-medium">{fmtCents(proj.annualRevCents)}</p></div>
+            <div><span className="text-soft-gray text-xs">Rep Commission (10%)</span><p className="text-off-white font-medium">{fmtCents(proj.commissionCents)}</p></div>
+            <div><span className="text-soft-gray text-xs">Net ROI</span><p className={proj.roiCents >= 0 ? "text-green-400 font-medium" : "text-red-400 font-medium"}>{fmtCents(proj.roiCents)}</p></div>
             {proj.roiMultiple !== null && (
-              <div>
-                <span className="text-soft-gray text-xs">ROI Multiple</span>
-                <p className="text-off-white font-medium">{proj.roiMultiple.toFixed(1)}x</p>
-              </div>
+              <div><span className="text-soft-gray text-xs">ROI Multiple</span><p className="text-off-white font-medium">{proj.roiMultiple.toFixed(1)}x</p></div>
             )}
           </div>
         </div>
@@ -150,30 +168,63 @@ function LeadEconomicsPanel({ leadId }: { leadId: number }) {
   );
 }
 
+function ComplianceBadge({ ok, label }: { ok: boolean | null | undefined; label: string }) {
+  if (ok === null || ok === undefined) {
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-soft-gray/10 text-soft-gray border-border/30 font-sans">{label}: unknown</span>;
+  }
+  return ok
+    ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-green-500/10 text-green-400 border-green-400/20 font-sans">{label}: yes</span>
+    : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border bg-red-500/10 text-red-400 border-red-400/20 font-sans">{label}: no</span>;
+}
+
+// ─── Main Component ───
+
 export default function Leads() {
   const [showCreate, setShowCreate] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("overview");
   const [enrichingId, setEnrichingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ businessName: "", contactName: "", email: "", phone: "", industry: "", website: "", source: "manual" as const, notes: "" });
-
-  const { data: leads, isLoading, refetch } = trpc.leads.list.useQuery();
-  const createLead = trpc.leads.create.useMutation({
-    onSuccess: () => { toast.success("Lead created"); refetch(); setShowCreate(false); setForm({ businessName: "", contactName: "", email: "", phone: "", industry: "", website: "", source: "manual", notes: "" }); },
-    onError: (e) => toast.error(e.message),
-  });
-  const updateLead = trpc.leads.update.useMutation({
-    onSuccess: () => { toast.success("Lead updated"); refetch(); },
-    onError: (e) => toast.error(e.message),
-  });
-  const { data: reps } = trpc.reps.list.useQuery();
-  const transferLeads = trpc.leads.transferLeads.useMutation({
-    onSuccess: (data) => { toast.success(`${data.transferredCount} leads transferred`); refetch(); setShowTransfer(false); },
-    onError: (e) => toast.error(e.message),
+  const [form, setForm] = useState({
+    businessName: "", contactName: "", email: "", phone: "",
+    industry: "", website: "", source: "manual" as const, notes: "",
   });
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferFrom, setTransferFrom] = useState("");
   const [transferTo, setTransferTo] = useState("");
+
+  const { data: leads, isLoading, refetch } = trpc.leads.list.useQuery();
+  const { data: reps } = trpc.reps.list.useQuery();
+
+  // Fetched when detail dialog is open
+  const { data: conversations, isLoading: convoLoading } = trpc.leadGen.listConversations.useQuery(
+    { leadId: selectedLead?.id ?? 0, limit: 30 },
+    { enabled: showDetail && !!selectedLead?.id }
+  );
+  const { data: outreachItems, isLoading: outreachLoading } = trpc.leadGen.listOutreachSequences.useQuery(
+    { leadId: selectedLead?.id ?? 0, limit: 50 },
+    { enabled: showDetail && !!selectedLead?.id }
+  );
+
+  const createLead = trpc.leads.create.useMutation({
+    onSuccess: () => {
+      toast.success("Lead created");
+      refetch();
+      setShowCreate(false);
+      setForm({ businessName: "", contactName: "", email: "", phone: "", industry: "", website: "", source: "manual", notes: "" });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updateLead = trpc.leads.update.useMutation({
+    onSuccess: () => { toast.success("Lead updated"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const transferLeads = trpc.leads.transferLeads.useMutation({
+    onSuccess: (data) => { toast.success(`${data.transferredCount} leads transferred`); refetch(); setShowTransfer(false); },
+    onError: (e) => toast.error(e.message),
+  });
 
   const clearHumanReviewFlag = trpc.leads.clearHumanReviewFlag.useMutation({
     onSuccess: () => {
@@ -189,9 +240,7 @@ export default function Leads() {
       toast.success("Lead enriched with AI insights");
       refetch();
       setEnrichingId(null);
-      if (selectedLead) {
-        setSelectedLead({ ...selectedLead, enrichmentData: data.enrichmentData, stage: "enriched" });
-      }
+      if (selectedLead) setSelectedLead({ ...selectedLead, enrichmentData: data.enrichmentData, stage: "enriched" });
     },
     onError: (e) => { toast.error(`Enrichment failed: ${e.message}`); setEnrichingId(null); },
   });
@@ -201,8 +250,22 @@ export default function Leads() {
     enrichLead.mutate({ id: leadId });
   };
 
+  const openLead = (lead: any) => {
+    setSelectedLead(lead);
+    setActiveTab("overview");
+    setShowDetail(true);
+  };
+
+  const assignedRep = reps?.find((r: any) => r.id === selectedLead?.assignedRepId);
+
+  // Conversations sorted oldest-first for reading
+  const convoChronological = conversations ? [...conversations].reverse() : [];
+  // Latest AI decision entry (newest)
+  const latestConvo = conversations?.[0];
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-serif text-off-white">Lead Pipeline</h1>
@@ -276,9 +339,8 @@ export default function Leads() {
                         <td className="py-3 px-2">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-off-white">{lead.businessName}</span>
-                            {hasEnrichment && (
-                              <span title="AI Enriched"><Sparkles className="h-3.5 w-3.5 text-electric/60" /></span>
-                            )}
+                            {lead.needsHumanCloser && <AlertTriangle className="h-3.5 w-3.5 text-amber-400" title="Human review required" />}
+                            {hasEnrichment && <span title="AI Enriched"><Sparkles className="h-3.5 w-3.5 text-electric/60" /></span>}
                           </div>
                         </td>
                         <td className="py-3 px-2 text-soft-gray">{lead.contactName}</td>
@@ -295,31 +357,22 @@ export default function Leads() {
                         </td>
                         <td className="py-3 px-2 text-soft-gray">{lead.qualificationScore}/100</td>
                         <td className="py-3 px-2">
-                          {lead.totalCostCents > 0 ? (
-                            <span className="text-xs text-amber-400 font-medium">{fmtCents(lead.totalCostCents)}</span>
-                          ) : (
-                            <span className="text-xs text-soft-gray/40">—</span>
-                          )}
+                          {lead.totalCostCents > 0
+                            ? <span className="text-xs text-amber-400 font-medium">{fmtCents(lead.totalCostCents)}</span>
+                            : <span className="text-xs text-soft-gray/40">—</span>}
                         </td>
                         <td className="py-3 px-2 text-soft-gray text-xs">{lead.source.replace(/_/g, " ")}</td>
                         <td className="py-3 px-2 text-right space-x-1">
                           {!hasEnrichment && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs text-electric hover:text-electric hover:bg-electric/10"
-                              onClick={() => handleEnrich(lead.id)}
-                              disabled={enrichingId === lead.id}
-                            >
-                              {enrichingId === lead.id ? (
-                                <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enriching...</>
-                              ) : (
-                                <><Sparkles className="h-3 w-3 mr-1" /> Enrich</>
-                              )}
+                            <Button variant="ghost" size="sm" className="text-xs text-electric hover:text-electric hover:bg-electric/10"
+                              onClick={() => handleEnrich(lead.id)} disabled={enrichingId === lead.id}>
+                              {enrichingId === lead.id
+                                ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enriching...</>
+                                : <><Sparkles className="h-3 w-3 mr-1" /> Enrich</>}
                             </Button>
                           )}
                           <Button variant="ghost" size="sm" className="text-xs text-soft-gray hover:text-off-white"
-                            onClick={() => { setSelectedLead(lead); setShowDetail(true); }}>
+                            onClick={() => openLead(lead)}>
                             View
                           </Button>
                         </td>
@@ -333,7 +386,7 @@ export default function Leads() {
         </CardContent>
       </Card>
 
-      {/* Create Lead Dialog */}
+      {/* ── Create Lead Dialog ── */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -341,54 +394,30 @@ export default function Leads() {
           </DialogHeader>
           <div className="space-y-3 font-sans">
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-soft-gray">Business Name *</label>
-                <Input value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs text-soft-gray">Contact Name *</label>
-                <Input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} />
-              </div>
+              <div><label className="text-xs text-soft-gray">Business Name *</label><Input value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} /></div>
+              <div><label className="text-xs text-soft-gray">Contact Name *</label><Input value={form.contactName} onChange={(e) => setForm({ ...form, contactName: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-soft-gray">Email *</label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs text-soft-gray">Phone</label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </div>
+              <div><label className="text-xs text-soft-gray">Email *</label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div><label className="text-xs text-soft-gray">Phone</label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-soft-gray">Industry</label>
-                <Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-xs text-soft-gray">Website</label>
-                <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
-              </div>
+              <div><label className="text-xs text-soft-gray">Industry</label><Input value={form.industry} onChange={(e) => setForm({ ...form, industry: e.target.value })} /></div>
+              <div><label className="text-xs text-soft-gray">Website</label><Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></div>
             </div>
-            <div>
-              <label className="text-xs text-soft-gray">Notes</label>
-              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
-            </div>
+            <div><label className="text-xs text-soft-gray">Notes</label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)} className="font-sans text-sm">Cancel</Button>
-            <Button
-              onClick={() => createLead.mutate(form)}
-              disabled={!form.businessName || !form.contactName || !form.email}
-              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm"
-            >
+            <Button onClick={() => createLead.mutate(form)} disabled={!form.businessName || !form.contactName || !form.email}
+              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm">
               Create Lead
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Bulk Transfer Dialog */}
+      {/* ── Bulk Transfer Dialog ── */}
       <Dialog open={showTransfer} onOpenChange={setShowTransfer}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -402,7 +431,9 @@ export default function Leads() {
                 <SelectTrigger><SelectValue placeholder="Select source rep" /></SelectTrigger>
                 <SelectContent>
                   {(reps || []).filter((r: any) => r.status === "active" || r.status === "certified").map((r: any) => (
-                    <SelectItem key={r.id} value={String(r.id)}>{r.fullName} ({(leads || []).filter((l: any) => l.assignedRepId === r.id && !["closed_won","closed_lost"].includes(l.stage)).length} active leads)</SelectItem>
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      {r.fullName} ({(leads || []).filter((l: any) => l.assignedRepId === r.id && !["closed_won", "closed_lost"].includes(l.stage)).length} active leads)
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -421,26 +452,35 @@ export default function Leads() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTransfer(false)} className="font-sans text-sm">Cancel</Button>
-            <Button
-              onClick={() => transferLeads.mutate({ fromRepId: Number(transferFrom), toRepId: Number(transferTo) })}
+            <Button onClick={() => transferLeads.mutate({ fromRepId: Number(transferFrom), toRepId: Number(transferTo) })}
               disabled={!transferFrom || !transferTo || transferLeads.isPending}
-              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm"
-            >
-              {transferLeads.isPending ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Transferring...</> : <><ArrowRightLeft className="h-4 w-4 mr-1" /> Transfer All Leads</>}
+              className="bg-electric hover:bg-electric-light text-midnight font-sans text-sm">
+              {transferLeads.isPending
+                ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Transferring...</>
+                : <><ArrowRightLeft className="h-4 w-4 mr-1" /> Transfer All Leads</>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Lead Detail Dialog */}
+      {/* ── Lead Detail Dialog ── */}
       <Dialog open={showDetail} onOpenChange={setShowDetail}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-off-white">{selectedLead?.businessName}</DialogTitle>
+            <DialogTitle className="font-serif text-off-white flex items-center gap-2">
+              {selectedLead?.businessName}
+              {selectedLead?.needsHumanCloser && (
+                <Badge className="text-xs bg-amber-400/20 text-amber-400 border border-amber-400/30 font-sans ml-1">
+                  <AlertTriangle className="h-3 w-3 mr-1" /> Review required
+                </Badge>
+              )}
+            </DialogTitle>
           </DialogHeader>
+
           {selectedLead && (
             <div className="space-y-4 font-sans">
-              {/* Human review banner */}
+
+              {/* Human review banner — persistent above tabs */}
               {selectedLead.needsHumanCloser && (
                 <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 space-y-2">
                   <div className="flex items-center gap-2">
@@ -450,121 +490,360 @@ export default function Leads() {
                   {selectedLead.escalationReason && (
                     <p className="text-xs text-soft-gray leading-relaxed">{selectedLead.escalationReason}</p>
                   )}
-                  <Button
-                    size="sm"
-                    variant="outline"
+                  <Button size="sm" variant="outline"
                     className="text-xs border-green-500/30 text-green-400 hover:bg-green-500/10 hover:border-green-500/50 mt-1"
                     onClick={() => clearHumanReviewFlag.mutate({ leadId: selectedLead.id })}
-                    disabled={clearHumanReviewFlag.isPending}
-                  >
+                    disabled={clearHumanReviewFlag.isPending}>
                     <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                     Clear Review Flag
                   </Button>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-soft-gray text-xs">Contact</span><p className="text-off-white">{selectedLead.contactName}</p></div>
-                <div><span className="text-soft-gray text-xs">Email</span><p className="text-off-white">{selectedLead.email}</p></div>
-                <div><span className="text-soft-gray text-xs">Industry</span><p className="text-off-white">{selectedLead.industry || "—"}</p></div>
-                <div><span className="text-soft-gray text-xs">Score</span><p className="text-off-white">{selectedLead.qualificationScore}/100</p></div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-soft-gray">Stage</label>
-                  <Select value={selectedLead.stage} onValueChange={(val) => { updateLead.mutate({ id: selectedLead.id, stage: val as any }); setSelectedLead({ ...selectedLead, stage: val }); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {["new", "enriched", "warming", "warm", "assigned", "contacted", "proposal_sent", "negotiating", "closed_won", "closed_lost"].map((s) => (
-                        <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs text-soft-gray">Temperature</label>
-                  <Select value={selectedLead.temperature} onValueChange={(val) => { updateLead.mutate({ id: selectedLead.id, temperature: val as any }); setSelectedLead({ ...selectedLead, temperature: val }); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {["cold", "warm", "hot"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              {/* AI Enrichment Data */}
-              {selectedLead.enrichmentData && Object.keys(selectedLead.enrichmentData).length > 0 ? (
-                <div className="border border-electric/20 rounded-xl p-4 bg-electric/5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="h-4 w-4 text-electric" />
-                    <span className="text-sm font-medium text-off-white">AI Enrichment Profile</span>
-                  </div>
+              {/* Tabs */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid grid-cols-5 w-full h-9">
+                  <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+                  <TabsTrigger value="compliance" className="text-xs">
+                    <ShieldCheck className="h-3 w-3 mr-1" />Compliance
+                  </TabsTrigger>
+                  <TabsTrigger value="ai" className="text-xs">
+                    <Brain className="h-3 w-3 mr-1" />AI Review
+                  </TabsTrigger>
+                  <TabsTrigger value="conversations" className="text-xs">
+                    <MessageCircle className="h-3 w-3 mr-1" />Convos
+                  </TabsTrigger>
+                  <TabsTrigger value="outreach" className="text-xs">
+                    <Inbox className="h-3 w-3 mr-1" />Outreach
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* ── Overview Tab ── */}
+                <TabsContent value="overview" className="space-y-4 mt-4">
+                  {/* Identity */}
                   <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div><span className="text-soft-gray text-xs">Contact</span><p className="text-off-white">{selectedLead.contactName}</p></div>
+                    <div><span className="text-soft-gray text-xs">Email</span><p className="text-off-white break-all">{selectedLead.email}</p></div>
                     <div>
-                      <span className="text-soft-gray text-xs">Company Size</span>
-                      <p className="text-off-white">{selectedLead.enrichmentData.companySize}</p>
+                      <span className="text-soft-gray text-xs flex items-center gap-1"><Phone className="h-3 w-3" />Phone</span>
+                      <p className="text-off-white">{selectedLead.phone || "—"}</p>
                     </div>
                     <div>
-                      <span className="text-soft-gray text-xs">Est. Revenue</span>
-                      <p className="text-off-white">{selectedLead.enrichmentData.estimatedRevenue}</p>
+                      <span className="text-soft-gray text-xs flex items-center gap-1"><Globe className="h-3 w-3" />Website</span>
+                      {selectedLead.website
+                        ? <a href={selectedLead.website} target="_blank" rel="noopener noreferrer" className="text-electric text-xs hover:underline break-all">{selectedLead.website}</a>
+                        : <p className="text-soft-gray/50">—</p>}
+                    </div>
+                    <div><span className="text-soft-gray text-xs">Industry</span><p className="text-off-white">{selectedLead.industry || "—"}</p></div>
+                    <div><span className="text-soft-gray text-xs">Score</span><p className="text-off-white">{selectedLead.qualificationScore}/100</p></div>
+                  </div>
+
+                  {/* Stage/Temp editable */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-soft-gray">Stage</label>
+                      <Select value={selectedLead.stage} onValueChange={(val) => { updateLead.mutate({ id: selectedLead.id, stage: val as any }); setSelectedLead({ ...selectedLead, stage: val }); }}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["new","enriched","warming","warm","assigned","contacted","proposal_sent","negotiating","closed_won","closed_lost"].map((s) => (
+                            <SelectItem key={s} value={s}>{s.replace(/_/g, " ")}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
-                      <span className="text-soft-gray text-xs">Online Presence</span>
-                      <Badge className={`text-xs ${
-                        selectedLead.enrichmentData.onlinePresence === "poor" ? "badge-danger" :
-                        selectedLead.enrichmentData.onlinePresence === "fair" ? "badge-pending" :
-                        selectedLead.enrichmentData.onlinePresence === "good" ? "badge-success" :
-                        "bg-emerald-100 text-emerald-700"
-                      }`}>{selectedLead.enrichmentData.onlinePresence}</Badge>
-                    </div>
-                    <div>
-                      <span className="text-soft-gray text-xs">Recommended Package</span>
-                      <Badge className="text-xs bg-electric/10 text-off-white capitalize">{selectedLead.enrichmentData.recommendedPackage}</Badge>
+                      <label className="text-xs text-soft-gray">Temperature</label>
+                      <Select value={selectedLead.temperature} onValueChange={(val) => { updateLead.mutate({ id: selectedLead.id, temperature: val as any }); setSelectedLead({ ...selectedLead, temperature: val }); }}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["cold","warm","hot"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                  {selectedLead.enrichmentData.websiteNeeds?.length > 0 && (
-                    <div className="mt-3">
-                      <span className="text-soft-gray text-xs">Website Needs</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {selectedLead.enrichmentData.websiteNeeds.map((need: string, i: number) => (
-                          <Badge key={i} variant="outline" className="text-xs border-electric/20 text-soft-gray">{need}</Badge>
-                        ))}
+
+                  {/* Attribution / handoff grid */}
+                  <div className="grid grid-cols-2 gap-3 text-sm border border-border/30 rounded-xl p-3 bg-charcoal/40">
+                    <div>
+                      <span className="text-soft-gray text-xs flex items-center gap-1"><User className="h-3 w-3" />Assigned Rep</span>
+                      <p className="text-off-white">{assignedRep ? assignedRep.fullName : (selectedLead.assignedRepId ? `Rep #${selectedLead.assignedRepId}` : "Unassigned")}</p>
+                    </div>
+                    <div>
+                      <span className="text-soft-gray text-xs">Source</span>
+                      <p className="text-off-white capitalize">{selectedLead.source?.replace(/_/g, " ") || "—"}</p>
+                    </div>
+                    <div>
+                      <span className="text-soft-gray text-xs">Acquisition Channel</span>
+                      <p className="text-off-white">{selectedLead.acquisitionChannel || "—"}</p>
+                    </div>
+                    <div>
+                      <span className="text-soft-gray text-xs flex items-center gap-1"><Clock className="h-3 w-3" />Last Touch</span>
+                      <p className="text-off-white">{fmtDateShort(selectedLead.lastTouchAt)}</p>
+                    </div>
+                    {selectedLead.checkoutSentAt && (
+                      <div>
+                        <span className="text-soft-gray text-xs">Checkout Sent</span>
+                        <p className="text-amber-400">{fmtDateShort(selectedLead.checkoutSentAt)}</p>
+                      </div>
+                    )}
+                    {selectedLead.checkoutUrl && (
+                      <div className="col-span-2">
+                        <span className="text-soft-gray text-xs">Checkout URL</span>
+                        <p className="text-electric text-xs break-all">{selectedLead.checkoutUrl}</p>
+                      </div>
+                    )}
+                    {selectedLead.elenaHandoffAt && (
+                      <div>
+                        <span className="text-soft-gray text-xs">Elena Handoff</span>
+                        <p className="text-electric/80">{fmtDateShort(selectedLead.elenaHandoffAt)}</p>
+                      </div>
+                    )}
+                    {selectedLead.selfClosed && (
+                      <div>
+                        <span className="text-soft-gray text-xs">Self-Closed</span>
+                        <Badge className="text-xs badge-success">yes</Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Enrichment */}
+                  {selectedLead.enrichmentData && Object.keys(selectedLead.enrichmentData).length > 0 ? (
+                    <div className="border border-electric/20 rounded-xl p-4 bg-electric/5">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="h-4 w-4 text-electric" />
+                        <span className="text-sm font-medium text-off-white">AI Enrichment Profile</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div><span className="text-soft-gray text-xs">Company Size</span><p className="text-off-white">{selectedLead.enrichmentData.companySize}</p></div>
+                        <div><span className="text-soft-gray text-xs">Est. Revenue</span><p className="text-off-white">{selectedLead.enrichmentData.estimatedRevenue}</p></div>
+                        <div>
+                          <span className="text-soft-gray text-xs">Online Presence</span>
+                          <Badge className={`text-xs ${selectedLead.enrichmentData.onlinePresence === "poor" ? "badge-danger" : selectedLead.enrichmentData.onlinePresence === "fair" ? "badge-pending" : selectedLead.enrichmentData.onlinePresence === "good" ? "badge-success" : "bg-emerald-100 text-emerald-700"}`}>
+                            {selectedLead.enrichmentData.onlinePresence}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="text-soft-gray text-xs">Recommended Package</span>
+                          <Badge className="text-xs bg-electric/10 text-off-white capitalize">{selectedLead.enrichmentData.recommendedPackage}</Badge>
+                        </div>
+                      </div>
+                      {selectedLead.enrichmentData.websiteNeeds?.length > 0 && (
+                        <div className="mt-3">
+                          <span className="text-soft-gray text-xs">Website Needs</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {selectedLead.enrichmentData.websiteNeeds.map((need: string, i: number) => (
+                              <Badge key={i} variant="outline" className="text-xs border-electric/20 text-soft-gray">{need}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {selectedLead.enrichmentData.enrichmentSummary && (
+                        <div className="mt-3">
+                          <span className="text-soft-gray text-xs">Summary</span>
+                          <p className="text-sm text-off-white/80 mt-1">{selectedLead.enrichmentData.enrichmentSummary}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="border border-dashed border-electric/30 rounded-xl p-4 text-center">
+                      <Sparkles className="h-5 w-5 text-electric/40 mx-auto mb-2" />
+                      <p className="text-xs text-soft-gray mb-2">No AI enrichment data yet</p>
+                      <Button size="sm" className="bg-electric hover:bg-electric-light text-midnight font-sans text-xs"
+                        onClick={() => handleEnrich(selectedLead.id)} disabled={enrichingId === selectedLead.id}>
+                        {enrichingId === selectedLead.id
+                          ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enriching...</>
+                          : <><Sparkles className="h-3 w-3 mr-1" /> Enrich with AI</>}
+                      </Button>
+                    </div>
+                  )}
+
+                  <LeadEconomicsPanel leadId={selectedLead.id} />
+
+                  {selectedLead.notes && (
+                    <div><span className="text-xs text-soft-gray">Notes</span><p className="text-sm text-off-white/80 mt-1">{selectedLead.notes}</p></div>
+                  )}
+                </TabsContent>
+
+                {/* ── Compliance Tab ── */}
+                <TabsContent value="compliance" className="space-y-4 mt-4">
+                  <div className="rounded-xl border border-border/30 p-4 space-y-3 bg-charcoal/40">
+                    <p className="text-xs font-medium text-soft-gray uppercase tracking-wider">Email</p>
+                    <div className="flex flex-wrap gap-2">
+                      <ComplianceBadge ok={!selectedLead.emailOptedOut} label="Email active" />
+                      <ComplianceBadge ok={selectedLead.emailVerified} label="Email verified" />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-border/30 p-4 space-y-3 bg-charcoal/40">
+                    <p className="text-xs font-medium text-soft-gray uppercase tracking-wider">SMS</p>
+                    <div className="flex flex-wrap gap-2">
+                      <ComplianceBadge ok={selectedLead.smsOptIn} label="SMS opted in" />
+                      <ComplianceBadge ok={!selectedLead.smsOptedOut} label="SMS not opted out" />
+                    </div>
+                    {selectedLead.smsOptInMethod && (
+                      <div className="text-xs text-soft-gray">
+                        Opt-in method: <span className="text-off-white capitalize">{selectedLead.smsOptInMethod.replace(/_/g, " ")}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-border/30 p-4 space-y-3 bg-charcoal/40">
+                    <p className="text-xs font-medium text-soft-gray uppercase tracking-wider">Timezone & Enrichment</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-soft-gray text-xs">Timezone</span>
+                        <p className={selectedLead.timezone ? "text-off-white" : "text-soft-gray/40"}>
+                          {selectedLead.timezone || "Not set — SMS time-gate may be skipped"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-soft-gray text-xs">Enrichment Status</span>
+                        <p className="text-off-white capitalize">{selectedLead.enrichmentStatus || "pending"}</p>
                       </div>
                     </div>
-                  )}
-                  {selectedLead.enrichmentData.enrichmentSummary && (
-                    <div className="mt-3">
-                      <span className="text-soft-gray text-xs">Summary</span>
-                      <p className="text-sm text-off-white/80 mt-1">{selectedLead.enrichmentData.enrichmentSummary}</p>
+                  </div>
+                </TabsContent>
+
+                {/* ── AI Review Tab ── */}
+                <TabsContent value="ai" className="space-y-4 mt-4">
+                  {selectedLead.needsHumanCloser ? (
+                    <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-4 space-y-2">
+                      <p className="text-xs font-medium text-amber-400 uppercase tracking-wider">Flagged for Human Review</p>
+                      {selectedLead.escalationReason && (
+                        <p className="text-sm text-soft-gray leading-relaxed">{selectedLead.escalationReason}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-3 text-xs text-green-400 font-sans">
+                      No active escalation flag.
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="border border-dashed border-electric/30 rounded-xl p-4 text-center">
-                  <Sparkles className="h-5 w-5 text-electric/40 mx-auto mb-2" />
-                  <p className="text-xs text-soft-gray mb-2">No AI enrichment data yet</p>
-                  <Button
-                    size="sm"
-                    className="bg-electric hover:bg-electric-light text-midnight font-sans text-xs"
-                    onClick={() => handleEnrich(selectedLead.id)}
-                    disabled={enrichingId === selectedLead.id}
-                  >
-                    {enrichingId === selectedLead.id ? (
-                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enriching...</>
-                    ) : (
-                      <><Sparkles className="h-3 w-3 mr-1" /> Enrich with AI</>
-                    )}
-                  </Button>
-                </div>
-              )}
 
-              {/* Economics Panel */}
-              <LeadEconomicsPanel leadId={selectedLead.id} />
+                  {convoLoading ? (
+                    <Skeleton className="h-24 w-full" />
+                  ) : latestConvo ? (
+                    <div className="rounded-xl border border-border/30 p-4 bg-charcoal/40 space-y-3">
+                      <p className="text-xs font-medium text-soft-gray uppercase tracking-wider">Latest AI Decision</p>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-soft-gray text-xs">Decision</span>
+                          {latestConvo.aiDecision
+                            ? <Badge className="text-xs bg-electric/10 text-electric border-electric/20 block mt-1 w-fit">{latestConvo.aiDecision.replace(/_/g, " ")}</Badge>
+                            : <p className="text-soft-gray/50">—</p>}
+                        </div>
+                        <div>
+                          <span className="text-soft-gray text-xs">Confidence</span>
+                          {latestConvo.aiConfidence !== null && latestConvo.aiConfidence !== undefined ? (
+                            <p className={`font-medium ${parseFloat(String(latestConvo.aiConfidence)) >= 85 ? "text-green-400" : "text-amber-400"}`}>
+                              {Math.round(parseFloat(String(latestConvo.aiConfidence)))}/100
+                            </p>
+                          ) : <p className="text-soft-gray/50">—</p>}
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-soft-gray text-xs">AI Reasoning</span>
+                          <p className="text-off-white/80 text-xs mt-1 leading-relaxed">{latestConvo.aiReasoning || "—"}</p>
+                        </div>
+                        <div>
+                          <span className="text-soft-gray text-xs">Channel</span>
+                          <p className="text-off-white capitalize">{latestConvo.channel}</p>
+                        </div>
+                        <div>
+                          <span className="text-soft-gray text-xs">Timestamp</span>
+                          <p className="text-off-white">{fmtDateShort(latestConvo.createdAt)}</p>
+                        </div>
+                        {latestConvo.handedOffToOwner && (
+                          <div className="col-span-2">
+                            <Badge className="text-xs badge-warning">Handed off to owner</Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-soft-gray/60 text-center py-6">No AI decisions recorded yet.</p>
+                  )}
+                </TabsContent>
 
-              {selectedLead.notes && (
-                <div><span className="text-xs text-soft-gray">Notes</span><p className="text-sm text-off-white/80 mt-1">{selectedLead.notes}</p></div>
-              )}
+                {/* ── Conversations Tab ── */}
+                <TabsContent value="conversations" className="mt-4">
+                  {convoLoading ? (
+                    <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
+                  ) : convoChronological.length === 0 ? (
+                    <p className="text-xs text-soft-gray/60 text-center py-8">No AI conversation history yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {convoChronological.map((c: any) => (
+                        <div key={c.id} className={`rounded-lg border p-3 space-y-1 ${c.direction === "inbound" ? "border-border/30 bg-charcoal/30" : "border-electric/15 bg-electric/5"}`}>
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <Badge className={`text-xs border font-sans ${c.direction === "inbound" ? "bg-soft-gray/10 text-soft-gray border-border/30" : "bg-electric/10 text-electric border-electric/20"}`}>
+                                {c.direction === "inbound" ? "Lead" : "Elena"}
+                              </Badge>
+                              <span className="text-xs text-soft-gray/50 font-sans capitalize">{c.channel}</span>
+                            </div>
+                            <span className="text-xs text-soft-gray/40 font-sans">{fmtDate(c.createdAt)}</span>
+                          </div>
+                          <p className="text-xs text-off-white/80 leading-relaxed">{c.content}</p>
+                          {c.aiDecision && (
+                            <div className="flex items-center gap-2 pt-1 flex-wrap">
+                              <Badge className="text-xs bg-blue-500/10 text-blue-400 border border-blue-400/20 font-sans">
+                                {c.aiDecision.replace(/_/g, " ")}
+                              </Badge>
+                              {c.aiConfidence !== null && c.aiConfidence !== undefined && (
+                                <span className={`text-xs font-sans font-medium ${parseFloat(String(c.aiConfidence)) >= 85 ? "text-green-400" : "text-amber-400"}`}>
+                                  {Math.round(parseFloat(String(c.aiConfidence)))}% confidence
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {c.aiReasoning && (
+                            <p className="text-xs text-soft-gray/50 italic leading-relaxed">{c.aiReasoning}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* ── Outreach Tab ── */}
+                <TabsContent value="outreach" className="mt-4">
+                  {outreachLoading ? (
+                    <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
+                  ) : !outreachItems?.length ? (
+                    <p className="text-xs text-soft-gray/60 text-center py-8">No outreach sequence scheduled yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(outreachItems as any[]).map((seq) => (
+                        <div key={seq.id} className="rounded-lg border border-border/30 bg-charcoal/30 p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge className={`text-xs border font-sans ${OUTREACH_STATUS_COLORS[seq.status] ?? "bg-soft-gray/10 text-soft-gray border-border/30"}`}>
+                                {seq.status}
+                              </Badge>
+                              <span className="text-xs text-soft-gray/60 font-sans capitalize">{CHANNEL_LABELS[seq.channel] ?? seq.channel}</span>
+                              <span className="text-xs text-soft-gray/40 font-sans capitalize">{seq.sequenceType?.replace(/_/g, " ")}</span>
+                              {seq.aiGenerated && (
+                                <span className="text-xs text-electric/50 font-sans">AI-generated</span>
+                              )}
+                            </div>
+                            <span className="text-xs text-soft-gray/40 font-sans">
+                              {seq.sentAt ? `Sent ${fmtDateShort(seq.sentAt)}` : `Scheduled ${fmtDateShort(seq.scheduledAt)}`}
+                            </span>
+                          </div>
+                          {seq.subject && (
+                            <p className="text-xs font-medium text-off-white">{seq.subject}</p>
+                          )}
+                          {seq.body && (
+                            <p className="text-xs text-soft-gray/70 leading-relaxed line-clamp-3">{seq.body}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           )}
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDetail(false)} className="font-sans text-sm">Close</Button>
           </DialogFooter>
