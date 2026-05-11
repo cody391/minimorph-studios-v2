@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from "react";
+import { useState, useMemo, useRef, lazy, Suspense } from "react";
 import NotificationsBell from "./rep/NotificationsBell";
 const PipelineTab = lazy(() => import("./rep/PipelineTab"));
 const PerformanceHub = lazy(() => import("./rep/PerformanceHub"));
@@ -27,7 +27,7 @@ import {
   BarChart3, Briefcase, CheckCircle, AlertCircle, Flame, Trophy,
   Star, Zap, Phone, Mail, Calendar, FileText, Send, Sparkles,
   BookOpen, GraduationCap, Shield, MessageSquare, Plus, ChevronRight, Copy,
-  AlertTriangle, Lightbulb, Brain, RefreshCw, Globe, ArrowRight,
+  AlertTriangle, Lightbulb, Brain, RefreshCw, Globe, ArrowRight, ExternalLink,
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -1298,21 +1298,47 @@ function UnreadMessagesBadge() {
    ═══════════════════════════════════════════════════════ */
 function StripeConnectSetup() {
   const { data: connectStatus, isLoading } = trpc.reps.connectStatus.useQuery();
+  const popupRef = useRef<Window | null>(null);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
+
+  const isMobile = () =>
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    window.innerWidth < 768;
+
   const createOnboarding = trpc.reps.createConnectOnboarding.useMutation({
     onSuccess: (data) => {
-      // On mobile: redirect in same window (new tabs are unreliable on phones)
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      ) || window.innerWidth < 768;
-      if (isMobile) {
+      if (isMobile()) {
         window.location.href = data.url;
+        return;
+      }
+      const popup = popupRef.current;
+      popupRef.current = null;
+      if (popup && !popup.closed) {
+        popup.location.href = data.url;
+        toast.success("Stripe setup opened in a new tab. Complete the setup there.");
       } else {
-        window.open(data.url, "_blank");
-        toast.success("Stripe Connect onboarding opened in a new tab.");
+        setFallbackUrl(data.url);
+        toast.warning("Popup blocked. Use the button below to open Stripe setup.");
       }
     },
-    onError: (error) => toast.error(error.message || "Failed to create onboarding link. Please try again."),
+    onError: (error) => {
+      if (popupRef.current && !popupRef.current.closed) {
+        popupRef.current.close();
+      }
+      popupRef.current = null;
+      toast.error(error.message || "Failed to create onboarding link. Please try again.");
+    },
   });
+
+  const handleConnect = () => {
+    setFallbackUrl(null);
+    if (!isMobile()) {
+      const popup = window.open("about:blank", "_blank");
+      if (popup) popup.opener = null;
+      popupRef.current = popup;
+    }
+    createOnboarding.mutate({ returnUrl: window.location.href });
+  };
 
   if (isLoading) {
     return <div className="h-16 bg-midnight-dark/20 rounded-lg animate-pulse" />;
@@ -1342,7 +1368,7 @@ function StripeConnectSetup() {
         </div>
       </div>
       <Button
-        onClick={() => createOnboarding.mutate({ returnUrl: window.location.href })}
+        onClick={handleConnect}
         disabled={createOnboarding.isPending}
         className="bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans rounded-full w-full"
       >
@@ -1352,6 +1378,37 @@ function StripeConnectSetup() {
           <span className="flex items-center gap-2"><Shield className="h-4 w-4" /> Set Up Payouts with Stripe</span>
         )}
       </Button>
+
+      {/* Popup-blocked fallback */}
+      {fallbackUrl && (
+        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 space-y-2">
+          <p className="text-xs text-amber-300 font-sans text-center">
+            Popup blocked. Use the buttons below to open Stripe setup.
+          </p>
+          <a
+            href={fallbackUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans text-sm font-semibold rounded-full py-2.5 transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> Open Stripe Setup
+          </a>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full font-sans text-soft-gray border-border/30 hover:text-off-white text-xs"
+            onClick={() => {
+              navigator.clipboard.writeText(fallbackUrl).then(
+                () => toast.success("Setup link copied."),
+                () => toast.error("Could not copy — try the button above.")
+              );
+            }}
+          >
+            <Copy className="h-3 w-3 mr-1.5" /> Copy Setup Link
+          </Button>
+        </div>
+      )}
+
       <p className="text-[10px] text-soft-gray/60 font-sans text-center">
         Powered by Stripe Connect. Your sensitive information is handled securely by Stripe — we never see your bank details or SSN.
       </p>

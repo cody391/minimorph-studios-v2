@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
@@ -15,6 +16,8 @@ import {
   DollarSign,
   Zap,
   SkipForward,
+  ExternalLink,
+  Copy,
 } from "lucide-react";
 
 /** Detect mobile/tablet — used to decide redirect vs new tab */
@@ -28,23 +31,46 @@ function isMobileDevice(): boolean {
 export default function PayoutSetup() {
   const { user, loading: authLoading } = useAuth();
   const [, navigate] = useLocation();
+  const popupRef = useRef<Window | null>(null);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
 
   const createOnboarding = trpc.reps.createConnectOnboarding.useMutation({
     onSuccess: (data) => {
       if (isMobileDevice()) {
-        // On mobile: redirect in the same window — new tabs are unreliable
         window.location.href = data.url;
+        return;
+      }
+      const popup = popupRef.current;
+      popupRef.current = null;
+      if (popup && !popup.closed) {
+        popup.location.href = data.url;
+        toast.success("Stripe setup opened in a new tab. Complete the setup there.");
       } else {
-        // On desktop: open in new tab so they don't lose their place
-        window.open(data.url, "_blank");
-        toast.success(
-          "Stripe Connect opened in a new tab. Complete the setup there."
-        );
+        // Popup was blocked — surface fallback
+        setFallbackUrl(data.url);
+        toast.warning("Popup blocked. Use the button below to open Stripe setup.");
       }
     },
-    onError: (error) =>
-      toast.error(error.message || "Failed to create onboarding link. Please try again."),
+    onError: (error) => {
+      // Close blank tab so we don't leave an empty window open
+      if (popupRef.current && !popupRef.current.closed) {
+        popupRef.current.close();
+      }
+      popupRef.current = null;
+      toast.error(error.message || "Failed to create onboarding link. Please try again.");
+    },
   });
+
+  const handleConnect = () => {
+    setFallbackUrl(null);
+    if (!isMobileDevice()) {
+      // Open blank tab synchronously inside the click handler so browsers allow it
+      const popup = window.open("about:blank", "_blank");
+      if (popup) popup.opener = null;
+      popupRef.current = popup;
+    }
+    createOnboarding.mutate({ returnUrl: window.location.href });
+  };
 
   const { data: connectStatus, isLoading: statusLoading } =
     trpc.reps.connectStatus.useQuery(undefined, { enabled: !!user });
@@ -204,11 +230,7 @@ export default function PayoutSetup() {
             </div>
 
             <Button
-              onClick={() =>
-                createOnboarding.mutate({
-                  returnUrl: window.location.href,
-                })
-              }
+              onClick={handleConnect}
               disabled={createOnboarding.isPending}
               className="bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans rounded-full w-full py-5 min-h-[52px]"
               size="lg"
@@ -223,6 +245,36 @@ export default function PayoutSetup() {
                 </span>
               )}
             </Button>
+
+            {/* Popup-blocked fallback — only shown when browser blocks the new tab */}
+            {fallbackUrl && (
+              <div className="mt-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 space-y-3">
+                <p className="text-sm text-amber-300 font-sans text-center">
+                  Your browser blocked the popup. Use the buttons below to open Stripe setup.
+                </p>
+                <a
+                  href={fallbackUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-[#635BFF] hover:bg-[#5851DB] text-white font-sans text-sm font-semibold rounded-full py-3 transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" /> Open Stripe Setup
+                </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full font-sans text-soft-gray border-border/30 hover:text-off-white"
+                  onClick={() => {
+                    navigator.clipboard.writeText(fallbackUrl).then(
+                      () => toast.success("Setup link copied to clipboard."),
+                      () => toast.error("Could not copy — please copy the link manually.")
+                    );
+                  }}
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy Setup Link
+                </Button>
+              </div>
+            )}
 
             <p className="text-[10px] text-soft-gray/60 font-sans text-center mt-3">
               Powered by Stripe Connect. Your sensitive information is handled
