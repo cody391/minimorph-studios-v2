@@ -41,13 +41,13 @@ const FORM_CONFIG: Record<FormType, {
     color: "text-emerald-400 bg-green-50",
   },
   hr_employment: {
-    title: "HR / Employment Info",
+    title: "Identity & Contact Info",
     icon: Users,
-    description: "Employment details, emergency contacts, and personal information",
+    description: "Identity and contact details, emergency contacts, and personal information",
     color: "text-blue-600 bg-blue-50",
   },
   payroll_setup: {
-    title: "Payroll Setup",
+    title: "Payout Setup",
     icon: CreditCard,
     description: "Payment method and banking information",
     color: "text-purple-600 bg-purple-50",
@@ -620,7 +620,7 @@ function PayrollForm({
   return (
     <div className="space-y-4">
       <SmartField
-        label="Legal Name (for payroll records)"
+        label="Legal Name (for 1099 / payout records)"
         value={overrides["pay_name"] ?? data.legalName}
         source={sources.legalName}
         onChange={(v) => setOverrides({ ...overrides, pay_name: v })}

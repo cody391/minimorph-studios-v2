@@ -283,11 +283,11 @@ export default function BecomeRep() {
             </div>
             <h2 className="text-2xl font-serif text-off-white mb-3">You're In! Welcome to MiniMorph Studios!</h2>
             <p className="text-soft-gray font-sans mb-4 leading-relaxed max-w-md mx-auto">
-              Your application has been approved. Just a few more steps to get you fully set up — we need your HR and tax paperwork, then you'll head straight to the Sales Academy.
+              Your application has been approved. Just a few more steps to get you fully set up — we need your tax and identity paperwork, then you'll head straight to the Sales Academy.
             </p>
             <div className="space-y-2 max-w-sm mx-auto mb-8 text-left">
               {[
-                { num: "1", label: "Complete onboarding paperwork", desc: "W-9, HR info, payroll — mostly auto-filled" },
+                { num: "1", label: "Complete onboarding paperwork", desc: "W-9 tax form, identity info, payout setup — mostly auto-filled" },
                 { num: "2", label: "Set up your payout account", desc: "Connect Stripe to receive commissions" },
                 { num: "3", label: "Sales Academy training", desc: "Learn the company, products, and how to sell" },
               ].map((item) => (

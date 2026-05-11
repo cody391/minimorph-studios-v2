@@ -825,7 +825,7 @@ export default function SalesAcademy() {
                 <AlertTriangle className="w-6 h-6 text-amber-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-serif text-off-white font-medium mb-1">Daily Training Required</h3>
+                <h3 className="text-sm font-serif text-off-white font-medium mb-1">Daily Sales Prep</h3>
                 <p className="text-xs text-soft-gray font-sans mb-3">
                   Complete your daily coaching reviews before accessing leads and making calls.
                   You have <span className="font-bold text-amber-400">{dailyCheckIn.pendingReviews.length}</span> review{dailyCheckIn.pendingReviews.length > 1 ? "s" : ""} to complete today.
@@ -854,7 +854,7 @@ export default function SalesAcademy() {
         <Card className="border border-green-500/30 bg-green-500/10">
           <CardContent className="p-4 flex items-center gap-3">
             <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            <span className="text-sm font-sans text-green-400">Daily training complete! You're cleared to work.</span>
+            <span className="text-sm font-sans text-green-400">Daily sales prep complete! Lead access unlocked.</span>
           </CardContent>
         </Card>
       )}

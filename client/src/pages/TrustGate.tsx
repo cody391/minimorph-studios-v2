@@ -250,7 +250,7 @@ export default function TrustGate() {
               <p className="text-sm font-medium text-blue-800 mb-1">Why we collect this information</p>
               <p className="text-xs text-blue-700 leading-relaxed">
                 <strong>Smart company, smart process.</strong> We collect your identity and address once, then auto-populate
-                all your onboarding paperwork (tax forms, HR docs, payroll setup, rep agreement) so you never have to type
+                all your onboarding paperwork (tax forms, identity docs, payout setup, rep agreement) so you never have to type
                 the same information twice. This also protects our proprietary AI training materials and sales methodologies.
               </p>
             </div>
@@ -478,7 +478,7 @@ export default function TrustGate() {
                   <Sparkles className="w-3.5 h-3.5 text-electric shrink-0" />
                   <span>
                     <strong>One-time entry.</strong> This data will auto-populate your W-9 tax form,
-                    HR employment docs, payroll setup, and rep agreement — no retyping.
+                    identity docs, payout setup, and rep agreement — no retyping.
                   </span>
                 </p>
               </div>

@@ -233,7 +233,7 @@ export default function RepDashboard() {
                   <GraduationCap className="w-8 h-8 text-electric" />
                 </div>
                 <h2 className="text-2xl font-serif text-off-white mb-2">
-                  {isCertificationGate ? "Complete Your Rep Training" : "Daily Training Required"}
+                  {isCertificationGate ? "Complete Your Rep Training" : "Daily Sales Prep"}
                 </h2>
                 <p className="text-sm text-soft-gray font-sans mb-2 leading-relaxed">
                   {accessCheck.reason}
@@ -523,7 +523,7 @@ export default function RepDashboard() {
                 <CardContent className="py-8 text-center">
                   <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
                   <h3 className="text-base font-serif text-off-white mb-2">
-                    {isCertificationGate ? "Complete Your Rep Training" : "Daily Training Required"}
+                    {isCertificationGate ? "Complete Your Rep Training" : "Daily Sales Prep"}
                   </h3>
                   <p className="text-sm text-soft-gray font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
                   <Button onClick={() => setActiveTab("training")} className="bg-charcoal text-off-white hover:bg-electric/90 font-sans text-sm">
@@ -695,7 +695,7 @@ export default function RepDashboard() {
                 <CardContent className="py-8 text-center">
                   <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
                   <h3 className="text-base font-serif text-off-white mb-2">
-                    {isCertificationGate ? "Complete Your Rep Training" : "Daily Training Required"}
+                    {isCertificationGate ? "Complete Your Rep Training" : "Daily Sales Prep"}
                   </h3>
                   <p className="text-sm text-soft-gray font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
                   <Button onClick={() => setActiveTab("training")} className="bg-charcoal text-off-white hover:bg-electric/90 font-sans text-sm">

@@ -418,7 +418,7 @@ export function buildEmailSignature(rep: { fullName: string; email: string; phon
     <td style="vertical-align:top;padding-right:12px;">${photoHtml}</td>
     <td style="vertical-align:top;">
       <strong style="font-size:14px;color:#eaeaf0;">${rep.fullName}</strong><br/>
-      <span style="color:#666;">Sales Representative — MiniMorph Studios</span><br/>
+      <span style="color:#666;">Independent Sales Rep — MiniMorph Studios</span><br/>
       <span style="color:#666;">✉️ ${rep.email}</span>${phoneHtml}
     </td>
   </tr>
@@ -989,7 +989,7 @@ const leadsRouter = router({
             to: lead.email,
             subject: proposal.subject,
             html: proposal.htmlContent + signature,
-            text: proposal.plainTextContent + `\n\n--\n${rep.fullName}\nSales Representative — MiniMorph Studios\n${rep.email}${rep.phone ? '\n' + rep.phone : ''}`,
+            text: proposal.plainTextContent + `\n\n--\n${rep.fullName}\nIndependent Sales Rep — MiniMorph Studios\n${rep.email}${rep.phone ? '\n' + rep.phone : ''}`,
             replyTo: ctx.user.email || undefined,
           });
           deliveryStatus = delivery.success ? "sent" : "delivery_failed";
