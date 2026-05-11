@@ -184,8 +184,17 @@ export default function RepDashboard() {
   const currentTier = (accountabilityTier?.tier || "bronze") as string;
   const TierIcon = tierIcons[currentTier] || Shield;
 
-  // Morning training gate: if accessCheck says not allowed, show a non-dismissable overlay
-  const showTrainingGate = accessCheck && !accessCheck.allowed;
+  // Training gate: show overlay when access is blocked, but NOT when user is already on the training tab.
+  // Clicking "Go to Training" sets activeTab="training" which hides the overlay and reveals the tab.
+  const showTrainingGate = accessCheck && !accessCheck.allowed && activeTab !== "training";
+
+  // Determine whether this is a first-time certification block or a daily check-in block.
+  // "certification" or "academy" in the reason = new/uncertified rep → use academy-focused copy.
+  // Anything else = certified rep who hasn't done today's reviews → use daily check-in copy.
+  const isCertificationGate = !!(
+    accessCheck?.reason &&
+    (accessCheck.reason.toLowerCase().includes("certif") || accessCheck.reason.toLowerCase().includes("academy"))
+  );
 
   return (
     <div className="min-h-screen bg-midnight">
@@ -206,7 +215,7 @@ export default function RepDashboard() {
           </Button>
         </div>
       )}
-      {/* Part 5: Morning training gate overlay — non-dismissable */}
+      {/* Training gate overlay — hides automatically when activeTab === "training" */}
       {showTrainingGate && (
         <div className="fixed inset-0 z-50 bg-midnight/95 backdrop-blur-sm flex items-center justify-center px-4">
           <div className="max-w-md w-full">
@@ -215,22 +224,38 @@ export default function RepDashboard() {
                 <div className="w-16 h-16 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-5">
                   <GraduationCap className="w-8 h-8 text-electric" />
                 </div>
-                <h2 className="text-2xl font-serif text-off-white mb-2">Morning Training Required</h2>
+                <h2 className="text-2xl font-serif text-off-white mb-2">
+                  {isCertificationGate ? "Complete Your Rep Training" : "Daily Training Required"}
+                </h2>
                 <p className="text-sm text-soft-gray font-sans mb-2 leading-relaxed">
                   {accessCheck.reason}
                 </p>
                 <p className="text-xs text-soft-gray/60 font-sans mb-6">
-                  Complete your daily coaching reviews and quizzes to unlock the Pipeline and Comms tabs for today.
+                  {isCertificationGate
+                    ? "Finish the Sales Academy to unlock your pipeline, leads, and comms tools."
+                    : "Complete today's coaching reviews and quizzes to unlock the Pipeline and Comms tabs."}
                 </p>
                 <Button
                   onClick={() => setActiveTab("training")}
                   className="w-full bg-electric hover:bg-electric-light text-midnight font-sans rounded-full py-5 mb-3"
                   size="lg"
                 >
-                  <BookOpen className="w-4 h-4 mr-2" /> Go to Training
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  {isCertificationGate ? "Continue Training" : "Go to Training"}
                 </Button>
+                {repProfile?.stripeConnectOnboarded === false && (
+                  <Button
+                    variant="outline"
+                    className="w-full font-sans rounded-full py-4 mb-3 border-amber-500/30 text-amber-300 hover:bg-amber-500/10 text-sm"
+                    onClick={() => setLocation("/become-rep/payout-setup")}
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" /> Set Up Stripe Payouts
+                  </Button>
+                )}
                 <p className="text-[10px] text-soft-gray/40 font-sans">
-                  This gate resets daily. Completing training unlocks full dashboard access.
+                  {isCertificationGate
+                    ? "Payout setup can be completed at any time from Settings. Commissions require Stripe Connect."
+                    : "This gate resets daily. Completing training unlocks full dashboard access."}
                 </p>
               </CardContent>
             </Card>
@@ -470,10 +495,13 @@ export default function RepDashboard() {
               <Card className="border-amber-500/20 bg-amber-500/10/50">
                 <CardContent className="py-8 text-center">
                   <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-                  <h3 className="text-base font-serif text-off-white mb-2">Daily Training Required</h3>
+                  <h3 className="text-base font-serif text-off-white mb-2">
+                    {isCertificationGate ? "Complete Your Rep Training" : "Daily Training Required"}
+                  </h3>
                   <p className="text-sm text-soft-gray font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
                   <Button onClick={() => setActiveTab("training")} className="bg-charcoal text-off-white hover:bg-electric/90 font-sans text-sm">
-                    <BookOpen className="h-4 w-4 mr-2" /> Go to Training
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    {isCertificationGate ? "Continue Training" : "Go to Training"}
                   </Button>
                 </CardContent>
               </Card>
@@ -639,10 +667,13 @@ export default function RepDashboard() {
               <Card className="border-amber-500/20 bg-amber-500/10/50">
                 <CardContent className="py-8 text-center">
                   <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-                  <h3 className="text-base font-serif text-off-white mb-2">Daily Training Required</h3>
+                  <h3 className="text-base font-serif text-off-white mb-2">
+                    {isCertificationGate ? "Complete Your Rep Training" : "Daily Training Required"}
+                  </h3>
                   <p className="text-sm text-soft-gray font-sans mb-4 max-w-md mx-auto">{accessCheck.reason}</p>
                   <Button onClick={() => setActiveTab("training")} className="bg-charcoal text-off-white hover:bg-electric/90 font-sans text-sm">
-                    <BookOpen className="h-4 w-4 mr-2" /> Go to Training
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    {isCertificationGate ? "Continue Training" : "Go to Training"}
                   </Button>
                 </CardContent>
               </Card>
