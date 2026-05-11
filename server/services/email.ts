@@ -42,7 +42,10 @@ const getPublicAppUrl = () =>
 const CAN_SPAM_FOOTER = `
 <div style="background:#151526;padding:16px 32px;border-top:1px solid #2d2d45;text-align:center;">
   <p style="margin:0 0 8px;font-size:11px;color:#7a7a90;line-height:1.5;">
-    MiniMorph Studios &bull; Muskegon, MI 49440<br/>
+    MiniMorph Studios<br/>
+    2743 Henry St, PMB 224<br/>
+    Muskegon, MI 49441<br/>
+    United States<br/>
     You received this email because your business information was publicly available and MiniMorph Studios may be relevant to your online presence.
   </p>
   <p style="margin:0;font-size:11px;color:#7a7a90;">
