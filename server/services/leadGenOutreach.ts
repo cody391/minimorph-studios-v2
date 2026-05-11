@@ -26,6 +26,29 @@ export const OUTREACH_SCHEDULE = [
   { day: 14, channel: "email" as const, type: "follow_up" as const, purpose: "final_follow_up" },
 ];
 
+// TCPA per-lead local-time helpers.
+// Returns the lead's local hour (0–23) from an IANA timezone string, or null
+// if the timezone is missing, invalid, or produces an unparseable result.
+function getLeadLocalHour(timezone: string, now: Date = new Date()): number | null {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      hour: "numeric",
+      hour12: false,
+    }).formatToParts(now);
+    const hourRaw = parts.find((part) => part.type === "hour")?.value;
+    const hour = hourRaw ? Number.parseInt(hourRaw, 10) : NaN;
+    return Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : null;
+  } catch {
+    return null;
+  }
+}
+
+function isWithinSmsContactWindow(timezone: string, now: Date = new Date()): boolean {
+  const hour = getLeadLocalHour(timezone, now);
+  return hour !== null && hour >= 8 && hour < 21;
+}
+
 /**
  * Generate a personalized outreach message using AI
  */
@@ -282,8 +305,17 @@ export async function sendDueOutreach(): Promise<number> {
         await db.update(outreachSequences)
           .set({ status: "sent", sentAt: new Date() })
           .where(eq(outreachSequences.id, seq.id));
-      } else if (seq.channel === "sms" && lead.phone && lead.smsOptIn) {
-        // Send SMS — only if lead has explicitly opted in
+      } else if (seq.channel === "sms" && lead.phone && lead.smsOptIn && !lead.smsOptedOut) {
+        // Send SMS — only if lead has explicitly opted in and not opted out
+        if (!lead.timezone) {
+          console.log(`[Outreach] SMS deferred for lead ${lead.id}: missing timezone`);
+          continue;
+        }
+        if (!isWithinSmsContactWindow(lead.timezone)) {
+          console.log(`[Outreach] SMS deferred for lead ${lead.id}: outside local contact window (${lead.timezone})`);
+          continue;
+        }
+
         const body = seq.body || "";
         const smsBody = !lead.smsFirstMessageSent
           ? `${body}\n\nReply STOP to opt out.`
