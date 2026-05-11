@@ -12,7 +12,7 @@
 
 import { invokeLLM } from "../_core/llm";
 import { getDb, getProductCatalog } from "../db";
-import { leads, aiConversations, outreachSequences, reps, repServiceAreas } from "../../drizzle/schema";
+import { leads, aiConversations, outreachSequences, reps, repServiceAreas, emailUnsubscribes } from "../../drizzle/schema";
 import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { sendSms } from "./sms";
 import { sendEmail } from "./email";
@@ -346,9 +346,28 @@ export async function handleConversation(params: {
     await db.update(leads).set({
       stage: "closed_lost",
       temperature: "cold",
+      emailOptedOut: true,
       lastTouchAt: new Date(),
     }).where(eq(leads.id, params.leadId));
-    console.log(`[ConversationAI] Opt-out detected for lead ${params.leadId} — marked closed_lost, no AI called`);
+
+    // Add to global email blocklist (idempotent)
+    if (lead.email) {
+      const normalizedEmail = lead.email.trim().toLowerCase();
+      const alreadyUnsub = await db.select({ id: emailUnsubscribes.id })
+        .from(emailUnsubscribes)
+        .where(eq(emailUnsubscribes.email, normalizedEmail))
+        .limit(1);
+      if (alreadyUnsub.length === 0) {
+        await db.insert(emailUnsubscribes).values({ email: normalizedEmail, source: "email_link" });
+      }
+    }
+
+    // Cancel all pending outreach sequences for this lead
+    await db.update(outreachSequences)
+      .set({ status: "cancelled" })
+      .where(and(eq(outreachSequences.leadId, params.leadId), eq(outreachSequences.status, "scheduled")));
+
+    console.log(`[ConversationAI] Opt-out detected for lead ${params.leadId} — marked closed_lost, sequences cancelled, no AI called`);
     return {
       decision: "mark_not_interested",
       confidenceScore: 100,

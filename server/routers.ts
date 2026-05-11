@@ -6126,16 +6126,33 @@ export const appRouter = router({
       .input(z.object({ email: z.string().email() }))
       .mutation(async ({ input }) => {
         const { getDb } = await import("./db");
-        const { emailUnsubscribes } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
+        const { emailUnsubscribes, leads: leadsTable, outreachSequences } = await import("../drizzle/schema");
+        const { eq, and, sql } = await import("drizzle-orm");
         const database = await getDb();
         if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database unavailable" });
-        // Check if already unsubscribed
+
+        const normalizedEmail = input.email.trim().toLowerCase();
+
+        // Insert into global blocklist (idempotent)
         const existing = await database.select().from(emailUnsubscribes)
-          .where(eq(emailUnsubscribes.email, input.email)).limit(1);
+          .where(eq(emailUnsubscribes.email, normalizedEmail)).limit(1);
         if (existing.length === 0) {
-          await database.insert(emailUnsubscribes).values({ email: input.email, source: "email_link" });
+          await database.insert(emailUnsubscribes).values({ email: normalizedEmail, source: "email_link" });
         }
+
+        // Mark matching leads opted-out and cancel their scheduled sequences
+        const matchingLeads = await database.select({ id: leadsTable.id })
+          .from(leadsTable)
+          .where(sql`LOWER(${leadsTable.email}) = ${normalizedEmail}`);
+        for (const lead of matchingLeads) {
+          await database.update(leadsTable)
+            .set({ emailOptedOut: true, stage: "closed_lost" })
+            .where(eq(leadsTable.id, lead.id));
+          await database.update(outreachSequences)
+            .set({ status: "cancelled" })
+            .where(and(eq(outreachSequences.leadId, lead.id), eq(outreachSequences.status, "scheduled")));
+        }
+
         return { success: true };
       }),
   }),

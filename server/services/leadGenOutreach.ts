@@ -309,7 +309,7 @@ export async function sendDueOutreach(): Promise<number> {
           direction: "outbound",
           content: seq.body || "",
         });
-      } else if (seq.channel === "email" && lead.email && (lead as any).emailVerified) {
+      } else if (seq.channel === "email" && lead.email && (lead as any).emailVerified && !lead.emailOptedOut) {
         // Send email — only to verified addresses
         await sendEmail({
           to: lead.email,

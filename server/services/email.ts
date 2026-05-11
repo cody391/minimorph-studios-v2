@@ -31,6 +31,9 @@ function getResend(): Resend {
   return _resend;
 }
 
+const getPublicAppUrl = () =>
+  (ENV.appUrl || process.env.APP_URL || process.env.VITE_APP_URL || "https://www.minimorphstudios.net").replace(/\/+$/, "");
+
 /* ═══════════════════════════════════════════════════════
    CAN-SPAM COMPLIANCE FOOTER — Dark Premium Brand
    Federal law requires: physical address, sender identification,
@@ -40,7 +43,7 @@ const CAN_SPAM_FOOTER = `
 <div style="background:#151526;padding:16px 32px;border-top:1px solid #2d2d45;text-align:center;">
   <p style="margin:0 0 8px;font-size:11px;color:#7a7a90;line-height:1.5;">
     MiniMorph Studios &bull; Muskegon, MI 49440<br/>
-    You received this email because you inquired about our services or were contacted by a MiniMorph representative.
+    You received this email because your business information was publicly available and MiniMorph Studios may be relevant to your online presence.
   </p>
   <p style="margin:0;font-size:11px;color:#7a7a90;">
     <a href="{{unsubscribe_url}}" style="color:#4a9eff;text-decoration:underline;">Unsubscribe</a> &bull;
@@ -49,13 +52,13 @@ const CAN_SPAM_FOOTER = `
 </div>`;
 
 /**
- * Build the CAN-SPAM footer with proper URLs.
- * Uses the app's origin for unsubscribe and privacy links.
+ * Build the CAN-SPAM footer with absolute URLs suitable for email clients.
  */
 function buildCanSpamFooter(recipientEmail: string): string {
+  const base = getPublicAppUrl();
   const encoded = encodeURIComponent(recipientEmail);
-  const unsubUrl = `/unsubscribe?email=${encoded}`;
-  const privacyUrl = `/privacy`;
+  const unsubUrl = `${base}/unsubscribe?email=${encoded}`;
+  const privacyUrl = `${base}/privacy`;
   return CAN_SPAM_FOOTER
     .replace("{{unsubscribe_url}}", unsubUrl)
     .replace("{{privacy_url}}", privacyUrl);
@@ -109,13 +112,13 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
       }
     }
 
+    const unsubscribeUrl = `${getPublicAppUrl()}/unsubscribe?email=${encodeURIComponent(params.to)}`;
     const options: Record<string, any> = {
       from: fromAddress,
       to: [params.to],
       subject: params.subject,
       headers: {
-        "List-Unsubscribe": `<mailto:unsubscribe@minimorphstudios.net?subject=unsubscribe-${encodeURIComponent(params.to)}>`,
-        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:unsubscribe@minimorphstudios.net?subject=unsubscribe-${encodeURIComponent(params.to)}>`,
       },
     };
     if (htmlContent) options.html = htmlContent;
