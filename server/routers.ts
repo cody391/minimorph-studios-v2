@@ -425,6 +425,19 @@ export function buildEmailSignature(rep: { fullName: string; email: string; phon
 </table>`;
 }
 
+// Certification gate for rep money actions (closeDeal, generateRepPaymentLink, createMyLead).
+// Allows only reps whose status is "active" or "certified" (academy full certification
+// auto-sets status to "active"). Does NOT check daily training or daily check-in —
+// those are optional engagement mechanics, not hard money gates for a 1099 contractor model.
+function assertRepCertifiedForSales(rep: { status: string }) {
+  if (rep.status !== "active" && rep.status !== "certified") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Complete sales certification before accessing sales actions.",
+    });
+  }
+}
+
 /* ═══════════════════════════════════════════════════════
    LEADS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -683,6 +696,7 @@ const leadsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const rep = await db.getRepByUserId(ctx.user.id);
       if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      assertRepCertifiedForSales(rep);
       const lead = await db.createLead({
         ...input,
         source: "referral" as const,
@@ -717,6 +731,7 @@ const leadsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const rep = await db.getRepByUserId(ctx.user.id);
       if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      assertRepCertifiedForSales(rep);
       const lead = await db.getLeadById(input.leadId);
       if (!lead || lead.assignedRepId !== rep.id) {
         throw new TRPCError({ code: "FORBIDDEN", message: "This lead is not assigned to you" });
@@ -1112,9 +1127,10 @@ const leadsRouter = router({
   generateRepPaymentLink: protectedProcedure
     .input(z.object({ leadId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      // 1. Confirm requester is a rep
+      // 1. Confirm requester is a certified/active rep
       const rep = await db.getRepByUserId(ctx.user.id);
       if (!rep) throw new TRPCError({ code: "FORBIDDEN", message: "You are not a registered rep" });
+      assertRepCertifiedForSales(rep);
 
       // 2. Confirm lead belongs to this rep and is closed_won
       const lead = await db.getLeadById(input.leadId);
