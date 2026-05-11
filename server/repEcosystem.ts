@@ -440,7 +440,7 @@ export const repCommsRouter = router({
         to: input.recipientEmail,
         subject: input.subject,
         html: htmlBody,
-        text: input.body + `\n\n--\n${rep.fullName}\nSales Representative — MiniMorph Studios\n${rep.email}${rep.phone ? '\n' + rep.phone : ''}`,
+        text: input.body + `\n\n--\n${rep.fullName}\nIndependent Sales Rep — MiniMorph Studios\n${rep.email}${rep.phone ? '\n' + rep.phone : ''}`,
         replyTo: ctx.user.email || undefined,
       });
       if (delivery.success && delivery.resendId) {

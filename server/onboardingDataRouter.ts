@@ -304,7 +304,7 @@ export const onboardingDataRouter = router({
         case "hr_employment":
           return {
             formType: "hr_employment",
-            formTitle: "HR / Employment Information",
+            formTitle: "Identity & Contact Information",
             autoPopulatedFields: {
               legalFirstName: data?.legalFirstName || "",
               legalLastName: data?.legalLastName || "",
@@ -333,7 +333,7 @@ export const onboardingDataRouter = router({
         case "payroll_setup":
           return {
             formType: "payroll_setup",
-            formTitle: "Payroll Setup",
+            formTitle: "Payout Setup",
             autoPopulatedFields: {
               legalName: legalName,
               email: rep?.email || user?.email || "",

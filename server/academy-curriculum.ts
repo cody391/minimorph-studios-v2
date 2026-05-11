@@ -336,7 +336,7 @@ Two sources:
 
 2. **Academy Reinforcement** — When you're new and haven't had many conversations yet, the system pulls review material from the Academy modules you've already completed. This keeps your skills sharp while you're building up real conversation data.
 
-Each review is a short lesson (2-3 minutes to read) followed by a quiz question. Complete all your assigned reviews and you're cleared to work for the day.
+Each review is a short lesson (2-3 minutes to read) followed by a quiz question. Complete all your assigned reviews and your lead access is unlocked for the day.
 
 ## Accountability Tiers — Your Rank Matters
 
