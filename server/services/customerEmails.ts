@@ -447,11 +447,12 @@ export async function sendCompetitiveWorkupEmail(params: {
     <p style="margin:0 0 16px;color:#c8c8d8;">Hi ${params.customerName},</p>
     <p style="margin:0 0 24px;color:#c8c8d8;">
       Here's your monthly competitive intelligence report for <strong style="color:#eaeaf0;">${params.businessName}</strong>.
-      We've analyzed your competitors and identified opportunities to stay ahead.
+      We've reviewed publicly available information to surface directional insights and opportunities.
     </p>
-    <div style="background:#1c1c30;border:1px solid #2d2d45;border-radius:8px;padding:24px;margin-bottom:24px;">
+    <div style="background:#1c1c30;border:1px solid #2d2d45;border-radius:8px;padding:24px;margin-bottom:16px;">
       ${formattedReport}
     </div>
+    <p style="margin:0 0 24px;font-size:12px;color:#555568;">Competitive insights are based on publicly available information at the time of review and are meant to be directional, not a guaranteed measurement.</p>
     <div style="margin:24px 0;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
       <p style="margin:0;font-size:14px;color:#c8c8d8;">
         <strong style="color:#eaeaf0;">View full report:</strong> Log in to your Customer Portal and check the Insights tab
@@ -842,9 +843,10 @@ export async function sendMonthlyReportEmail(params: {
     </p>
 
     <h3 style="color:#eaeaf0;margin:0 0 12px;font-size:18px;">Competitive Intelligence</h3>
-    <div style="background:#1c1c30;border:1px solid #2d2d45;border-radius:8px;padding:24px;margin-bottom:24px;">
+    <div style="background:#1c1c30;border:1px solid #2d2d45;border-radius:8px;padding:24px;margin-bottom:16px;">
       ${formattedReport}
     </div>
+    <p style="margin:0 0 24px;font-size:12px;color:#555568;">Competitive insights are based on publicly available information at the time of review and are meant to be directional, not a guaranteed measurement.</p>
 
     ${invoiceNote}
     ${renewalNotice}

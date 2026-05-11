@@ -610,17 +610,17 @@ export function registerScheduledRoutes(app: Express) {
               if (results.length > 0) competitorContent = results.join("\n\n---\n\n");
             }
 
-            const analysisPrompt = `You are a digital marketing analyst for MiniMorph Studios. Generate a monthly competitive intelligence report for ${project.businessName} (${customer.industry || "local business"}).
+            const analysisPrompt = `You are a digital marketing analyst for MiniMorph Studios. Generate a monthly competitive intelligence report for ${project.businessName} (${customer.industry || "local business"}) based on publicly available information.
 
-${competitorContent ? `COMPETITOR WEBSITE DATA:\n${competitorContent}\n\n` : ""}
+${competitorContent ? `COMPETITOR WEBSITE DATA (scraped from public websites):\n${competitorContent}\n\n` : ""}
 
 Generate a concise competitive report with:
-1. A brief market overview (2-3 sentences)
-2. What competitors are doing well (2-3 points)
-3. Gaps/weaknesses in competitor positioning (2-3 points)
-4. Three specific actionable recommendations for ${project.businessName} to gain advantage this month
+1. A brief market overview (2-3 sentences — use directional language like "appears" or "likely")
+2. What competitors appear to be doing well based on their public presence (2-3 points — frame as observations, not verified facts)
+3. Potential gaps or opportunities in competitor positioning worth reviewing (2-3 points)
+4. Three specific recommendations for ${project.businessName} to consider this month
 
-Keep it practical, specific, and action-oriented. Format with clear sections using ## headers. Total length: 300-400 words.`;
+Use hedged, directional language throughout (e.g., "appears to", "may benefit from", "worth reviewing", "based on public signals"). Do not state unverifiable claims as certainties. Keep it practical and action-oriented. Format with clear sections using ## headers. Total length: 300-400 words.`;
 
             const llmResult = await invokeLLM({
               messages: [{ role: "user" as const, content: analysisPrompt }],
