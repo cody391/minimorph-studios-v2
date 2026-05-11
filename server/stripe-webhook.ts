@@ -210,6 +210,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const _rawSource = session.metadata?.acquisition_source || session.metadata?.source || "self_service";
   const metaSource = String(_rawSource).trim().slice(0, 64) || "self_service";
 
+  // Actual amount collected by Stripe (cents). Zero for fully-discounted checkouts.
+  const amountPaidCents = typeof session.amount_total === "number" ? session.amount_total : 0;
+
+  // Detect whether any discount was applied to this checkout.
+  // If amount_subtotal is missing, default to amountPaidCents (no false-positive discount detection).
+  const amountSubtotalCents =
+    typeof session.amount_subtotal === "number" ? session.amount_subtotal : amountPaidCents;
+  const discountAmountCents =
+    typeof session.total_details?.amount_discount === "number"
+      ? session.total_details.amount_discount
+      : Math.max(0, amountSubtotalCents - amountPaidCents);
+  const checkoutWasDiscounted = discountAmountCents > 0 || amountPaidCents < amountSubtotalCents;
+
   // Validate lead attribution — skip if not found or already rep-owned
   let attributionLeadId = metaLeadId;
   if (!isRepClosedSession && attributionLeadId) {
@@ -379,7 +392,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // ── 8. Auto-create initial commission for the rep (if applicable) ──
   if (!isRepClosedSession) {
-    await createInitialCommission(session, contractId);
+    await createInitialCommission(session, contractId, amountPaidCents);
   } else {
     console.log("[StripeWebhook] Skipping initial commission creation for rep-closed checkout; Step 9 will approve existing pending commission");
   }
@@ -401,21 +414,29 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           .select()
           .from(commissions)
           .where(eq(commissions.contractId, repContractId));
-        for (const comm of pendingCommissions) {
-          if (comm.status === "pending") {
-            await database
-              .update(commissions)
-              .set({ status: "approved" })
-              .where(eq(commissions.id, comm.id));
-            // Notify the rep
-            await db.createRepNotification({
-              repId: comm.repId,
-              type: "commission_approved",
-              title: "Commission Approved — Payment Confirmed!",
-              message: `Payment received for contract #${repContractId}. Your $${parseFloat(comm.amount).toFixed(2)} commission is now approved.`,
-              metadata: { commissionId: comm.id, contractId: repContractId, amount: comm.amount },
-            });
-            console.log(`[Stripe] Commission ${comm.id} approved after payment for contract ${repContractId}`);
+        if (amountPaidCents <= 0) {
+          console.warn(`[Stripe] Skipping commission approval for contract ${repContractId} — checkout paid amount was $0 (fully discounted). Commissions remain pending for manual review.`);
+        } else if (checkoutWasDiscounted) {
+          // closeDeal-created commissions do not store rateApplied, so the webhook cannot safely
+          // recalculate the commission on a paid basis. Leave pending for manual admin review.
+          console.warn(`[Stripe] Skipping commission approval for contract ${repContractId} — checkout was discounted ($${(discountAmountCents / 100).toFixed(2)} off). Commissions remain pending for manual review.`);
+        } else {
+          for (const comm of pendingCommissions) {
+            if (comm.status === "pending") {
+              await database
+                .update(commissions)
+                .set({ status: "approved", basisAmountCents: amountPaidCents })
+                .where(eq(commissions.id, comm.id));
+              // Notify the rep
+              await db.createRepNotification({
+                repId: comm.repId,
+                type: "commission_approved",
+                title: "Commission Approved — Payment Confirmed!",
+                message: `Payment received for contract #${repContractId}. Your $${parseFloat(comm.amount).toFixed(2)} commission is now approved.`,
+                metadata: { commissionId: comm.id, contractId: repContractId, amount: comm.amount },
+              });
+              console.log(`[Stripe] Commission ${comm.id} approved after payment for contract ${repContractId}`);
+            }
           }
         }
       } catch (err) {
@@ -654,8 +675,13 @@ async function handleInvoicePaid(invoice: Stripe.Invoice) {
   }
 
   // ── 2. Create recurring commission for the rep ─────────────────────
+  const invoiceAmountPaidCents = typeof invoice.amount_paid === "number" ? invoice.amount_paid : 0;
   if (contract.repId && contract.repId > 0) {
-    await createRecurringCommissionForContract(contract);
+    if (invoiceAmountPaidCents <= 0) {
+      console.log(`[Stripe] Skipping recurring commission — invoice amount_paid is 0 for contract ${contract.id}`);
+    } else {
+      await createRecurringCommissionForContract(contract, invoiceAmountPaidCents);
+    }
   }
 
   // ── 3. Keep contract status active ─────────────────────────────────
@@ -890,13 +916,18 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
  * Create initial commission on first checkout (called from handleCheckoutCompleted).
  * Renamed from createRecurringCommission to clarify its role.
  */
-async function createInitialCommission(session: Stripe.Checkout.Session, currentContractId: number | null) {
+async function createInitialCommission(session: Stripe.Checkout.Session, currentContractId: number | null, amountPaidCents: number) {
   try {
     const database = await getDb();
     if (!database) return;
 
     if (!currentContractId) {
       console.log("[StripeWebhook] No current contract id for initial commission creation, skipping");
+      return;
+    }
+
+    if (amountPaidCents <= 0) {
+      console.log("[StripeWebhook] Skipping initial commission — checkout paid amount is 0", { contractId: currentContractId });
       return;
     }
 
@@ -912,19 +943,16 @@ async function createInitialCommission(session: Stripe.Checkout.Session, current
     const hasInitialSale = existingCommissions.some(c => c.type === "initial_sale");
     if (hasInitialSale) return; // Already has initial commission
 
-    // This is the first payment — create initial_sale commission
-    const monthlyPrice = parseFloat(contract.monthlyPrice);
-
     const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, contract.repId)).limit(1);
     const tierKey = (tierRows[0]?.tier || "bronze") as TierKey;
     let rate = TIER_CONFIG[tierKey].commissionRate / 100;
 
     // Self-sourced leads get 2x rate (capped at 40%)
-    // Check if the lead was self-sourced by checking the contract metadata
     const isSelfSourced = false; // Initial checkout doesn't carry self-sourced flag
 
     const ratePercent = TIER_CONFIG[tierKey].commissionRate;
-    const commissionAmount = (monthlyPrice * rate).toFixed(2);
+    const paidBasis = amountPaidCents / 100; // cents → dollars
+    const commissionAmount = (paidBasis * rate).toFixed(2);
 
     await db.createCommission({
       repId: contract.repId,
@@ -934,6 +962,7 @@ async function createInitialCommission(session: Stripe.Checkout.Session, current
       status: "approved",
       selfSourced: isSelfSourced,
       rateApplied: ratePercent.toFixed(2),
+      basisAmountCents: amountPaidCents,
     });
 
     // Auto-transfer to rep's Stripe Connect account if set up
@@ -975,12 +1004,13 @@ async function createInitialCommission(session: Stripe.Checkout.Session, current
  * Called from handleInvoicePaid for each recurring payment.
  * Idempotent: checks if commission already exists for this month.
  */
-async function createRecurringCommissionForContract(contract: typeof contracts.$inferSelect) {
+async function createRecurringCommissionForContract(contract: typeof contracts.$inferSelect, invoiceAmountPaidCents: number) {
   try {
     const database = await getDb();
     if (!database) return;
 
     if (!contract.repId || contract.repId === 0) return;
+    if (invoiceAmountPaidCents <= 0) return; // Defense-in-depth: caller guards this too
 
     const existingCommissions = await db.getActiveCommissionsByContract(contract.id);
 
@@ -995,8 +1025,6 @@ async function createRecurringCommissionForContract(contract: typeof contracts.$
       return;
     }
 
-    // Calculate commission based on monthly price and rep's tier rate
-    const monthlyPrice = parseFloat(contract.monthlyPrice);
     const initialCommission = existingCommissions.find(c => c.type === "initial_sale");
     const isSelfSourced = initialCommission?.selfSourced || false;
 
@@ -1006,7 +1034,8 @@ async function createRecurringCommissionForContract(contract: typeof contracts.$
     const ratePercent = TIER_CONFIG[tierKey].commissionRate;
     if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
 
-    const commissionAmount = (monthlyPrice * rate).toFixed(2);
+    const paidBasis = invoiceAmountPaidCents / 100; // cents → dollars
+    const commissionAmount = (paidBasis * rate).toFixed(2);
 
     await db.createCommission({
       repId: contract.repId,
@@ -1016,6 +1045,7 @@ async function createRecurringCommissionForContract(contract: typeof contracts.$
       status: "approved",
       selfSourced: isSelfSourced,
       rateApplied: (isSelfSourced ? Math.min(ratePercent * 2, 40) : ratePercent).toFixed(2),
+      basisAmountCents: invoiceAmountPaidCents,
     });
 
     // Auto-transfer to rep's Stripe Connect account if set up
