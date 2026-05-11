@@ -69,7 +69,7 @@ export async function generateOutreachMessage(params: {
   const isSms = params.channel === "sms";
   const maxLength = isSms ? 300 : 1500;
 
-  const prompt = `You are Elena Brooks, a team member at MiniMorph Studios (a web design agency).
+  const prompt = `You are writing as Elena, who reaches out on behalf of MiniMorph Studios (a web design agency) to help local business owners identify practical website improvements.
 Generate a ${params.channel === "sms" ? "short SMS" : "professional email"} reaching out to a local business owner.
 
 BUSINESS: ${params.businessName}
@@ -86,11 +86,11 @@ ${params.previousMessages?.length ? `PREVIOUS MESSAGES SENT:\n${params.previousM
 
 ELENA'S VOICE:
 - Warm, direct, genuinely helpful — not pushy or salesy
-- Sounds like a real person who actually looked at their business
+- Reads as a genuine, personal note — references specific details about this business
 - References specific things about THEIR business (reviews, industry, location, website issues)
-- ${!params.website ? "Emphasizes the real customers they're missing by not having a website" : "Points out specific issues with their current website and what it's costing them"}
-- Never sounds like a template — this feels personal
-- Sign off as "Elena" (just first name, from MiniMorph Studios)
+- ${!params.website ? "Focuses on the real customers they're missing by not having a website" : "Points out specific issues with their current website and what it's costing them"}
+- Specific and relevant to this business — not generic
+- Sign off as "Elena at MiniMorph Studios"
 - ${isSms ? "Under 300 characters. No fluff." : "3-4 short paragraphs max. One clear ask."}
 
 Respond in JSON:
