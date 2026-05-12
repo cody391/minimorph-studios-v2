@@ -1,11 +1,13 @@
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import {
   CheckCircle2, XCircle, AlertTriangle, Database, CreditCard,
   Mail, Globe, Cloud, Brain, Zap, Shield, FileText, Users, Rocket,
-  Info,
+  Info, ClipboardCheck, Eye, Loader2,
 } from "lucide-react";
 
 function StatusBadge({ ok, warn, label }: { ok: boolean; warn?: boolean; label?: string }) {
@@ -138,10 +140,36 @@ function computeProjectVerdict(p: {
 }
 
 export default function LaunchReadiness() {
+  const utils = trpc.useUtils();
   const { data: readiness, isLoading: loadingR } = trpc.compliance.getSystemReadiness.useQuery();
   const { data: agreements, isLoading: loadingA } = trpc.compliance.listCustomerAgreements.useQuery();
   const { data: paperwork, isLoading: loadingP } = trpc.compliance.listRepPaperwork.useQuery({});
   const { data: projects, isLoading: loadingPr } = trpc.compliance.listProjectReadiness.useQuery();
+
+  const adminApprovePreviewMutation = trpc.onboarding.adminApprovePreview.useMutation({
+    onSuccess: () => utils.compliance.listProjectReadiness.invalidate(),
+  });
+  const adminReleaseLaunchMutation = trpc.onboarding.adminReleaseLaunch.useMutation({
+    onSuccess: () => utils.compliance.listProjectReadiness.invalidate(),
+  });
+
+  const handleApprovePreview = async (projectId: number, businessName: string) => {
+    try {
+      await adminApprovePreviewMutation.mutateAsync({ projectId });
+      toast.success(`Preview approved for ${businessName}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to approve preview");
+    }
+  };
+
+  const handleReleaseLaunch = async (projectId: number, businessName: string) => {
+    try {
+      await adminReleaseLaunchMutation.mutateAsync({ projectId });
+      toast.success(`Launch released for ${businessName}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to release launch");
+    }
+  };
 
   const systemSafe = readiness && readiness.db && readiness.stripe && readiness.email && readiness.anthropic
     && !readiness.enableAutoDeployEnv && !readiness.enableAutoDomainPurchaseEnv;
@@ -172,6 +200,80 @@ export default function LaunchReadiness() {
           </div>
         </div>
       )}
+
+      {/* ── Action Queue ── */}
+      {projects && (() => {
+        const needsPreviewApproval = projects.filter((p: any) => p.stage === "pending_admin_review");
+        const needsLaunchRelease = projects.filter((p: any) =>
+          p.stage === "final_approval" && p.approvedAt && !p.adminLaunchApprovedAt
+        );
+        const failed = projects.filter((p: any) => p.generationStatus === "failed");
+        const totalActions = needsPreviewApproval.length + needsLaunchRelease.length + failed.length;
+        if (totalActions === 0) return null;
+        return (
+          <Card className="border-orange-500/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardCheck size={16} className="text-orange-400" />
+                Action Queue
+                <Badge className="bg-orange-500/15 text-orange-400 border-orange-500/20 ml-1">{totalActions}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {needsPreviewApproval.map((p: any) => (
+                <div key={`preview-${p.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg border border-rose-500/20 bg-rose-500/5">
+                  <div className="flex items-center gap-2">
+                    <Eye size={14} className="text-rose-400 shrink-0" />
+                    <span className="text-sm font-medium">{p.businessName}</span>
+                    <span className="text-xs text-muted-foreground">— site generated, needs admin preview approval</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleApprovePreview(p.id, p.businessName)}
+                    disabled={adminApprovePreviewMutation.isPending}
+                    className="bg-rose-600 hover:bg-rose-700 text-white h-7 text-xs"
+                  >
+                    {adminApprovePreviewMutation.isPending
+                      ? <Loader2 size={12} className="animate-spin mr-1" />
+                      : <Eye size={12} className="mr-1" />}
+                    Approve Preview
+                  </Button>
+                </div>
+              ))}
+              {needsLaunchRelease.map((p: any) => (
+                <div key={`launch-${p.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg border border-teal-500/20 bg-teal-500/5">
+                  <div className="flex items-center gap-2">
+                    <Rocket size={14} className="text-teal-400 shrink-0" />
+                    <span className="text-sm font-medium">{p.businessName}</span>
+                    <span className="text-xs text-muted-foreground">— customer approved, waiting for admin launch release</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleReleaseLaunch(p.id, p.businessName)}
+                    disabled={adminReleaseLaunchMutation.isPending}
+                    className="bg-teal-600 hover:bg-teal-700 text-white h-7 text-xs"
+                  >
+                    {adminReleaseLaunchMutation.isPending
+                      ? <Loader2 size={12} className="animate-spin mr-1" />
+                      : <Rocket size={12} className="mr-1" />}
+                    Release Launch
+                  </Button>
+                </div>
+              ))}
+              {failed.map((p: any) => (
+                <div key={`fail-${p.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg border border-red-500/20 bg-red-500/5">
+                  <div className="flex items-center gap-2">
+                    <XCircle size={14} className="text-red-400 shrink-0" />
+                    <span className="text-sm font-medium">{p.businessName}</span>
+                    <span className="text-xs text-muted-foreground">— generation failed, manual intervention required</span>
+                  </div>
+                  <Badge className="bg-red-500/15 text-red-400 border-red-500/20 text-xs">Check Onboarding Projects</Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* ── A. Global System Readiness ── */}
       <Card>

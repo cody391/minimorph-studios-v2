@@ -31,6 +31,7 @@ import {
   ChevronDown,
   ChevronUp,
   Monitor,
+  History,
 } from "lucide-react";
 import { FLAG_DESCRIPTIONS } from "@shared/quoteEngine";
 
@@ -76,10 +77,70 @@ const EMPTY_FORM = {
   mustHaveFeatures: [] as string[],
 };
 
+function VersionHistoryPanel({
+  projectId,
+  enabled,
+  onRollback,
+  isPending,
+}: {
+  projectId: number;
+  enabled: boolean;
+  onRollback: (versionId: number, versionNumber: number) => void;
+  isPending: boolean;
+}) {
+  const { data: versions, isLoading } = trpc.onboarding.listSiteVersions.useQuery(
+    { projectId },
+    { enabled }
+  );
+
+  if (!enabled) return null;
+  if (isLoading) return (
+    <div className="py-3 text-center">
+      <Loader2 className="w-4 h-4 animate-spin mx-auto text-gray-400" />
+    </div>
+  );
+  if (!versions?.length) return (
+    <p className="py-3 text-xs text-gray-500 text-center">No version snapshots yet.</p>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      {versions.map((v: any) => (
+        <div key={v.id} className="flex items-start justify-between gap-2 p-2 rounded border border-gray-200 bg-white text-xs">
+          <div className="min-w-0">
+            <span className="font-semibold text-gray-700">v{v.versionNumber}</span>
+            <span className="text-gray-400 ml-2">{new Date(v.createdAt).toLocaleString()}</span>
+            {v.changeRequest && (
+              <span className="text-gray-500 ml-2 block mt-0.5 truncate max-w-xs">
+                {v.changeRequest.length > 80 ? v.changeRequest.slice(0, 80) + "…" : v.changeRequest}
+              </span>
+            )}
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (window.confirm(`Restore version ${v.versionNumber}?\n\nThis will replace the current site HTML and send the project back to admin preview review. The current state will be saved as a safety snapshot.`)) {
+                onRollback(v.id, v.versionNumber);
+              }
+            }}
+            disabled={isPending}
+            className="h-6 text-xs border-orange-400 text-orange-600 hover:bg-orange-50 shrink-0"
+          >
+            {isPending ? <Loader2 className="w-2.5 h-2.5 animate-spin mr-1" /> : <History className="w-2.5 h-2.5 mr-1" />}
+            Restore
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function OnboardingProjects() {
   const [filterStage, setFilterStage] = useState<string>("all");
   const [markLiveForms, setMarkLiveForms] = useState<Record<number, { open: boolean; liveUrl: string; domainName: string }>>({});
   const [expandedLogs, setExpandedLogs] = useState<Record<number, boolean>>({});
+  const [expandedVersions, setExpandedVersions] = useState<Record<number, boolean>>({});
   const [newBuildOpen, setNewBuildOpen] = useState(false);
   const [buildForm, setBuildForm] = useState(EMPTY_FORM);
   const [buildStep, setBuildStep] = useState<"idle" | "creating" | "queuing" | "done">("idle");
@@ -94,6 +155,7 @@ export default function OnboardingProjects() {
   const questMutation = trpc.onboarding.submitQuestionnaire.useMutation();
   const adminApprovePreviewMutation = trpc.onboarding.adminApprovePreview.useMutation();
   const adminReleaseLaunchMutation = trpc.onboarding.adminReleaseLaunch.useMutation();
+  const rollbackMutation = trpc.onboarding.rollbackToVersion.useMutation();
 
   const projects = projectsQuery.data || [];
 
@@ -619,6 +681,38 @@ export default function OnboardingProjects() {
                       </div>
                     </div>
                   )}
+
+                  {/* Version history toggle */}
+                  <div className="mt-3 border-t border-gray-100 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedVersions(prev => ({ ...prev, [project.id]: !prev[project.id] }))}
+                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <History className="w-3 h-3" />
+                      Version History
+                      {expandedVersions[project.id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                    {expandedVersions[project.id] && (
+                      <div className="mt-2 p-3 rounded-lg border border-gray-200 bg-gray-50/50">
+                        <VersionHistoryPanel
+                          projectId={project.id}
+                          enabled={!!expandedVersions[project.id]}
+                          isPending={rollbackMutation.isPending}
+                          onRollback={async (versionId, versionNumber) => {
+                            try {
+                              await rollbackMutation.mutateAsync({ projectId: project.id, versionId });
+                              toast.success(`Restored to version ${versionNumber} — back in admin review`);
+                              setExpandedVersions(prev => ({ ...prev, [project.id]: false }));
+                              projectsQuery.refetch();
+                            } catch (e: any) {
+                              toast.error(e?.message || "Rollback failed");
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );

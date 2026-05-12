@@ -2827,13 +2827,28 @@ const onboardingRouter = router({
     }),
 
   // Admin: release customer-approved site for deployment
+  // dryRun: true validates all gates and returns verdict without deploying
   adminReleaseLaunch: adminProcedure
-    .input(z.object({ projectId: z.number() }))
+    .input(z.object({ projectId: z.number(), dryRun: z.boolean().optional() }))
     .mutation(async ({ input }) => {
       const project = await db.getOnboardingProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       if (!project.approvedAt) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Customer has not yet approved the site. Wait for customer approval before releasing." });
+      }
+      if (input.dryRun) {
+        console.log(`[adminReleaseLaunch] DRY RUN for project ${input.projectId} — gates passed, deploy NOT triggered`);
+        return {
+          success: true,
+          dryRun: true,
+          message: "Dry run passed — all gates valid. Deploy was not triggered.",
+          projectId: input.projectId,
+          businessName: project.businessName,
+          stage: project.stage,
+          approvedAt: project.approvedAt,
+          hasDomain: !!(project.domainName || project.existingDomain),
+          hasCloudflare: !!project.cloudflareProjectName,
+        };
       }
       await db.updateOnboardingProject(input.projectId, {
         adminLaunchApprovedAt: new Date(),
@@ -2844,7 +2859,62 @@ const onboardingRouter = router({
         console.error("[adminReleaseLaunch] Deployment error:", err)
       );
       console.log(`[adminReleaseLaunch] Project ${input.projectId} released for deployment`);
-      return { success: true };
+      return { success: true, dryRun: false };
+    }),
+
+  // Admin: list site version snapshots for a project
+  listSiteVersions: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ input }) => {
+      return db.listSiteVersions(input.projectId);
+    }),
+
+  // Admin: roll back generatedSiteHtml to a saved version snapshot
+  rollbackToVersion: adminProcedure
+    .input(z.object({ projectId: z.number(), versionId: z.number() }))
+    .mutation(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+      const versions = await db.listSiteVersions(input.projectId);
+      const target = versions.find(v => v.id === input.versionId);
+      if (!target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Version not found for this project" });
+      }
+      if (!target.htmlSnapshot || (target.htmlSnapshot as string).length < 10) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Version snapshot is empty — cannot restore" });
+      }
+
+      // Safety snapshot of current state before overwriting
+      const safetyVersion = await db.getNextSiteVersionNumber(input.projectId);
+      await db.createSiteVersion({
+        projectId: input.projectId,
+        versionNumber: safetyVersion,
+        htmlSnapshot: project.generatedSiteHtml as string,
+        changeRequest: `Admin rollback safety snapshot before restoring version #${target.versionNumber}`,
+        createdBy: "admin_rollback_safety",
+      });
+
+      // Restore the chosen snapshot
+      await db.updateOnboardingProject(input.projectId, {
+        generatedSiteHtml: target.htmlSnapshot as string,
+        generationStatus: "complete",
+        stage: "pending_admin_review",
+        adminPreviewApprovedAt: null,
+        previewReadyAt: null,
+      });
+
+      // Notify admin that review is required before customer sees it
+      try {
+        const { notifyOwner } = await import("./_core/notification");
+        await notifyOwner({
+          title: `Version Restored — Admin Review Required: ${project.businessName}`,
+          content: `Project #${input.projectId} (${project.businessName}) was rolled back to version #${target.versionNumber}.\n\nStage set to: pending_admin_review\nAdmin preview approval required before customer can see this version.\n\nDeploy was NOT triggered.`,
+        });
+      } catch {}
+
+      console.log(`[rollbackToVersion] Project ${input.projectId} restored to version ${target.versionNumber} (safety snapshot: v${safetyVersion})`);
+      return { success: true, restoredVersion: target.versionNumber, safetySnapshotVersion: safetyVersion };
     }),
 
   // Protected: generate contract text for a project
