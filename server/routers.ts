@@ -3220,7 +3220,7 @@ const onboardingRouter = router({
           : `${origin}/get-started?cancelled=true`,
       };
 
-      // Check if buyer is a rep — apply 25% employee discount
+      // Check if buyer is a rep — apply 25% partner discount
       if (!stripePromoCodeId && !isRepClosed) {
         const { reps: repsTable } = await import("../drizzle/schema");
         const repCheck = await getDb();
@@ -3437,7 +3437,7 @@ async function getOrCreateRepCoupon(stripe: any): Promise<string> {
       id: couponId,
       percent_off: 25,
       duration: "forever",
-      name: "Rep Employee Discount (25% off)",
+      name: "Rep Partner Discount (25% off)",
     });
     return coupon.id;
   }
