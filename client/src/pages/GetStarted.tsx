@@ -170,6 +170,7 @@ export default function GetStarted() {
   const chatMutation = trpc.ai.onboardingChat.useMutation();
   const saveProgressMutation = trpc.onboarding.saveProgress.useMutation();
   const createCheckoutMutation = trpc.onboarding.createCheckoutAfterElena.useMutation();
+  const recordAgreementMutation = trpc.onboarding.recordAgreementAcceptance.useMutation();
   const uploadAssetMutation = trpc.onboarding.uploadAsset.useMutation();
   const resendCredentialMutation = trpc.auth.resendCredentialEmail.useMutation();
 
@@ -827,14 +828,23 @@ export default function GetStarted() {
                 loading={checkoutLoading}
                 couponCode={couponCode}
                 onCouponChange={setCouponCode}
-                onPay={async () => {
+                onPay={async (signerName: string) => {
                   if (!projectId) { toast.error("Project not found. Please try again."); return; }
                   setCheckoutLoading(true);
                   try {
+                    // Step 1: Record legal agreement server-side before Stripe
+                    const agreementResult = await recordAgreementMutation.mutateAsync({
+                      projectId,
+                      signerName,
+                      packageSnapshot: paymentReady as Record<string, unknown>,
+                      termsVersion: "1.0",
+                    });
+                    // Step 2: Create Stripe checkout with agreementId in metadata
                     const result = await createCheckoutMutation.mutateAsync({
                       projectId,
                       couponCode: couponCode.trim() || undefined,
                       tempPassword: tempPassword || undefined,
+                      agreementId: agreementResult.agreementId,
                     });
                     window.location.href = result.checkoutUrl;
                   } catch (err) {
@@ -928,9 +938,10 @@ function PaymentSummaryCard({
   loading: boolean;
   couponCode: string;
   onCouponChange: (v: string) => void;
-  onPay: () => void;
+  onPay: (signerName: string) => void;
 }) {
   const [legalAccepted, setLegalAccepted] = useState(false);
+  const [signerName, setSignerName] = useState("");
   const tier = data.packageTier ? capitalize(data.packageTier) : "Your";
   const monthlyTotal = data.monthlyTotal ?? 0;
   const addons = data.addons ?? [];
@@ -1009,36 +1020,56 @@ function PaymentSummaryCard({
           )}
         </div>
 
-        {/* Legal acceptance */}
-        <label className="flex items-start gap-2.5 mb-4 cursor-pointer group">
-          <div className="relative mt-0.5 flex-shrink-0">
+        {/* Legal acceptance section */}
+        <div className="mb-4 space-y-3">
+          <div>
+            <p className="text-xs text-gray-400 mb-1.5 font-medium">Your full legal name (e-signature)</p>
             <input
-              type="checkbox"
-              checked={legalAccepted}
-              onChange={e => setLegalAccepted(e.target.checked)}
-              className="sr-only"
+              type="text"
+              value={signerName}
+              onChange={e => setSignerName(e.target.value)}
+              placeholder="Full name as it appears on ID"
+              className="w-full bg-[#0d0d1a] border border-[#2a2a40] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#4a9eff]/50"
             />
-            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${legalAccepted ? "bg-[#4a9eff] border-[#4a9eff]" : "border-gray-600 group-hover:border-gray-400"}`}>
-              {legalAccepted && <CheckCircle2 className="w-3 h-3 text-white" />}
-            </div>
           </div>
-          <span className="text-xs text-gray-400 leading-relaxed">
-            I agree to MiniMorph Studios' <a href="/terms" target="_blank" className="text-[#4a9eff] hover:underline">Terms of Service</a> and{" "}
-            <a href="/privacy" target="_blank" className="text-[#4a9eff] hover:underline">Privacy Policy</a>, and acknowledge the 12-month service agreement billed monthly at ${monthlyTotal > 0 ? monthlyTotal.toFixed(0) : "—"}/mo.
-          </span>
-        </label>
+          <label className="flex items-start gap-2.5 cursor-pointer group">
+            <div className="relative mt-0.5 flex-shrink-0">
+              <input
+                type="checkbox"
+                checked={legalAccepted}
+                onChange={e => setLegalAccepted(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${legalAccepted ? "bg-[#4a9eff] border-[#4a9eff]" : "border-gray-600 group-hover:border-gray-400"}`}>
+                {legalAccepted && <CheckCircle2 className="w-3 h-3 text-white" />}
+              </div>
+            </div>
+            <span className="text-xs text-gray-400 leading-relaxed">
+              I agree to MiniMorph Studios'{" "}
+              <a href="/terms" target="_blank" className="text-[#4a9eff] hover:underline">Terms of Service</a> and{" "}
+              <a href="/privacy" target="_blank" className="text-[#4a9eff] hover:underline">Privacy Policy</a>, and authorize a 12-month service agreement at{" "}
+              <strong className="text-white">${monthlyTotal > 0 ? monthlyTotal.toFixed(0) : "—"}/mo</strong>,{" "}
+              billed monthly.{oneTimeTotal > 0 ? ` A one-time fee of $${oneTimeTotal.toFixed(0)} is due today.` : ""}
+            </span>
+          </label>
+        </div>
 
         <button
-          onClick={onPay}
-          disabled={loading || !legalAccepted}
+          onClick={() => onPay(signerName.trim())}
+          disabled={loading || !legalAccepted || signerName.trim().length < 2}
           className="w-full bg-[#4a9eff] hover:bg-[#3a8eef] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
             <><Lock className="w-4 h-4" />Start My Website →</>
           )}
         </button>
-        <p className="text-center text-xs text-gray-500 mt-2">
-          Secure payment via Stripe · Cancel anytime after 12-month term
+        {(!legalAccepted || signerName.trim().length < 2) && (
+          <p className="text-center text-xs text-amber-500/70 mt-1.5">
+            {signerName.trim().length < 2 ? "Enter your full name above to continue" : "Check the box above to accept the terms"}
+          </p>
+        )}
+        <p className="text-center text-xs text-gray-500 mt-1.5">
+          Secure payment via Stripe · 12-month commitment, billed monthly
         </p>
       </div>
     </div>

@@ -78,6 +78,8 @@ import {
   broadcasts,
   InsertBroadcast,
   systemSettings,
+  customerAgreements,
+  InsertCustomerAgreement,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import mysql from "mysql2/promise";
@@ -508,6 +510,45 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `leads` ADD COLUMN `timezone` varchar(64) DEFAULT NULL");
     await safe("ALTER TABLE `leads` ADD UNIQUE KEY `uq_leads_optOutToken` (`optOutToken`)");
 
+    // ── 0051: customer_agreements — pre-checkout legal acceptance ────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`customer_agreements\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`userId\` int NOT NULL,
+      \`projectId\` int NOT NULL,
+      \`signerName\` varchar(255) NOT NULL,
+      \`termsVersion\` varchar(16) NOT NULL DEFAULT '1.0',
+      \`packageSnapshot\` json NOT NULL,
+      \`acceptedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`ipAddress\` varchar(64),
+      \`userAgent\` varchar(500),
+      \`checkoutSessionId\` varchar(255),
+      \`contractId\` int,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX \`idx_customer_agreements_userId\` (\`userId\`),
+      INDEX \`idx_customer_agreements_projectId\` (\`projectId\`)
+    )`);
+
+    // ── rep_paperwork_submissions (0050) ──────────────────────────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`rep_paperwork_submissions\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`repId\` int NOT NULL,
+      \`userId\` int NOT NULL,
+      \`formType\` enum('w9_tax','hr_employment','payroll_setup','rep_agreement') NOT NULL,
+      \`formTitle\` varchar(255) NOT NULL,
+      \`formVersion\` varchar(16) NOT NULL DEFAULT '1.0',
+      \`formDataJson\` json NOT NULL,
+      \`signatureType\` enum('drawn','typed') NOT NULL,
+      \`signatureData\` longtext NOT NULL,
+      \`signerName\` varchar(255) NOT NULL,
+      \`signedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`signedIpAddress\` varchar(64),
+      \`signedUserAgent\` varchar(500),
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY \`uq_rep_paperwork_repId_formType\` (\`repId\`, \`formType\`)
+    )`);
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);
@@ -679,6 +720,35 @@ export async function updateCustomer(id: number, data: Partial<InsertCustomer>) 
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(customers).set(data).where(eq(customers.id, id));
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER AGREEMENTS — pre-checkout legal acceptance
+   ═══════════════════════════════════════════════════════ */
+export async function createCustomerAgreement(data: InsertCustomerAgreement) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(customerAgreements).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function getCustomerAgreementById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(customerAgreements).where(eq(customerAgreements.id, id)).limit(1);
+  return result[0];
+}
+
+export async function updateCustomerAgreement(id: number, data: Partial<InsertCustomerAgreement>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(customerAgreements).set(data).where(eq(customerAgreements.id, id));
+}
+
+export async function listCustomerAgreementsByProject(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(customerAgreements).where(eq(customerAgreements.projectId, projectId)).orderBy(desc(customerAgreements.createdAt));
 }
 
 /* ═══════════════════════════════════════════════════════

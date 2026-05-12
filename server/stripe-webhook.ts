@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { ENV } from "./_core/env";
 import * as db from "./db";
 import { getDb } from "./db";
-import { orders, users, contracts, leads, commissions, customers, onboardingProjects, nurtureLogs, reps, coupons, processedCheckoutSessions } from "../drizzle/schema";
+import { orders, users, contracts, leads, commissions, customers, onboardingProjects, nurtureLogs, reps, coupons, processedCheckoutSessions, customerAgreements } from "../drizzle/schema";
 import { eq, and, desc, or, isNull, lt, sql } from "drizzle-orm";
 import { sendWelcomeEmail, sendPaymentFailedEmail } from "./services/customerEmails";
 import { notifyOwner } from "./_core/notification";
@@ -337,6 +337,32 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       });
       contractId = newContract.id;
       console.log(`[Stripe] Contract created: contract=${contractId}, customer=${customerId}, package=${packageTier}, sub=${stripeSubscriptionId}`);
+
+      // Link customer agreement to this contract if one was recorded pre-checkout
+      const rawAgreementId = session.metadata?.agreement_id;
+      const parsedAgreementId = rawAgreementId ? parseInt(rawAgreementId) : NaN;
+      if (!isNaN(parsedAgreementId) && parsedAgreementId > 0) {
+        try {
+          const database = await getDb();
+          if (database) {
+            await database.update(customerAgreements)
+              .set({ contractId, checkoutSessionId: session.id })
+              .where(eq(customerAgreements.id, parsedAgreementId));
+            // Also backfill contractSignedAt from the agreement for traceability
+            const [agreementRow] = await database.select().from(customerAgreements)
+              .where(eq(customerAgreements.id, parsedAgreementId)).limit(1);
+            if (agreementRow) {
+              await db.updateContract(contractId, {
+                contractSignedAt: agreementRow.acceptedAt,
+                contractSignedIp: agreementRow.ipAddress || undefined,
+                contractSignedUserAgent: agreementRow.userAgent || undefined,
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("[Stripe] Failed to link agreement to contract:", e instanceof Error ? e.message : String(e));
+        }
+      }
     }
   }
 

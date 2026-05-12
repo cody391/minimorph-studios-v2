@@ -98,6 +98,97 @@ export function formatSetupFee(key: PackageKey): string {
   return `$${PACKAGES[key].setupFee.toLocaleString()}`;
 }
 
+/* ═══════════════════════════════════════════════════════
+   ADD-ON CATALOG — Server-side source of truth for add-on prices
+   RULE: createCheckoutAfterElena must verify prices against this catalog.
+   Never trust Elena price strings as the sole billing amount.
+   ═══════════════════════════════════════════════════════ */
+export const ADDONS = {
+  review_collector:         { name: "Review Collector",          pricePerMonth: 149, billingType: "recurring_monthly" as const },
+  seo_autopilot:            { name: "SEO Autopilot",             pricePerMonth: 199, billingType: "recurring_monthly" as const },
+  email_marketing_setup:    { name: "Email Marketing Setup",     pricePerMonth: 149, billingType: "recurring_monthly" as const },
+  ai_chatbot:               { name: "AI Chatbot",                pricePerMonth: 299, billingType: "recurring_monthly" as const },
+  competitor_monitoring:    { name: "Competitor Monitoring",     pricePerMonth: 149, billingType: "recurring_monthly" as const },
+  booking_widget:           { name: "Booking Widget",            pricePerMonth: 149, billingType: "recurring_monthly" as const },
+  social_feed_embed:        { name: "Social Feed",               pricePerMonth:  99, billingType: "recurring_monthly" as const },
+  lead_capture_bot:         { name: "Lead Capture Bot",          pricePerMonth:  99, billingType: "recurring_monthly" as const },
+  sms_alerts:               { name: "SMS Lead Alerts",           pricePerMonth:  49, billingType: "recurring_monthly" as const },
+  logo_design:              { name: "Logo Design",               pricePerMonth: 499, billingType: "one_time" as const },
+  professional_copywriting: { name: "Professional Copywriting",  pricePerMonth: 199, billingType: "one_time" as const },
+  brand_style_guide:        { name: "Brand Style Guide",         pricePerMonth: 299, billingType: "one_time" as const },
+} as const;
+
+export type AddonKey = keyof typeof ADDONS;
+export type AddonBillingType = "recurring_monthly" | "one_time";
+
+/**
+ * Look up an add-on by product name (case-insensitive fuzzy match).
+ * Returns the catalog entry or null if not found.
+ */
+export function lookupAddonByName(name: string): (typeof ADDONS)[AddonKey] | null {
+  const normalized = name.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
+  for (const entry of Object.values(ADDONS)) {
+    const entryNorm = entry.name.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
+    if (normalized === entryNorm || normalized.includes(entryNorm) || entryNorm.includes(normalized)) {
+      return entry;
+    }
+  }
+  return null;
+}
+
+/**
+ * Calculate the full checkout totals from a package tier + list of addon keys/names.
+ * Uses catalog prices as the source of truth.
+ */
+export function calculateCheckoutTotals(
+  packageTier: PackageKey,
+  addons: Array<{ product: string; price?: string }>
+): {
+  basePlanMonthly: number;
+  recurringAddonTotal: number;
+  oneTimeTotal: number;
+  monthlyTotal: number;
+  dueToday: number;
+  termMonths: number;
+  recurringAddons: Array<{ name: string; price: number }>;
+  oneTimeItems: Array<{ name: string; price: number }>;
+} {
+  const basePlanMonthly = PACKAGES[packageTier].monthlyPrice;
+  const termMonths = PACKAGES[packageTier].contractMonths;
+  const recurringAddons: Array<{ name: string; price: number }> = [];
+  const oneTimeItems: Array<{ name: string; price: number }> = [];
+
+  for (const addon of addons) {
+    const catalogEntry = lookupAddonByName(addon.product);
+    if (catalogEntry) {
+      if (catalogEntry.billingType === "one_time") {
+        oneTimeItems.push({ name: catalogEntry.name, price: catalogEntry.pricePerMonth });
+      } else {
+        recurringAddons.push({ name: catalogEntry.name, price: catalogEntry.pricePerMonth });
+      }
+    } else {
+      // Fallback: parse Elena's price string if no catalog match
+      const rawPrice = addon.price || "0";
+      const parsed = parseFloat(rawPrice.replace(/[$,]/g, "").replace(/\s*(\/mo|\/month|one-time|one time)\s*/gi, "").trim()) || 0;
+      const isOneTime = /one[-\s]time/i.test(rawPrice);
+      if (parsed > 0) {
+        if (isOneTime) {
+          oneTimeItems.push({ name: addon.product, price: parsed });
+        } else {
+          recurringAddons.push({ name: addon.product, price: parsed });
+        }
+      }
+    }
+  }
+
+  const recurringAddonTotal = recurringAddons.reduce((s, a) => s + a.price, 0);
+  const oneTimeTotal = oneTimeItems.reduce((s, a) => s + a.price, 0);
+  const monthlyTotal = basePlanMonthly + recurringAddonTotal;
+  const dueToday = monthlyTotal + oneTimeTotal;
+
+  return { basePlanMonthly, recurringAddonTotal, oneTimeTotal, monthlyTotal, dueToday, termMonths, recurringAddons, oneTimeItems };
+}
+
 /** All three monthly prices as a string: "$195/$295/$395" */
 export const PRICE_RANGE_SHORT = `$${PACKAGES.starter.monthlyPrice}/$${PACKAGES.growth.monthlyPrice}/$${PACKAGES.premium.monthlyPrice}`;
 

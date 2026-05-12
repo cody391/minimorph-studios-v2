@@ -3069,10 +3069,35 @@ const onboardingRouter = router({
       return { success: true };
     }),
 
+  // Pre-checkout: record customer's legal agreement acceptance before creating Stripe session
+  // Returns agreementId which is stored in session metadata for full traceability
+  recordAgreementAcceptance: protectedProcedure
+    .input(z.object({
+      projectId: z.number(),
+      signerName: z.string().min(2, "Full name required"),
+      packageSnapshot: z.record(z.string(), z.unknown()),
+      termsVersion: z.string().default("1.0"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      const ipAddress = (ctx.req.headers["x-forwarded-for"] as string || ctx.req.socket?.remoteAddress || "").slice(0, 64);
+      const userAgent = (ctx.req.headers["user-agent"] as string || "").slice(0, 500);
+      const agreement = await db.createCustomerAgreement({
+        userId: ctx.user.id,
+        projectId: input.projectId,
+        signerName: input.signerName.trim(),
+        termsVersion: input.termsVersion,
+        packageSnapshot: input.packageSnapshot,
+        ipAddress: ipAddress || undefined,
+        userAgent: userAgent || undefined,
+      });
+      return { agreementId: agreement.id };
+    }),
+
   // Protected: create Stripe checkout after Elena finishes (new payment-last flow)
   // Customer pays after talking to Elena — addons are included in the session
   createCheckoutAfterElena: protectedProcedure
-    .input(z.object({ projectId: z.number(), couponCode: z.string().optional(), tempPassword: z.string().optional() }))
+    .input(z.object({ projectId: z.number(), couponCode: z.string().optional(), tempPassword: z.string().optional(), agreementId: z.number().optional() }))
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
       const project = await db.getOnboardingProjectById(input.projectId);
@@ -3093,60 +3118,65 @@ const onboardingRouter = router({
       const stripeKey = ENV.stripeSecretKey;
       if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
       const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
-      const { PACKAGES } = await import("../shared/pricing");
+      const { PACKAGES, calculateCheckoutTotals } = await import("../shared/pricing");
       const pkg = PACKAGES[packageTier as keyof typeof PACKAGES] ?? PACKAGES.starter;
-      const monthlyPrice = pkg.monthlyPrice;
 
-      // Base line item
-      const lineItems: Array<{
-        price_data: { currency: string; product_data: { name: string; description?: string }; unit_amount: number; recurring: { interval: string } };
+      // Use server-side catalog as source of truth for pricing — not Elena's price strings
+      const addonsSelected = (q.addonsSelected as Array<{ product: string; price?: string; label?: string }> | undefined) ?? [];
+      const totals = calculateCheckoutTotals(packageTier as any, addonsSelected);
+
+      // Stripe Checkout Session line_items:
+      // - Recurring items: price_data with `recurring` field → charged monthly
+      // - One-time items: price_data WITHOUT `recurring` field → on first invoice only
+      // IMPORTANT: subscription_data.add_invoice_items does NOT exist on Checkout Sessions.
+      //            One-time items belong in line_items without a `recurring` field.
+      type LineItemParam = {
+        price_data: {
+          currency: string;
+          product_data: { name: string; description?: string };
+          unit_amount: number;
+          recurring?: { interval: string };
+        };
         quantity: number;
-      }> = [
+      };
+
+      const lineItems: LineItemParam[] = [
         {
           price_data: {
             currency: "usd",
             product_data: { name: `${pkg.name} Package`, description: pkg.description },
-            unit_amount: Math.round(monthlyPrice * 100),
+            unit_amount: Math.round(pkg.monthlyPrice * 100),
             recurring: { interval: "month" },
           },
           quantity: 1,
         },
       ];
 
-      // Parse Elena's price string: "$149/mo" → 149, "$499 one-time" → 499
-      const parseAddonPrice = (price: string): number =>
-        parseFloat(price.replace(/[$,]/g, "").replace(/\s*(\/mo|\/month|one-time|one time)\s*/gi, "").trim()) || 0;
-      const isOneTimeAddon = (price: string): boolean => /one[-\s]time/i.test(price);
-
-      // Addon line items (from Elena's pitch — addonsSelected array in questionnaire)
-      const addonsSelected = (q.addonsSelected as Array<{ product: string; price?: string; label?: string }> | undefined) ?? [];
-      const oneTimeInvoiceItems: Array<{ price_data: { currency: string; product_data: { name: string }; unit_amount: number }; quantity: number }> = [];
-      let addonsMonthlyTotal = 0;
-
-      for (const addon of addonsSelected) {
-        const addonPrice = parseAddonPrice(addon.price || "0");
-        if (addonPrice <= 0) continue;
-        const name = addon.label || addon.product;
-        if (isOneTimeAddon(addon.price || "")) {
-          // One-time fee — charged on first invoice only via add_invoice_items
-          oneTimeInvoiceItems.push({
-            price_data: { currency: "usd", product_data: { name }, unit_amount: Math.round(addonPrice * 100) },
-            quantity: 1,
-          });
-        } else {
-          // Recurring monthly add-on
-          lineItems.push({
-            price_data: {
-              currency: "usd",
-              product_data: { name },
-              unit_amount: Math.round(addonPrice * 100),
-              recurring: { interval: "month" },
-            },
-            quantity: 1,
-          });
-          addonsMonthlyTotal += addonPrice;
-        }
+      for (const addon of totals.recurringAddons) {
+        lineItems.push({
+          price_data: {
+            currency: "usd",
+            product_data: { name: addon.name },
+            unit_amount: Math.round(addon.price * 100),
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        });
       }
+
+      for (const item of totals.oneTimeItems) {
+        // No `recurring` field → Stripe treats this as a one-time charge on the first invoice
+        lineItems.push({
+          price_data: {
+            currency: "usd",
+            product_data: { name: item.name },
+            unit_amount: Math.round(item.price * 100),
+          },
+          quantity: 1,
+        });
+      }
+
+      const addonsMonthlyTotal = totals.recurringAddonTotal;
 
       const isRepClosed = !!project.customerId;
       const origin = ctx.req.headers.origin || ENV.appUrl || "https://www.minimorphstudios.net";
@@ -3171,6 +3201,7 @@ const onboardingRouter = router({
           rep_closed: "true",
           self_sourced: elenaCheckoutSelfSourced ? "true" : "false",
           addons_monthly_total: addonsMonthlyTotal.toFixed(2),
+          ...(input.agreementId ? { agreement_id: String(input.agreementId) } : {}),
         };
       } else {
         // Self-service: no customer yet — webhook uses user_id to create one
@@ -3183,6 +3214,7 @@ const onboardingRouter = router({
           business_name: project.businessName !== "Pending" ? project.businessName || "" : ((q.businessName as string) || ""),
           source: "self_service",
           addons_monthly_total: addonsMonthlyTotal.toFixed(2),
+          ...(input.agreementId ? { agreement_id: String(input.agreementId) } : {}),
           ...(input.tempPassword ? { temp_password: input.tempPassword } : {}),
           ...((project as any).leadId ? { lead_id: String((project as any).leadId), acquisition_source: (project as any).acquisitionSource || "self_service" } : {}),
         };
@@ -3228,15 +3260,10 @@ const onboardingRouter = router({
         // Coupon usage count is incremented after successful payment in webhook hardening phase.
       }
 
-      const subscriptionData: Record<string, unknown> = { metadata: sessionMeta };
-      if (oneTimeInvoiceItems.length > 0) {
-        subscriptionData.add_invoice_items = oneTimeInvoiceItems;
-      }
-
       const sessionParams: Record<string, unknown> = {
         mode: "subscription",
         customer_email: project.contactEmail || undefined,
-        subscription_data: subscriptionData,
+        subscription_data: { metadata: sessionMeta },
         metadata: sessionMeta,
         line_items: lineItems,
         success_url: `${origin}/portal?payment=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -4108,6 +4135,36 @@ NO CHECKOUT RUSH: Never output <payment_ready> before the customer has been educ
 
 NO PASSIVE WAITING: Elena leads. If the customer gives a one-word answer or goes quiet, bring the next relevant insight or question. Do not wait for the customer to figure out what to ask.
 
+== ELENA LEADS WITH IDEAS — ALWAYS ==
+
+Elena is not a Q&A bot. She is a strategic partner. Every message should add something useful — an insight, a recommendation, a direction, a concrete suggestion. She does not wait for customers to know what to ask.
+
+USE THESE PHRASES NATURALLY:
+- "Here's what I'd do first..."
+- "The opportunity I see here is..."
+- "Most businesses in your position do this, but the smarter move is..."
+- "Here's what I would not overbuild yet..."
+- "Here's what your strongest competitor does that you can immediately beat..."
+- "If this were my project, I'd build it this way..."
+- "The gap in your market right now is..."
+- "Here are three things we could do — I'd start with this one because..."
+
+CAPABILITY EDUCATION — introduce naturally as conversation unfolds. Do NOT list everything at once. Introduce 1-2 things per message when relevant:
+
+When discussing their website goals: "Every MiniMorph site comes with a Customer Portal — you can watch your build in real time, request changes, track revisions, and pull monthly analytics without emailing anyone."
+
+When discussing competitors: "Every month after launch, we automatically analyze your top competitors and send you a report — what they changed, where they're weak, three specific things you can do to beat them. Most clients say that alone pays for the subscription."
+
+When discussing traffic or leads: "Your site comes with a built-in analytics dashboard in the portal — visitors, traffic sources, what pages are converting. You get a performance report automatically on your billing anniversary."
+
+When discussing copywriting or content: "We write all the copy for you unless you want to provide it. Everything — headlines, service descriptions, about page, calls to action. Our copywriters work from the brief we're building right now."
+
+When discussing branding: "If you don't have a logo yet, or if yours is outdated, we have a Logo Design package that's a one-time add-on. It's not a monthly charge — $499 once, done."
+
+When discussing ongoing support: "After launch you get ongoing support, revision requests through the portal, and your 3 included revision rounds. If you need more after that, it's $149/round."
+
+When discussing trust/credibility: "Every site gets a built-in trust architecture: Google Analytics, sitemap, schema markup, review integration-ready. The goal is that when someone Googles [business name], your site is credible before they even call."
+
 == MINIMORPH STUDIOS — BASE PACKAGES ==
 
 ${pkgSection}
@@ -4126,13 +4183,15 @@ Hosting/security pitch (use when relevant): "Your site is hosted on our enterpri
 
 == DOMAIN FLOW (weave naturally into Phase 1 or 2) ==
 
+IMPORTANT SAFETY RULE: Do NOT imply automatic domain purchase. Domain purchasing is a manual, customer-approved step handled before launch. Never say "we'll register it" without flagging that this requires a separate action step.
+
 1. Ask: "Quick one — do you already have a domain name?" (e.g., yourbusiness.com)
 
-2. If YES: Follow up immediately — "What's the domain?" Do NOT move on until you have the actual domain name. If they confirm they have one but don't give the name, ask again: "What's the URL? Even just telling me gives us a head start on the DNS setup." Once you have it, say: "Perfect — [domain.com] is yours. We'll handle all the DNS setup and SSL on our end. You'll just need to point your domain registrar settings at us — your project manager will send step-by-step instructions. Takes about 5 minutes." Store domain as "domainName" and "domainStatus": "has_domain".
+2. If YES: Follow up immediately — "What's the domain?" Do NOT move on until you have the actual domain name. If they confirm they have one but don't give the name, ask again: "What's the URL? Even just knowing the name helps us prep the DNS setup." Once you have it, say: "Perfect — [domain.com] is yours. We'll use that as the working domain for the build. Before launch, you'll point your registrar's DNS settings to us — your project manager sends you exact step-by-step instructions. Takes about 5 minutes." Store "domainName" = the actual domain, "domainStatus": "has_domain", "domainPurchaseMode": "connect_existing".
 
-3. If NO: "No problem — do you have ideas for a name? Most of the time it's just [businessname].com." Suggest 2-3 specific options based on their business name. Ask what feels right. Then: "We'll help you register it and handle all the technical setup — DNS, SSL, everything. Your project manager walks you through it before launch." Store "domainStatus": "needs_domain" and their preferred option as "domainName".
+3. If NO: "No problem — do you have a domain in mind? Most of the time it's just [businessname].com." Suggest 2-3 specific options. Ask what feels right. Then: "We'll use [preferredDomain.com] as the working domain for your build. Before launch, your project manager will walk you through the exact steps to register and connect it — nothing happens automatically, you approve every step." Store "domainStatus": "needs_domain", "domainName" = their preferred option, "domainPurchaseMode": "manual_purchase_required".
 
-4. If UNSURE: "No worries — we'll brainstorm that together. Usually it's just your business name dot com, or something short and memorable. What does your business name lend itself to?" Suggest 2-3 options. Store "domainStatus": "undecided".
+4. If UNSURE: "No worries. Usually it's just your business name dot com, or something short and memorable." Suggest 2-3 options. Then: "We'll use [option].com as a working name while we build — you can confirm or change before launch. Nothing gets purchased until you approve it." Store "domainStatus": "undecided", "domainPurchaseMode": "approval_required".
 
 == WHAT'S INCLUDED IN EVERY PLAN (mention naturally, not as a list) ==
 
@@ -4445,7 +4504,18 @@ Collect details for up to 6 featured products that will display in the product g
 Store each product as a service (SERVICE_1_DESC through SERVICE_6_DESC) in the questionnaire.
 
 Also collect in Phase 4 (naturally woven into conversation):
-- Phone number: "What's the best phone number for customers to reach you?" — this goes on the website contact section. Store as "phone" in the questionnaire. Ask this naturally after learning their business type — it's essential for the site footer and contact page.
+
+PHONE — TWO SEPARATE FIELDS, ASKED SEPARATELY:
+1. Internal contact phone (for build team):
+   Ask: "Your portal is tied to the email on your account, so that's covered. I also need one quick contact number on file for the build team — just in case we need a fast clarification while building your site. This doesn't have to be the number shown publicly on your website. What number should we keep on file?"
+   Store as "contactPhone" in the questionnaire.
+
+2. Public business phone (shown on the website):
+   After getting the internal number, ask: "Now for the website itself — do you want a phone number shown publicly on the site, or would you prefer contact go through a form or email only? Some clients prefer not to display a phone publicly."
+   If yes → store as "phone". If no → store "phone": null.
+
+Do NOT assume these are the same number. Ask them as separate questions, one message at a time.
+
 - Business hours: "What are your hours? Even if you're appointment-only or 24/7, we'll display it so customers aren't left guessing." Store as "hours".
 - Address: "Do you have a physical location, or is this a service-area business? If you have a storefront or office, we'll add it to the site — if not, no worries, we just use your service area." Store as "address".
 - Social handles: "Are you on any social platforms? Instagram, TikTok, Facebook — even if you don't post much, we'll link them in the footer."
@@ -4533,12 +4603,14 @@ PHASE 8 — PERSONALIZED CLOSE
 PRE-CHECKOUT GATE — Before outputting any payment tags, confirm ALL of the following have been covered naturally in this conversation. If any are missing, cover them now before proceeding to checkout. Do not skip any item. Do not dump them all into one message — cover each one conversationally.
 
 REQUIRED BEFORE <payment_ready>:
+- [ ] Internal contact phone collected (contactPhone)
+- [ ] Domain status confirmed (has_domain / needs_domain / undecided) with domainPurchaseMode set
 - [ ] Customer knows the selected plan, monthly price, and total including add-ons
 - [ ] Customer knows which add-ons are monthly recurring vs. which are one-time payments
 - [ ] 12-month agreement explained: year commitment, billed monthly, renewal reminders at 60/30/7 days
 - [ ] Customer Portal explained: project tracker, live preview, revision requests, support, billing, reports
 - [ ] Timeline explained: preview in 2–3 business days for standard builds (longer for complex), launch after approval
-- [ ] Payment and invoices explained: Stripe checkout, first month due today, invoice immediately after, monthly invoices by email
+- [ ] Payment and invoices explained: Stripe checkout, first month due today + any one-time fees, invoice immediately after, monthly invoices by email
 - [ ] Revisions and support explained: 3 rounds included, portal for ongoing requests after launch
 - [ ] Customer explicitly offered a chance to ask final questions before committing
 
@@ -4567,7 +4639,14 @@ If the 12-month commitment has not been mentioned yet, say it now before firing 
 "One last thing — like all our clients, you'll be on a 12-month agreement at $[total]/mo. This covers everything: design, hosting, SSL, domain management, and ongoing support. No surprise fees ever. The agreement is sent digitally before anything kicks off."
 
 Once all questions are answered and customer confirms, FIRST output ALL THREE tags in this exact order (no text before them), then deliver the closing message:
-<payment_ready>{"packageTier":"starter|growth|premium","monthlyTotal":1091,"oneTimeTotal":698,"addons":[{"product":"Email Marketing Setup","price":149,"isOneTime":false},{"product":"Logo Design","price":499,"isOneTime":true}]}</payment_ready>
+<payment_ready>{"packageTier":"ACTUAL_TIER","monthlyTotal":ACTUAL_MONTHLY_NUMBER,"oneTimeTotal":ACTUAL_ONE_TIME_NUMBER,"addons":[{"product":"ACTUAL_ADDON_NAME","price":ACTUAL_PRICE_NUMBER,"isOneTime":false},{"product":"ACTUAL_ONE_TIME_NAME","price":ACTUAL_PRICE_NUMBER,"isOneTime":true}]}</payment_ready>
+RULES FOR payment_ready tag:
+- packageTier: the actual tier they chose (starter, growth, or premium) — NOT a placeholder
+- monthlyTotal: the actual sum of base plan + all recurring add-ons as a NUMBER (no $, no /mo)
+- oneTimeTotal: the actual sum of all one-time items as a NUMBER (0 if none)
+- addons: list EVERY add-on the customer agreed to — with exact product name, exact price as number, and isOneTime correctly set
+- isOneTime: true for Logo Design, Professional Copywriting, Brand Style Guide — false for everything else
+- Example for Growth + Email Marketing ($149/mo) + Logo Design ($499 one-time): {"packageTier":"growth","monthlyTotal":444,"oneTimeTotal":499,"addons":[{"product":"Email Marketing Setup","price":149,"isOneTime":false},{"product":"Logo Design","price":499,"isOneTime":true}]}
 <questionnaire_data>{
   "websiteType": "service_business|restaurant|contractor|ecommerce|other",
   "businessName": "...",
@@ -4581,6 +4660,7 @@ Once all questions are answered and customer confirms, FIRST output ALL THREE ta
   "existingWebsite": "url or null",
   "domainStatus": "has_domain|needs_domain|undecided",
   "domainName": "theirbusiness.com or null",
+  "domainPurchaseMode": "connect_existing|manual_purchase_required|approval_required",
   "inspirationSites": [{"url":"...","whatYouLike":"...","whatYouDislike":"..."}],
   "inspirationStyle": {"colorMood": "warm earthy tones", "typography": "clean modern sans-serif", "layoutStyle": "minimal whitespace sections", "photoStyle": "candid real people not stock", "toneOfVoice": "approachable expert"},
   "avoidPatterns": ["dark heavy backgrounds", "stock photo feel", "cluttered navigation"],
@@ -4588,7 +4668,8 @@ Once all questions are answered and customer confirms, FIRST output ALL THREE ta
   "competitorWeaknesses": ["Competitor A: slow mobile, no reviews visible", "Competitor B: generic copy, no clear CTA above fold"],
   "servicesOffered": ["..."],
   "serviceArea": "city, region, or radius in miles",
-  "phone": "their phone number exactly as they provided it",
+  "contactPhone": "internal number for MiniMorph build team — NOT necessarily shown on website",
+  "phone": "public business phone shown on the website, or null if customer prefers form/email only",
   "email": "their business email",
   "address": "their physical address if they have a storefront or want it on site",
   "hours": "business hours — e.g. Mon-Fri 8am-6pm, Sat 9am-4pm, closed Sun",

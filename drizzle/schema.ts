@@ -1985,3 +1985,25 @@ export const repPaperworkSubmissions = mysqlTable("rep_paperwork_submissions", {
 }));
 export type RepPaperworkSubmission = typeof repPaperworkSubmissions.$inferSelect;
 export type InsertRepPaperworkSubmission = typeof repPaperworkSubmissions.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER_AGREEMENTS — Pre-checkout legal acceptance
+   Stored before Stripe session creation. Linked to contract after webhook.
+   ═══════════════════════════════════════════════════════ */
+export const customerAgreements = mysqlTable("customer_agreements", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  projectId: int("projectId").notNull(),
+  signerName: varchar("signerName", { length: 255 }).notNull(),
+  termsVersion: varchar("termsVersion", { length: 16 }).notNull().default("1.0"),
+  packageSnapshot: json("packageSnapshot").notNull(),
+  acceptedAt: timestamp("acceptedAt").defaultNow().notNull(),
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  userAgent: varchar("userAgent", { length: 500 }),
+  checkoutSessionId: varchar("checkoutSessionId", { length: 255 }),
+  contractId: int("contractId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CustomerAgreement = typeof customerAgreements.$inferSelect;
+export type InsertCustomerAgreement = typeof customerAgreements.$inferInsert;
