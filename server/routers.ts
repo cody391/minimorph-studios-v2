@@ -7099,6 +7099,50 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
       });
       return { success: true };
     }),
+
+  // Admin: respond to a customer's revision request by creating a new blueprint version
+  // - marks the current revision_requested blueprint as stale
+  // - creates a new version with status=customer_review so the customer can re-approve
+  updateBlueprintForReview: adminProcedure
+    .input(z.object({
+      projectId: z.number(),
+      blueprintId: z.number(),
+      updatedBlueprintJson: z.record(z.string(), z.unknown()),
+      adminNotes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      if (!blueprint) throw new TRPCError({ code: "NOT_FOUND", message: "No blueprint found for this project" });
+      if (blueprint.id !== input.blueprintId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Blueprint ID mismatch — reload the page and try again" });
+      }
+      // Mark the revision_requested blueprint as stale
+      await db.updateBlueprint(blueprint.id, { status: "stale" });
+      // Create a new version for customer re-approval
+      const newVersion = (blueprint.versionNumber ?? 1) + 1;
+      await db.createBlueprint({
+        projectId: input.projectId,
+        userId: blueprint.userId ?? undefined,
+        blueprintJson: input.updatedBlueprintJson,
+        status: "customer_review",
+        versionNumber: newVersion,
+        createdBy: "admin",
+        presentedAt: new Date(),
+      });
+      // Reset project to blueprint_review with generation idle
+      await db.updateOnboardingProject(input.projectId, {
+        stage: "blueprint_review",
+        generationStatus: "idle",
+        generationLog: "Updated Website Blueprint sent for customer review.",
+      });
+      try {
+        await notifyOwner({
+          title: `Blueprint Updated: ${(input.updatedBlueprintJson as any)?.businessName ?? `Project #${input.projectId}`}`,
+          content: `Admin sent updated Website Blueprint (v${newVersion}) for project #${input.projectId}. Customer must re-approve before generation.`,
+        });
+      } catch {}
+      return { success: true, newVersion };
+    }),
 });
 
 /* ═══════════════════════════════════════════════════════

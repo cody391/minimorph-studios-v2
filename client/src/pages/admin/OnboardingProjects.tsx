@@ -78,6 +78,124 @@ const EMPTY_FORM = {
   mustHaveFeatures: [] as string[],
 };
 
+function BlueprintRevisionPanel({
+  projectId,
+  enabled,
+  isPending,
+  onSendUpdate,
+}: {
+  projectId: number;
+  enabled: boolean;
+  isPending: boolean;
+  onSendUpdate: (blueprintId: number, updatedJson: Record<string, unknown>) => void;
+}) {
+  const bpQuery = trpc.compliance.adminListBlueprints.useQuery(
+    { projectId },
+    { enabled }
+  );
+
+  const bp = bpQuery.data?.[0] as any;
+  const bpJson = bp?.blueprintJson as Record<string, any> | null;
+
+  const [fields, setFields] = useState({
+    businessName: "",
+    brandTone: "",
+    brandColors: "",
+    servicesOffered: "",
+    specialRequests: "",
+    domainName: "",
+  });
+
+  useEffect(() => {
+    if (!bpJson) return;
+    setFields({
+      businessName: String(bpJson.businessName ?? ""),
+      brandTone: String(bpJson.designDirection?.brandTone ?? ""),
+      brandColors: String(bpJson.designDirection?.brandColors ?? ""),
+      servicesOffered: Array.isArray(bpJson.contentPlan?.servicesOffered)
+        ? (bpJson.contentPlan.servicesOffered as string[]).join(", ")
+        : "",
+      specialRequests: String(bpJson.contentPlan?.specialRequests ?? ""),
+      domainName: String(bpJson.businessDetails?.domainName ?? ""),
+    });
+  }, [bp?.id]);
+
+  if (!enabled) return null;
+  if (bpQuery.isLoading) return (
+    <div className="py-3 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto text-gray-400" /></div>
+  );
+  if (!bp) return (
+    <p className="py-3 text-xs text-amber-600 text-center">No blueprint found for this project.</p>
+  );
+
+  const handleSend = () => {
+    const servicesArray = fields.servicesOffered
+      ? fields.servicesOffered.split(",").map((s: string) => s.trim()).filter(Boolean)
+      : [];
+    const updatedJson: Record<string, unknown> = {
+      ...bpJson,
+      businessName: fields.businessName,
+      designDirection: { ...(bpJson?.designDirection ?? {}), brandTone: fields.brandTone, brandColors: fields.brandColors },
+      contentPlan: { ...(bpJson?.contentPlan ?? {}), servicesOffered: servicesArray, specialRequests: fields.specialRequests },
+      businessDetails: { ...(bpJson?.businessDetails ?? {}), domainName: fields.domainName },
+    };
+    onSendUpdate(bp.id, updatedJson);
+  };
+
+  return (
+    <div className="space-y-4">
+      {bp.revisionNotes && (
+        <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+          <p className="text-xs font-semibold text-amber-700 mb-1 flex items-center gap-1">
+            <MessageSquare className="w-3 h-3" />
+            Customer Revision Request
+          </p>
+          <p className="text-sm text-amber-900 whitespace-pre-wrap">{bp.revisionNotes}</p>
+          {bp.revisionRequestedAt && (
+            <p className="text-xs text-amber-600 mt-1">
+              Requested {new Date(bp.revisionRequestedAt).toLocaleString()}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <label className="text-xs font-medium text-gray-600 block mb-1">Business Name</label>
+          <Input value={fields.businessName} onChange={e => setFields(p => ({ ...p, businessName: e.target.value }))} className="h-8 text-sm" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-gray-600 block mb-1">Brand Tone</label>
+          <Input value={fields.brandTone} onChange={e => setFields(p => ({ ...p, brandTone: e.target.value }))} className="h-8 text-sm" placeholder="professional, bold, friendly…" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-gray-600 block mb-1">Brand Colors</label>
+          <Input value={fields.brandColors} onChange={e => setFields(p => ({ ...p, brandColors: e.target.value }))} className="h-8 text-sm" placeholder="#1a1a1a charcoal, #e07b39 orange" />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs font-medium text-gray-600 block mb-1">Services Offered (comma-separated)</label>
+          <Input value={fields.servicesOffered} onChange={e => setFields(p => ({ ...p, servicesOffered: e.target.value }))} className="h-8 text-sm" placeholder="Web Design, SEO, Social Media…" />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs font-medium text-gray-600 block mb-1">Special Requests</label>
+          <Textarea value={fields.specialRequests} onChange={e => setFields(p => ({ ...p, specialRequests: e.target.value }))} rows={3} className="text-sm" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-gray-600 block mb-1">Domain Name</label>
+          <Input value={fields.domainName} onChange={e => setFields(p => ({ ...p, domainName: e.target.value }))} className="h-8 text-sm" placeholder="example.com" />
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-gray-100">
+        <Button size="sm" onClick={handleSend} disabled={isPending} className="bg-sky-600 hover:bg-sky-700 text-white">
+          {isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <FileText className="w-3 h-3 mr-1" />}
+          Send Updated Blueprint
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function VersionHistoryPanel({
   projectId,
   enabled,
@@ -142,6 +260,7 @@ export default function OnboardingProjects() {
   const [markLiveForms, setMarkLiveForms] = useState<Record<number, { open: boolean; liveUrl: string; domainName: string }>>({});
   const [expandedLogs, setExpandedLogs] = useState<Record<number, boolean>>({});
   const [expandedVersions, setExpandedVersions] = useState<Record<number, boolean>>({});
+  const [expandedBlueprintRevisions, setExpandedBlueprintRevisions] = useState<Record<number, boolean>>({});
   const [newBuildOpen, setNewBuildOpen] = useState(false);
   const [buildForm, setBuildForm] = useState(EMPTY_FORM);
   const [buildStep, setBuildStep] = useState<"idle" | "creating" | "queuing" | "done">("idle");
@@ -157,6 +276,7 @@ export default function OnboardingProjects() {
   const adminApprovePreviewMutation = trpc.onboarding.adminApprovePreview.useMutation();
   const adminReleaseLaunchMutation = trpc.onboarding.adminReleaseLaunch.useMutation();
   const rollbackMutation = trpc.onboarding.rollbackToVersion.useMutation();
+  const updateBlueprintForReviewMutation = trpc.compliance.updateBlueprintForReview.useMutation();
 
   const projects = projectsQuery.data || [];
 
@@ -680,6 +800,44 @@ export default function OnboardingProjects() {
                           Cancel
                         </Button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Blueprint revision panel — shown when customer requested changes */}
+                  {(project as any).blueprintStatus === "revision_requested" && (
+                    <div className="mt-3 border-t border-amber-200 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedBlueprintRevisions(prev => ({ ...prev, [project.id]: !prev[project.id] }))}
+                        className="flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-800 transition-colors"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                        Blueprint Revision Requested
+                        {expandedBlueprintRevisions[project.id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                      {expandedBlueprintRevisions[project.id] && (
+                        <div className="mt-2 p-3 rounded-lg border border-amber-200 bg-amber-50/30">
+                          <BlueprintRevisionPanel
+                            projectId={project.id}
+                            enabled={!!expandedBlueprintRevisions[project.id]}
+                            isPending={updateBlueprintForReviewMutation.isPending}
+                            onSendUpdate={async (blueprintId, updatedJson) => {
+                              try {
+                                const result = await updateBlueprintForReviewMutation.mutateAsync({
+                                  projectId: project.id,
+                                  blueprintId,
+                                  updatedBlueprintJson: updatedJson,
+                                });
+                                toast.success(`Updated blueprint v${result.newVersion} sent — customer can now re-approve`);
+                                setExpandedBlueprintRevisions(prev => ({ ...prev, [project.id]: false }));
+                                projectsQuery.refetch();
+                              } catch (e: any) {
+                                toast.error(e?.message || "Failed to send updated blueprint");
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 
