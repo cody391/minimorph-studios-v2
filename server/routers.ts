@@ -814,6 +814,19 @@ const leadsRouter = router({
       if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
       const annualValue = discountedPrice * 12;
       const commissionAmount = (annualValue * rate).toFixed(2);
+
+      // Dedup guard: skip creating commission if one already exists for this contract + type
+      const { commissions: commissionsTable } = await import("../drizzle/schema");
+      const existingInitial = database
+        ? await database.select({ id: commissionsTable.id })
+            .from(commissionsTable)
+            .where(and(eq(commissionsTable.contractId, contract.id), eq(commissionsTable.type as any, "initial_sale")))
+            .limit(1)
+        : [];
+      if (existingInitial.length > 0) {
+        throw new TRPCError({ code: "CONFLICT", message: "Commission already recorded for this contract." });
+      }
+
       // Commission auto-approved (instant payout model)
       const commission = await db.createCommission({
         repId: rep.id,

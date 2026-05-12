@@ -33,7 +33,6 @@ const footerLinks = [
       { label: "Client Portal", href: "/portal", isRoute: true },
       { label: "Become a Rep", href: "/become-rep", isRoute: true },
       { label: "Rep Login", href: "/login?next=/rep", isRoute: true },
-      { label: "Admin Login", href: "/login?next=/admin", isRoute: true },
     ],
   },
 ];
@@ -110,13 +109,6 @@ export default function Footer() {
               className="text-xs font-sans text-off-white/20 hover:text-off-white/50 transition-colors"
             >
               Rep Login
-            </a>
-            <span className="text-xs text-off-white/15">·</span>
-            <a
-              href="/login?next=/admin"
-              className="text-xs font-sans text-off-white/20 hover:text-off-white/50 transition-colors"
-            >
-              Admin Login
             </a>
           </div>
         </div>
