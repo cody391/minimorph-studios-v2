@@ -339,7 +339,7 @@ export default function Leads() {
                         <td className="py-3 px-2">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-off-white">{lead.businessName}</span>
-                            {lead.needsHumanCloser && <span title="Human review required"><AlertTriangle className="h-3.5 w-3.5 text-amber-400" /></span>}
+                            {lead.needsHumanCloser && <AlertTriangle className="h-3.5 w-3.5 text-amber-400" title="Human review required" />}
                             {hasEnrichment && <span title="AI Enriched"><Sparkles className="h-3.5 w-3.5 text-electric/60" /></span>}
                           </div>
                         </td>

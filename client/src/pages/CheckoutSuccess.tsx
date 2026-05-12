@@ -30,7 +30,7 @@ export default function CheckoutSuccess() {
             </li>
             <li className="flex gap-2">
               <span className="font-medium text-off-white">2.</span>
-              Our team begins reviewing your business and industry
+              Our AI system begins analyzing your business and industry
             </li>
             <li className="flex gap-2">
               <span className="font-medium text-off-white">3.</span>
@@ -38,7 +38,7 @@ export default function CheckoutSuccess() {
             </li>
             <li className="flex gap-2">
               <span className="font-medium text-off-white">4.</span>
-              Our build team reviews your answers and prepares your custom website
+              Our AI build system reviews your answers and prepares your custom website
             </li>
           </ol>
         </div>

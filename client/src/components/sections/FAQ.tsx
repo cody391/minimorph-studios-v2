@@ -11,8 +11,8 @@ const faqs = [
     a: "You own your content, branding, and domain — always. The site itself is built and hosted as part of your MiniMorph Studios subscription. If you ever cancel, we'll work with you on transferring your files. No hostage situations.",
   },
   {
-    q: "How do you keep the site fresh after launch?",
-    a: "Our team monitors your site performance, spots broken links, flags slow pages, and proactively suggests improvements every month — you don't have to ask. That's what monthly maintenance actually means.",
+    q: "What does \"AI-assisted\" actually mean?",
+    a: "It means our AI tools analyze your site performance, spot broken links, flag slow pages, and suggest improvements — and flag anything that needs a closer look before it touches your site.",
   },
   {
     q: "How long until I see my first draft?",
@@ -28,7 +28,7 @@ const faqs = [
   },
   {
     q: "What's the customer portal?",
-    a: "It's your home base — project status, support tickets, monthly reports, file uploads, growth recommendations, and direct communication with our team. Every plan includes it. You'll use it more than you think.",
+    a: "It's your home base — project status, support tickets, monthly reports, file uploads, AI recommendations, and direct communication with our team. Every plan includes it. You'll use it more than you think.",
   },
   {
     q: "Do you work with businesses outside the US?",
@@ -36,7 +36,7 @@ const faqs = [
   },
   {
     q: "Do you guarantee results?",
-    a: "We don't promise specific traffic numbers or revenue targets — anyone who does is lying. What we do guarantee: a professionally built site, monthly maintenance, real reports, and expert recommendations tailored to your business.",
+    a: "We don't promise specific traffic numbers or revenue targets — anyone who does is lying. What we do guarantee: a professionally built site, monthly maintenance, real reports, and AI-powered recommendations that get smarter over time.",
   },
   {
     q: "Is there a setup fee?",
@@ -44,7 +44,7 @@ const faqs = [
   },
   {
     q: "How is this different from Wix or Squarespace?",
-    a: "Wix and Squarespace give you a tool and leave you to figure it out. We handle it for you. We build the site, maintain it every month, provide real analytics, expert recommendations, and responsive support. You never touch a template — we handle everything.",
+    a: "Wix and Squarespace give you a tool and leave you to figure it out. We handle it for you. We build the site, maintain it every month, provide real analytics, AI recommendations, and responsive support. You never touch a template — we handle everything.",
   },
   {
     q: "What happens when my 12-month agreement ends?",

@@ -640,7 +640,7 @@ export const onboardingDataRouter = router({
         formType: z.enum(["w9_tax", "hr_employment", "payroll_setup", "rep_agreement"]),
         formTitle: z.string().min(1).max(255),
         formVersion: z.string().max(16).default("1.0"),
-        formDataJson: z.record(z.string(), z.unknown()),
+        formDataJson: z.record(z.unknown()),
         signatureType: z.enum(["drawn", "typed"]),
         signatureData: z.string().min(1).max(500000),
         signerName: z.string().min(1).max(255),
