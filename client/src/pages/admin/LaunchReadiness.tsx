@@ -514,9 +514,18 @@ export default function LaunchReadiness() {
                           Blueprint: {((p as any).blueprintStatus as string).replace(/_/g, " ").toUpperCase()}
                         </span>
                       )}
-                      {p.approvedAt && (
-                        <span>Customer approved: {new Date(p.approvedAt).toLocaleString()}{!live && !hasCloudflare ? " — manual deploy needed" : ""}</span>
-                      )}
+                      <span className={`flex items-center gap-1 ${(p as any).paymentConfirmedAt ? "text-green-400" : "text-muted-foreground"}`}>
+                        {(p as any).paymentConfirmedAt
+                          ? <CheckCircle2 size={11} className="shrink-0" />
+                          : <XCircle size={11} className="shrink-0" />}
+                        Payment: {(p as any).paymentConfirmedAt ? "CONFIRMED" : "PENDING"}
+                      </span>
+                      <span className={`flex items-center gap-1 ${p.approvedAt ? "text-green-400" : "text-muted-foreground"}`}>
+                        {p.approvedAt
+                          ? <CheckCircle2 size={11} className="shrink-0" />
+                          : <XCircle size={11} className="shrink-0" />}
+                        Final site approval: {p.approvedAt ? `APPROVED ${new Date(p.approvedAt).toLocaleString()}${!live && !hasCloudflare ? " — manual deploy needed" : ""}` : "PENDING"}
+                      </span>
                     </div>
                     {(p.domainName || p.existingDomain) && !live && (
                       <div className="flex items-start gap-1.5 text-xs text-yellow-500/80">

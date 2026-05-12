@@ -485,7 +485,10 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   lastCompetitiveReportDate: timestamp("lastCompetitiveReportDate"),
 
   previewReadyAt: timestamp("previewReadyAt"),
+  // Final customer approval of the completed website preview — required before adminReleaseLaunch
   approvedAt: timestamp("approvedAt"),
+  // Payment confirmed via Stripe checkout or bypass — separate from final site approval
+  paymentConfirmedAt: timestamp("paymentConfirmedAt"),
   adminPreviewApprovedAt: timestamp("adminPreviewApprovedAt"),
   adminLaunchApprovedAt: timestamp("adminLaunchApprovedAt"),
   revisionsRemaining: int("revisionsRemaining").default(3),

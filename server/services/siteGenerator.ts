@@ -624,13 +624,27 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     return;
   }
 
-  // Blueprint gate: generation is blocked until the customer approves their Website Blueprint
+  // Gate 1 — Blueprint must be approved before any generation begins
   const blueprint = await db.getBlueprintByProjectId(projectId);
   if (!blueprint || blueprint.status !== "approved") {
-    console.warn(`[SiteGenerator] Project ${projectId}: generation blocked — blueprint not approved (status: ${blueprint?.status ?? "none"})`);
+    console.warn(`[SiteGenerator] Project ${projectId}: blocked — blueprint not approved (status: ${blueprint?.status ?? "none"})`);
     await db.updateOnboardingProject(projectId, {
       generationStatus: "idle",
-      generationLog: "Waiting for customer blueprint approval before generation can begin.",
+      generationLog: "Waiting for customer blueprint approval.",
+      stage: "blueprint_review",
+    });
+    return;
+  }
+
+  // Gate 2 — For self-service projects, payment must be confirmed before generation begins
+  // approvedAt is NEVER checked here — it means final customer site approval, not payment
+  const p = project as any;
+  const paymentRequired = p.source === "self_service";
+  if (paymentRequired && !p.paymentConfirmedAt) {
+    console.warn(`[SiteGenerator] Project ${projectId}: blocked — payment not confirmed for self-service project`);
+    await db.updateOnboardingProject(projectId, {
+      generationStatus: "idle",
+      generationLog: "Waiting for payment confirmation.",
       stage: "blueprint_review",
     });
     return;
@@ -639,7 +653,7 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
   await db.updateOnboardingProject(projectId, {
     generationStatus: "generating",
     stage: "design",
-    generationLog: "Starting AI site generation...",
+    generationLog: "Blueprint approved and payment confirmed — building your website.",
   });
 
   // Notify customer build has started (email + SMS)

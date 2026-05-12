@@ -570,11 +570,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         const project = await db.getOnboardingProjectById(projectId);
         const q = project?.questionnaire as Record<string, unknown> | null;
         if (project && q && q.businessName && project.generationStatus !== "generating" && project.generationStatus !== "complete") {
-          // Mark payment confirmed on project so blueprint approval can trigger generation later
-          await db.updateOnboardingProject(projectId, { approvedAt: new Date() });
-
-          // Blueprint gate is enforced inside generateSiteForProject — it will park at blueprint_review if not approved
+          // Record payment confirmation — this is NOT final site approval (approvedAt)
+          // approvedAt is reserved exclusively for customer approval of completed website preview
           await db.updateOnboardingProject(projectId, {
+            paymentConfirmedAt: new Date(),
             generationStatus: "generating",
             generationLog: "Payment confirmed — checking blueprint approval...",
           });
@@ -696,9 +695,10 @@ export async function simulateCheckoutCompleted({
 
   // Trigger site generation if Elena has filled in the data
   // Blueprint gate is enforced inside generateSiteForProject — will park at blueprint_review if not approved
+  // approvedAt is NOT set here — it is reserved for customer final site approval only
   if (q.businessName && project.generationStatus !== "generating" && project.generationStatus !== "complete") {
     await db.updateOnboardingProject(projectId, {
-      approvedAt: new Date(),
+      paymentConfirmedAt: new Date(),
       generationStatus: "generating",
       generationLog: "Bypass payment confirmed — checking blueprint approval...",
     });

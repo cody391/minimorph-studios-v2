@@ -504,6 +504,17 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `adminPreviewApprovedAt` TIMESTAMP NULL DEFAULT NULL");
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `adminLaunchApprovedAt` TIMESTAMP NULL DEFAULT NULL");
 
+    // ── 0056: paymentConfirmedAt — separate payment tracking from final site approval ──
+    // approvedAt = customer approved completed website preview (required for launch)
+    // paymentConfirmedAt = Stripe checkout completed (required for generation in self-service flow)
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `paymentConfirmedAt` TIMESTAMP NULL DEFAULT NULL");
+
+    // ── 0056b: one-time data fix — project #21 had approvedAt written by the old webhook
+    // (handleCheckoutCompleted set approvedAt instead of paymentConfirmedAt). Transfer
+    // the timestamp to paymentConfirmedAt and clear approvedAt. Idempotent: after first
+    // run paymentConfirmedAt IS NOT NULL so WHERE clause never matches again.
+    await safe("UPDATE `onboarding_projects` SET `paymentConfirmedAt` = `approvedAt`, `approvedAt` = NULL WHERE `id` = 21 AND `approvedAt` IS NOT NULL AND `paymentConfirmedAt` IS NULL");
+
     // ── Table from 0053 (webhook idempotency guard) ───────────────────────
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`processed_checkout_sessions\` (
       \`id\` int NOT NULL AUTO_INCREMENT,

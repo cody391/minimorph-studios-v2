@@ -3232,33 +3232,39 @@ const onboardingRouter = router({
         lockedForGeneration: true,
       });
 
-      // Check if payment was already received (project has a contract) — if so, trigger generation now
+      // Check if payment was already received — use paymentConfirmedAt, NOT approvedAt
+      // approvedAt is reserved exclusively for customer final site approval (approveLaunch)
       const project = await db.getOnboardingProjectById(input.projectId);
-      const shouldGenerate = project && (project.source !== "self_service" || project.approvedAt);
+      const paymentRequired = (project as any)?.source === "self_service";
+      const paymentConfirmed = !!(project as any)?.paymentConfirmedAt;
+      const shouldGenerate = !!project && (!paymentRequired || paymentConfirmed);
+
       if (shouldGenerate) {
         await db.updateOnboardingProject(input.projectId, {
           stage: "assets_upload",
           generationStatus: "generating",
-          generationLog: "Blueprint approved — queued for AI generation...",
+          generationLog: "Blueprint approved and payment confirmed — building your website.",
         });
         generateSiteForProject(input.projectId).catch(err =>
           console.error("[onboarding.approveBlueprint] Generation error:", err)
         );
       } else {
-        // Self-service without payment — move to assets_upload stage but don't generate yet
+        // Self-service without payment confirmed yet — park; generation fires when payment arrives
         await db.updateOnboardingProject(input.projectId, {
           stage: "assets_upload",
+          generationStatus: "idle",
+          generationLog: "Blueprint approved — waiting for payment confirmation before building.",
         });
       }
 
       try {
         await notifyOwner({
           title: `Blueprint Approved: ${project?.businessName ?? input.projectId}`,
-          content: `Customer approved their Website Blueprint for project #${input.projectId}. ${shouldGenerate ? "Generation started automatically." : "Awaiting payment before generation."}`,
+          content: `Customer approved their Website Blueprint for project #${input.projectId}. ${shouldGenerate ? "Generation started automatically." : "Awaiting payment confirmation before generation."}`,
         });
       } catch {}
 
-      return { success: true, generationStarted: !!shouldGenerate };
+      return { success: true, generationStarted: !!shouldGenerate, awaitingPayment: paymentRequired && !paymentConfirmed };
     }),
 
   // Protected: customer requests blueprint changes
@@ -6884,7 +6890,10 @@ const complianceRouter = router({
         hostingSetup: onboardingProjects.hostingSetup,
         sslSetup: onboardingProjects.sslSetup,
         liveUrl: onboardingProjects.liveUrl,
+        // approvedAt = customer final site approval only (NOT payment)
         approvedAt: onboardingProjects.approvedAt,
+        // paymentConfirmedAt = Stripe checkout completed (separate from site approval)
+        paymentConfirmedAt: (onboardingProjects as any).paymentConfirmedAt,
         previewReadyAt: onboardingProjects.previewReadyAt,
         adminPreviewApprovedAt: onboardingProjects.adminPreviewApprovedAt,
         adminLaunchApprovedAt: onboardingProjects.adminLaunchApprovedAt,
@@ -7032,7 +7041,13 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
     }),
 
   adminSeedTestProject: adminProcedure
-    .input(z.object({ projectId: z.number(), setApprovedAt: z.boolean().optional() }))
+    .input(z.object({
+      projectId: z.number(),
+      // setFinalSiteApprovedAt: true simulates customer final website preview approval
+      // This sets onboarding_projects.approvedAt — the only correct way to set it in tests
+      // Do NOT use this to mean "payment" — use paymentConfirmedAt for that
+      setFinalSiteApprovedAt: z.boolean().optional(),
+    }))
     .mutation(async ({ input }) => {
       const project = await db.getOnboardingProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -7047,7 +7062,8 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
         generatedSiteHtml: testHtml,
         generationStatus: "complete",
       };
-      if (input.setApprovedAt) {
+      if (input.setFinalSiteApprovedAt) {
+        // Simulates customer approving the completed website preview — the ONLY meaning of approvedAt
         updateData.approvedAt = new Date();
         updateData.adminPreviewApprovedAt = new Date();
       }
@@ -7055,7 +7071,7 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
       // Create initial version snapshot for rollback testing
       const vn = await db.getNextSiteVersionNumber(input.projectId);
       await db.createSiteVersion({ projectId: input.projectId, versionNumber: vn, htmlSnapshot: testHtml, changeRequest: "Admin seed: initial test snapshot for E2E testing", createdBy: "admin_seed" });
-      return { success: true, message: `Test project seeded. generatedSiteHtml set, version #${vn} created.${input.setApprovedAt ? " approvedAt + adminPreviewApprovedAt set." : ""}` };
+      return { success: true, message: `Test project seeded. generatedSiteHtml set, version #${vn} created.${input.setFinalSiteApprovedAt ? " approvedAt (final site approval) + adminPreviewApprovedAt set." : ""}` };
     }),
 
   adminListBlueprints: adminProcedure
@@ -7069,6 +7085,8 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
     }),
 
   // Admin: approve blueprint on behalf of a customer (for testing / manual override)
+  // NOTE: this sets website_blueprints.approvedAt — NOT onboarding_projects.approvedAt
+  // onboarding_projects.approvedAt is ONLY set by approveLaunch (final site approval)
   adminApproveBlueprint: adminProcedure
     .input(z.object({ projectId: z.number() }))
     .mutation(async ({ input }) => {
@@ -7077,7 +7095,6 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
       await db.updateBlueprint(blueprint.id, {
         status: "approved",
         approvedAt: new Date(),
-        createdBy: "admin",
         lockedForGeneration: true,
       });
       return { success: true };
