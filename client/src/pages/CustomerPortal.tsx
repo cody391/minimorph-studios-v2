@@ -138,8 +138,23 @@ export default function CustomerPortal() {
   }
 
   if (!isAuthenticated) {
-    setLocation("/login?next=/portal");
-    return null;
+    return (
+      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
+        <Card className="max-w-md w-full border-border/50">
+          <CardContent className="p-8 text-center">
+            <Shield className="h-12 w-12 text-soft-gray/40 mx-auto mb-4" />
+            <h2 className="text-xl font-serif text-off-white mb-2">Customer Portal</h2>
+            <p className="text-sm text-soft-gray font-sans mb-6">Sign in to view your website contract, performance reports, and manage your account.</p>
+            <Button
+              onClick={() => { setLocation("/login?next=/portal"); }}
+              className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8"
+            >
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (custLoading) {
