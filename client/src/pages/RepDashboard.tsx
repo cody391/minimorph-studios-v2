@@ -72,7 +72,7 @@ export default function RepDashboard() {
   // Smart onboarding routing — check which step the rep should be on
   const { data: onboardingStatus, isLoading: onboardingLoading } = trpc.repOnboarding.getOnboardingStatus.useQuery(
     undefined,
-    { enabled: isAuthenticated && !!repProfile && repProfile.status === "training" }
+    { enabled: isAuthenticated && !!repProfile && ["applied", "onboarding", "training"].includes(repProfile.status) }
   );
 
   const activeLeads = useMemo(() => (myLeads ?? []).filter((l: any) => !["closed_won", "closed_lost"].includes(l.stage)), [myLeads]);
@@ -162,8 +162,8 @@ export default function RepDashboard() {
   );
 
   // ── Smart onboarding routing ──
-  // If the rep is in training and hasn't completed all onboarding steps, redirect them
-  if (repProfile.status === "training" && onboardingStatus && !onboardingStatus.isFullyOnboarded) {
+  // applied/onboarding/training reps who have not finished all steps get routed back immediately
+  if (["applied", "onboarding", "training"].includes(repProfile.status) && onboardingStatus && !onboardingStatus.isFullyOnboarded) {
     // Only redirect if they're not already on the payout step (which is skippable)
     if (onboardingStatus.currentStep < 7) {
       return (
@@ -192,6 +192,40 @@ export default function RepDashboard() {
         </div>
       );
     }
+  }
+
+  // ── Suspended / inactive / rejected lockout ──
+  if (["suspended", "inactive", "rejected"].includes(repProfile.status)) {
+    const isRejected = repProfile.status === "rejected";
+    return (
+      <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <div className="mb-6 text-center">
+            <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-soft-gray hover:text-electric text-sm font-sans transition-colors">
+              <ArrowLeft size={16} /> Back to MiniMorph Studios
+            </button>
+          </div>
+          <Card className="border-border/50 shadow-lg">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                <AlertCircle className="h-8 w-8 text-red-400" />
+              </div>
+              <div className="mb-4">
+                <Badge className="bg-red-500/20 text-red-300 font-sans text-xs capitalize">
+                  {repProfile.status}
+                </Badge>
+              </div>
+              <h2 className="text-xl font-serif text-off-white mb-3">Rep Access Paused</h2>
+              <p className="text-sm text-soft-gray font-sans leading-relaxed">
+                {isRejected
+                  ? "Your MiniMorph rep application is not active. If you believe this is a mistake, contact MiniMorph support."
+                  : "Your MiniMorph rep access is currently paused. If you believe this is a mistake, contact MiniMorph support."}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   // Stripe Connect not set up — non-blocking (payout step is skippable)
