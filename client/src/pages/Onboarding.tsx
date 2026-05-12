@@ -695,10 +695,10 @@ export default function Onboarding() {
                 </Button>
               </div>
               <p className="text-xs text-gray-600 mt-2">
-                Prefer a form?{" "}
-                <Link href="/onboarding" className="text-[#4a9eff] hover:underline">
-                  Use the questionnaire instead
-                </Link>
+                Need help?{" "}
+                <a href="mailto:hello@minimorphstudios.net" className="text-[#4a9eff] hover:underline">
+                  Contact our team
+                </a>
               </p>
             </div>
           )}

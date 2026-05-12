@@ -202,7 +202,7 @@ export default function CustomerPortal() {
         <div className="bg-emerald-600 text-white px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 flex-shrink-0" />
-            <span className="text-sm font-medium">Payment successful! Your site is being built — we'll notify you when it's ready for review.</span>
+            <span className="text-sm font-medium">Payment confirmed — review your Website Blueprint below to start your build.</span>
           </div>
           <button onClick={() => setPaymentBannerVisible(false)} className="flex-shrink-0 hover:opacity-70">
             <X className="h-4 w-4" />

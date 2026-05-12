@@ -37,7 +37,8 @@ import { FLAG_DESCRIPTIONS } from "@shared/quoteEngine";
 
 const STAGE_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   intake: { label: "Intake", color: "badge-neutral", icon: <ClipboardList className="w-3 h-3" /> },
-  questionnaire: { label: "Questionnaire", color: "bg-amber-100 text-amber-800", icon: <ClipboardList className="w-3 h-3" /> },
+  questionnaire: { label: "Discovery", color: "bg-amber-100 text-amber-800", icon: <ClipboardList className="w-3 h-3" /> },
+  blueprint_review: { label: "Blueprint Review", color: "bg-sky-100 text-sky-800", icon: <FileText className="w-3 h-3" /> },
   assets_upload: { label: "Assets Upload", color: "bg-blue-100 text-blue-800", icon: <Upload className="w-3 h-3" /> },
   design: { label: "Designing", color: "bg-purple-100 text-purple-800", icon: <Palette className="w-3 h-3" /> },
   pending_admin_review: { label: "Pending Admin Review", color: "bg-rose-100 text-rose-800", icon: <ShieldAlert className="w-3 h-3" /> },
@@ -48,7 +49,7 @@ const STAGE_CONFIG: Record<string, { label: string; color: string; icon: React.R
   complete: { label: "Complete", color: "bg-green-200 text-green-900", icon: <CheckCircle2 className="w-3 h-3" /> },
 };
 
-const ALL_STAGES = ["intake", "questionnaire", "assets_upload", "design", "pending_admin_review", "review", "revisions", "final_approval", "launch", "complete"] as const;
+const ALL_STAGES = ["intake", "questionnaire", "blueprint_review", "assets_upload", "design", "pending_admin_review", "review", "revisions", "final_approval", "launch", "complete"] as const;
 
 const MUST_HAVE_FEATURES = [
   "Contact / quote form",
