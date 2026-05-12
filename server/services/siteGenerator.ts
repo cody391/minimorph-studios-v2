@@ -1213,8 +1213,8 @@ ${Object.keys(pages)
       generationStatus: "complete",
       generationLog: `Generated ${Object.keys(pages).length} pages: ${Object.keys(pages).join(", ")}`,
       generatedSiteHtml: JSON.stringify(pages),
-      stage: "review",
-      previewReadyAt: new Date(),
+      // Stage set to pending_admin_review — admin must approve before customer sees preview
+      stage: "pending_admin_review",
       cloudflareProjectName: cfProjectName,
     });
 
@@ -1287,28 +1287,15 @@ ${Object.keys(pages)
       }
     } catch {}
 
-    // Send preview ready email
-    try {
-      const { sendPreviewReadyEmail } = await import("./customerEmails");
-      const revisionsRemaining = project.revisionsRemaining ?? 3;
-      await sendPreviewReadyEmail({
-        to: project.contactEmail,
-        customerName: project.contactName,
-        businessName: resolvedBusinessName,
-        pageNames: Object.keys(pages),
-        portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
-        revisionsRemaining,
-      });
-    } catch (emailErr) {
-      console.error("[SiteGenerator] Preview ready email failed:", emailErr);
-    }
+    // Do NOT send preview email to customer yet — admin must approve preview first
+    // The preview email is sent when admin calls adminApprovePreview()
 
-    // Notify admin
+    // Notify admin: preview is ready for their review before customer sees it
     try {
       const { notifyOwner } = await import("../_core/notification");
       await notifyOwner({
-        title: "Site Preview Ready for QA",
-        content: `${resolvedBusinessName} (#${projectId}) site preview is ready. Pages: ${Object.keys(pages).join(", ")}. Awaiting customer review.`,
+        title: "ACTION: Site Preview Needs Admin Approval",
+        content: `${resolvedBusinessName} (#${projectId}) site generation complete.\nPages: ${Object.keys(pages).join(", ")}\n\nACTION: Review the preview in /admin/onboarding and approve it before the customer can see it.\nStage: pending_admin_review`,
       });
     } catch {}
 
@@ -1367,6 +1354,7 @@ ${Object.keys(pages)
           const qaCtx = {
             customerId: project.customerId,
             projectId,
+            // siteUrl is set but won't be fetched in preDeployMode
             siteUrl: project.generatedSiteUrl || `https://${cfProjectName}.pages.dev`,
             businessName: resolvedBusinessName,
             businessType: (q.industry as string) || websiteType || "",
@@ -1381,6 +1369,8 @@ ${Object.keys(pages)
             ),
             questionnaire: q as Record<string, any>,
             htmlContent: pages["index"],
+            // Pre-deploy mode: all layers use htmlContent only, no live URL fetches
+            preDeployMode: true,
           };
 
           runQAWithSafeguards(qaCtx, reporter, database).then(result => {

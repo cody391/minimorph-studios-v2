@@ -748,6 +748,43 @@ function OnboardingProjectTab({
     );
   }
 
+  // Generation complete but pending admin review (customer cannot see preview yet)
+  if (project.stage === "pending_admin_review" || (project.generationStatus === "complete" && !(project as any).adminPreviewApprovedAt && project.stage !== "review" && project.stage !== "revisions" && project.stage !== "final_approval" && project.stage !== "launch" && project.stage !== "complete")) {
+    return (
+      <Card className="border-border/50">
+        <CardContent className="py-12 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-electric/10 flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-base">
+              E
+            </div>
+          </div>
+          <div>
+            <h3 className="text-lg font-serif text-off-white mb-1">Your website preview is being prepared</h3>
+            <p className="text-sm text-soft-gray max-w-md mx-auto">
+              Elena has finished building your site. Our team is reviewing it to make sure everything looks great before you see it.
+              We'll notify you by email as soon as it's ready for your review — usually within a few hours.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-1">
+            <span className="w-2 h-2 bg-electric/60 rounded-full animate-pulse [animation-delay:0ms]" />
+            <span className="w-2 h-2 bg-electric/60 rounded-full animate-pulse [animation-delay:300ms]" />
+            <span className="w-2 h-2 bg-electric/60 rounded-full animate-pulse [animation-delay:600ms]" />
+          </div>
+          <p className="text-xs text-soft-gray/50">No action needed from you right now.</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefetch}
+            className="text-soft-gray hover:text-electric"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Check status
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // AI is generating
   if (project.generationStatus === "generating") {
     return (

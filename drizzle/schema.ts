@@ -417,6 +417,7 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
     "questionnaire",
     "assets_upload",
     "design",
+    "pending_admin_review",
     "review",
     "revisions",
     "final_approval",
@@ -484,6 +485,8 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
 
   previewReadyAt: timestamp("previewReadyAt"),
   approvedAt: timestamp("approvedAt"),
+  adminPreviewApprovedAt: timestamp("adminPreviewApprovedAt"),
+  adminLaunchApprovedAt: timestamp("adminLaunchApprovedAt"),
   revisionsRemaining: int("revisionsRemaining").default(3),
 
   // Elena onboarding progress — persisted after every message exchange

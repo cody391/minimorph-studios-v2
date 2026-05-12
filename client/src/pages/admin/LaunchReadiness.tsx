@@ -108,6 +108,8 @@ function computeProjectVerdict(p: {
   existingDomain: string | null;
   domainRegistered: boolean | null;
   approvedAt: Date | null;
+  adminPreviewApprovedAt?: Date | null;
+  adminLaunchApprovedAt?: Date | null;
   liveUrl: string | null;
   stage: string;
 }): { label: string; color: string } {
@@ -117,14 +119,20 @@ function computeProjectVerdict(p: {
   const hasSite = !!p.generatedSiteUrl || p.generationStatus === "complete";
   if (!hasSite) return { label: "BLOCKED — site not generated", color: "bg-red-500/15 text-red-400 border-red-500/20" };
 
+  if (p.stage === "pending_admin_review" || !p.adminPreviewApprovedAt) {
+    return { label: "NEEDS ADMIN PREVIEW APPROVAL", color: "bg-rose-500/15 text-rose-400 border-rose-500/20" };
+  }
+
   const hasCF = !!p.cloudflareProjectName;
   if (!hasCF) return { label: "MANUAL REQUIRED — no Cloudflare project", color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20" };
 
   const needsDomainSetup = p.domainOption === "new" && !p.domainRegistered;
   if (needsDomainSetup) return { label: "MANUAL REQUIRED — domain not registered", color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20" };
 
-  const approved = !!p.approvedAt;
-  if (!approved) return { label: "NEEDS CUSTOMER APPROVAL", color: "bg-blue-500/15 text-blue-400 border-blue-500/20" };
+  const customerApproved = !!p.approvedAt;
+  if (!customerApproved) return { label: "NEEDS CUSTOMER APPROVAL", color: "bg-blue-500/15 text-blue-400 border-blue-500/20" };
+
+  if (!p.adminLaunchApprovedAt) return { label: "NEEDS ADMIN LAUNCH RELEASE", color: "bg-orange-500/15 text-orange-400 border-orange-500/20" };
 
   return { label: "NEEDS ADMIN DEPLOY", color: "bg-orange-500/15 text-orange-400 border-orange-500/20" };
 }
@@ -425,6 +433,40 @@ export default function LaunchReadiness() {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs pt-1">
+                      <div className="flex items-center gap-1">
+                        {(p as any).adminPreviewApprovedAt
+                          ? <CheckCircle2 size={11} className="text-green-400 shrink-0" />
+                          : <XCircle size={11} className="text-muted-foreground shrink-0" />}
+                        <span className={(p as any).adminPreviewApprovedAt ? "text-foreground" : "text-muted-foreground"}>
+                          Admin preview: {(p as any).adminPreviewApprovedAt ? "APPROVED" : "PENDING"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {approved
+                          ? <CheckCircle2 size={11} className="text-green-400 shrink-0" />
+                          : <XCircle size={11} className="text-muted-foreground shrink-0" />}
+                        <span className={approved ? "text-foreground" : "text-muted-foreground"}>
+                          Customer approved: {approved ? "YES" : "NO"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {(p as any).adminLaunchApprovedAt
+                          ? <CheckCircle2 size={11} className="text-green-400 shrink-0" />
+                          : <XCircle size={11} className="text-muted-foreground shrink-0" />}
+                        <span className={(p as any).adminLaunchApprovedAt ? "text-foreground" : "text-muted-foreground"}>
+                          Admin launch release: {(p as any).adminLaunchApprovedAt ? "RELEASED" : "BLOCKED"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {live
+                          ? <CheckCircle2 size={11} className="text-green-400 shrink-0" />
+                          : <XCircle size={11} className="text-muted-foreground shrink-0" />}
+                        <span className={live ? "text-green-400" : "text-muted-foreground"}>
+                          Deployed: {live ? "YES" : "NO"}
+                        </span>
+                      </div>
+                    </div>
                     {p.approvedAt && (
                       <p className="text-xs text-muted-foreground">
                         Customer approved: {new Date(p.approvedAt).toLocaleString()}

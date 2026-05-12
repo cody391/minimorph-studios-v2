@@ -40,6 +40,8 @@ export interface QAContext {
   purchasedAddons: string[];
   questionnaire: Record<string, any>;
   htmlContent?: string;
+  /** When true: all layers use htmlContent only — no live URL fetches (pre-deployment mode) */
+  preDeployMode?: boolean;
 }
 
 function extractLLMText(result: any): string {
@@ -68,7 +70,12 @@ export async function runQAInspector(
   previousIssueFingerprints: string[] = [],
   attemptNumber: number = 1
 ): Promise<QAResult> {
-  await reporter.info("qa_inspector", `Starting QA inspection (attempt ${attemptNumber}/3)`, `Site: ${ctx.siteUrl}`);
+  const qaMode = ctx.preDeployMode ? "html_predeploy" : "live_url";
+  await reporter.info(
+    "qa_inspector",
+    `Starting QA inspection (attempt ${attemptNumber}/3) — qaMode: ${qaMode}`,
+    ctx.preDeployMode ? `liveUrlChecked: false — using htmlContent only` : `Site: ${ctx.siteUrl}`
+  );
 
   const allIssues: QAIssue[] = [];
   const layerScores: Record<string, number> = {};
@@ -241,8 +248,18 @@ Return [] if no issues found.` }],
 async function checkSEO(ctx: QAContext, reporter: BuildReporter): Promise<QAIssue[]> {
   const issues: QAIssue[] = [];
   try {
-    const res = await fetch(ctx.siteUrl, { signal: AbortSignal.timeout(15000) });
-    const html = await res.text();
+    let html: string;
+    if (ctx.preDeployMode) {
+      if (!ctx.htmlContent) {
+        await reporter.warn("qa_layer2", "SEO check skipped — no htmlContent in pre-deploy mode");
+        return issues;
+      }
+      html = ctx.htmlContent;
+      await reporter.info("qa_layer2", "SEO check — qaMode: html_predeploy, liveUrlChecked: false");
+    } else {
+      const res = await fetch(ctx.siteUrl, { signal: AbortSignal.timeout(15000) });
+      html = await res.text();
+    }
 
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     if (!titleMatch || titleMatch[1].trim().length < 10) {
@@ -287,11 +304,17 @@ async function checkSEO(ctx: QAContext, reporter: BuildReporter): Promise<QAIssu
         autoFixAction: "add_schema_markup", fingerprint: "seo_missing_schema" });
     }
 
-    const sitemapRes = await fetch(`${ctx.siteUrl}/sitemap.xml`, { signal: AbortSignal.timeout(5000) }).catch(() => null);
-    if (!sitemapRes?.ok) {
-      issues.push({ layer: "seo", severity: "warning", ruleKey: "missing_sitemap",
-        description: "sitemap.xml not found", autoFixable: true,
-        autoFixAction: "generate_sitemap", fingerprint: "seo_missing_sitemap" });
+    if (!ctx.preDeployMode) {
+      // Live URL only: fetch sitemap (undeployed sites won't have one)
+      const sitemapRes = await fetch(`${ctx.siteUrl}/sitemap.xml`, { signal: AbortSignal.timeout(5000) }).catch(() => null);
+      if (!sitemapRes?.ok) {
+        issues.push({ layer: "seo", severity: "warning", ruleKey: "missing_sitemap",
+          description: "sitemap.xml not found", autoFixable: true,
+          autoFixAction: "generate_sitemap", fingerprint: "seo_missing_sitemap" });
+      }
+    } else {
+      // Pre-deploy: flag as informational — sitemap not verifiable before deployment
+      await reporter.info("qa_layer2", "Sitemap check deferred — site not yet deployed");
     }
 
     const imgTags = html.match(/<img[^>]+>/gi) || [];
@@ -317,6 +340,44 @@ async function checkSEO(ctx: QAContext, reporter: BuildReporter): Promise<QAIssu
 async function checkTechnical(ctx: QAContext, reporter: BuildReporter): Promise<QAIssue[]> {
   const issues: QAIssue[] = [];
   try {
+    if (ctx.preDeployMode) {
+      await reporter.info("qa_layer3", "Technical check — qaMode: html_predeploy, liveUrlChecked: false");
+      const html = ctx.htmlContent || "";
+      const lower = html.toLowerCase();
+
+      // Favicon: check for <link rel="icon"> or <link rel="shortcut icon"> in HTML head
+      if (!lower.includes('rel="icon"') && !lower.includes("rel='icon'") &&
+          !lower.includes('rel="shortcut icon"') && !lower.includes("href=\"/favicon")) {
+        issues.push({ layer: "technical", severity: "warning", ruleKey: "missing_favicon",
+          description: "Favicon link not found in HTML head (pre-deploy check)", autoFixable: true,
+          autoFixAction: "generate_favicon", fingerprint: "tech_missing_favicon" });
+      }
+
+      // Contact form detection from HTML
+      const hasContactForm = lower.includes("form") && (lower.includes("contact") || lower.includes("get in touch") || lower.includes("message"));
+      if (!hasContactForm) {
+        issues.push({ layer: "technical", severity: "warning", ruleKey: "no_contact_form",
+          description: "No contact form detected in HTML", autoFixable: false, fingerprint: "tech_no_contact_form" });
+      }
+
+      // Booking/store page: check HTML for addon-specific content
+      if (ctx.purchasedAddons.includes("booking_widget") && !lower.includes("book") && !lower.includes("appointment")) {
+        issues.push({ layer: "technical", severity: "warning", ruleKey: "booking_content_missing",
+          description: "Booking Widget purchased but no booking content detected in HTML (pre-deploy)", autoFixable: false,
+          fingerprint: "tech_booking_page_missing" });
+      }
+      if (ctx.purchasedAddons.includes("online_store") && !lower.includes("shop") && !lower.includes("store") && !lower.includes("product")) {
+        issues.push({ layer: "technical", severity: "warning", ruleKey: "store_content_missing",
+          description: "Online Store purchased but no store content detected in HTML (pre-deploy)", autoFixable: false,
+          fingerprint: "tech_store_page_missing" });
+      }
+
+      // robots.txt and 404 are deferred to live URL check
+      await reporter.info("qa_layer3", "HTTP status, load time, robots.txt, and 404 checks deferred — site not yet deployed");
+      return issues;
+    }
+
+    // ── Live URL mode ────────────────────────────────────────────────────
     if (!ctx.siteUrl.startsWith("https://")) {
       issues.push({ layer: "technical", severity: "critical", ruleKey: "no_ssl",
         description: "Site not using HTTPS", autoFixable: false, fingerprint: "tech_no_ssl" });
@@ -391,6 +452,51 @@ async function checkTechnical(ctx: QAContext, reporter: BuildReporter): Promise<
 async function checkSecurity(ctx: QAContext, reporter: BuildReporter): Promise<QAIssue[]> {
   const issues: QAIssue[] = [];
   try {
+    if (ctx.preDeployMode) {
+      await reporter.info("qa_layer4", "Security check — qaMode: html_predeploy, liveUrlChecked: false");
+      const html = ctx.htmlContent || "";
+
+      // Can't check HTTP response headers in pre-deploy mode — skip header checks silently
+      await reporter.info("qa_layer4", "Security header checks deferred — site not yet deployed (headers not available pre-deploy)");
+
+      // Can check HTML source for API key leaks
+      const apiKeyPatterns = [/sk-[a-zA-Z0-9]{20,}/, /AIza[a-zA-Z0-9_-]{35}/, /AKIA[A-Z0-9]{16}/, /sk_live_[a-zA-Z0-9]+/];
+      for (const pattern of apiKeyPatterns) {
+        if (pattern.test(html)) {
+          issues.push({ layer: "security", severity: "critical", ruleKey: "api_key_exposed",
+            description: "Potential API key exposed in generated HTML source", autoFixable: false,
+            fingerprint: "security_api_key" });
+          break;
+        }
+      }
+
+      // Mixed content check is meaningful in HTML source
+      if (html.includes("http://") && !html.includes("localhost")) {
+        issues.push({ layer: "security", severity: "warning", ruleKey: "mixed_content",
+          description: "HTTP resources found in generated HTML (mixed content when served over HTTPS)", autoFixable: true,
+          autoFixAction: "fix_mixed_content", fingerprint: "security_mixed_content" });
+      }
+
+      // Forms without CSRF tokens (contact form uses fetch/API — no CSRF token needed)
+      const formCount = (html.match(/<form[^>]*>/gi) || []).length;
+      const csrfCount = (html.match(/csrf|_token|nonce/gi) || []).length;
+      if (formCount > 0 && csrfCount === 0) {
+        issues.push({ layer: "security", severity: "warning", ruleKey: "forms_no_csrf",
+          description: "Forms detected without CSRF protection tokens", autoFixable: false,
+          fingerprint: "security_no_csrf" });
+      }
+
+      // Sensitive data patterns in HTML (SSNs, credit card patterns)
+      if (/\b\d{3}-\d{2}-\d{4}\b/.test(html)) {
+        issues.push({ layer: "security", severity: "critical", ruleKey: "ssn_in_html",
+          description: "Possible SSN pattern found in HTML source", autoFixable: false,
+          fingerprint: "security_ssn_exposed" });
+      }
+
+      return issues;
+    }
+
+    // ── Live URL mode ────────────────────────────────────────────────────
     const res = await fetch(ctx.siteUrl, { signal: AbortSignal.timeout(15000) });
     const headers = res.headers;
     const html = await res.text().catch(() => "");

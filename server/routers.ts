@@ -2779,12 +2779,71 @@ const onboardingRouter = router({
         });
       } catch { /* best-effort */ }
 
-      // Fire-and-forget auto-deployment via Cloudflare Pages
+      // Do NOT deploy here — admin must call adminReleaseLaunch after reviewing customer approval
+      // Notify admin that customer approved and release is needed
+      try {
+        await notifyOwner({
+          title: "ACTION: Customer Approved — Admin Launch Release Required",
+          content: `${project?.businessName || "Unknown"} (#${input.projectId}) customer has approved the site.\n\nContact: ${project?.contactName} <${project?.contactEmail}>\nDomain: ${project?.domainName || project?.existingDomain || "TBD"}\nPackage: ${project?.packageTier}\n\nACTION: Go to /admin/onboarding and click "Release to Launch" to deploy the site.`,
+        });
+      } catch { /* best-effort */ }
+
+      return { success: true };
+    }),
+
+  // Admin: approve the generated site preview so customer can see it
+  adminApprovePreview: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .mutation(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (project.generationStatus !== "complete") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Site generation is not yet complete" });
+      }
+      const now = new Date();
+      await db.updateOnboardingProject(input.projectId, {
+        adminPreviewApprovedAt: now,
+        stage: "review",
+        previewReadyAt: (project.previewReadyAt as Date | null) ?? now,
+      });
+      // Send preview ready email to customer now that admin has approved
+      try {
+        const pages = project.generatedSiteHtml ? Object.keys(JSON.parse(project.generatedSiteHtml as string)) : ["index"];
+        const revisionsRemaining = project.revisionsRemaining ?? 3;
+        const { sendPreviewReadyEmail } = await import("./services/customerEmails");
+        await sendPreviewReadyEmail({
+          to: project.contactEmail,
+          customerName: project.contactName,
+          businessName: project.businessName,
+          pageNames: pages,
+          portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
+          revisionsRemaining,
+        });
+      } catch (emailErr) {
+        console.error("[adminApprovePreview] Preview email failed:", emailErr);
+      }
+      console.log(`[adminApprovePreview] Project ${input.projectId} preview approved — customer can now see preview`);
+      return { success: true };
+    }),
+
+  // Admin: release customer-approved site for deployment
+  adminReleaseLaunch: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .mutation(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (!project.approvedAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Customer has not yet approved the site. Wait for customer approval before releasing." });
+      }
+      await db.updateOnboardingProject(input.projectId, {
+        adminLaunchApprovedAt: new Date(),
+      });
+      // Now fire deployment — this is the only path that can trigger deployment
       const { deployApprovedSite } = await import("./services/siteDeployment");
       deployApprovedSite(input.projectId).catch(err =>
-        console.error("[approveLaunch] Deployment error:", err)
+        console.error("[adminReleaseLaunch] Deployment error:", err)
       );
-
+      console.log(`[adminReleaseLaunch] Project ${input.projectId} released for deployment`);
       return { success: true };
     }),
 
@@ -3161,6 +3220,11 @@ const onboardingRouter = router({
       if (!agreement) throw new TRPCError({ code: "BAD_REQUEST", message: "Legal agreement not found. Please accept the terms before proceeding to checkout." });
       if (agreement.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Agreement does not belong to this account." });
       if (agreement.projectId !== input.projectId) throw new TRPCError({ code: "BAD_REQUEST", message: "Agreement project mismatch." });
+      if (!agreement.acceptedAt) throw new TRPCError({ code: "BAD_REQUEST", message: "Agreement has not been accepted. Please complete the terms acceptance." });
+      const normalizedSigner = (agreement.signerName || "").trim().toLowerCase();
+      if (normalizedSigner.length < 2 || normalizedSigner === "customer" || normalizedSigner === "unknown") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "A valid legal name is required. Please enter your full name before checkout." });
+      }
 
       const q = (project.questionnaire || {}) as Record<string, unknown>;
       const packageTier = (q.packageTier as string || project.packageTier || "starter").toLowerCase();
@@ -3376,7 +3440,7 @@ const onboardingRouter = router({
     .input(
       z.object({
         id: z.number(),
-        stage: z.enum(["intake", "questionnaire", "assets_upload", "design", "review", "revisions", "final_approval", "launch", "complete"]),
+        stage: z.enum(["intake", "questionnaire", "assets_upload", "design", "pending_admin_review", "review", "revisions", "final_approval", "launch", "complete"]),
         designMockupUrl: z.string().optional(),
         liveUrl: z.string().optional(),
       })
@@ -6571,6 +6635,8 @@ const complianceRouter = router({
         liveUrl: onboardingProjects.liveUrl,
         approvedAt: onboardingProjects.approvedAt,
         previewReadyAt: onboardingProjects.previewReadyAt,
+        adminPreviewApprovedAt: onboardingProjects.adminPreviewApprovedAt,
+        adminLaunchApprovedAt: onboardingProjects.adminLaunchApprovedAt,
         launchedAt: onboardingProjects.launchedAt,
         packageTier: onboardingProjects.packageTier,
         contactEmail: onboardingProjects.contactEmail,

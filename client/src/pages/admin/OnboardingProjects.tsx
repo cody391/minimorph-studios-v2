@@ -39,6 +39,7 @@ const STAGE_CONFIG: Record<string, { label: string; color: string; icon: React.R
   questionnaire: { label: "Questionnaire", color: "bg-amber-100 text-amber-800", icon: <ClipboardList className="w-3 h-3" /> },
   assets_upload: { label: "Assets Upload", color: "bg-blue-100 text-blue-800", icon: <Upload className="w-3 h-3" /> },
   design: { label: "Designing", color: "bg-purple-100 text-purple-800", icon: <Palette className="w-3 h-3" /> },
+  pending_admin_review: { label: "Pending Admin Review", color: "bg-rose-100 text-rose-800", icon: <ShieldAlert className="w-3 h-3" /> },
   review: { label: "Review", color: "bg-emerald-100 text-emerald-800", icon: <Eye className="w-3 h-3" /> },
   revisions: { label: "Revisions", color: "bg-orange-100 text-orange-800", icon: <MessageSquare className="w-3 h-3" /> },
   final_approval: { label: "Final Approval", color: "bg-teal-100 text-teal-800", icon: <CheckCircle2 className="w-3 h-3" /> },
@@ -46,7 +47,7 @@ const STAGE_CONFIG: Record<string, { label: string; color: string; icon: React.R
   complete: { label: "Complete", color: "bg-green-200 text-green-900", icon: <CheckCircle2 className="w-3 h-3" /> },
 };
 
-const ALL_STAGES = ["intake", "questionnaire", "assets_upload", "design", "review", "revisions", "final_approval", "launch", "complete"] as const;
+const ALL_STAGES = ["intake", "questionnaire", "assets_upload", "design", "pending_admin_review", "review", "revisions", "final_approval", "launch", "complete"] as const;
 
 const MUST_HAVE_FEATURES = [
   "Contact / quote form",
@@ -91,6 +92,8 @@ export default function OnboardingProjects() {
   const triggerGenerationMutation = trpc.onboarding.triggerGeneration.useMutation();
   const createMutation = trpc.onboarding.create.useMutation();
   const questMutation = trpc.onboarding.submitQuestionnaire.useMutation();
+  const adminApprovePreviewMutation = trpc.onboarding.adminApprovePreview.useMutation();
+  const adminReleaseLaunchMutation = trpc.onboarding.adminReleaseLaunch.useMutation();
 
   const projects = projectsQuery.data || [];
 
@@ -119,6 +122,26 @@ export default function OnboardingProjects() {
       projectsQuery.refetch();
     } catch {
       toast.error("Failed to trigger generation");
+    }
+  };
+
+  const handleAdminApprovePreview = async (projectId: number) => {
+    try {
+      await adminApprovePreviewMutation.mutateAsync({ projectId });
+      toast.success("Preview approved — customer can now see their site");
+      projectsQuery.refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to approve preview");
+    }
+  };
+
+  const handleAdminReleaseLaunch = async (projectId: number) => {
+    try {
+      await adminReleaseLaunchMutation.mutateAsync({ projectId });
+      toast.success("Launch released — deployment triggered");
+      projectsQuery.refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to release launch");
     }
   };
 
@@ -499,6 +522,36 @@ export default function OnboardingProjects() {
                       >
                         <Zap className="w-3 h-3 mr-1" />
                         Re-generate
+                      </Button>
+                    )}
+
+                    {/* Admin: approve preview for customer */}
+                    {project.stage === "pending_admin_review" && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleAdminApprovePreview(project.id)}
+                        disabled={adminApprovePreviewMutation.isPending}
+                        className="bg-rose-600 hover:bg-rose-700 text-white h-8"
+                      >
+                        {adminApprovePreviewMutation.isPending
+                          ? <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                          : <Eye className="w-3 h-3 mr-1" />}
+                        Approve Preview for Customer
+                      </Button>
+                    )}
+
+                    {/* Admin: release to launch (after customer approval) */}
+                    {project.stage === "final_approval" && (project as any).approvedAt && !(project as any).adminLaunchApprovedAt && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleAdminReleaseLaunch(project.id)}
+                        disabled={adminReleaseLaunchMutation.isPending}
+                        className="bg-teal-600 hover:bg-teal-700 text-white h-8"
+                      >
+                        {adminReleaseLaunchMutation.isPending
+                          ? <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                          : <Rocket className="w-3 h-3 mr-1" />}
+                        Release to Launch
                       </Button>
                     )}
 
