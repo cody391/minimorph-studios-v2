@@ -99,34 +99,10 @@ export default function RepDashboard() {
   }, [isCertificationGate]);
 
   if (authLoading) return <div className="min-h-screen bg-midnight flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-electric border-t-transparent rounded-full" /></div>;
-  if (!isAuthenticated) return (
-    <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-soft-gray hover:text-electric text-sm font-sans transition-colors">
-            <ArrowLeft size={16} /> Back to MiniMorph Studios
-          </button>
-        </div>
-        <Card className="max-w-md w-full border-border/50 shadow-lg">
-          <CardContent className="p-8 text-center">
-            <div className="w-16 h-16 bg-electric/10 rounded-full flex items-center justify-center mx-auto mb-5">
-              <Briefcase className="h-8 w-8 text-off-white" />
-            </div>
-            <h2 className="text-2xl font-serif text-off-white mb-2">Rep Portal</h2>
-            <p className="text-sm text-soft-gray font-sans mb-6">Sign in to access your sales dashboard, leads, training, and earnings.</p>
-            <Button onClick={() => { setLocation("/login"); }} className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full px-8 py-5 w-full" size="lg">Sign In</Button>
-            <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/50" /></div>
-              <div className="relative flex justify-center text-xs"><span className="bg-charcoal px-3 text-soft-gray/60 font-sans">New to MiniMorph Studios?</span></div>
-            </div>
-            <Button variant="outline" onClick={() => setLocation("/become-rep/values")} className="w-full rounded-full border-border text-off-white font-sans">
-              Apply to Become a Rep
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+  if (!isAuthenticated) {
+    setLocation("/login?next=/rep");
+    return null;
+  }
   if (repLoading) return <div className="min-h-screen bg-midnight p-4 sm:p-6"><div className="max-w-6xl mx-auto space-y-6"><Skeleton className="h-10 w-64" /><div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div><Skeleton className="h-64" /></div></div>;
   if (!repProfile) return (
     <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
