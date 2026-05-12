@@ -85,6 +85,7 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
   <li>Replace existing nameservers with the two above</li>
   <li>Save — propagation takes 24–48 hours</li>
 </ol>
+<p style="background:#2a1a1a;border-left:4px solid #ff6b6b;padding:12px 16px;border-radius:4px;color:#ffb3b3;margin:16px 0"><strong>⚠️ Important — Email on your domain:</strong> Switching nameservers will transfer DNS control to Cloudflare. If you currently receive email at <strong>${domainName}</strong> (e.g. info@${domainName}), your existing MX records must be re-added inside Cloudflare before you change nameservers, or email delivery will stop. Please check with your email provider before making this change, or contact us and we'll help you.</p>
 <p style="color:#c8c8d8">We'll send you another email the moment your domain is fully live. If you need help, reply to this email.</p>
 <p style="color:#7a7a90">&mdash; The MiniMorph Studios Team</p>
 </body></html>`,

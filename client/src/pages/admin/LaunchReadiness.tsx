@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   CheckCircle2, XCircle, AlertTriangle, Database, CreditCard,
   Mail, Globe, Cloud, Brain, Zap, Shield, FileText, Users, Rocket,
+  Info,
 } from "lucide-react";
 
 function StatusBadge({ ok, warn, label }: { ok: boolean; warn?: boolean; label?: string }) {
@@ -98,11 +99,47 @@ function stageColor(stage: string) {
   return "bg-muted/30 text-muted-foreground border-border";
 }
 
+function computeProjectVerdict(p: {
+  generationStatus: string | null;
+  generatedSiteUrl: string | null;
+  cloudflareProjectName: string | null;
+  domainOption: string | null;
+  domainName: string | null;
+  existingDomain: string | null;
+  domainRegistered: boolean | null;
+  approvedAt: Date | null;
+  liveUrl: string | null;
+  stage: string;
+}): { label: string; color: string } {
+  const live = !!p.liveUrl || p.stage === "launch" || p.stage === "complete";
+  if (live) return { label: "LIVE", color: "bg-green-500/15 text-green-400 border-green-500/20" };
+
+  const hasSite = !!p.generatedSiteUrl || p.generationStatus === "complete";
+  if (!hasSite) return { label: "BLOCKED — site not generated", color: "bg-red-500/15 text-red-400 border-red-500/20" };
+
+  const hasCF = !!p.cloudflareProjectName;
+  if (!hasCF) return { label: "MANUAL REQUIRED — no Cloudflare project", color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20" };
+
+  const needsDomainSetup = p.domainOption === "new" && !p.domainRegistered;
+  if (needsDomainSetup) return { label: "MANUAL REQUIRED — domain not registered", color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20" };
+
+  const approved = !!p.approvedAt;
+  if (!approved) return { label: "NEEDS CUSTOMER APPROVAL", color: "bg-blue-500/15 text-blue-400 border-blue-500/20" };
+
+  return { label: "NEEDS ADMIN DEPLOY", color: "bg-orange-500/15 text-orange-400 border-orange-500/20" };
+}
+
 export default function LaunchReadiness() {
   const { data: readiness, isLoading: loadingR } = trpc.compliance.getSystemReadiness.useQuery();
   const { data: agreements, isLoading: loadingA } = trpc.compliance.listCustomerAgreements.useQuery();
   const { data: paperwork, isLoading: loadingP } = trpc.compliance.listRepPaperwork.useQuery({});
   const { data: projects, isLoading: loadingPr } = trpc.compliance.listProjectReadiness.useQuery();
+
+  const systemSafe = readiness && readiness.db && readiness.stripe && readiness.email && readiness.anthropic
+    && !readiness.enableAutoDeployEnv && !readiness.enableAutoDomainPurchaseEnv;
+  const dangerousAutomationsOff = readiness && !Object.values(
+    Object.fromEntries(LEAD_ENGINE_KEYS.map(k => [k.key, readiness.automationSettings[k.key]]))
+  ).some(v => v === "true");
 
   return (
     <div className="p-6 space-y-6 max-w-5xl">
@@ -110,6 +147,23 @@ export default function LaunchReadiness() {
         <h1 className="text-2xl font-semibold tracking-tight">Launch Readiness</h1>
         <p className="text-sm text-muted-foreground mt-1">System health, legal compliance, automation gates, and per-project launch status.</p>
       </div>
+
+      {/* ── Summary Banner ── */}
+      {!loadingR && readiness && (
+        <div className={`rounded-lg border p-4 flex items-start gap-3 ${systemSafe && dangerousAutomationsOff ? "border-green-500/20 bg-green-500/5" : "border-yellow-500/20 bg-yellow-500/5"}`}>
+          {systemSafe && dangerousAutomationsOff
+            ? <CheckCircle2 size={18} className="text-green-400 mt-0.5 shrink-0" />
+            : <AlertTriangle size={18} className="text-yellow-400 mt-0.5 shrink-0" />}
+          <div className="space-y-0.5">
+            <p className="text-sm font-semibold">
+              {systemSafe && dangerousAutomationsOff ? "System is safe to operate" : "Action required — review items below"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              DB: {readiness.db ? "✓" : "✗"} · Stripe: {readiness.stripe ? "✓" : "✗"} · Email: {readiness.email ? "✓" : "✗"} · AI: {readiness.anthropic ? "✓" : "✗"} · Auto-deploy: {readiness.enableAutoDeployEnv ? "ON ⚠" : "OFF ✓"} · Auto-domain: {readiness.enableAutoDomainPurchaseEnv ? "ON ⚠" : "OFF ✓"} · Lead engine: {readiness.automationSettings["lead_engine_active"] === "true" ? "ACTIVE ⚠" : "off ✓"}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── A. Global System Readiness ── */}
       <Card>
@@ -190,6 +244,7 @@ export default function LaunchReadiness() {
             {agreements && (
               <Badge variant="secondary" className="ml-1">{agreements.length}</Badge>
             )}
+            <span className="ml-auto text-xs text-muted-foreground font-normal">PDF export: not available yet</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -253,6 +308,7 @@ export default function LaunchReadiness() {
             {paperwork && (
               <Badge variant="secondary" className="ml-1">{paperwork.length}</Badge>
             )}
+            <span className="ml-auto text-xs text-muted-foreground font-normal">PDF export: not available yet</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -316,14 +372,10 @@ export default function LaunchReadiness() {
               {projects.map((p) => {
                 const hasSite = !!p.generatedSiteUrl || p.generationStatus === "complete";
                 const hasCloudflare = !!p.cloudflareProjectName;
-                const domainReady = p.domainOption === "existing"
-                  ? !!p.existingDomain
-                  : p.domainOption === "new"
-                    ? !!p.domainRegistered
-                    : false;
                 const approved = !!p.approvedAt;
                 const live = !!p.liveUrl || p.stage === "launch" || p.stage === "complete";
-                const manualRequired = !hasCloudflare || (p.domainOption === "new" && !p.domainRegistered);
+                const verdict = computeProjectVerdict(p);
+                const domainDisplay = p.domainName ?? p.existingDomain ?? (p.domainOption === "existing" ? "Existing domain (not set)" : p.domainOption === "new" ? "New domain (not registered)" : "No domain");
 
                 return (
                   <div key={p.id} className="border border-border rounded-lg p-4 space-y-3">
@@ -334,9 +386,7 @@ export default function LaunchReadiness() {
                       </div>
                       <div className="flex items-center gap-2 flex-wrap justify-end">
                         <Badge className={`${stageColor(p.stage)} text-xs`}>{p.stage}</Badge>
-                        {live && <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs">LIVE</Badge>}
-                        {approved && !live && <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/20 text-xs">APPROVED</Badge>}
-                        {manualRequired && !live && <Badge className="bg-yellow-500/15 text-yellow-400 border-yellow-500/20 text-xs">MANUAL REQUIRED</Badge>}
+                        <Badge className={`${verdict.color} text-xs`}>{verdict.label}</Badge>
                       </div>
                     </div>
 
@@ -356,13 +406,11 @@ export default function LaunchReadiness() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        {p.domainName
+                        {(p.domainName || p.existingDomain)
                           ? <CheckCircle2 size={13} className="text-green-400 shrink-0" />
-                          : p.domainOption === "existing"
-                            ? <AlertTriangle size={13} className="text-yellow-400 shrink-0" />
-                            : <XCircle size={13} className="text-muted-foreground shrink-0" />}
-                        <span className={p.domainName ? "text-foreground" : "text-muted-foreground"}>
-                          {p.domainName ?? (p.domainOption === "existing" ? "Existing domain" : p.domainOption === "new" ? "New domain" : "No domain")}
+                          : <AlertTriangle size={13} className="text-yellow-400 shrink-0" />}
+                        <span className={(p.domainName || p.existingDomain) ? "text-foreground" : "text-yellow-400"}>
+                          {domainDisplay}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -382,6 +430,12 @@ export default function LaunchReadiness() {
                         Customer approved: {new Date(p.approvedAt).toLocaleString()}
                         {!live && !hasCloudflare && " — manual deploy needed (Cloudflare not configured)"}
                       </p>
+                    )}
+                    {(p.domainName || p.existingDomain) && !live && (
+                      <div className="flex items-start gap-1.5 text-xs text-yellow-500/80">
+                        <Info size={12} className="shrink-0 mt-0.5" />
+                        <span>Email warning: Changing nameservers to Cloudflare will break existing MX records. Confirm with customer before DNS cutover.</span>
+                      </div>
                     )}
                   </div>
                 );

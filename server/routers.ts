@@ -3150,11 +3150,17 @@ const onboardingRouter = router({
   // Protected: create Stripe checkout after Elena finishes (new payment-last flow)
   // Customer pays after talking to Elena — addons are included in the session
   createCheckoutAfterElena: protectedProcedure
-    .input(z.object({ projectId: z.number(), couponCode: z.string().optional(), tempPassword: z.string().optional(), agreementId: z.number().optional() }))
+    .input(z.object({ projectId: z.number(), couponCode: z.string().optional(), tempPassword: z.string().optional(), agreementId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
       const project = await db.getOnboardingProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+      // Verify agreement was recorded before checkout is allowed
+      const agreement = await db.getCustomerAgreementById(input.agreementId);
+      if (!agreement) throw new TRPCError({ code: "BAD_REQUEST", message: "Legal agreement not found. Please accept the terms before proceeding to checkout." });
+      if (agreement.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Agreement does not belong to this account." });
+      if (agreement.projectId !== input.projectId) throw new TRPCError({ code: "BAD_REQUEST", message: "Agreement project mismatch." });
 
       const q = (project.questionnaire || {}) as Record<string, unknown>;
       const packageTier = (q.packageTier as string || project.packageTier || "starter").toLowerCase();

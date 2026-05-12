@@ -629,13 +629,13 @@ export default function Onboarding() {
               <PaymentSummaryCard
                 data={paymentReady}
                 loading={checkoutLoading}
-                onPay={async () => {
+                onPay={async (signerName: string) => {
                   if (!projectId) { toast.error("Project not found. Please try again."); return; }
                   setCheckoutLoading(true);
                   try {
                     const agreementResult = await recordAgreementMutation.mutateAsync({
                       projectId,
-                      signerName: user?.name || "Customer",
+                      signerName,
                       packageSnapshot: paymentReady as Record<string, unknown>,
                       termsVersion: "1.0",
                     });
@@ -903,8 +903,10 @@ function PaymentSummaryCard({
 }: {
   data: PaymentReadyData;
   loading: boolean;
-  onPay: () => void;
+  onPay: (signerName: string) => void;
 }) {
+  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [signerName, setSignerName] = useState("");
   const tier = data.packageTier ? capitalize(data.packageTier) : "Your";
   const total = data.monthlyTotal ?? 0;
   const addons = data.addons ?? [];
@@ -941,10 +943,43 @@ function PaymentSummaryCard({
           </div>
         </div>
 
+        {/* Legal acceptance — required before checkout */}
+        <div className="mb-4 space-y-3">
+          <div>
+            <p className="text-xs text-gray-400 mb-1.5 font-medium">Your full legal name (e-signature)</p>
+            <input
+              type="text"
+              value={signerName}
+              onChange={e => setSignerName(e.target.value)}
+              placeholder="Full name as it appears on ID"
+              className="w-full bg-[#0d0d1a] border border-[#2a2a40] rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#4a9eff]/50"
+            />
+          </div>
+          <label className="flex items-start gap-2.5 cursor-pointer group">
+            <div className="relative mt-0.5 flex-shrink-0">
+              <input
+                type="checkbox"
+                checked={legalAccepted}
+                onChange={e => setLegalAccepted(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${legalAccepted ? "bg-[#4a9eff] border-[#4a9eff]" : "border-gray-600 group-hover:border-gray-400"}`}>
+                {legalAccepted && <CheckCircle2 className="w-3 h-3 text-white" />}
+              </div>
+            </div>
+            <span className="text-xs text-gray-400 leading-relaxed">
+              I agree to MiniMorph Studios'{" "}
+              <a href="/terms" target="_blank" className="text-[#4a9eff] hover:underline">Terms of Service</a> and{" "}
+              <a href="/privacy" target="_blank" className="text-[#4a9eff] hover:underline">Privacy Policy</a>, and authorize a 12-month service agreement at{" "}
+              <strong className="text-white">${total > 0 ? total.toFixed(0) : "—"}/mo</strong>, billed monthly.
+            </span>
+          </label>
+        </div>
+
         <button
-          onClick={onPay}
-          disabled={loading}
-          className="w-full bg-[#4a9eff] hover:bg-[#3a8eef] disabled:opacity-60 text-white font-semibold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+          onClick={() => onPay(signerName.trim())}
+          disabled={loading || !legalAccepted || signerName.trim().length < 2}
+          className="w-full bg-[#4a9eff] hover:bg-[#3a8eef] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -955,6 +990,11 @@ function PaymentSummaryCard({
             </>
           )}
         </button>
+        {(!legalAccepted || signerName.trim().length < 2) && (
+          <p className="text-center text-xs text-amber-500/70 mt-1.5">
+            {signerName.trim().length < 2 ? "Enter your full name above to continue" : "Check the box above to accept the terms"}
+          </p>
+        )}
         <p className="text-center text-xs text-gray-500 mt-2">
           Secure payment via Stripe · Cancel anytime with 30-day notice
         </p>
