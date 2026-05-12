@@ -4,10 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 import {
   CheckCircle2, XCircle, AlertTriangle, Database, CreditCard,
   Mail, Globe, Cloud, Brain, Zap, Shield, FileText, Users, Rocket,
-  Info, ClipboardCheck, Eye, Loader2,
+  Info, ClipboardCheck, Eye, Loader2, ExternalLink, Download,
 } from "lucide-react";
 
 function StatusBadge({ ok, warn, label }: { ok: boolean; warn?: boolean; label?: string }) {
@@ -140,6 +141,7 @@ function computeProjectVerdict(p: {
 }
 
 export default function LaunchReadiness() {
+  const [, navigate] = useLocation();
   const utils = trpc.useUtils();
   const { data: readiness, isLoading: loadingR } = trpc.compliance.getSystemReadiness.useQuery();
   const { data: agreements, isLoading: loadingA } = trpc.compliance.listCustomerAgreements.useQuery();
@@ -345,118 +347,42 @@ export default function LaunchReadiness() {
         </CardContent>
       </Card>
 
-      {/* ── C. Customer Legal Files ── */}
+      {/* ── C. Legal Vault Summary ── */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
-            <FileText size={16} />
-            Customer Legal Agreements
-            {agreements && (
-              <Badge variant="secondary" className="ml-1">{agreements.length}</Badge>
-            )}
-            <span className="ml-auto text-xs text-muted-foreground font-normal">PDF export: not available yet</span>
+            <Shield size={16} />
+            Legal Compliance Summary
+            <Button size="sm" variant="outline" className="ml-auto text-xs h-7" onClick={() => navigate("/admin/legal")}>
+              <ExternalLink size={12} className="mr-1" />Open Legal Vault
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loadingA ? (
-            <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-          ) : !agreements?.length ? (
-            <p className="text-sm text-muted-foreground py-4">No customer agreements on record yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[700px]">
-                <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wider">
-                    <th className="text-left py-2 pr-3">Signer</th>
-                    <th className="text-left py-2 pr-3">Version</th>
-                    <th className="text-left py-2 pr-3">Accepted</th>
-                    <th className="text-left py-2 pr-3">IP</th>
-                    <th className="text-left py-2 pr-3">Contract</th>
-                    <th className="text-left py-2 pr-3">Session</th>
-                    <th className="text-left py-2">Project</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {agreements.map((a) => (
-                    <tr key={a.id} className="border-b border-border/50 hover:bg-muted/20">
-                      <td className="py-2 pr-3 font-medium text-xs">{a.signerName ?? "—"}</td>
-                      <td className="py-2 pr-3">
-                        <Badge variant="outline" className="text-xs">{a.termsVersion ?? "—"}</Badge>
-                      </td>
-                      <td className="py-2 pr-3 text-muted-foreground text-xs">
-                        {a.acceptedAt ? new Date(a.acceptedAt).toLocaleString() : "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-muted-foreground font-mono text-xs">{a.ipAddress ?? "—"}</td>
-                      <td className="py-2 pr-3">
-                        {a.contractId ? (
-                          <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs">#{a.contractId}</Badge>
-                        ) : (
-                          <Badge className="bg-yellow-500/15 text-yellow-400 border-yellow-500/20 text-xs">Pending</Badge>
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 text-muted-foreground font-mono text-xs">
-                        {a.checkoutSessionId ? a.checkoutSessionId.slice(0, 14) + "…" : "—"}
-                      </td>
-                      <td className="py-2 text-muted-foreground text-xs">
-                        {a.projectId ? `#${a.projectId}` : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{agreements?.length ?? "—"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Customer Agreements</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ── D. Rep Legal Files ── */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users size={16} />
-            Rep Paperwork Submissions
-            {paperwork && (
-              <Badge variant="secondary" className="ml-1">{paperwork.length}</Badge>
-            )}
-            <span className="ml-auto text-xs text-muted-foreground font-normal">PDF export: not available yet</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingP ? (
-            <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-          ) : !paperwork?.length ? (
-            <p className="text-sm text-muted-foreground py-4">No rep paperwork submissions on record yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wider">
-                    <th className="text-left py-2 pr-3">Rep ID</th>
-                    <th className="text-left py-2 pr-3">Form</th>
-                    <th className="text-left py-2 pr-3">Version</th>
-                    <th className="text-left py-2 pr-3">Signer</th>
-                    <th className="text-left py-2 pr-3">IP</th>
-                    <th className="text-left py-2">Signed at</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paperwork.map((p) => (
-                    <tr key={p.id} className="border-b border-border/50 hover:bg-muted/20">
-                      <td className="py-2 pr-3 font-mono text-xs">{p.repId}</td>
-                      <td className="py-2 pr-3">
-                        <Badge variant="outline" className="text-xs">{p.formType}</Badge>
-                      </td>
-                      <td className="py-2 pr-3 text-muted-foreground text-xs">{p.formVersion ?? "—"}</td>
-                      <td className="py-2 pr-3 text-xs">{p.signerName ?? "—"}</td>
-                      <td className="py-2 pr-3 text-muted-foreground font-mono text-xs">{p.signedIpAddress ?? "—"}</td>
-                      <td className="py-2 text-muted-foreground text-xs">
-                        {p.signedAt ? new Date(p.signedAt).toLocaleString() : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{paperwork?.length ?? "—"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Rep Paperwork Forms</p>
             </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-400">
+                {agreements ? agreements.filter(a => a.checkoutSessionId).length : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Stripe-Linked</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-yellow-400">
+                {agreements ? agreements.filter(a => !a.checkoutSessionId).length : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Awaiting Stripe Link</p>
+            </div>
+          </div>
+          {!loadingA && !agreements?.length && (
+            <p className="text-sm text-muted-foreground py-2 mt-2">No customer agreements on record yet.</p>
           )}
         </CardContent>
       </Card>
@@ -573,6 +499,12 @@ export default function LaunchReadiness() {
                       <span className="flex items-center gap-1">
                         <FileText size={11} className="shrink-0" />
                         Revisions saved: <span className="text-foreground font-medium ml-0.5">{(p as any).versionCount ?? 0}</span>
+                      </span>
+                      <span className={`flex items-center gap-1 ${(p as any).agreementSigned ? "text-green-400" : "text-red-400"}`}>
+                        {(p as any).agreementSigned
+                          ? <CheckCircle2 size={11} className="shrink-0" />
+                          : <XCircle size={11} className="shrink-0" />}
+                        Legal agreement: {(p as any).agreementSigned ? "SIGNED" : "MISSING"}
                       </span>
                       {p.approvedAt && (
                         <span>Customer approved: {new Date(p.approvedAt).toLocaleString()}{!live && !hasCloudflare ? " — manual deploy needed" : ""}</span>

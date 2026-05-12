@@ -2518,6 +2518,10 @@ const onboardingRouter = router({
           }
         }
       }
+      // Server-side preview gate: strip HTML for non-admin when admin hasn't approved yet
+      if (ctx.user.role !== "admin" && !project.adminPreviewApprovedAt) {
+        return { ...project, generatedSiteHtml: null };
+      }
       return project;
     }),
 
@@ -2988,7 +2992,13 @@ const onboardingRouter = router({
       if (!database) return null;
       const custs = await database.select().from(customers).where(eq(customers.userId, ctx.user.id)).limit(1);
       if (!custs.length) return null;
-      return db.getOnboardingProjectByCustomerId(custs[0].id);
+      const project = await db.getOnboardingProjectByCustomerId(custs[0].id);
+      if (!project) return null;
+      // Server-side preview gate: strip HTML for non-admin when admin hasn't approved yet
+      if (ctx.user.role !== "admin" && !project.adminPreviewApprovedAt) {
+        return { ...project, generatedSiteHtml: null };
+      }
+      return project;
     }),
 
   // Protected: find the most recent self-service project for this user (pre-payment)
@@ -3279,7 +3289,7 @@ const onboardingRouter = router({
   // Protected: create Stripe checkout after Elena finishes (new payment-last flow)
   // Customer pays after talking to Elena — addons are included in the session
   createCheckoutAfterElena: protectedProcedure
-    .input(z.object({ projectId: z.number(), couponCode: z.string().optional(), tempPassword: z.string().optional(), agreementId: z.number() }))
+    .input(z.object({ projectId: z.number(), couponCode: z.string().optional(), agreementId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
       const project = await db.getOnboardingProjectById(input.projectId);
@@ -6735,10 +6745,12 @@ const complianceRouter = router({
       .from(onboardingProjects)
       .orderBy(descFn(onboardingProjects.createdAt));
 
-    // Attach version counts for each project
+    // Attach version counts and agreement status for each project
     const projectIds = rows.map(r => r.id);
     let versionCounts: Record<number, number> = {};
+    let agreementSigned: Record<number, boolean> = {};
     if (projectIds.length > 0) {
+      const { customerAgreements } = await import("../drizzle/schema");
       const vcRows = await database
         .select({
           projectId: siteVersions.projectId,
@@ -6750,9 +6762,16 @@ const complianceRouter = router({
       for (const vc of vcRows) {
         versionCounts[vc.projectId] = Number(vc.count);
       }
+      const agRows = await database
+        .select({ projectId: customerAgreements.projectId })
+        .from(customerAgreements)
+        .where(sqlFn`${customerAgreements.projectId} IN (${sqlFn.raw(projectIds.join(","))})`);
+      for (const ag of agRows) {
+        agreementSigned[ag.projectId] = true;
+      }
     }
 
-    return rows.map(r => ({ ...r, versionCount: versionCounts[r.id] ?? 0 }));
+    return rows.map(r => ({ ...r, versionCount: versionCounts[r.id] ?? 0, agreementSigned: agreementSigned[r.id] ?? false }));
   }),
 
   getSystemReadiness: adminProcedure.query(async () => {
@@ -6788,6 +6807,90 @@ const complianceRouter = router({
       automationSettings,
     };
   }),
+
+  generateAgreementHtml: adminProcedure
+    .input(z.object({ agreementId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      const { customerAgreements, onboardingProjects } = await import("../drizzle/schema");
+      const { eq: eqFn } = await import("drizzle-orm");
+      const rows = await database.select().from(customerAgreements).where(eqFn(customerAgreements.id, input.agreementId)).limit(1);
+      const ag = rows[0];
+      if (!ag) throw new TRPCError({ code: "NOT_FOUND", message: "Agreement not found" });
+      const projRows = await database.select({ businessName: onboardingProjects.businessName, contactEmail: onboardingProjects.contactEmail }).from(onboardingProjects).where(eqFn(onboardingProjects.id, ag.projectId)).limit(1);
+      const proj = projRows[0];
+      const pkg = ag.packageSnapshot as Record<string, unknown> || {};
+      const esc = (s: string) => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>MiniMorph Studios — Service Agreement #${ag.id}</title>
+<style>
+  body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:0 24px;color:#111;line-height:1.6}
+  h1{font-size:22px;border-bottom:2px solid #111;padding-bottom:8px}
+  h2{font-size:16px;margin-top:32px;color:#333}
+  table{width:100%;border-collapse:collapse;margin:8px 0}
+  td,th{border:1px solid #ccc;padding:8px 12px;text-align:left;font-size:14px}
+  th{background:#f5f5f5;font-weight:600}
+  .meta{font-size:13px;color:#555}
+  .sig{border-top:1px solid #aaa;margin-top:48px;padding-top:16px}
+  @media print{body{margin:0}.no-print{display:none}}
+</style>
+</head>
+<body>
+<div class="no-print" style="margin-bottom:24px"><button onclick="window.print()">Print / Save as PDF</button></div>
+<h1>MiniMorph Studios — Service Agreement</h1>
+<p class="meta">Agreement ID: <strong>#${ag.id}</strong> &nbsp;|&nbsp; Terms Version: <strong>${esc(ag.termsVersion)}</strong> &nbsp;|&nbsp; Project: <strong>#${ag.projectId}</strong></p>
+${proj ? `<p class="meta">Business: <strong>${esc(proj.businessName)}</strong> &nbsp;|&nbsp; Contact: <strong>${esc(proj.contactEmail)}</strong></p>` : ""}
+
+<h2>Signatory</h2>
+<table><tr><th>Full Legal Name</th><td>${esc(ag.signerName)}</td></tr>
+<tr><th>Date &amp; Time</th><td>${ag.acceptedAt ? new Date(ag.acceptedAt).toUTCString() : "—"}</td></tr>
+<tr><th>IP Address</th><td>${esc(ag.ipAddress || "—")}</td></tr>
+<tr><th>User Agent</th><td style="word-break:break-all;font-size:12px">${esc(ag.userAgent || "—")}</td></tr>
+<tr><th>Stripe Session</th><td>${esc(ag.checkoutSessionId || "—")}</td></tr>
+<tr><th>Contract ID</th><td>${ag.contractId ? `#${ag.contractId}` : "Pending"}</td></tr>
+</table>
+
+<h2>Package at Time of Agreement</h2>
+<table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>
+${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))}</td></tr>`).join("")}
+</tbody></table>
+
+<div class="sig">
+<p><strong>Electronic Signature:</strong> ${esc(ag.signerName)} &nbsp;|&nbsp; <em>Accepted electronically on ${ag.acceptedAt ? new Date(ag.acceptedAt).toUTCString() : "N/A"} from IP ${esc(ag.ipAddress || "N/A")}</em></p>
+<p style="font-size:12px;color:#666">This document is a legally binding electronic record of the service agreement accepted via the MiniMorph Studios platform. By accepting the terms, the signatory agreed to the MiniMorph Studios Terms of Service version ${esc(ag.termsVersion)}.</p>
+</div>
+</body></html>`;
+      return { html, agreementId: ag.id };
+    }),
+
+  adminSeedTestProject: adminProcedure
+    .input(z.object({ projectId: z.number(), setApprovedAt: z.boolean().optional() }))
+    .mutation(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (project.generatedSiteHtml) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Project already has generated HTML — seed only on empty projects to avoid overwriting real work." });
+      }
+      const testHtml = JSON.stringify({
+        index: `<!DOCTYPE html><html><head><title>TEST — ${project.businessName}</title></head><body><h1>${project.businessName}</h1><p>This is an admin-seeded test site for E2E testing. It was never shown to the customer.</p></body></html>`,
+        contact: `<!DOCTYPE html><html><head><title>Contact — ${project.businessName}</title></head><body><h1>Contact Us</h1><p>Test page seeded by admin for rollback/dry-run testing.</p></body></html>`,
+      });
+      const updateData: Record<string, unknown> = {
+        generatedSiteHtml: testHtml,
+        generationStatus: "complete",
+      };
+      if (input.setApprovedAt) {
+        updateData.approvedAt = new Date();
+        updateData.adminPreviewApprovedAt = new Date();
+      }
+      await db.updateOnboardingProject(input.projectId, updateData as Parameters<typeof db.updateOnboardingProject>[1]);
+      // Create initial version snapshot for rollback testing
+      const vn = await db.getNextSiteVersionNumber(input.projectId);
+      await db.createSiteVersion({ projectId: input.projectId, versionNumber: vn, htmlSnapshot: testHtml, changeRequest: "Admin seed: initial test snapshot for E2E testing", createdBy: "admin_seed" });
+      return { success: true, message: `Test project seeded. generatedSiteHtml set, version #${vn} created.${input.setApprovedAt ? " approvedAt + adminPreviewApprovedAt set." : ""}` };
+    }),
 });
 
 /* ═══════════════════════════════════════════════════════

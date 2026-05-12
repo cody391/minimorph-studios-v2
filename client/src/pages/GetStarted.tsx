@@ -843,7 +843,6 @@ export default function GetStarted() {
                     const result = await createCheckoutMutation.mutateAsync({
                       projectId,
                       couponCode: couponCode.trim() || undefined,
-                      tempPassword: tempPassword || undefined,
                       agreementId: agreementResult.agreementId,
                     });
                     window.location.href = result.checkoutUrl;

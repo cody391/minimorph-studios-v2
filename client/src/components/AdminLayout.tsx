@@ -180,6 +180,7 @@ function AdminLayoutContent({
       items: [
         { icon: LayoutDashboard, label: "Overview", path: "/admin" },
         { icon: CheckCircle2, label: "Launch Readiness", path: "/admin/readiness" },
+        { icon: Shield, label: "Legal Vault", path: "/admin/legal" },
       ],
     },
     {

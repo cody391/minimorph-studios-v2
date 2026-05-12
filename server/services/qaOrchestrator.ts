@@ -73,9 +73,29 @@ export async function runQAWithSafeguards(
     const finalStatus = finalScore >= 85 ? "commissioned" : "commissioned_with_warnings";
     await reporter.updateStatus(finalStatus, { commissionedAt: new Date() });
     await reporter.info("qa_orchestrator", `Site commissioned after ${attempts} attempts — score: ${finalScore}/100`);
+    if (finalStatus === "commissioned_with_warnings") {
+      try {
+        const { notifyOwner } = await import("../_core/notification");
+        await notifyOwner({
+          title: `NOTICE: QA Commissioned with Warnings: ${ctx.businessName}`,
+          content: `Site was commissioned with warnings for ${ctx.businessName} (Project #${ctx.projectId}).\n\nCustomer: ${ctx.email}\nQA Score: ${finalScore}/100 (below 85 ideal threshold)\nStatus: commissioned_with_warnings — site can proceed but has known issues.\n\nReview issues at /admin/onboarding before approving the preview for the customer.`,
+        });
+      } catch (notifyErr) {
+        console.warn("[QAOrchestrator] Warning notification failed:", notifyErr);
+      }
+    }
   } else {
     await reporter.updateStatus("escalated");
     await reporter.error("qa_orchestrator", `Site ESCALATED — score ${finalScore}/100 too low. Manual review required.`);
+    try {
+      const { notifyOwner } = await import("../_core/notification");
+      await notifyOwner({
+        title: `ACTION: QA Escalated — Manual Review Required: ${ctx.businessName}`,
+        content: `QA failed for ${ctx.businessName} (Project #${ctx.projectId}).\n\nCustomer: ${ctx.email}\nFinal QA Score: ${finalScore}/100 (below 50 threshold after ${attempts} attempts)\nResult: ESCALATED — site cannot be commissioned automatically.\n\nNext step: Login at /admin/onboarding → find this project → override QA or rebuild site.\n\nCritical issues: ${lastResult?.issues.filter(i => i.severity === "critical").length ?? 0}\nTotal issues: ${lastResult?.issues.length ?? 0}`,
+      });
+    } catch (notifyErr) {
+      console.warn("[QAOrchestrator] Admin notification failed:", notifyErr);
+    }
   }
 
   return {
