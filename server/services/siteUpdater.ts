@@ -125,21 +125,30 @@ Only return pages that are in the input — do not invent new pages.`;
       { request: changeRequest, respondedAt: new Date().toISOString() },
     ];
 
+    // Park at pending_admin_review — admin must approve before customer sees changes
     await db.updateOnboardingProject(projectId, {
       generationStatus: "complete",
       generationLog: parsed.summary || "Change request applied.",
       generatedSiteHtml: JSON.stringify(mergedPages),
       changeHistory: newHistory,
-      stage: "review",
+      stage: "pending_admin_review",
+      adminPreviewApprovedAt: null,
+      previewReadyAt: null,
     });
 
-    // Redeploy if site is already live
-    if (project.stage === "complete" || project.stage === "launch") {
-      const { redeploySite } = await import("./siteDeployment");
-      redeploySite(projectId).catch(err =>
-        console.error("[SiteUpdater] Redeploy error:", err)
-      );
+    // Notify admin that revision is ready for review
+    try {
+      const { notifyOwner } = await import("../_core/notification");
+      await notifyOwner({
+        title: `ACTION: Revision Ready — Admin Review Required: ${project.businessName}`,
+        content: `A revision has been processed for ${project.businessName} (Project #${projectId}).\n\nCustomer: ${project.contactName} <${project.contactEmail}>\nChange request: ${changeRequest}\nRequested by: ${requestedBy}\n\nThe updated site is parked at admin review. Customer cannot see it until you approve.\n\nLogin at /admin/onboarding → find this project → "Approve Preview for Customer".`,
+      });
+    } catch (notifyErr) {
+      console.warn("[SiteUpdater] Admin notification failed:", notifyErr);
     }
+
+    // For live sites: redeploy only after admin approves via adminReleaseLaunch
+    // (redeploy-on-approval is handled in adminApprovePreview + adminReleaseLaunch flow)
 
     // Send updated preview email
     try {
