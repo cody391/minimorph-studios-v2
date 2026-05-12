@@ -448,6 +448,21 @@ export const onboardingDataRouter = router({
       .limit(1);
     if (!rep[0])
       throw new TRPCError({ code: "NOT_FOUND", message: "Rep profile not found" });
+
+    const requiredForms = ["w9_tax", "hr_employment", "payroll_setup", "rep_agreement"] as const;
+    const submissions = await db
+      .select({ formType: repPaperworkSubmissions.formType })
+      .from(repPaperworkSubmissions)
+      .where(eq(repPaperworkSubmissions.repId, rep[0].id));
+    const submittedForms = new Set(submissions.map((s) => s.formType));
+    const missingForms = requiredForms.filter((f) => !submittedForms.has(f));
+    if (missingForms.length > 0) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Complete all paperwork forms before finishing onboarding.",
+      });
+    }
+
     await db
       .update(reps)
       .set({ paperworkCompletedAt: new Date() })
