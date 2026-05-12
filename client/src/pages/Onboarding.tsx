@@ -172,6 +172,7 @@ export default function Onboarding() {
   const saveQuestionnaireMutation = trpc.onboarding.saveQuestionnaire.useMutation();
   const saveProgressMutation = trpc.onboarding.saveProgress.useMutation();
   const createCheckoutMutation = trpc.onboarding.createCheckoutAfterElena.useMutation();
+  const recordAgreementMutation = trpc.onboarding.recordAgreementAcceptance.useMutation();
   const uploadAssetMutation = trpc.onboarding.uploadAsset.useMutation();
 
   // Load saved conversation on mount — runs once when project query settles
@@ -632,7 +633,16 @@ export default function Onboarding() {
                   if (!projectId) { toast.error("Project not found. Please try again."); return; }
                   setCheckoutLoading(true);
                   try {
-                    const result = await createCheckoutMutation.mutateAsync({ projectId });
+                    const agreementResult = await recordAgreementMutation.mutateAsync({
+                      projectId,
+                      signerName: user?.name || "Customer",
+                      packageSnapshot: paymentReady as Record<string, unknown>,
+                      termsVersion: "1.0",
+                    });
+                    const result = await createCheckoutMutation.mutateAsync({
+                      projectId,
+                      agreementId: agreementResult.agreementId,
+                    });
                     window.location.href = result.checkoutUrl;
                   } catch (err) {
                     const msg = err instanceof Error ? err.message : "Checkout failed";

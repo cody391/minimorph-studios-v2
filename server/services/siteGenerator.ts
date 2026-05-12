@@ -1161,7 +1161,9 @@ ${Object.keys(pages)
     pages["robots.txt"] = `User-agent: *\nAllow: /\n${siteBase ? `Sitemap: ${siteBase}/sitemap.xml` : ""}`;
 
     // ── Auto-register domain if customer said they need one ──────────────────
-    if ((q.domainStatus as string) === "needs_domain" && (q.domainName as string)) {
+    // Requires ENABLE_AUTO_DOMAIN_PURCHASE=true in addition to Namecheap keys being set.
+    // Without this env gate, domain purchase never fires even if keys are configured.
+    if ((q.domainStatus as string) === "needs_domain" && (q.domainName as string) && process.env.ENABLE_AUTO_DOMAIN_PURCHASE === "true") {
       const domainToRegister = (q.domainName as string).trim().toLowerCase();
       try {
         const { registerDomain } = await import("./domainService");

@@ -6478,7 +6478,7 @@ const complianceRouter = router({
   listCustomerAgreements: adminProcedure.query(async () => {
     const database = await getDb();
     if (!database) return [];
-    const { customerAgreements, users } = await import("../drizzle/schema");
+    const { customerAgreements } = await import("../drizzle/schema");
     const { desc: descFn } = await import("drizzle-orm");
     return database
       .select({
@@ -6489,6 +6489,7 @@ const complianceRouter = router({
         termsVersion: customerAgreements.termsVersion,
         acceptedAt: customerAgreements.acceptedAt,
         ipAddress: customerAgreements.ipAddress,
+        userAgent: customerAgreements.userAgent,
         checkoutSessionId: customerAgreements.checkoutSessionId,
         contractId: customerAgreements.contractId,
         packageSnapshot: customerAgreements.packageSnapshot,
@@ -6521,7 +6522,19 @@ const complianceRouter = router({
       const { repPaperworkSubmissions } = await import("../drizzle/schema");
       const { eq: eqFn, desc: descFn } = await import("drizzle-orm");
       const query = database
-        .select()
+        .select({
+          id: repPaperworkSubmissions.id,
+          repId: repPaperworkSubmissions.repId,
+          userId: repPaperworkSubmissions.userId,
+          formType: repPaperworkSubmissions.formType,
+          formTitle: repPaperworkSubmissions.formTitle,
+          formVersion: repPaperworkSubmissions.formVersion,
+          signerName: repPaperworkSubmissions.signerName,
+          signedAt: repPaperworkSubmissions.signedAt,
+          signedIpAddress: repPaperworkSubmissions.signedIpAddress,
+          signedUserAgent: repPaperworkSubmissions.signedUserAgent,
+          createdAt: repPaperworkSubmissions.createdAt,
+        })
         .from(repPaperworkSubmissions)
         .orderBy(descFn(repPaperworkSubmissions.signedAt));
       if (input.repId != null) {
@@ -6529,6 +6542,37 @@ const complianceRouter = router({
       }
       return query;
     }),
+
+  listProjectReadiness: adminProcedure.query(async () => {
+    const database = await getDb();
+    if (!database) return [];
+    const { onboardingProjects } = await import("../drizzle/schema");
+    const { desc: descFn } = await import("drizzle-orm");
+    return database
+      .select({
+        id: onboardingProjects.id,
+        businessName: onboardingProjects.businessName,
+        stage: onboardingProjects.stage,
+        generationStatus: onboardingProjects.generationStatus,
+        generatedSiteUrl: onboardingProjects.generatedSiteUrl,
+        cloudflareProjectName: onboardingProjects.cloudflareProjectName,
+        domainOption: onboardingProjects.domainOption,
+        domainName: onboardingProjects.domainName,
+        existingDomain: onboardingProjects.existingDomain,
+        domainRegistered: onboardingProjects.domainRegistered,
+        hostingSetup: onboardingProjects.hostingSetup,
+        sslSetup: onboardingProjects.sslSetup,
+        liveUrl: onboardingProjects.liveUrl,
+        approvedAt: onboardingProjects.approvedAt,
+        previewReadyAt: onboardingProjects.previewReadyAt,
+        launchedAt: onboardingProjects.launchedAt,
+        packageTier: onboardingProjects.packageTier,
+        contactEmail: onboardingProjects.contactEmail,
+        createdAt: onboardingProjects.createdAt,
+      })
+      .from(onboardingProjects)
+      .orderBy(descFn(onboardingProjects.createdAt));
+  }),
 
   getSystemReadiness: adminProcedure.query(async () => {
     const database = await getDb();
@@ -6559,6 +6603,7 @@ const complianceRouter = router({
       cloudflare: !!ENV.cloudflareApiToken,
       anthropic: !!ENV.anthropicApiKey,
       enableAutoDeployEnv: process.env.ENABLE_AUTO_DEPLOY === "true",
+      enableAutoDomainPurchaseEnv: process.env.ENABLE_AUTO_DOMAIN_PURCHASE === "true",
       automationSettings,
     };
   }),
