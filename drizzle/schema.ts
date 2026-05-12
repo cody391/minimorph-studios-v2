@@ -415,6 +415,7 @@ export const onboardingProjects = mysqlTable("onboarding_projects", {
   stage: mysqlEnum("stage", [
     "intake",
     "questionnaire",
+    "blueprint_review",
     "assets_upload",
     "design",
     "pending_admin_review",
@@ -2026,3 +2027,47 @@ export const customerAgreements = mysqlTable("customer_agreements", {
 });
 export type CustomerAgreement = typeof customerAgreements.$inferSelect;
 export type InsertCustomerAgreement = typeof customerAgreements.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
+   WEBSITE_BLUEPRINTS — Customer-approved website brief
+   Created from questionnaire data before generation begins.
+   Customer must approve before site is built.
+   ═══════════════════════════════════════════════════════ */
+export const websiteBlueprints = mysqlTable("website_blueprints", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  userId: int("userId"),
+
+  status: mysqlEnum("status", [
+    "draft",
+    "customer_review",
+    "approved",
+    "revision_requested",
+    "stale",
+  ]).default("draft").notNull(),
+
+  versionNumber: int("versionNumber").default(1).notNull(),
+  blueprintJson: json("blueprintJson").notNull(),
+
+  // Approval record
+  approvedAt: timestamp("approvedAt"),
+  approvedByUserId: int("approvedByUserId"),
+  approvalIpAddress: varchar("approvalIpAddress", { length: 64 }),
+  approvalUserAgent: varchar("approvalUserAgent", { length: 500 }),
+
+  // Revision request
+  revisionRequestedAt: timestamp("revisionRequestedAt"),
+  revisionNotes: text("revisionNotes"),
+
+  // Presentation
+  presentedAt: timestamp("presentedAt"),
+
+  // Authorship
+  createdBy: mysqlEnum("createdBy", ["elena", "admin", "system"]).default("elena").notNull(),
+  lockedForGeneration: boolean("lockedForGeneration").default(false).notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type WebsiteBlueprint = typeof websiteBlueprints.$inferSelect;
+export type InsertWebsiteBlueprint = typeof websiteBlueprints.$inferInsert;

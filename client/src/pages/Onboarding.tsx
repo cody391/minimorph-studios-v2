@@ -663,7 +663,7 @@ export default function Onboarding() {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-green-400" />
                   <span className="text-sm text-green-400 font-medium">
-                    Onboarding complete — your site is being built!
+                    Onboarding complete — review your Website Blueprint in the portal!
                   </span>
                 </div>
                 <Link href="/portal">

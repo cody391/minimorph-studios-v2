@@ -569,19 +569,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       try {
         const project = await db.getOnboardingProjectById(projectId);
         const q = project?.questionnaire as Record<string, unknown> | null;
-        if (project && q && q.businessName && q.businessType && project.generationStatus !== "generating" && project.generationStatus !== "complete") {
-          // Mark as queued and fire generation
+        if (project && q && q.businessName && project.generationStatus !== "generating" && project.generationStatus !== "complete") {
+          // Mark payment confirmed on project so blueprint approval can trigger generation later
+          await db.updateOnboardingProject(projectId, { approvedAt: new Date() });
+
+          // Blueprint gate is enforced inside generateSiteForProject — it will park at blueprint_review if not approved
           await db.updateOnboardingProject(projectId, {
-            stage: "assets_upload",
             generationStatus: "generating",
-            generationLog: "Payment confirmed — building your site...",
+            generationLog: "Payment confirmed — checking blueprint approval...",
           });
-          // Fire-and-forget generation
           const { generateSiteForProject } = await import("./services/siteGenerator");
           generateSiteForProject(projectId).catch(err =>
             console.error(`[Stripe] Generation failed for project ${projectId}:`, err)
           );
-          console.log(`[Stripe] Site generation queued for project ${projectId} after payment`);
+          console.log(`[Stripe] Site generation triggered for project ${projectId} after payment`);
         }
       } catch (genErr) {
         console.error(`[Stripe] Failed to trigger generation for project ${projectId}:`, genErr);
@@ -694,17 +695,18 @@ export async function simulateCheckoutCompleted({
   }
 
   // Trigger site generation if Elena has filled in the data
-  if (q.businessName && q.businessType && project.generationStatus !== "generating" && project.generationStatus !== "complete") {
+  // Blueprint gate is enforced inside generateSiteForProject — will park at blueprint_review if not approved
+  if (q.businessName && project.generationStatus !== "generating" && project.generationStatus !== "complete") {
     await db.updateOnboardingProject(projectId, {
-      stage: "assets_upload",
+      approvedAt: new Date(),
       generationStatus: "generating",
-      generationLog: "Bypass payment confirmed — building your site...",
+      generationLog: "Bypass payment confirmed — checking blueprint approval...",
     });
     const { generateSiteForProject } = await import("./services/siteGenerator");
     generateSiteForProject(projectId).catch(err =>
       console.error(`[Bypass] Generation failed for project ${projectId}:`, err)
     );
-    console.log(`[Bypass] Site generation queued for project ${projectId}`);
+    console.log(`[Bypass] Site generation triggered for project ${projectId}`);
   }
 }
 

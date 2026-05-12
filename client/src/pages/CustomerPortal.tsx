@@ -592,9 +592,17 @@ function OnboardingProjectTab({
   const [previewPage, setPreviewPage] = useState("index");
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [reviewMessages, setReviewMessages] = useState<Array<{role: string; content: string}>>([]);
+  const [blueprintRevisionNotes, setBlueprintRevisionNotes] = useState("");
   const requestChangeMutation = trpc.onboarding.requestChange.useMutation();
   const approveMutation = trpc.onboarding.approveLaunch.useMutation();
   const reviewChatMutation = trpc.ai.onboardingChat.useMutation();
+  const approveBlueprintMutation = trpc.onboarding.approveBlueprint.useMutation();
+  const requestBlueprintRevisionMutation = trpc.onboarding.requestBlueprintRevision.useMutation();
+
+  const { data: blueprint, refetch: refetchBlueprint } = trpc.onboarding.getBlueprint.useQuery(
+    { projectId: project?.id ?? 0 },
+    { enabled: !!project?.id && (project?.stage === "blueprint_review" || project?.stage === "questionnaire") }
+  );
 
   // Parse generated pages (stable across re-renders)
   const pages = useMemo<Record<string, string>>(() => {
@@ -676,6 +684,38 @@ function OnboardingProjectTab({
     }
   };
 
+  const handleApproveBlueprint = async () => {
+    if (!project?.id || !blueprint?.id) return;
+    try {
+      const result = await approveBlueprintMutation.mutateAsync({ projectId: project.id, blueprintId: blueprint.id });
+      if (result.generationStarted) {
+        toast.success("Blueprint approved! Your website build has started — check back in a few minutes.");
+      } else {
+        toast.success("Blueprint approved! Complete payment to start your build.");
+      }
+      onRefetch();
+      refetchBlueprint();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to approve blueprint.");
+    }
+  };
+
+  const handleRequestBlueprintRevision = async () => {
+    if (!project?.id || !blueprint?.id || !blueprintRevisionNotes.trim()) return;
+    try {
+      await requestBlueprintRevisionMutation.mutateAsync({
+        projectId: project.id,
+        blueprintId: blueprint.id,
+        notes: blueprintRevisionNotes.trim(),
+      });
+      toast.success("Change request sent. Our team will update your blueprint shortly.");
+      setBlueprintRevisionNotes("");
+      refetchBlueprint();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send revision request.");
+    }
+  };
+
   // No project yet
   if (!project) {
     return (
@@ -695,6 +735,172 @@ function OnboardingProjectTab({
           </Button>
         </CardContent>
       </Card>
+    );
+  }
+
+  // Blueprint review — customer must approve before generation begins
+  if (project.stage === "blueprint_review" || (blueprint && (blueprint.status === "customer_review" || blueprint.status === "revision_requested"))) {
+    const bp = (blueprint?.blueprintJson ?? {}) as Record<string, unknown>;
+    const design = (bp.designDirection ?? {}) as Record<string, unknown>;
+    const content = (bp.contentPlan ?? {}) as Record<string, unknown>;
+    const features = (bp.features ?? {}) as Record<string, unknown>;
+    const bizDetails = (bp.businessDetails ?? {}) as Record<string, unknown>;
+    const colors = Array.isArray(design.brandColors) ? (design.brandColors as string[]) : [];
+    const services = Array.isArray(content.servicesOffered) ? (content.servicesOffered as string[]) : [];
+    const addons = Array.isArray(features.addonsSelected) ? (features.addonsSelected as any[]) : [];
+    const isRevisionRequested = blueprint?.status === "revision_requested";
+
+    return (
+      <div className="space-y-6">
+        <Card className="border-electric/30 bg-electric/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-sm shrink-0">
+                E
+              </div>
+              <div>
+                <CardTitle className="text-off-white font-serif text-base">Your Website Blueprint</CardTitle>
+                <CardDescription className="text-soft-gray text-sm mt-1">
+                  {isRevisionRequested
+                    ? "Your revision request was received. Our team is updating your blueprint — check back soon."
+                    : "Elena has prepared your personalised website brief. Review everything below and approve it to start your build."}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {!blueprint ? (
+              <div className="py-8 text-center text-soft-gray text-sm">Loading your blueprint...</div>
+            ) : (
+              <>
+                {/* Business overview */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-soft-gray/60 uppercase tracking-wider">Business Overview</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-soft-gray">Business:</span>{" "}
+                      <span className="text-off-white font-medium">{String(bp.businessName ?? project.businessName)}</span>
+                    </div>
+                    <div>
+                      <span className="text-soft-gray">Type:</span>{" "}
+                      <span className="text-off-white font-medium capitalize">{String(bp.websiteType ?? "Business website")}</span>
+                    </div>
+                    <div>
+                      <span className="text-soft-gray">Package:</span>{" "}
+                      <span className="text-off-white font-medium capitalize">{String(bp.packageTier ?? project.packageTier)}</span>
+                    </div>
+                    {!!bizDetails.domainName && (
+                      <div>
+                        <span className="text-soft-gray">Domain:</span>{" "}
+                        <span className="text-off-white font-medium">{String(bizDetails.domainName)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Design direction */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-soft-gray/60 uppercase tracking-wider">Design Direction</h4>
+                  <div className="space-y-1.5 text-sm">
+                    {!!design.brandTone && (
+                      <div><span className="text-soft-gray">Tone:</span> <span className="text-off-white capitalize">{String(design.brandTone)}</span></div>
+                    )}
+                    {colors.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-soft-gray">Colors:</span>
+                        {colors.map((c, i) => (
+                          <span key={i} className="inline-flex items-center gap-1.5">
+                            <span className="w-4 h-4 rounded-full border border-border/30 inline-block" style={{ backgroundColor: c }} />
+                            <span className="text-off-white text-xs">{c}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {!!design.inspirationStyle && typeof design.inspirationStyle === "object" && (
+                      <div className="text-soft-gray text-xs">
+                        Style: {Object.values(design.inspirationStyle as Record<string, string>).filter(Boolean).join(" · ")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Services / content */}
+                {services.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-soft-gray/60 uppercase tracking-wider">Services / Content</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {services.map((s, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full bg-graphite text-soft-gray text-xs border border-border/30">{String(s)}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Features & add-ons */}
+                {addons.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-soft-gray/60 uppercase tracking-wider">Add-Ons Included</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {addons.map((a: any, i: number) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full bg-electric/10 text-electric text-xs border border-electric/20">
+                          {a.product ?? a.label ?? String(a)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Special requests */}
+                {content.specialRequests && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-soft-gray/60 uppercase tracking-wider">Special Requests</h4>
+                    <p className="text-sm text-soft-gray">{String(content.specialRequests)}</p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                {!isRevisionRequested && (
+                  <div className="pt-2 space-y-4 border-t border-border/30">
+                    <p className="text-sm text-soft-gray">
+                      Does this look right? Approve to start your build, or let us know what needs to change.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        onClick={handleApproveBlueprint}
+                        disabled={approveBlueprintMutation.isPending}
+                        className="bg-electric hover:bg-electric-light text-midnight font-sans rounded-full flex-1 sm:flex-none"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        {approveBlueprintMutation.isPending ? "Approving..." : "Approve Blueprint & Start Build"}
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-xs text-soft-gray/70">Something not right? Describe what you'd like changed:</p>
+                      <Textarea
+                        value={blueprintRevisionNotes}
+                        onChange={e => setBlueprintRevisionNotes(e.target.value)}
+                        placeholder="E.g. — The brand tone should be more playful. Add catering services to the services list. Our domain is mybiz.com not mybiz.net."
+                        rows={3}
+                        className="text-sm bg-charcoal border-border/50 text-off-white placeholder:text-soft-gray/40 resize-none"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRequestBlueprintRevision}
+                        disabled={!blueprintRevisionNotes.trim() || requestBlueprintRevisionMutation.isPending}
+                        className="border-border/50 text-soft-gray hover:text-off-white hover:border-electric/50"
+                      >
+                        {requestBlueprintRevisionMutation.isPending ? "Sending..." : "Request Changes"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 

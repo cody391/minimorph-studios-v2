@@ -44,6 +44,51 @@ function getStripePriceId(tier: string): string | null {
   return map[tier] || null;
 }
 
+function buildBlueprintFromQuestionnaire(
+  q: Record<string, unknown>,
+  meta: { businessName: string; websiteType: string; brandTone: string; packageTier: string }
+): Record<string, unknown> {
+  return {
+    businessName: q.businessName ?? meta.businessName,
+    websiteType: q.websiteType ?? meta.websiteType,
+    packageTier: q.packageTier ?? meta.packageTier,
+    designDirection: {
+      brandTone: q.brandTone ?? meta.brandTone,
+      brandColors: q.brandColors ?? null,
+      inspirationStyle: q.inspirationStyle ?? null,
+      avoidPatterns: q.avoidPatterns ?? [],
+    },
+    contentPlan: {
+      servicesOffered: q.servicesOffered ?? [],
+      targetAudience: q.targetAudience ?? null,
+      targetCustomerDescription: q.targetCustomerDescription ?? null,
+      uniqueDifferentiator: q.uniqueDifferentiator ?? null,
+      contentPreference: q.contentPreference ?? "we_write",
+      specialRequests: q.specialRequests ?? null,
+    },
+    features: {
+      mustHaveFeatures: q.mustHaveFeatures ?? [],
+      addonsSelected: q.addonsSelected ?? [],
+      pricingDisplay: q.pricingDisplay ?? "contact_for_pricing",
+    },
+    businessDetails: {
+      address: q.address ?? null,
+      phone: q.phone ?? null,
+      hours: q.hours ?? null,
+      socialHandles: q.socialHandles ?? null,
+      domainName: q.domainName ?? null,
+      domainStatus: q.domainStatus ?? "undecided",
+    },
+    competitiveStrategy: {
+      competitorWeaknesses: q.competitorWeaknesses ?? [],
+      competitorSites: q.competitorSites ?? [],
+    },
+    inspirationSites: q.inspirationSites ?? [],
+    testimonials: q.testimonials ?? [],
+    hasCustomPhotos: q.hasCustomPhotos ?? false,
+  };
+}
+
 /* ═══════════════════════════════════════════════════════
    REPS ROUTER
    ═══════════════════════════════════════════════════════ */
@@ -3125,14 +3170,120 @@ const onboardingRouter = router({
 
       await db.updateOnboardingProject(input.projectId, {
         questionnaire: input.questionnaire,
-        stage: "assets_upload",
-        generationStatus: "generating",
-        generationLog: "Queued for AI generation...",
+        stage: "blueprint_review",
+        generationStatus: "idle",
+        generationLog: "Waiting for customer blueprint approval.",
       });
-      // Fire-and-forget site generation
-      generateSiteForProject(input.projectId).catch(err =>
-        console.error("[onboarding.saveQuestionnaire] Generation error:", err)
-      );
+
+      // Build a customer-readable blueprint from the questionnaire
+      const bpJson = buildBlueprintFromQuestionnaire(input.questionnaire, {
+        businessName: businessName!,
+        websiteType: websiteType!,
+        brandTone: brandTone!,
+        packageTier: (await db.getOnboardingProjectById(input.projectId))?.packageTier ?? "growth",
+      });
+
+      // Upsert blueprint: mark any prior blueprints stale, then create new one
+      const existing = await db.getBlueprintByProjectId(input.projectId);
+      if (existing && existing.status !== "approved") {
+        await db.updateBlueprint(existing.id, { status: "stale" });
+      }
+      await db.createBlueprint({
+        projectId: input.projectId,
+        userId: ctx.user.id,
+        status: "customer_review",
+        versionNumber: existing ? existing.versionNumber + 1 : 1,
+        blueprintJson: bpJson,
+        presentedAt: new Date(),
+        createdBy: "elena",
+      });
+
+      return { success: true, blueprintPending: true };
+    }),
+
+  // Protected: get the current blueprint for a project
+  getBlueprint: protectedProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      return db.getBlueprintByProjectId(input.projectId);
+    }),
+
+  // Protected: customer approves the blueprint → triggers generation
+  approveBlueprint: protectedProcedure
+    .input(z.object({ projectId: z.number(), blueprintId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      if (!blueprint || blueprint.id !== input.blueprintId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Blueprint not found" });
+      }
+      if (blueprint.status === "approved") {
+        return { success: true, alreadyApproved: true };
+      }
+      if (blueprint.status !== "customer_review" && blueprint.status !== "revision_requested") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: `Blueprint cannot be approved in status: ${blueprint.status}` });
+      }
+
+      await db.updateBlueprint(input.blueprintId, {
+        status: "approved",
+        approvedAt: new Date(),
+        approvedByUserId: ctx.user.id,
+        lockedForGeneration: true,
+      });
+
+      // Check if payment was already received (project has a contract) — if so, trigger generation now
+      const project = await db.getOnboardingProjectById(input.projectId);
+      const shouldGenerate = project && (project.source !== "self_service" || project.approvedAt);
+      if (shouldGenerate) {
+        await db.updateOnboardingProject(input.projectId, {
+          stage: "assets_upload",
+          generationStatus: "generating",
+          generationLog: "Blueprint approved — queued for AI generation...",
+        });
+        generateSiteForProject(input.projectId).catch(err =>
+          console.error("[onboarding.approveBlueprint] Generation error:", err)
+        );
+      } else {
+        // Self-service without payment — move to assets_upload stage but don't generate yet
+        await db.updateOnboardingProject(input.projectId, {
+          stage: "assets_upload",
+        });
+      }
+
+      try {
+        await notifyOwner({
+          title: `Blueprint Approved: ${project?.businessName ?? input.projectId}`,
+          content: `Customer approved their Website Blueprint for project #${input.projectId}. ${shouldGenerate ? "Generation started automatically." : "Awaiting payment before generation."}`,
+        });
+      } catch {}
+
+      return { success: true, generationStarted: !!shouldGenerate };
+    }),
+
+  // Protected: customer requests blueprint changes
+  requestBlueprintRevision: protectedProcedure
+    .input(z.object({ projectId: z.number(), blueprintId: z.number(), notes: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      await assertProjectOwnership(ctx.user, input.projectId);
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      if (!blueprint || blueprint.id !== input.blueprintId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Blueprint not found" });
+      }
+      await db.updateBlueprint(input.blueprintId, {
+        status: "revision_requested",
+        revisionRequestedAt: new Date(),
+        revisionNotes: input.notes,
+      });
+      await db.updateOnboardingProject(input.projectId, { stage: "blueprint_review" });
+
+      try {
+        await notifyOwner({
+          title: `Blueprint Revision Requested: ${blueprint.blueprintJson ? (blueprint.blueprintJson as any).businessName : input.projectId}`,
+          content: `Customer requested changes to their Website Blueprint for project #${input.projectId}.\n\nNotes: ${input.notes}`,
+        });
+      } catch {}
+
       return { success: true };
     }),
 
@@ -6745,12 +6896,13 @@ const complianceRouter = router({
       .from(onboardingProjects)
       .orderBy(descFn(onboardingProjects.createdAt));
 
-    // Attach version counts and agreement status for each project
+    // Attach version counts, agreement status, and blueprint status for each project
     const projectIds = rows.map(r => r.id);
     let versionCounts: Record<number, number> = {};
     let agreementSigned: Record<number, boolean> = {};
+    let blueprintStatus: Record<number, string> = {};
     if (projectIds.length > 0) {
-      const { customerAgreements } = await import("../drizzle/schema");
+      const { customerAgreements, websiteBlueprints } = await import("../drizzle/schema");
       const vcRows = await database
         .select({
           projectId: siteVersions.projectId,
@@ -6769,9 +6921,23 @@ const complianceRouter = router({
       for (const ag of agRows) {
         agreementSigned[ag.projectId] = true;
       }
+      const bpRows = await database
+        .select({ projectId: websiteBlueprints.projectId, status: websiteBlueprints.status })
+        .from(websiteBlueprints)
+        .where(sqlFn`${websiteBlueprints.projectId} IN (${sqlFn.raw(projectIds.join(","))})`)
+        .orderBy(descFn(websiteBlueprints.versionNumber));
+      // Only keep the latest blueprint per project
+      for (const bp of bpRows) {
+        if (!blueprintStatus[bp.projectId]) blueprintStatus[bp.projectId] = bp.status;
+      }
     }
 
-    return rows.map(r => ({ ...r, versionCount: versionCounts[r.id] ?? 0, agreementSigned: agreementSigned[r.id] ?? false }));
+    return rows.map(r => ({
+      ...r,
+      versionCount: versionCounts[r.id] ?? 0,
+      agreementSigned: agreementSigned[r.id] ?? false,
+      blueprintStatus: blueprintStatus[r.id] ?? null,
+    }));
   }),
 
   getSystemReadiness: adminProcedure.query(async () => {
@@ -6890,6 +7056,31 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
       const vn = await db.getNextSiteVersionNumber(input.projectId);
       await db.createSiteVersion({ projectId: input.projectId, versionNumber: vn, htmlSnapshot: testHtml, changeRequest: "Admin seed: initial test snapshot for E2E testing", createdBy: "admin_seed" });
       return { success: true, message: `Test project seeded. generatedSiteHtml set, version #${vn} created.${input.setApprovedAt ? " approvedAt + adminPreviewApprovedAt set." : ""}` };
+    }),
+
+  adminListBlueprints: adminProcedure
+    .input(z.object({ projectId: z.number().optional() }).optional())
+    .query(async ({ input }) => {
+      if (input?.projectId) {
+        const bp = await db.getBlueprintByProjectId(input.projectId);
+        return bp ? [bp] : [];
+      }
+      return db.listBlueprintsAdmin(100);
+    }),
+
+  // Admin: approve blueprint on behalf of a customer (for testing / manual override)
+  adminApproveBlueprint: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .mutation(async ({ input }) => {
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      if (!blueprint) throw new TRPCError({ code: "NOT_FOUND", message: "No blueprint found for this project" });
+      await db.updateBlueprint(blueprint.id, {
+        status: "approved",
+        approvedAt: new Date(),
+        createdBy: "admin",
+        lockedForGeneration: true,
+      });
+      return { success: true };
     }),
 });
 

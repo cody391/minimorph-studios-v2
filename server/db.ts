@@ -82,6 +82,8 @@ import {
   InsertCustomerAgreement,
   siteVersions,
   InsertSiteVersion,
+  websiteBlueprints,
+  InsertWebsiteBlueprint,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import mysql from "mysql2/promise";
@@ -536,6 +538,30 @@ export async function repairSchema(): Promise<void> {
       INDEX \`idx_customer_agreements_userId\` (\`userId\`),
       INDEX \`idx_customer_agreements_projectId\` (\`projectId\`)
     )`);
+
+    // ── 0055: website_blueprints — customer-approved site brief ────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`website_blueprints\` (
+      \`id\` int AUTO_INCREMENT PRIMARY KEY NOT NULL,
+      \`projectId\` int NOT NULL,
+      \`userId\` int DEFAULT NULL,
+      \`status\` enum('draft','customer_review','approved','revision_requested','stale') NOT NULL DEFAULT 'draft',
+      \`versionNumber\` int NOT NULL DEFAULT 1,
+      \`blueprintJson\` json NOT NULL,
+      \`approvedAt\` timestamp NULL DEFAULT NULL,
+      \`approvedByUserId\` int DEFAULT NULL,
+      \`approvalIpAddress\` varchar(64) DEFAULT NULL,
+      \`approvalUserAgent\` varchar(500) DEFAULT NULL,
+      \`revisionRequestedAt\` timestamp NULL DEFAULT NULL,
+      \`revisionNotes\` text DEFAULT NULL,
+      \`presentedAt\` timestamp NULL DEFAULT NULL,
+      \`createdBy\` enum('elena','admin','system') NOT NULL DEFAULT 'elena',
+      \`lockedForGeneration\` boolean NOT NULL DEFAULT false,
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      KEY \`idx_website_blueprints_projectId\` (\`projectId\`)
+    )`);
+    // Add blueprint_review to onboarding_projects.stage enum (idempotent MODIFY)
+    await safe("ALTER TABLE `onboarding_projects` MODIFY COLUMN `stage` ENUM('intake','questionnaire','blueprint_review','assets_upload','design','pending_admin_review','review','revisions','final_approval','launch','complete') NOT NULL DEFAULT 'intake'");
 
     // ── 0053_site_versions: HTML snapshot before each revision ───────────────
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`site_versions\` (
@@ -1124,6 +1150,44 @@ export async function getNextSiteVersionNumber(projectId: number): Promise<numbe
     .from(siteVersions)
     .where(eq(siteVersions.projectId, projectId));
   return (result[0]?.maxVer ?? 0) + 1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   WEBSITE BLUEPRINTS — Customer-approved site briefs
+   ═══════════════════════════════════════════════════════ */
+export async function createBlueprint(data: InsertWebsiteBlueprint) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(websiteBlueprints).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function getBlueprintByProjectId(projectId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(websiteBlueprints)
+    .where(eq(websiteBlueprints.projectId, projectId))
+    .orderBy(desc(websiteBlueprints.versionNumber))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function updateBlueprint(id: number, data: Partial<InsertWebsiteBlueprint>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(websiteBlueprints).set(data).where(eq(websiteBlueprints.id, id));
+}
+
+export async function listBlueprintsAdmin(limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(websiteBlueprints)
+    .orderBy(desc(websiteBlueprints.createdAt))
+    .limit(limit);
 }
 
 /* ═══════════════════════════════════════════════════════

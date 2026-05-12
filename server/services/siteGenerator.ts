@@ -624,6 +624,18 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     return;
   }
 
+  // Blueprint gate: generation is blocked until the customer approves their Website Blueprint
+  const blueprint = await db.getBlueprintByProjectId(projectId);
+  if (!blueprint || blueprint.status !== "approved") {
+    console.warn(`[SiteGenerator] Project ${projectId}: generation blocked — blueprint not approved (status: ${blueprint?.status ?? "none"})`);
+    await db.updateOnboardingProject(projectId, {
+      generationStatus: "idle",
+      generationLog: "Waiting for customer blueprint approval before generation can begin.",
+      stage: "blueprint_review",
+    });
+    return;
+  }
+
   await db.updateOnboardingProject(projectId, {
     generationStatus: "generating",
     stage: "design",

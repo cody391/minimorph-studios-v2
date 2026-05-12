@@ -506,6 +506,14 @@ export default function LaunchReadiness() {
                           : <XCircle size={11} className="shrink-0" />}
                         Legal agreement: {(p as any).agreementSigned ? "SIGNED" : "MISSING"}
                       </span>
+                      {(p as any).blueprintStatus && (
+                        <span className={`flex items-center gap-1 ${(p as any).blueprintStatus === "approved" ? "text-green-400" : (p as any).blueprintStatus === "customer_review" ? "text-yellow-400" : "text-muted-foreground"}`}>
+                          {(p as any).blueprintStatus === "approved"
+                            ? <CheckCircle2 size={11} className="shrink-0" />
+                            : <AlertTriangle size={11} className="shrink-0" />}
+                          Blueprint: {((p as any).blueprintStatus as string).replace(/_/g, " ").toUpperCase()}
+                        </span>
+                      )}
                       {p.approvedAt && (
                         <span>Customer approved: {new Date(p.approvedAt).toLocaleString()}{!live && !hasCloudflare ? " — manual deploy needed" : ""}</span>
                       )}
