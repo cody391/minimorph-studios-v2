@@ -117,7 +117,19 @@ async function startServer() {
 
   // ── Security headers ──
   app.use(helmet({
-    contentSecurityPolicy: false, // Vite dev server needs inline scripts
+    contentSecurityPolicy: process.env.NODE_ENV === "production"
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "https://js.stripe.com", "https://static.cloudflareinsights.com"],
+            frameSrc: ["'self'", "https://js.stripe.com"],
+            connectSrc: ["'self'", "https://api.stripe.com", "https://cloudflareinsights.com"],
+            imgSrc: ["'self'", "data:", "https:"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          },
+        }
+      : false,
     crossOriginEmbedderPolicy: false,
   }));
 
