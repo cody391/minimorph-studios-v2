@@ -108,6 +108,16 @@ Only return pages that are in the input — do not invent new pages.`;
     // Merge updated pages back with untouched pages (Claude only received affected pages)
     const mergedPages = { ...pages, ...parsed.pages };
 
+    // Snapshot current HTML before overwriting (enables rollback)
+    const versionNumber = await db.getNextSiteVersionNumber(projectId);
+    await db.createSiteVersion({
+      projectId,
+      versionNumber,
+      htmlSnapshot: project.generatedSiteHtml,
+      changeRequest,
+      createdBy: requestedBy,
+    });
+
     // Append to change history
     const existingHistory = (project.changeHistory as Array<{ request: string; respondedAt: string }>) || [];
     const newHistory = [

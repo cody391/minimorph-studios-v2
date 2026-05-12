@@ -80,6 +80,8 @@ import {
   systemSettings,
   customerAgreements,
   InsertCustomerAgreement,
+  siteVersions,
+  InsertSiteVersion,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import mysql from "mysql2/promise";
@@ -1073,6 +1075,36 @@ export async function updateOnboardingProject(id: number, data: Partial<InsertOn
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(onboardingProjects).set(data).where(eq(onboardingProjects.id, id));
+}
+
+/* ═══════════════════════════════════════════════════════
+   SITE VERSIONS — HTML snapshots before revisions
+   ═══════════════════════════════════════════════════════ */
+export async function createSiteVersion(data: InsertSiteVersion) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(siteVersions).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function listSiteVersions(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(siteVersions)
+    .where(eq(siteVersions.projectId, projectId))
+    .orderBy(desc(siteVersions.versionNumber));
+}
+
+export async function getNextSiteVersionNumber(projectId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 1;
+  const result = await db
+    .select({ maxVer: sql<number>`COALESCE(MAX(${siteVersions.versionNumber}), 0)` })
+    .from(siteVersions)
+    .where(eq(siteVersions.projectId, projectId));
+  return (result[0]?.maxVer ?? 0) + 1;
 }
 
 /* ═══════════════════════════════════════════════════════

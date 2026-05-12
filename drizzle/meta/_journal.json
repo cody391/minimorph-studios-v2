@@ -373,6 +373,13 @@
       "when": 1747440000000,
       "tag": "0052_admin_gates",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "5",
+      "when": 1747526400000,
+      "tag": "0053_site_versions",
+      "breakpoints": true
     }
   ]
 }

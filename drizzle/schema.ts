@@ -1990,6 +1990,22 @@ export type RepPaperworkSubmission = typeof repPaperworkSubmissions.$inferSelect
 export type InsertRepPaperworkSubmission = typeof repPaperworkSubmissions.$inferInsert;
 
 /* ═══════════════════════════════════════════════════════
+   SITE_VERSIONS — Snapshot of generatedSiteHtml before each revision
+   One row per revision request, preserving full HTML for rollback.
+   ═══════════════════════════════════════════════════════ */
+export const siteVersions = mysqlTable("site_versions", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  versionNumber: int("versionNumber").notNull(),
+  htmlSnapshot: longtext("htmlSnapshot").notNull(),
+  changeRequest: text("changeRequest"),
+  createdBy: varchar("createdBy", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SiteVersion = typeof siteVersions.$inferSelect;
+export type InsertSiteVersion = typeof siteVersions.$inferInsert;
+
+/* ═══════════════════════════════════════════════════════
    CUSTOMER_AGREEMENTS — Pre-checkout legal acceptance
    Stored before Stripe session creation. Linked to contract after webhook.
    ═══════════════════════════════════════════════════════ */

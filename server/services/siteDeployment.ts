@@ -65,28 +65,45 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
         await addCustomDomain({ projectName: cfProjectName, domain: `www.${domainName}` }).catch(() => {});
         liveUrl = `https://${domainName}`;
 
-        // Send DNS setup instructions to customer
+        // Send DNS setup instructions to customer (friendly, white-glove copy)
         if (project.contactEmail) {
           try {
             const { sendEmail } = await import("./email");
+            const customerFirstName = (project.contactName || "there").split(" ")[0];
             await sendEmail({
               to: project.contactEmail,
-              subject: `Action needed: Connect your domain ${domainName}`,
+              subject: `Almost there! One quick step to connect ${domainName}`,
               html: `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#111122;color:#eaeaf0">
-<h2 style="color:#4a9eff">One last step — connect your domain</h2>
-<p>To make <strong>${domainName}</strong> point to your new site, update your nameservers at your domain registrar.</p>
-<h3 style="color:#4a9eff">Your new nameservers:</h3>
-<div style="background:#222240;padding:16px;border-radius:8px;font-family:monospace;margin:16px 0">
-  vera.ns.cloudflare.com<br>wade.ns.cloudflare.com
+<h2 style="color:#4a9eff">Quick email check before we connect your domain</h2>
+<p>Hi ${customerFirstName},</p>
+<p>Your new site is built and ready to go live at <strong>${domainName}</strong>. Before we flip the switch, we want to make sure nothing gets disrupted on your end — especially email.</p>
+
+<div style="background:#1a2a1a;border-left:4px solid #4aff88;padding:16px;border-radius:8px;margin:20px 0">
+  <strong style="color:#4aff88">Do you receive emails at ${domainName}?</strong><br>
+  <span style="color:#c8e8c8">For example: info@${domainName}, hello@${domainName}, or similar?<br>
+  If yes — don't worry, we'll take care of it. Just reply to this email and let us know which email addresses you use, and we'll make sure they keep working perfectly after the switch.</span>
 </div>
-<ol style="color:#c8c8d8;line-height:2">
-  <li>Log in to wherever you bought <strong>${domainName}</strong></li>
-  <li>Find <strong>DNS Settings</strong> or <strong>Nameservers</strong></li>
-  <li>Replace existing nameservers with the two above</li>
-  <li>Save — propagation takes 24–48 hours</li>
+
+<h3 style="color:#4a9eff;margin-top:28px">Ready to go? Here's all you need to do:</h3>
+<ol style="color:#c8c8d8;line-height:2.2">
+  <li>Log in to wherever you registered <strong>${domainName}</strong> (GoDaddy, Namecheap, Google Domains, etc.)</li>
+  <li>Find <strong>Domain Settings</strong> or <strong>Name Servers</strong></li>
+  <li>Replace whatever's there with these two addresses:<br>
+    <div style="background:#222240;padding:12px 16px;border-radius:6px;font-family:monospace;margin:8px 0;font-size:15px">
+      vera.ns.cloudflare.com<br>wade.ns.cloudflare.com
+    </div>
+  </li>
+  <li>Save and you're done — we'll handle the rest</li>
 </ol>
-<p style="background:#2a1a1a;border-left:4px solid #ff6b6b;padding:12px 16px;border-radius:4px;color:#ffb3b3;margin:16px 0"><strong>⚠️ Important — Email on your domain:</strong> Switching nameservers will transfer DNS control to Cloudflare. If you currently receive email at <strong>${domainName}</strong> (e.g. info@${domainName}), your existing MX records must be re-added inside Cloudflare before you change nameservers, or email delivery will stop. Please check with your email provider before making this change, or contact us and we'll help you.</p>
-<p style="color:#c8c8d8">We'll send you another email the moment your domain is fully live. If you need help, reply to this email.</p>
+
+<p style="color:#c8c8d8">Once you save, it typically takes a few hours (up to 48) for your domain to fully point to your new site. We'll send you a celebration email the moment it's live.</p>
+
+<div style="background:#1a1a2a;border:1px solid #333360;padding:16px;border-radius:8px;margin:20px 0">
+  <strong style="color:#aaaacc">Not sure where your domain is registered?</strong><br>
+  <span style="color:#8888aa">No problem at all — just reply to this email. We'll walk you through it step by step.</span>
+</div>
+
+<p style="color:#c8c8d8">We're with you every step of the way.</p>
 <p style="color:#7a7a90">&mdash; The MiniMorph Studios Team</p>
 </body></html>`,
             });

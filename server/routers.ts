@@ -4644,6 +4644,15 @@ Do NOT assume these are the same number. Ask them as separate questions, one mes
 - Testimonials: "Do you have any customer reviews or testimonials you love? Even one or two quotes with a first name and what they said — the more specific the better."
 - Blog topics: "If we're including a blog, what topics would actually help your customers? Think about what questions they ask you most — those are your best posts."
 
+DOMAIN EMAIL CHECK (always ask this if they mentioned a custom domain or have an existing domain):
+Ask: "Quick question before we wrap up the details — do you currently receive emails at your domain, like info@yourbusiness.com or hello@yourbusiness.com? No worries either way, I just want to make sure nothing gets disrupted when we connect your new site."
+- If yes or they list addresses: Ask "Which email addresses do you use? Just list them so our team can make sure they stay working after launch."
+  Store: domainEmailInUse: "yes", emailProvider: "<whatever they share — e.g. Google Workspace, GoDaddy, Outlook>" or "unknown" if they don't know.
+- If no: Store: domainEmailInUse: "no".
+- If unsure: "No problem — I'll flag it for our team so they can check when they connect your domain. That way nothing gets missed."
+  Store: domainEmailInUse: "unsure".
+This is purely a courtesy check. Never make it sound scary. Frame it as: we take care of it, you just need to let us know.
+
 PHASE 5 — DESIGN DIRECTION (research-backed, not a blank canvas)
 
 After you know the business type, location, and competitive landscape, you already know the design direction. Present it as a recommendation, not a question:
@@ -4726,6 +4735,7 @@ PRE-CHECKOUT GATE — Before outputting any payment tags, confirm ALL of the fol
 
 REQUIRED BEFORE <payment_ready>:
 - [ ] Internal contact phone collected (contactPhone)
+- [ ] Domain email check completed (domainEmailInUse stored as yes/no/unsure)
 - [ ] Domain status confirmed (has_domain / needs_domain / undecided) with domainPurchaseMode set
 - [ ] Customer knows the selected plan, monthly price, and total including add-ons
 - [ ] Customer knows which add-ons are monthly recurring vs. which are one-time payments
@@ -4807,6 +4817,8 @@ RULES FOR payment_ready tag:
   "socialHandles": {"instagram": "@handle", "facebook": "page-url", "tiktok": "@handle"},
   "testimonials": [{"quote": "Exact customer quote here", "name": "First name only", "context": "e.g. homeowner in Austin"}],
   "blogTopics": ["Topic 1 — why it matters to their customers", "Topic 2", "Topic 3"],
+  "domainEmailInUse": "yes|no|unsure",
+  "emailProvider": "Google Workspace|GoDaddy|Outlook|unknown|null",
   "addonsSelected": [{"product":"Review Collector","price":"$149/mo"}],
   "packageTier": "starter|growth|premium"
 }</questionnaire_data>
@@ -6616,9 +6628,9 @@ const complianceRouter = router({
   listProjectReadiness: adminProcedure.query(async () => {
     const database = await getDb();
     if (!database) return [];
-    const { onboardingProjects } = await import("../drizzle/schema");
-    const { desc: descFn } = await import("drizzle-orm");
-    return database
+    const { onboardingProjects, siteVersions } = await import("../drizzle/schema");
+    const { desc: descFn, sql: sqlFn, eq: eqFn } = await import("drizzle-orm");
+    const rows = await database
       .select({
         id: onboardingProjects.id,
         businessName: onboardingProjects.businessName,
@@ -6644,6 +6656,25 @@ const complianceRouter = router({
       })
       .from(onboardingProjects)
       .orderBy(descFn(onboardingProjects.createdAt));
+
+    // Attach version counts for each project
+    const projectIds = rows.map(r => r.id);
+    let versionCounts: Record<number, number> = {};
+    if (projectIds.length > 0) {
+      const vcRows = await database
+        .select({
+          projectId: siteVersions.projectId,
+          count: sqlFn<number>`COUNT(*)`,
+        })
+        .from(siteVersions)
+        .where(sqlFn`${siteVersions.projectId} IN (${sqlFn.raw(projectIds.join(","))})`)
+        .groupBy(siteVersions.projectId);
+      for (const vc of vcRows) {
+        versionCounts[vc.projectId] = Number(vc.count);
+      }
+    }
+
+    return rows.map(r => ({ ...r, versionCount: versionCounts[r.id] ?? 0 }));
   }),
 
   getSystemReadiness: adminProcedure.query(async () => {

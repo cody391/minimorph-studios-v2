@@ -467,16 +467,19 @@ export default function LaunchReadiness() {
                         </span>
                       </div>
                     </div>
-                    {p.approvedAt && (
-                      <p className="text-xs text-muted-foreground">
-                        Customer approved: {new Date(p.approvedAt).toLocaleString()}
-                        {!live && !hasCloudflare && " — manual deploy needed (Cloudflare not configured)"}
-                      </p>
-                    )}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground pt-1">
+                      <span className="flex items-center gap-1">
+                        <FileText size={11} className="shrink-0" />
+                        Revisions saved: <span className="text-foreground font-medium ml-0.5">{(p as any).versionCount ?? 0}</span>
+                      </span>
+                      {p.approvedAt && (
+                        <span>Customer approved: {new Date(p.approvedAt).toLocaleString()}{!live && !hasCloudflare ? " — manual deploy needed" : ""}</span>
+                      )}
+                    </div>
                     {(p.domainName || p.existingDomain) && !live && (
                       <div className="flex items-start gap-1.5 text-xs text-yellow-500/80">
                         <Info size={12} className="shrink-0 mt-0.5" />
-                        <span>Email warning: Changing nameservers to Cloudflare will break existing MX records. Confirm with customer before DNS cutover.</span>
+                        <span>Domain email: Customer has been contacted about checking existing email before DNS cutover.</span>
                       </div>
                     )}
                   </div>
