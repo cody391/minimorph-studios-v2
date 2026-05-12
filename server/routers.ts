@@ -3521,6 +3521,14 @@ const onboardingRouter = router({
       if (data.stage === "launch") {
         updateData.launchedAt = new Date();
       }
+      // Keep adminPreviewApprovedAt consistent: if admin manually jumps to review,
+      // set the approval timestamp so the action queue and readiness page stay accurate.
+      if (data.stage === "review" || data.stage === "revisions" || data.stage === "final_approval") {
+        const existing = await db.getOnboardingProjectById(id);
+        if (existing && !existing.adminPreviewApprovedAt) {
+          updateData.adminPreviewApprovedAt = new Date();
+        }
+      }
       await db.updateOnboardingProject(id, updateData);
       // Wire stage-change email to customer
       try {
