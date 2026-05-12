@@ -51,7 +51,7 @@ const steps = [
     icon: BarChart3,
     number: "06",
     title: "Monthly Care Begins",
-    description: "Monthly performance reports, ongoing change requests via your portal, and AI recommendations for what to improve next. This is where most agencies disappear. We don't.",
+    description: "Monthly performance reports, ongoing change requests via your portal, and recommendations for what to improve next. This is where most agencies disappear. We don't.",
     aside: "Every month, for real",
   },
 ];

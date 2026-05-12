@@ -195,8 +195,8 @@ export default function RepDashboard() {
   }
 
   // ── Suspended / inactive / rejected lockout ──
-  if (["suspended", "inactive", "rejected"].includes(repProfile.status)) {
-    const isRejected = repProfile.status === "rejected";
+  if (["suspended", "inactive", "rejected"].includes(repProfile.status as string)) {
+    const isRejected = (repProfile.status as string) === "rejected";
     return (
       <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
         <div className="w-full max-w-md">

@@ -37,7 +37,7 @@ export default function Hero() {
             >
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-electric/10 border border-electric/20 text-electric text-sm font-sans font-medium mb-8">
                 <Zap size={14} />
-                AI-Assisted Website Design & Management
+                Done-For-You Website Design & Management
               </span>
             </motion.div>
 
@@ -57,7 +57,7 @@ export default function Hero() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="text-lg lg:text-xl text-off-white/60 font-sans leading-relaxed mb-10 max-w-lg"
             >
-              Most agencies disappear after launch. We don't. Every plan includes an AI-assisted build, monthly reports, and support that actually responds — starting at $195/mo.
+              Most agencies disappear after launch. We don't. Every plan includes a custom-built website, monthly reports, and support that actually responds — starting at $195/mo.
             </motion.p>
 
             <motion.div
@@ -92,7 +92,7 @@ export default function Hero() {
             >
               <div className="text-center">
                 <div className="text-2xl font-serif text-off-white">48h</div>
-                <div className="text-[11px] font-sans text-off-white/40">First Draft</div>
+                <div className="text-[11px] font-sans text-off-white/40">First Concept</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-serif text-off-white">Any</div>

@@ -37,6 +37,7 @@ export interface SiteBrief {
   pricingDisplay?: string;
   customerPhotoUrl?: string;
   logoUrl?: string;
+  siteUrl?: string;
 }
 
 // ── Template selection ────────────────────────────────────────────────────────
@@ -694,9 +695,14 @@ export async function injectContentIntoTemplate(
 
   // ── UPGRADE 4: Canonical URL ──────────────────────────────────────────────
 
+  const siteSlugForCanonical = brief.businessName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  const canonicalBase = brief.siteUrl || `https://${siteSlugForCanonical}.${ENV.minimorphSitesDomain}`;
   const canonicalUrl = pageName === "index"
-    ? `https://www.minimorphstudios.net`
-    : `https://www.minimorphstudios.net/${pageName}.html`;
+    ? `${canonicalBase}/`
+    : `${canonicalBase}/${pageName}.html`;
 
   if (!html.includes('rel="canonical"')) {
     html = html.replace("</head>", `<link rel="canonical" href="${canonicalUrl}">\n</head>`);
@@ -1101,7 +1107,7 @@ export async function generateSiteFromTemplate(
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
-  const siteBase = `https://${siteSlug}.minimorphstudios.net`;
+  const siteBase = brief.siteUrl || `https://${siteSlug}.${ENV.minimorphSitesDomain}`;
   const today = new Date().toISOString().split("T")[0];
 
   const htmlPages = Object.keys(pages).filter(

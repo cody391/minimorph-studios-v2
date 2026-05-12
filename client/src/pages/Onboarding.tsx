@@ -686,7 +686,7 @@ export default function Onboarding() {
               </div>
               <p className="text-xs text-gray-600 mt-2">
                 Prefer a form?{" "}
-                <Link href="/onboarding/form" className="text-[#4a9eff] hover:underline">
+                <Link href="/onboarding" className="text-[#4a9eff] hover:underline">
                   Use the questionnaire instead
                 </Link>
               </p>

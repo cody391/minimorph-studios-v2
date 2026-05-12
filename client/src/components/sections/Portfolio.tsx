@@ -46,8 +46,7 @@ export default function Portfolio() {
             className="text-lg text-off-white/50 font-sans leading-relaxed max-w-xl mx-auto"
           >
             Built for every type of business — retail, trades, hospitality, wellness,
-            services, and more. Each one on a real MiniMorph Studios plan with real
-            add-ons you can see working. Click through — these are our showroom floor models.
+            services, and more. These are examples of the kind of sites we build for our clients.
           </motion.p>
         </div>
 

@@ -133,6 +133,7 @@ async function startServer() {
   app.use("/api/trpc/contactSubmissions.submit", publicFormLimiter);
   app.use("/api/trpc/leadGen.requestPublicAudit", publicFormLimiter);
   app.use("/api/trpc/orders.create", publicFormLimiter);
+  app.use("/api/contact-submit", publicFormLimiter);
 
   // ── Stricter rate limiting on auth endpoints (brute-force protection) ──
   const authLimiter = rateLimit({

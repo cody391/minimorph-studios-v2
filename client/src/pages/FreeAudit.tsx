@@ -127,7 +127,7 @@ export default function FreeAudit() {
                 Customers?
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Get a comprehensive AI-powered audit of your website in minutes. We'll analyze your
+                Get a comprehensive audit of your website in minutes. We'll analyze your
                 speed, mobile experience, SEO, security, and more — then show you exactly what to fix.
               </p>
               <div className="grid grid-cols-2 gap-4 pt-2">

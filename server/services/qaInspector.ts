@@ -622,7 +622,7 @@ Return [] if clean.` }],
 /* ── Auto-fix Engine ───────────────────────────────────────────────────── */
 async function applyAutoFix(issue: QAIssue, ctx: QAContext, reporter: BuildReporter, _db: any): Promise<boolean> {
   try {
-    await reporter.fix("auto_fix", `Applying fix: ${issue.autoFixAction}`, issue.description);
+    await reporter.fix("auto_fix", `Flagging for manual review: ${issue.autoFixAction}`, issue.description);
     switch (issue.autoFixAction) {
       case "generate_meta_description":
         await reporter.fix("auto_fix", "Meta description generated and logged for patch"); return true;

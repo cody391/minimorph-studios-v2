@@ -220,13 +220,13 @@ export async function repairSchema(): Promise<void> {
       UNIQUE KEY \`system_settings_key_unique\` (\`settingKey\`)
     )`);
     await conn.execute(`INSERT IGNORE INTO \`system_settings\` (\`settingKey\`, \`settingValue\`, \`description\`) VALUES
-      ('lead_engine_active','true','Master switch for the entire lead generation engine'),
-      ('job_scraper_active','true','Enable/disable the Google Maps scraping job'),
+      ('lead_engine_active','false','Master switch for the entire lead generation engine'),
+      ('job_scraper_active','false','Enable/disable the Google Maps scraping job'),
       ('job_scorer_active','true','Enable/disable the website scoring job'),
       ('job_enrichment_active','true','Enable/disable the business enrichment job'),
-      ('job_outreach_active','true','Enable/disable the automated outreach job'),
-      ('job_auto_feed_active','true','Enable/disable the auto-feed reps job'),
-      ('job_reengagement_active','true','Enable/disable the cold lead re-engagement job'),
+      ('job_outreach_active','false','Enable/disable the automated outreach job'),
+      ('job_auto_feed_active','false','Enable/disable the auto-feed reps job'),
+      ('job_reengagement_active','false','Enable/disable the cold lead re-engagement job'),
       ('daily_sms_cap','50','Maximum SMS messages per rep per day'),
       ('daily_email_cap','200','Maximum emails per rep per day'),
       ('daily_call_cap','100','Maximum calls per rep per day'),

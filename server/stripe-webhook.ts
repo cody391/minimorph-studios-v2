@@ -157,6 +157,24 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
+  // ── 0. Idempotency guard — one processing per checkout session ─────
+  // Uses the same processedCheckoutSessions table + onDuplicateKeyUpdate pattern
+  // already used for coupon dedup. First delivery inserts a new row (insertId > 0).
+  // A Stripe retry finds the unique key and gets insertId = 0 → early return.
+  if (session.id) {
+    const guardResult = await database
+      .insert(processedCheckoutSessions)
+      .values({ stripeSessionId: session.id, purpose: "checkout_completed" })
+      .onDuplicateKeyUpdate({ set: { processedAt: sql`processedAt` } });
+    const isFirstDelivery = Array.isArray(guardResult)
+      ? ((guardResult as any)[0]?.insertId ?? 0) > 0
+      : false;
+    if (!isFirstDelivery) {
+      console.log(`[Stripe] Duplicate checkout.session.completed for session ${session.id} — skipping`);
+      return;
+    }
+  }
+
   const userId = session.metadata?.user_id
     ? parseInt(session.metadata.user_id)
     : null;

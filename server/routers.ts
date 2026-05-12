@@ -740,6 +740,24 @@ const leadsRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "This lead is already closed" });
       }
 
+      // Stable dedup guard — must run before any records are created.
+      // customers.leadId is the most reliable key: if a customer row exists for this
+      // lead, a prior closeDeal call already committed. Catches retries and double-clicks
+      // that slip past the lead stage check above (e.g. replay after network error).
+      // True concurrent simultaneous requests require a DB unique index on customers.leadId
+      // which is deferred to the next migration patch.
+      const database = await getDb();
+      if (database) {
+        const existingCustomer = await database
+          .select({ id: customers.id })
+          .from(customers)
+          .where(eq(customers.leadId, input.leadId))
+          .limit(1);
+        if (existingCustomer.length > 0) {
+          throw new TRPCError({ code: "CONFLICT", message: "Commission already recorded for this deal." });
+        }
+      }
+
       // 0. Apply discount if any
       const discountPct = input.discountPercent || 0;
       const originalPrice = parseFloat(input.monthlyPrice);
@@ -803,7 +821,6 @@ const leadsRouter = router({
       // 4. Calculate commission — DOUBLE for self-sourced leads
       const isSelfSourced = lead.selfSourced;
       // Use accountability tier (bronze/silver/gold/platinum) for commission rate
-      const database = await getDb();
       let tierKey: TierKey = "bronze";
       if (database) {
         const tierRows = await database.select().from(repTiers).where(eq(repTiers.repId, rep.id)).limit(1);
@@ -814,7 +831,7 @@ const leadsRouter = router({
       if (isSelfSourced) rate = Math.min(rate * 2, 0.40);
       const annualValue = discountedPrice * 12;
       const commissionAmount = (annualValue * rate).toFixed(2);
-      // Commission auto-approved (instant payout model)
+
       const commission = await db.createCommission({
         repId: rep.id,
         contractId: contract.id,
@@ -3215,7 +3232,6 @@ const onboardingRouter = router({
           source: "self_service",
           addons_monthly_total: addonsMonthlyTotal.toFixed(2),
           ...(input.agreementId ? { agreement_id: String(input.agreementId) } : {}),
-          ...(input.tempPassword ? { temp_password: input.tempPassword } : {}),
           ...((project as any).leadId ? { lead_id: String((project as any).leadId), acquisition_source: (project as any).acquisitionSource || "self_service" } : {}),
         };
       }

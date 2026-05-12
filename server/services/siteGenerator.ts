@@ -1243,13 +1243,20 @@ ${Object.keys(pages)
       // S3 upload is non-critical
     }
 
-    // Auto-deploy if admin has enabled the setting (bypasses QA review step)
+    // Auto-deploy if admin has enabled the setting AND the ENABLE_AUTO_DEPLOY env var is
+    // explicitly set to "true". The env var is a hard gate for MVP safety: a DB value alone
+    // cannot trigger auto-deploy. Set ENABLE_AUTO_DEPLOY=true in Railway when the QA +
+    // delivery pipeline is fully validated and ready for unsupervised use.
+    const autoDeployEnvEnabled = process.env.ENABLE_AUTO_DEPLOY === "true";
+    if (!autoDeployEnvEnabled) {
+      console.log(`[SiteGen] Auto-deploy skipped for project ${projectId} — ENABLE_AUTO_DEPLOY is not set. Admin review required before deployment.`);
+    }
     try {
       const { getDb: getDbForSetting } = await import("../db");
       const { systemSettings: settingsTable } = await import("../../drizzle/schema");
       const { eq: eqSetting } = await import("drizzle-orm");
       const dbForSetting = await getDbForSetting();
-      if (dbForSetting) {
+      if (autoDeployEnvEnabled && dbForSetting) {
         const rows = await dbForSetting.select().from(settingsTable).where(eqSetting(settingsTable.settingKey, "auto_deploy_enabled"));
         if (rows[0]?.settingValue === "true") {
           const { deployToPages } = await import("./cloudflareDeployment");
