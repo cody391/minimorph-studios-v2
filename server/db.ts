@@ -492,9 +492,15 @@ export async function repairSchema(): Promise<void> {
     await safe("ALTER TABLE `coupons` ADD COLUMN `packageRestriction` varchar(64) NOT NULL DEFAULT 'all'");
     await safe("ALTER TABLE `coupons` ADD COLUMN `campaignName` varchar(128) DEFAULT NULL");
 
-    // ── Columns from 0052 (onboarding project attribution) ───────────────
+    // ── Columns from attribution migration (onboarding_projects) ───────────
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `leadId` int DEFAULT NULL");
     await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `acquisitionSource` varchar(64) DEFAULT NULL");
+
+    // ── 0052_admin_gates: stage enum + admin approval columns ──────────────
+    // MODIFY COLUMN for enum is idempotent — MySQL accepts same value silently
+    await safe("ALTER TABLE `onboarding_projects` MODIFY COLUMN `stage` ENUM('intake','questionnaire','assets_upload','design','pending_admin_review','review','revisions','final_approval','launch','complete') NOT NULL DEFAULT 'intake'");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `adminPreviewApprovedAt` TIMESTAMP NULL DEFAULT NULL");
+    await safe("ALTER TABLE `onboarding_projects` ADD COLUMN `adminLaunchApprovedAt` TIMESTAMP NULL DEFAULT NULL");
 
     // ── Table from 0053 (webhook idempotency guard) ───────────────────────
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`processed_checkout_sessions\` (
@@ -529,6 +535,19 @@ export async function repairSchema(): Promise<void> {
       \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       INDEX \`idx_customer_agreements_userId\` (\`userId\`),
       INDEX \`idx_customer_agreements_projectId\` (\`projectId\`)
+    )`);
+
+    // ── 0053_site_versions: HTML snapshot before each revision ───────────────
+    await conn.execute(`CREATE TABLE IF NOT EXISTS \`site_versions\` (
+      \`id\` int NOT NULL AUTO_INCREMENT,
+      \`projectId\` int NOT NULL,
+      \`versionNumber\` int NOT NULL,
+      \`htmlSnapshot\` longtext NOT NULL,
+      \`changeRequest\` text,
+      \`createdBy\` varchar(128),
+      \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (\`id\`),
+      KEY \`idx_site_versions_projectId\` (\`projectId\`)
     )`);
 
     // ── rep_paperwork_submissions (0050) ──────────────────────────────────
