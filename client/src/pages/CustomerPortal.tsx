@@ -288,7 +288,7 @@ export default function CustomerPortal() {
                   {latestReport ? (
                     <>
                       <div className="text-lg font-serif text-off-white">{latestReport.reportMonth}</div>
-                      <p className="text-xs text-soft-gray font-sans mt-1">{latestReport.pageViews ? `${latestReport.pageViews.toLocaleString()} page views` : "Analytics incoming"}</p>
+                      <p className="text-xs text-soft-gray font-sans mt-1">{(latestReport.pageViews ?? 0).toLocaleString()} page views</p>
                     </>
                   ) : (
                     <p className="text-sm text-soft-gray font-sans">No reports yet</p>
@@ -408,22 +408,22 @@ export default function CustomerPortal() {
                         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
                           <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
                             <Eye className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
-                            <p className="text-lg font-serif text-off-white">{report.pageViews ? report.pageViews.toLocaleString() : "—"}</p>
+                            <p className="text-lg font-serif text-off-white">{(report.pageViews ?? 0).toLocaleString()}</p>
                             <p className="text-[10px] text-soft-gray font-sans">Page Views</p>
                           </div>
                           <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
                             <UsersIcon className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
-                            <p className="text-lg font-serif text-off-white">{report.uniqueVisitors ? report.uniqueVisitors.toLocaleString() : "—"}</p>
+                            <p className="text-lg font-serif text-off-white">{(report.uniqueVisitors ?? 0).toLocaleString()}</p>
                             <p className="text-[10px] text-soft-gray font-sans">Visitors</p>
                           </div>
                           <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
                             <TrendingUp className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
-                            <p className="text-lg font-serif text-off-white">{report.bounceRate != null ? `${report.bounceRate}%` : "—"}</p>
+                            <p className="text-lg font-serif text-off-white">{report.bounceRate ?? "N/A"}%</p>
                             <p className="text-[10px] text-soft-gray font-sans">Bounce Rate</p>
                           </div>
                           <div className="text-center p-3 bg-midnight-dark/20 rounded-lg">
                             <Calendar className="h-4 w-4 text-soft-gray/60 mx-auto mb-1" />
-                            <p className="text-lg font-serif text-off-white">{report.conversionRate != null ? `${report.conversionRate}%` : "—"}</p>
+                            <p className="text-lg font-serif text-off-white">{report.conversionRate ?? "N/A"}%</p>
                             <p className="text-[10px] text-soft-gray font-sans">Conversion</p>
                           </div>
                         </div>
