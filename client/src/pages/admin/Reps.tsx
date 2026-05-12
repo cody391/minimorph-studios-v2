@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import {
   Users, CheckCircle, Clock, XCircle, Shield, Trophy, DollarSign,
   FileText, GraduationCap, AlertTriangle, CreditCard, ArrowUpRight,
-  ClipboardCheck, Eye, Zap, Phone,
+  ClipboardCheck, Eye, Zap, Phone, Loader2, PenLine,
 } from "lucide-react";
 import { useState, useMemo, lazy, Suspense } from "react";
 import { toast } from "sonner";
@@ -583,6 +583,8 @@ export default function Reps() {
 
               <RepOnboardingProgress repId={selectedRep.id} />
 
+              <RepPaperworkPanel repId={selectedRep.id} />
+
               <div>
                 <label className="text-xs text-soft-gray block mb-1">Change Status</label>
                 <Select value={selectedRep.status} onValueChange={(val) => handleStatusChange(selectedRep.id, val)}>
@@ -643,6 +645,180 @@ function RepOnboardingProgress({ repId }: { repId: number }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   REP PAPERWORK PANEL — Admin e-sign submission viewer
+   ═══════════════════════════════════════════════════════ */
+const FORM_LABELS: Record<string, string> = {
+  w9_tax: "W-9 Tax Information",
+  hr_employment: "Identity & Contact Info",
+  payroll_setup: "Payout Setup",
+  rep_agreement: "Rep Agreement",
+};
+
+function RepPaperworkPanel({ repId }: { repId: number }) {
+  const [viewSignatureId, setViewSignatureId] = useState<number | null>(null);
+
+  const { data: submissions, isLoading } = trpc.repOnboarding.adminGetPaperworkSubmissions.useQuery(
+    { repId },
+    { enabled: !!repId }
+  );
+
+  const { data: sigData, isLoading: sigLoading } = trpc.repOnboarding.adminGetPaperworkSignature.useQuery(
+    { submissionId: viewSignatureId! },
+    { enabled: !!viewSignatureId }
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 py-3 text-xs text-soft-gray">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading paperwork…
+      </div>
+    );
+  }
+
+  const REQUIRED_FORMS = ["w9_tax", "hr_employment", "payroll_setup", "rep_agreement"];
+  const savedCount = submissions?.length ?? 0;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-soft-gray font-medium flex items-center gap-1.5">
+          <PenLine className="h-3.5 w-3.5" /> E-Sign Paperwork
+        </span>
+        <span className={`text-xs font-medium ${savedCount === 4 ? "text-emerald-400" : "text-amber-400"}`}>
+          {savedCount}/{REQUIRED_FORMS.length} saved
+        </span>
+      </div>
+
+      {!submissions || submissions.length === 0 ? (
+        <p className="text-xs text-soft-gray/60 font-sans py-1">No saved paperwork submissions yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {submissions.map((sub: any) => {
+            const isViewing = viewSignatureId === sub.id;
+            return (
+              <div key={sub.id} className="border border-border/40 rounded-lg p-3 space-y-2 text-xs font-sans">
+                {/* Header row */}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-off-white">
+                    {sub.formTitle || FORM_LABELS[sub.formType] || sub.formType}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-border/50 text-soft-gray">
+                      v{sub.formVersion}
+                    </Badge>
+                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${
+                      sub.signatureType === "drawn"
+                        ? "border-blue-500/30 text-blue-400"
+                        : "border-purple-500/30 text-purple-400"
+                    }`}>
+                      {sub.signatureType}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Signer / date */}
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  <div>
+                    <span className="text-soft-gray/60">Signer</span>
+                    <p className="text-off-white/80">{sub.signerName}</p>
+                  </div>
+                  <div>
+                    <span className="text-soft-gray/60">Signed</span>
+                    <p className="text-off-white/80">
+                      {sub.signedAt ? new Date(sub.signedAt).toLocaleString() : "—"}
+                    </p>
+                  </div>
+                  {sub.signedIpAddress && (
+                    <div>
+                      <span className="text-soft-gray/60">IP</span>
+                      <p className="text-off-white/80 font-mono">{sub.signedIpAddress}</p>
+                    </div>
+                  )}
+                  {sub.signedUserAgent && (
+                    <div className="col-span-2">
+                      <span className="text-soft-gray/60">User-Agent</span>
+                      <p className="text-off-white/60 truncate" title={sub.signedUserAgent}>
+                        {sub.signedUserAgent}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Form data snapshot */}
+                {sub.formDataJson && (
+                  <details className="mt-1">
+                    <summary className="cursor-pointer text-soft-gray/60 hover:text-soft-gray select-none">
+                      Form data snapshot
+                    </summary>
+                    <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 pl-2 border-l border-border/30">
+                      {Object.entries(sub.formDataJson as Record<string, unknown>).map(([k, v]) => (
+                        <div key={k}>
+                          <span className="text-soft-gray/50">{k}: </span>
+                          <span className="text-off-white/70">
+                            {v === null || v === undefined
+                              ? "—"
+                              : typeof v === "boolean"
+                                ? v ? "yes" : "no"
+                                : String(v)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+
+                {/* Signature on-demand */}
+                <div className="pt-1 flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-[10px] h-6 px-2 text-electric hover:text-electric-light"
+                    onClick={() => setViewSignatureId(isViewing ? null : sub.id)}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    {isViewing ? "Hide Signature" : "View Signature"}
+                  </Button>
+                </div>
+
+                {isViewing && (
+                  <div className="border border-border/30 rounded-lg p-3 bg-midnight-dark/30">
+                    {sigLoading ? (
+                      <div className="flex items-center gap-2 text-xs text-soft-gray">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Loading signature…
+                      </div>
+                    ) : sigData ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-[10px] text-soft-gray/60">
+                          <span>{sigData.signerName}</span>
+                          <span>{sigData.signedAt ? new Date(sigData.signedAt).toLocaleString() : ""}</span>
+                        </div>
+                        {sigData.signatureType === "drawn" ? (
+                          <img
+                            src={sigData.signatureData}
+                            alt="Drawn signature"
+                            className="max-h-24 w-auto border border-border/30 rounded bg-white p-1"
+                          />
+                        ) : (
+                          <p className="font-serif text-xl text-off-white italic border-b border-border/40 pb-1">
+                            {sigData.signatureData}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-soft-gray/50">Failed to load signature.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
