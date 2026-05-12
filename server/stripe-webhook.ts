@@ -198,7 +198,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customerName = session.metadata?.customer_name || orderRow?.customerName || "Customer";
   const businessName = session.metadata?.business_name || orderRow?.businessName || customerName;
   const packageTier = (session.metadata?.package_tier || orderRow?.packageTier || "starter") as PackageKey;
-  const monthlyPrice = PACKAGES[packageTier].monthlyPrice;
+  const addonsMonthlyFromMeta = parseFloat(session.metadata?.addons_monthly_total || "0") || 0;
+  const monthlyPrice = PACKAGES[packageTier].monthlyPrice + addonsMonthlyFromMeta;
 
   // ── Attribution metadata from AI-drip flow ──────────────────────────
   const isRepClosedSession =

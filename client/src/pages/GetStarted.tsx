@@ -27,7 +27,8 @@ type AddonAccepted = { product: string; price: string; label: string };
 type PaymentReadyData = {
   packageTier?: string;
   monthlyTotal?: number;
-  addons?: Array<{ product: string; price: number }>;
+  oneTimeTotal?: number;
+  addons?: Array<{ product: string; price: number; isOneTime?: boolean }>;
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -929,9 +930,15 @@ function PaymentSummaryCard({
   onCouponChange: (v: string) => void;
   onPay: () => void;
 }) {
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const tier = data.packageTier ? capitalize(data.packageTier) : "Your";
-  const total = data.monthlyTotal ?? 0;
+  const monthlyTotal = data.monthlyTotal ?? 0;
   const addons = data.addons ?? [];
+  const recurringAddons = addons.filter(a => !a.isOneTime);
+  const oneTimeAddons = addons.filter(a => a.isOneTime);
+  const oneTimeTotal = data.oneTimeTotal ?? oneTimeAddons.reduce((s, a) => s + a.price, 0);
+  const baseMonthly = monthlyTotal - recurringAddons.reduce((s, a) => s + a.price, 0);
+  const dueToday = monthlyTotal + oneTimeTotal;
 
   const validateCoupon = trpc.onboarding.validateCoupon.useQuery(
     { code: couponCode.trim().toUpperCase() },
@@ -956,19 +963,29 @@ function PaymentSummaryCard({
         <div className="bg-[#0d0d1a] rounded-xl p-4 mb-4 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-300">{tier} Package</span>
-            <span className="text-white font-medium">
-              ${total > 0 ? (total - addons.reduce((s, a) => s + a.price, 0)).toFixed(0) : "—"}/mo
-            </span>
+            <span className="text-white font-medium">${baseMonthly > 0 ? baseMonthly.toFixed(0) : "—"}/mo</span>
           </div>
-          {addons.map((a, i) => (
+          {recurringAddons.map((a, i) => (
             <div key={i} className="flex justify-between text-sm">
               <span className="text-gray-400">{a.product}</span>
               <span className="text-gray-300">+${a.price}/mo</span>
             </div>
           ))}
-          <div className="border-t border-[#2a2a40] pt-2 flex justify-between">
-            <span className="text-sm font-semibold text-white">Total</span>
-            <span className="text-sm font-bold text-[#4a9eff]">${total > 0 ? total.toFixed(0) : "—"}/mo</span>
+          {oneTimeAddons.map((a, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <span className="text-gray-400">{a.product}</span>
+              <span className="text-amber-400">+${a.price} one-time</span>
+            </div>
+          ))}
+          <div className="border-t border-[#2a2a40] pt-2 space-y-1">
+            <div className="flex justify-between">
+              <span className="text-xs text-gray-500">Monthly after first payment</span>
+              <span className="text-xs text-gray-400">${monthlyTotal > 0 ? monthlyTotal.toFixed(0) : "—"}/mo</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm font-semibold text-white">Due today</span>
+              <span className="text-sm font-bold text-[#4a9eff]">${dueToday > 0 ? dueToday.toFixed(0) : "—"}</span>
+            </div>
           </div>
         </div>
 
@@ -992,17 +1009,36 @@ function PaymentSummaryCard({
           )}
         </div>
 
+        {/* Legal acceptance */}
+        <label className="flex items-start gap-2.5 mb-4 cursor-pointer group">
+          <div className="relative mt-0.5 flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={legalAccepted}
+              onChange={e => setLegalAccepted(e.target.checked)}
+              className="sr-only"
+            />
+            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${legalAccepted ? "bg-[#4a9eff] border-[#4a9eff]" : "border-gray-600 group-hover:border-gray-400"}`}>
+              {legalAccepted && <CheckCircle2 className="w-3 h-3 text-white" />}
+            </div>
+          </div>
+          <span className="text-xs text-gray-400 leading-relaxed">
+            I agree to MiniMorph Studios' <a href="/terms" target="_blank" className="text-[#4a9eff] hover:underline">Terms of Service</a> and{" "}
+            <a href="/privacy" target="_blank" className="text-[#4a9eff] hover:underline">Privacy Policy</a>, and acknowledge the 12-month service agreement billed monthly at ${monthlyTotal > 0 ? monthlyTotal.toFixed(0) : "—"}/mo.
+          </span>
+        </label>
+
         <button
           onClick={onPay}
-          disabled={loading}
-          className="w-full bg-[#4a9eff] hover:bg-[#3a8eef] disabled:opacity-60 text-white font-semibold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+          disabled={loading || !legalAccepted}
+          className="w-full bg-[#4a9eff] hover:bg-[#3a8eef] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
             <><Lock className="w-4 h-4" />Start My Website →</>
           )}
         </button>
         <p className="text-center text-xs text-gray-500 mt-2">
-          Secure payment via Stripe · 12-month commitment billed monthly
+          Secure payment via Stripe · Cancel anytime after 12-month term
         </p>
       </div>
     </div>

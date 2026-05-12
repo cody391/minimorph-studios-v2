@@ -7,6 +7,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
+import { ENV } from "./_core/env";
 import { sdk } from "./_core/sdk";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -150,7 +151,7 @@ export const localAuthRouter = router({
         expiresAt,
       });
 
-      const origin = (ctx.req.headers.origin as string) || "https://www.minimorphstudios.net";
+      const origin = ENV.appUrl || (ctx.req.headers.origin as string) || "https://www.minimorphstudios.net";
       const resetUrl = `${origin}/reset-password?token=${rawToken}`;
 
       const { sendPasswordResetEmail } = await import("./services/customerEmails");

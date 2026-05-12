@@ -3113,20 +3113,38 @@ const onboardingRouter = router({
         },
       ];
 
+      // Parse Elena's price string: "$149/mo" → 149, "$499 one-time" → 499
+      const parseAddonPrice = (price: string): number =>
+        parseFloat(price.replace(/[$,]/g, "").replace(/\s*(\/mo|\/month|one-time|one time)\s*/gi, "").trim()) || 0;
+      const isOneTimeAddon = (price: string): boolean => /one[-\s]time/i.test(price);
+
       // Addon line items (from Elena's pitch — addonsSelected array in questionnaire)
       const addonsSelected = (q.addonsSelected as Array<{ product: string; price?: string; label?: string }> | undefined) ?? [];
+      const oneTimeInvoiceItems: Array<{ price_data: { currency: string; product_data: { name: string }; unit_amount: number }; quantity: number }> = [];
+      let addonsMonthlyTotal = 0;
+
       for (const addon of addonsSelected) {
-        const addonPrice = parseFloat(addon.price || "0");
-        if (addonPrice > 0) {
+        const addonPrice = parseAddonPrice(addon.price || "0");
+        if (addonPrice <= 0) continue;
+        const name = addon.label || addon.product;
+        if (isOneTimeAddon(addon.price || "")) {
+          // One-time fee — charged on first invoice only via add_invoice_items
+          oneTimeInvoiceItems.push({
+            price_data: { currency: "usd", product_data: { name }, unit_amount: Math.round(addonPrice * 100) },
+            quantity: 1,
+          });
+        } else {
+          // Recurring monthly add-on
           lineItems.push({
             price_data: {
               currency: "usd",
-              product_data: { name: addon.label || addon.product },
+              product_data: { name },
               unit_amount: Math.round(addonPrice * 100),
               recurring: { interval: "month" },
             },
             quantity: 1,
           });
+          addonsMonthlyTotal += addonPrice;
         }
       }
 
@@ -3152,6 +3170,7 @@ const onboardingRouter = router({
           business_name: project.businessName || "",
           rep_closed: "true",
           self_sourced: elenaCheckoutSelfSourced ? "true" : "false",
+          addons_monthly_total: addonsMonthlyTotal.toFixed(2),
         };
       } else {
         // Self-service: no customer yet — webhook uses user_id to create one
@@ -3163,6 +3182,7 @@ const onboardingRouter = router({
           package_tier: packageTier,
           business_name: project.businessName !== "Pending" ? project.businessName || "" : ((q.businessName as string) || ""),
           source: "self_service",
+          addons_monthly_total: addonsMonthlyTotal.toFixed(2),
           ...(input.tempPassword ? { temp_password: input.tempPassword } : {}),
           ...((project as any).leadId ? { lead_id: String((project as any).leadId), acquisition_source: (project as any).acquisitionSource || "self_service" } : {}),
         };
@@ -3208,10 +3228,15 @@ const onboardingRouter = router({
         // Coupon usage count is incremented after successful payment in webhook hardening phase.
       }
 
+      const subscriptionData: Record<string, unknown> = { metadata: sessionMeta };
+      if (oneTimeInvoiceItems.length > 0) {
+        subscriptionData.add_invoice_items = oneTimeInvoiceItems;
+      }
+
       const sessionParams: Record<string, unknown> = {
         mode: "subscription",
         customer_email: project.contactEmail || undefined,
-        subscription_data: { metadata: sessionMeta },
+        subscription_data: subscriptionData,
         metadata: sessionMeta,
         line_items: lineItems,
         success_url: `${origin}/portal?payment=success&session_id={CHECKOUT_SESSION_ID}`,
@@ -4103,11 +4128,11 @@ Hosting/security pitch (use when relevant): "Your site is hosted on our enterpri
 
 1. Ask: "Quick one — do you already have a domain name?" (e.g., yourbusiness.com)
 
-2. If YES: "Perfect — we'll connect it to your new site. What's the domain?" Then: "We'll handle all the DNS setup and SSL certificate on our end — you don't need to do anything technical. Just point it at us and we take it from there."
+2. If YES: Follow up immediately — "What's the domain?" Do NOT move on until you have the actual domain name. If they confirm they have one but don't give the name, ask again: "What's the URL? Even just telling me gives us a head start on the DNS setup." Once you have it, say: "Perfect — [domain.com] is yours. We'll handle all the DNS setup and SSL on our end. You'll just need to point your domain registrar settings at us — your project manager will send step-by-step instructions. Takes about 5 minutes." Store domain as "domainName" and "domainStatus": "has_domain".
 
-3. If NO: "No problem at all — your project manager will help you get that sorted before launch. Any ideas for a domain name? Usually it's just [businessname].com or something close. I can suggest a few options based on your business name." Suggest 3-4 options. Ask what feels right. Then: "We'll coordinate the domain setup during onboarding — DNS, SSL, everything will be handled so you don't have to touch anything technical."
+3. If NO: "No problem — do you have ideas for a name? Most of the time it's just [businessname].com." Suggest 2-3 specific options based on their business name. Ask what feels right. Then: "We'll help you register it and handle all the technical setup — DNS, SSL, everything. Your project manager walks you through it before launch." Store "domainStatus": "needs_domain" and their preferred option as "domainName".
 
-4. If UNSURE: "No worries — we'll brainstorm that together during the build. Usually it's just your business name dot com, or something clever. We'll lock it in before we launch."
+4. If UNSURE: "No worries — we'll brainstorm that together. Usually it's just your business name dot com, or something short and memorable. What does your business name lend itself to?" Suggest 2-3 options. Store "domainStatus": "undecided".
 
 == WHAT'S INCLUDED IN EVERY PLAN (mention naturally, not as a list) ==
 
@@ -4420,6 +4445,9 @@ Collect details for up to 6 featured products that will display in the product g
 Store each product as a service (SERVICE_1_DESC through SERVICE_6_DESC) in the questionnaire.
 
 Also collect in Phase 4 (naturally woven into conversation):
+- Phone number: "What's the best phone number for customers to reach you?" — this goes on the website contact section. Store as "phone" in the questionnaire. Ask this naturally after learning their business type — it's essential for the site footer and contact page.
+- Business hours: "What are your hours? Even if you're appointment-only or 24/7, we'll display it so customers aren't left guessing." Store as "hours".
+- Address: "Do you have a physical location, or is this a service-area business? If you have a storefront or office, we'll add it to the site — if not, no worries, we just use your service area." Store as "address".
 - Social handles: "Are you on any social platforms? Instagram, TikTok, Facebook — even if you don't post much, we'll link them in the footer."
 - Testimonials: "Do you have any customer reviews or testimonials you love? Even one or two quotes with a first name and what they said — the more specific the better."
 - Blog topics: "If we're including a blog, what topics would actually help your customers? Think about what questions they ask you most — those are your best posts."
@@ -4539,7 +4567,7 @@ If the 12-month commitment has not been mentioned yet, say it now before firing 
 "One last thing — like all our clients, you'll be on a 12-month agreement at $[total]/mo. This covers everything: design, hosting, SSL, domain management, and ongoing support. No surprise fees ever. The agreement is sent digitally before anything kicks off."
 
 Once all questions are answered and customer confirms, FIRST output ALL THREE tags in this exact order (no text before them), then deliver the closing message:
-<payment_ready>{"packageTier":"starter|growth|premium","monthlyTotal":"total including addons as number","addons":[{"product":"name","price":49}]}</payment_ready>
+<payment_ready>{"packageTier":"starter|growth|premium","monthlyTotal":1091,"oneTimeTotal":698,"addons":[{"product":"Email Marketing Setup","price":149,"isOneTime":false},{"product":"Logo Design","price":499,"isOneTime":true}]}</payment_ready>
 <questionnaire_data>{
   "websiteType": "service_business|restaurant|contractor|ecommerce|other",
   "businessName": "...",
