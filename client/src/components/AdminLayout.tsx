@@ -54,6 +54,7 @@ import {
   ChevronDown,
   ChevronRight,
   AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -178,6 +179,7 @@ function AdminLayoutContent({
       label: "OVERVIEW",
       items: [
         { icon: LayoutDashboard, label: "Overview", path: "/admin" },
+        { icon: CheckCircle2, label: "Launch Readiness", path: "/admin/readiness" },
       ],
     },
     {

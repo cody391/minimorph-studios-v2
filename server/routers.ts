@@ -1183,6 +1183,40 @@ const leadsRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: reason });
       }
 
+      // 3b. Create pre-payment agreement record for legal traceability.
+      // closeDeal (step 9) already created an onboarding project and portal user,
+      // so both projectId and userId are available here.
+      let repDealAgreementId: number | undefined;
+      try {
+        const [existingProject] = await database
+          .select({ id: onboardingProjects.id })
+          .from(onboardingProjects)
+          .where(eq(onboardingProjects.customerId, customer.id))
+          .orderBy(desc(onboardingProjects.createdAt))
+          .limit(1);
+        if (existingProject && customer.userId) {
+          const repAgreement = await db.createCustomerAgreement({
+            userId: customer.userId,
+            projectId: existingProject.id,
+            signerName: customer.contactName,
+            termsVersion: "1.0-rep",
+            packageSnapshot: {
+              packageTier: contract.packageTier,
+              monthlyPrice: Number(contract.monthlyPrice),
+              term: "12 months",
+              source: "rep_closed",
+              repId: rep.id,
+              repName: rep.fullName,
+              contractId: contract.id,
+            },
+            ipAddress: (ctx.req.headers["x-forwarded-for"] as string || ctx.req.socket?.remoteAddress || "").slice(0, 64) || undefined,
+          });
+          repDealAgreementId = repAgreement.id;
+        }
+      } catch (agreementErr) {
+        console.warn("[generateRepPaymentLink] Agreement creation failed (non-fatal):", agreementErr instanceof Error ? agreementErr.message : String(agreementErr));
+      }
+
       // 4. Create Stripe checkout session — mirrors resendPaymentLink exactly
       const Stripe = (await import("stripe")).default;
       const { PACKAGES } = await import("../shared/pricing");
@@ -1214,6 +1248,7 @@ const leadsRouter = router({
             customer_id: String(customer.id),
             rep_closed: "true",
             self_sourced: isSelfSourced ? "true" : "false",
+            ...(repDealAgreementId ? { agreement_id: String(repDealAgreementId) } : {}),
           },
         },
         metadata: {
@@ -1228,6 +1263,7 @@ const leadsRouter = router({
           customer_id: String(customer.id),
           rep_closed: "true",
           self_sourced: isSelfSourced ? "true" : "false",
+          ...(repDealAgreementId ? { agreement_id: String(repDealAgreementId) } : {}),
         },
         line_items: (() => {
           const priceId = getStripePriceId(contract.packageTier);
@@ -6436,6 +6472,99 @@ const adminRouter = router({
 });
 
 /* ═══════════════════════════════════════════════════════
+   COMPLIANCE ROUTER — admin legal & system readiness
+   ═══════════════════════════════════════════════════════ */
+const complianceRouter = router({
+  listCustomerAgreements: adminProcedure.query(async () => {
+    const database = await getDb();
+    if (!database) return [];
+    const { customerAgreements, users } = await import("../drizzle/schema");
+    const { desc: descFn } = await import("drizzle-orm");
+    return database
+      .select({
+        id: customerAgreements.id,
+        userId: customerAgreements.userId,
+        projectId: customerAgreements.projectId,
+        signerName: customerAgreements.signerName,
+        termsVersion: customerAgreements.termsVersion,
+        acceptedAt: customerAgreements.acceptedAt,
+        ipAddress: customerAgreements.ipAddress,
+        checkoutSessionId: customerAgreements.checkoutSessionId,
+        contractId: customerAgreements.contractId,
+        packageSnapshot: customerAgreements.packageSnapshot,
+      })
+      .from(customerAgreements)
+      .orderBy(descFn(customerAgreements.acceptedAt));
+  }),
+
+  getProjectAgreement: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) return null;
+      const { customerAgreements } = await import("../drizzle/schema");
+      const { eq: eqFn, desc: descFn } = await import("drizzle-orm");
+      const rows = await database
+        .select()
+        .from(customerAgreements)
+        .where(eqFn(customerAgreements.projectId, input.projectId))
+        .orderBy(descFn(customerAgreements.acceptedAt))
+        .limit(1);
+      return rows[0] ?? null;
+    }),
+
+  listRepPaperwork: adminProcedure
+    .input(z.object({ repId: z.number().optional() }))
+    .query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) return [];
+      const { repPaperworkSubmissions } = await import("../drizzle/schema");
+      const { eq: eqFn, desc: descFn } = await import("drizzle-orm");
+      const query = database
+        .select()
+        .from(repPaperworkSubmissions)
+        .orderBy(descFn(repPaperworkSubmissions.signedAt));
+      if (input.repId != null) {
+        return query.where(eqFn(repPaperworkSubmissions.repId, input.repId));
+      }
+      return query;
+    }),
+
+  getSystemReadiness: adminProcedure.query(async () => {
+    const database = await getDb();
+    const { systemSettings } = await import("../drizzle/schema");
+
+    const automationKeys = [
+      "auto_deploy_enabled",
+      "auto_commission_enabled",
+      "auto_close_pipeline_enabled",
+      "auto_email_sequences_enabled",
+      "auto_contract_generation_enabled",
+    ];
+
+    let automationSettings: Record<string, string> = {};
+    if (database) {
+      const rows = await database.select().from(systemSettings);
+      for (const row of rows) {
+        automationSettings[row.settingKey] = row.settingValue ?? "";
+      }
+    }
+
+    return {
+      db: !!database,
+      stripe: !!(ENV.stripeSecretKey && ENV.stripeWebhookSecret),
+      stripeWebhook: !!ENV.stripeWebhookSecret,
+      email: !!ENV.resendApiKey,
+      namecheap: !!ENV.namecheapApiKey,
+      cloudflare: !!ENV.cloudflareApiToken,
+      anthropic: !!ENV.anthropicApiKey,
+      enableAutoDeployEnv: process.env.ENABLE_AUTO_DEPLOY === "true",
+      automationSettings,
+    };
+  }),
+});
+
+/* ═══════════════════════════════════════════════════════
    APP ROUTER
    ═══════════════════════════════════════════════════════ */
 export const appRouter = router({
@@ -6524,6 +6653,7 @@ export const appRouter = router({
   products: productsRouter,
   broadcasts: broadcastsRouter,
   notifCounts: notificationCountsRouter,
+  compliance: complianceRouter,
   email: router({
     unsubscribe: publicProcedure
       .input(z.object({ email: z.string().email() }))
