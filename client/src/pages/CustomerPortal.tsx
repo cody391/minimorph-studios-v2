@@ -738,8 +738,8 @@ function OnboardingProjectTab({
     );
   }
 
-  // Blueprint review — customer must approve before generation begins
-  if (project.stage === "blueprint_review" || (blueprint && (blueprint.status === "customer_review" || blueprint.status === "revision_requested"))) {
+  // Blueprint review — show blueprint card during review and after approval so customer can always see what was agreed
+  if (project.stage === "blueprint_review" || (blueprint && (blueprint.status === "customer_review" || blueprint.status === "revision_requested" || blueprint.status === "approved"))) {
     const bp = (blueprint?.blueprintJson ?? {}) as Record<string, unknown>;
     const design = (bp.designDirection ?? {}) as Record<string, unknown>;
     const content = (bp.contentPlan ?? {}) as Record<string, unknown>;
@@ -859,7 +859,15 @@ function OnboardingProjectTab({
                 )}
 
                 {/* Actions */}
-                {!isRevisionRequested && (
+                {blueprint?.status === "approved" && (
+                  <div className="pt-2 border-t border-border/30">
+                    <p className="text-sm text-green-400 font-medium flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Blueprint approved — your build is underway
+                    </p>
+                  </div>
+                )}
+                {!isRevisionRequested && blueprint?.status !== "approved" && (
                   <div className="pt-2 space-y-4 border-t border-border/30">
                     <p className="text-sm text-soft-gray">
                       Does this look right? Approve to start your build, or let us know what needs to change.
