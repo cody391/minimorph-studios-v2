@@ -1185,6 +1185,16 @@ export async function getBlueprintByProjectId(projectId: number) {
   return rows[0] ?? null;
 }
 
+export async function listBlueprintsByProjectId(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(websiteBlueprints)
+    .where(eq(websiteBlueprints.projectId, projectId))
+    .orderBy(desc(websiteBlueprints.versionNumber));
+}
+
 export async function updateBlueprint(id: number, data: Partial<InsertWebsiteBlueprint>) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");

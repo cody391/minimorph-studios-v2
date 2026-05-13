@@ -7095,8 +7095,7 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
     .input(z.object({ projectId: z.number().optional() }).optional())
     .query(async ({ input }) => {
       if (input?.projectId) {
-        const bp = await db.getBlueprintByProjectId(input.projectId);
-        return bp ? [bp] : [];
+        return db.listBlueprintsByProjectId(input.projectId);
       }
       return db.listBlueprintsAdmin(100);
     }),
