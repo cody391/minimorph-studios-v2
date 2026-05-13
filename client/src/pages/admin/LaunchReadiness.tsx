@@ -172,6 +172,56 @@ export default function LaunchReadiness() {
   };
 
   const handleReleaseLaunch = async (projectId: number, businessName: string) => {
+    // Step 1: dryRun to get blocker list before committing
+    let dryRunResult: any;
+    try {
+      dryRunResult = await adminReleaseLaunchMutation.mutateAsync({ projectId, dryRun: true });
+    } catch (e: any) {
+      // approvedAt / project-not-found errors surface here
+      toast.error(e?.message || "Pre-flight check failed");
+      return;
+    }
+
+    if (!dryRunResult?.ready) {
+      const blockers: string[] = dryRunResult?.blockers ?? [];
+      const requiresOverride: boolean = dryRunResult?.requiresOverride ?? false;
+
+      // Hard blockers cannot be overridden — show them and stop
+      if (blockers.length > 0) {
+        toast.error(`Cannot release ${businessName} — ${blockers.length} blocker(s):\n• ${blockers.join("\n• ")}`, { duration: 8000 });
+        return;
+      }
+
+      // Only manual add-on warnings require typed acknowledgment
+      if (requiresOverride) {
+        const warnings: string[] = dryRunResult?.warnings ?? [];
+        const reason = window.prompt(
+          `Manual fulfillment acknowledgment required for ${businessName}:\n\n${warnings.join("\n")}\n\nThese add-ons require manual team action after launch. Provide a reason (min 20 chars) to confirm you understand this:`,
+        );
+        if (!reason || reason.trim().length < 20) {
+          toast.error("Launch cancelled — acknowledgment reason must be at least 20 characters.");
+          return;
+        }
+        if (!window.confirm(`Confirm launch for ${businessName} with manual add-on override?\n\nOverride reason recorded: "${reason.trim()}"`)) return;
+        try {
+          await adminReleaseLaunchMutation.mutateAsync({
+            projectId,
+            acknowledgeManualAddons: true,
+            overrideReason: reason.trim(),
+          });
+          toast.success(`Launch released for ${businessName} (manual add-on override recorded)`);
+        } catch (e2: any) {
+          toast.error(e2?.message || "Launch release failed");
+        }
+        return;
+      }
+
+      toast.error(`Cannot release ${businessName} — readiness check failed`);
+      return;
+    }
+
+    // Step 2: clean — confirm and proceed
+    if (!window.confirm(`Pre-flight passed for ${businessName}.\n\nAll readiness blockers cleared. Release for deployment?`)) return;
     try {
       await adminReleaseLaunchMutation.mutateAsync({ projectId });
       toast.success(`Launch released for ${businessName}`);

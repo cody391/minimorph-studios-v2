@@ -29,6 +29,7 @@ import { formatAnswerBankForPrompt } from "../shared/answerBank";
 import { formatIntegrationMatrixForPrompt } from "../shared/integrationMatrix";
 import { assertRepOwnership, assertCustomerOwnership, assertProjectOwnership, assertLeadOwnership, assertAssetOwnership } from "./ownership";
 import { validateRevisionAvailability, computeNewRevisionCounts } from "./helpers/revisions";
+import { calculateLaunchReadiness } from "./helpers/launchReadiness";
 import { ENV } from "./_core/env";
 import { generateSiteForProject, stripDemoBanner } from "./services/siteGenerator";
 import { processSiteChangeRequest } from "./services/siteUpdater";
@@ -2904,21 +2905,100 @@ const onboardingRouter = router({
     }),
 
   // Admin: release customer-approved site for deployment
-  // dryRun: true validates all gates and returns verdict without deploying
+  // dryRun: true validates all gates and returns verdict without deploying.
+  // acknowledgeManualAddons + overrideReason (min 20 chars) allows override of manual add-on warnings only.
+  // Critical QA issues, DNS pending, missing payment/approval cannot be overridden here.
   adminReleaseLaunch: adminProcedure
-    .input(z.object({ projectId: z.number(), dryRun: z.boolean().optional() }))
+    .input(z.object({
+      projectId: z.number(),
+      dryRun: z.boolean().optional(),
+      acknowledgeManualAddons: z.boolean().optional(),
+      overrideReason: z.string().min(20).optional(),
+    }))
     .mutation(async ({ input }) => {
       const project = await db.getOnboardingProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      // Hard gate: customer final approval is always required — checked before readiness helper
       if (!project.approvedAt) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Customer has not yet approved the site. Wait for customer approval before releasing." });
       }
+
+      // Fetch QA issues from the latest site build report for this project
+      const database = await getDb();
+      let qaIssues: Array<{ severity: string; type?: string; description?: string }> = [];
+      let addonResults: Array<{ addon: string; success: boolean; details?: string }> = [];
+
+      if (database) {
+        const latestReports = await database
+          .select()
+          .from(siteBuildReports)
+          .where(eq(siteBuildReports.projectId, input.projectId))
+          .orderBy(desc(siteBuildReports.createdAt))
+          .limit(1);
+        if (latestReports[0]) {
+          const persistent = latestReports[0].issuesPersistent as any[] | null;
+          const escalated = latestReports[0].issuesEscalated as any[] | null;
+          for (const issue of [...(persistent ?? []), ...(escalated ?? [])]) {
+            qaIssues.push({
+              severity: issue.severity ?? issue.level ?? "warning",
+              type: issue.ruleKey ?? issue.type,
+              description: issue.description ?? issue.message ?? String(issue),
+            });
+          }
+        }
+
+        // Fetch pending launchChecklist items as manual-required add-ons
+        if (project.customerId) {
+          const pendingItems = await database
+            .select()
+            .from(launchChecklist)
+            .where(and(
+              eq(launchChecklist.customerId, project.customerId),
+              eq(launchChecklist.status, "pending"),
+            ));
+          addonResults = pendingItems.map(item => ({
+            addon: item.addonKey,
+            success: false,
+            details: item.title,
+          }));
+        }
+      }
+
+      // Determine if manual add-on override is accepted
+      const allowOverrideForManualAddons = !!(
+        input.acknowledgeManualAddons &&
+        input.overrideReason &&
+        input.overrideReason.trim().length >= 20
+      );
+
+      // Run full readiness check
+      const readiness = calculateLaunchReadiness(
+        {
+          stage: project.stage,
+          approvedAt: project.approvedAt,
+          paymentConfirmedAt: (project as any).paymentConfirmedAt,
+          domainName: project.domainName,
+          generatedSiteHtml: project.generatedSiteHtml,
+          adminPreviewApprovedAt: project.adminPreviewApprovedAt,
+          qaIssues,
+          addonResults,
+        },
+        { allowOverrideForManualAddons },
+      );
+
       if (input.dryRun) {
-        console.log(`[adminReleaseLaunch] DRY RUN for project ${input.projectId} — gates passed, deploy NOT triggered`);
+        const overrideNote = allowOverrideForManualAddons
+          ? `Manual add-on override accepted: ${input.overrideReason}`
+          : undefined;
+        console.log(`[adminReleaseLaunch] DRY RUN project ${input.projectId} — ready=${readiness.ready}, blockers=${readiness.blockers.length}`);
         return {
-          success: true,
+          success: readiness.ready,
           dryRun: true,
-          message: "Dry run passed — all gates valid. Deploy was not triggered.",
+          ready: readiness.ready,
+          blockers: readiness.blockers,
+          warnings: readiness.warnings,
+          requiresOverride: readiness.requiresOverride,
+          overrideNote,
           projectId: input.projectId,
           businessName: project.businessName,
           stage: project.stage,
@@ -2927,6 +3007,26 @@ const onboardingRouter = router({
           hasCloudflare: !!project.cloudflareProjectName,
         };
       }
+
+      // Real release path: block if not ready
+      if (!readiness.ready) {
+        const blockerMsg = readiness.blockers.length > 0
+          ? `Cannot release — ${readiness.blockers.length} blocker(s): ${readiness.blockers.join("; ")}`
+          : `Cannot release — manual add-on acknowledgment required. Re-submit with acknowledgeManualAddons=true and overrideReason (min 20 chars).`;
+        throw new TRPCError({ code: "BAD_REQUEST", message: blockerMsg });
+      }
+
+      // Log any manual add-on override before deployment
+      if (allowOverrideForManualAddons && input.overrideReason) {
+        console.warn(`[adminReleaseLaunch] Manual add-on OVERRIDE for project ${input.projectId}: ${input.overrideReason}`);
+        try {
+          await notifyOwner({
+            title: `Launch Override: ${project.businessName}`,
+            content: `Admin launched project #${input.projectId} (${project.businessName}) with manual add-on override.\nOverride reason: ${input.overrideReason}\nPending add-ons: ${addonResults.map(a => a.addon).join(", ")}`,
+          });
+        } catch {}
+      }
+
       await db.updateOnboardingProject(input.projectId, {
         adminLaunchApprovedAt: new Date(),
       });
@@ -2936,7 +3036,7 @@ const onboardingRouter = router({
         console.error("[adminReleaseLaunch] Deployment error:", err)
       );
       console.log(`[adminReleaseLaunch] Project ${input.projectId} released for deployment`);
-      return { success: true, dryRun: false };
+      return { success: true, dryRun: false, blockers: [], warnings: readiness.warnings };
     }),
 
   // Admin: confirm custom domain DNS has propagated and mark project complete/live

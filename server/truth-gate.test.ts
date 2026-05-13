@@ -470,7 +470,122 @@ describe("launch readiness — behavioral hard blocker tests", () => {
   });
 });
 
-// ── 11. Online Store Truth ────────────────────────────────────────────────
+// ── 11. adminReleaseLaunch — Wired to Readiness Helper ───────────────────
+
+describe("adminReleaseLaunch — enforced via calculateLaunchReadiness", () => {
+  const routersSrc = readServer("routers.ts");
+  const procStart = routersSrc.indexOf("adminReleaseLaunch: adminProcedure");
+  const procEnd = routersSrc.indexOf("adminConfirmDomainLive:", procStart);
+  const procBody = routersSrc.slice(procStart, procEnd);
+
+  it("procedure imports and calls calculateLaunchReadiness", () => {
+    expect(routersSrc).toContain("import { calculateLaunchReadiness }");
+    expect(procBody).toContain("calculateLaunchReadiness(");
+  });
+
+  it("dryRun returns ready, blockers, and warnings fields", () => {
+    expect(procBody).toContain("ready: readiness.ready");
+    expect(procBody).toContain("blockers: readiness.blockers");
+    expect(procBody).toContain("warnings: readiness.warnings");
+  });
+
+  it("dryRun does NOT call deployApprovedSite", () => {
+    // Find the dryRun return block
+    const dryRunStart = procBody.indexOf("if (input.dryRun)");
+    const dryRunEnd = procBody.indexOf("// Real release path", dryRunStart);
+    const dryRunBlock = procBody.slice(dryRunStart, dryRunEnd);
+    expect(dryRunBlock).not.toContain("deployApprovedSite");
+  });
+
+  it("real release throws when readiness.ready is false", () => {
+    expect(procBody).toContain("if (!readiness.ready)");
+    expect(procBody).toContain("Cannot release");
+    expect(procBody).toContain("blocker(s)");
+  });
+
+  it("deployApprovedSite only called after readiness check passes", () => {
+    // The readiness block must come BEFORE deployApprovedSite call
+    const readinessCheckPos = procBody.indexOf("if (!readiness.ready)");
+    const deployPos = procBody.indexOf("deployApprovedSite(");
+    expect(readinessCheckPos).toBeGreaterThan(0);
+    expect(deployPos).toBeGreaterThan(0);
+    expect(readinessCheckPos).toBeLessThan(deployPos);
+  });
+
+  it("procedure accepts acknowledgeManualAddons and overrideReason inputs", () => {
+    expect(procBody).toContain("acknowledgeManualAddons");
+    expect(procBody).toContain("overrideReason");
+    expect(procBody).toContain("z.string().min(20).optional()");
+  });
+
+  it("manual add-on override requires both acknowledgeManualAddons=true and overrideReason ≥20 chars", () => {
+    expect(procBody).toContain("acknowledgeManualAddons");
+    expect(procBody).toContain("input.overrideReason.trim().length >= 20");
+  });
+
+  it("override is logged before deployment", () => {
+    expect(procBody).toContain("OVERRIDE");
+    expect(procBody).toContain("notifyOwner");
+  });
+
+  it("QA issues fetched from siteBuildReports", () => {
+    expect(procBody).toContain("siteBuildReports");
+    expect(procBody).toContain("issuesPersistent");
+    expect(procBody).toContain("issuesEscalated");
+  });
+
+  it("add-on results fetched from launchChecklist pending items", () => {
+    expect(procBody).toContain("launchChecklist");
+    expect(procBody).toContain("status, \"pending\"");
+  });
+
+  // Behavioral: hard blocker proof via helper (complementary to wiring proof above)
+  it("missing payment produces blockers via helper", async () => {
+    const { calculateLaunchReadiness } = await import("./helpers/launchReadiness.js");
+    const r = calculateLaunchReadiness({ paymentConfirmedAt: null, adminPreviewApprovedAt: new Date(), approvedAt: new Date(), generatedSiteHtml: "{}" });
+    expect(r.ready).toBe(false);
+    expect(r.blockers).toContain("Payment not confirmed");
+  });
+
+  it("missing admin preview produces blockers via helper", async () => {
+    const { calculateLaunchReadiness } = await import("./helpers/launchReadiness.js");
+    const r = calculateLaunchReadiness({ paymentConfirmedAt: new Date(), adminPreviewApprovedAt: null, approvedAt: new Date(), generatedSiteHtml: "{}" });
+    expect(r.ready).toBe(false);
+    expect(r.blockers).toContain("Admin preview not approved");
+  });
+
+  it("critical QA issue produces blockers via helper", async () => {
+    const { calculateLaunchReadiness } = await import("./helpers/launchReadiness.js");
+    const r = calculateLaunchReadiness({
+      paymentConfirmedAt: new Date(), adminPreviewApprovedAt: new Date(), approvedAt: new Date(), generatedSiteHtml: "{}",
+      qaIssues: [{ severity: "critical", description: "broken" }],
+    });
+    expect(r.ready).toBe(false);
+    expect(r.blockers.some(b => b.includes("critical QA"))).toBe(true);
+  });
+
+  it("DNS pending produces blockers via helper", async () => {
+    const { calculateLaunchReadiness } = await import("./helpers/launchReadiness.js");
+    const r = calculateLaunchReadiness({
+      paymentConfirmedAt: new Date(), adminPreviewApprovedAt: new Date(), approvedAt: new Date(), generatedSiteHtml: "{}",
+      domainName: "test.com", stage: "launch",
+    });
+    expect(r.ready).toBe(false);
+    expect(r.blockers.some(b => b.includes("DNS not yet confirmed"))).toBe(true);
+  });
+
+  it("clean project is ready via helper", async () => {
+    const { calculateLaunchReadiness } = await import("./helpers/launchReadiness.js");
+    const r = calculateLaunchReadiness({
+      paymentConfirmedAt: new Date(), adminPreviewApprovedAt: new Date(), approvedAt: new Date(), generatedSiteHtml: "{}",
+      qaIssues: [], addonResults: [],
+    });
+    expect(r.ready).toBe(true);
+    expect(r.blockers).toHaveLength(0);
+  });
+});
+
+// ── 12. Online Store Truth ────────────────────────────────────────────────
 
 describe("online store truth — /shop not live until deployed", () => {
   const src = readService("addonOrchestrator.ts");
