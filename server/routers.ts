@@ -3665,11 +3665,28 @@ const onboardingRouter = router({
       return { checkoutUrl: session.url, sessionId: session.id };
     }),
 
-  // Admin: list all onboarding projects
+  // Admin: list all onboarding projects — includes blueprintStatus for each project
   list: adminProcedure
     .input(z.object({ stage: z.string().optional() }).optional())
     .query(async ({ input }) => {
-      return db.listOnboardingProjects(input?.stage);
+      const projects = await db.listOnboardingProjects(input?.stage);
+      if (!projects.length) return projects;
+      // Attach latest blueprint status to each project
+      const { websiteBlueprints } = await import("../drizzle/schema");
+      const { desc: descFn, sql: sqlFn } = await import("drizzle-orm");
+      const database = await getDb();
+      if (!database) return projects;
+      const ids = projects.map(p => p.id);
+      const bpRows = await database
+        .select({ projectId: websiteBlueprints.projectId, status: websiteBlueprints.status })
+        .from(websiteBlueprints)
+        .where(sqlFn`${websiteBlueprints.projectId} IN (${sqlFn.raw(ids.join(","))})`)
+        .orderBy(descFn(websiteBlueprints.versionNumber));
+      const bpStatus: Record<number, string> = {};
+      for (const bp of bpRows) {
+        if (!bpStatus[bp.projectId]) bpStatus[bp.projectId] = bp.status;
+      }
+      return projects.map(p => ({ ...p, blueprintStatus: bpStatus[p.id] ?? null }));
     }),
 
   // Admin: update project stage
