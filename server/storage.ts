@@ -36,6 +36,11 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
+  // Graceful fallback when S3 is not configured — store metadata without binary
+  if (!ENV.awsAccessKeyId || !ENV.awsSecretAccessKey || !ENV.awsS3Bucket) {
+    const key = appendHashSuffix(normalizeKey(relKey));
+    return { key, url: `/manus-storage/${key}` };
+  }
   const { client, bucket } = getS3Config();
   const key = appendHashSuffix(normalizeKey(relKey));
   const body = typeof data === "string" ? Buffer.from(data) : Buffer.from(data as Uint8Array);

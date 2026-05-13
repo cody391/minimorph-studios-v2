@@ -218,13 +218,19 @@ test.describe("Phase 3 Media & Elena Asset Intake", () => {
       await waitFor(page, 'text="Phase3 Test Media Co"', 12000);
       console.log("✅ §3.1 Test project card visible in admin");
 
-      // Open the Media Review panel for our test project
-      const mediaButtons = page.locator('button:has-text("Media Review")');
-      const count = await mediaButtons.count();
-      expect(count).toBeGreaterThan(0);
-
-      // Click the one near our test project
-      await mediaButtons.first().click();
+      // Open the Media Review panel specifically for "Phase3 Test Media Co"
+      // Use :has() to find the button within the card containing our test project
+      const testCard = page.locator('[role="article"]:has-text("Phase3 Test Media Co"), div:has-text("Phase3 Test Media Co")').first();
+      const mediaButton = testCard.locator('button:has-text("Media Review")');
+      const mediaButtonCount = await mediaButton.count();
+      // Fallback: if we can't scope to card, just use first Media Review button (project is newest → top of list)
+      if (mediaButtonCount > 0) {
+        await mediaButton.first().click();
+      } else {
+        const allMediaButtons = page.locator('button:has-text("Media Review")');
+        expect(await allMediaButtons.count()).toBeGreaterThan(0);
+        await allMediaButtons.first().click();
+      }
       await page.waitForTimeout(1000);
       console.log("✅ §3.2 Media Review toggle clicked");
 
