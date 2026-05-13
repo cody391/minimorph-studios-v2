@@ -203,6 +203,33 @@ export default function LaunchReadiness() {
         </div>
       )}
 
+      {/* ── Fulfillment Truth Notice ── */}
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2 text-amber-400">
+            <AlertTriangle size={16} />
+            Manual Fulfillment Required After Launch
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-xs text-muted-foreground space-y-2">
+          <p>The following add-ons are <strong className="text-foreground">not automated</strong>. When you release a launch, you must complete these manually within 24 hours and notify the customer:</p>
+          <ul className="list-disc list-inside space-y-1 pl-1">
+            <li><strong className="text-foreground">Google Analytics</strong> — GA4 tag must be injected into the deployed site HTML manually</li>
+            <li><strong className="text-foreground">Facebook Pixel</strong> — Pixel code must be injected into the deployed site HTML manually</li>
+            <li><strong className="text-foreground">SMS Lead Alerts</strong> — Twilio integration must be configured manually per customer</li>
+            <li><strong className="text-foreground">AI Photography</strong> — Images must be generated and uploaded to the customer portal manually</li>
+            <li><strong className="text-foreground">Logo Design</strong> — Logo concepts must be created and uploaded to the customer portal manually</li>
+            <li><strong className="text-foreground">AI Chatbot</strong> — Widget embed must be added to the deployed site manually</li>
+            <li><strong className="text-foreground">Review Collector</strong> — SMS automation requires Twilio setup per customer</li>
+            <li><strong className="text-foreground">Event Calendar</strong> — /events page must be created and deployed manually</li>
+            <li><strong className="text-foreground">Video Background</strong> — Video must be sourced and injected into the site via a redeploy</li>
+            <li><strong className="text-foreground">Email Marketing</strong> — Resend audience + sequence is written; you must activate sending manually</li>
+            <li><strong className="text-foreground">Custom Domain</strong> — Customer receives DNS instructions; site is NOT live at their domain until DNS propagates (no celebration email sent until verified)</li>
+          </ul>
+          <p className="text-amber-400/80 font-medium pt-1">QA issues flagged as "manual review required" are real issues — the QA system does not auto-fix anything.</p>
+        </CardContent>
+      </Card>
+
       {/* ── Action Queue ── */}
       {projects && (() => {
         const needsPreviewApproval = projects.filter((p: any) => p.stage === "pending_admin_review");

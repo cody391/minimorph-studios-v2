@@ -1,4 +1,5 @@
 import { ENV } from "../_core/env";
+import { CLOUDFLARE_NS1, CLOUDFLARE_NS2 } from "../config/domain";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    AGENT 3 — ADDON ORCHESTRATOR
@@ -301,8 +302,8 @@ async function registerDomain(
 2. Find DNS Settings or Name Servers
 
 3. Change your nameservers to:
-   ada.ns.cloudflare.com
-   bart.ns.cloudflare.com
+   ${CLOUDFLARE_NS1}
+   ${CLOUDFLARE_NS2}
 
 4. Save changes — DNS can take up to 24 hours to fully propagate
 
@@ -358,7 +359,7 @@ Need help? Reply to your welcome email and we'll walk you through it.`;
     const lastName = nameParts.slice(1).join(" ") || "Owner";
 
     const registerRes = await fetch(
-      `https://api.namecheap.com/xml.response?ApiUser=${namecheapUser}&ApiKey=${namecheapKey}&UserName=${namecheapUser}&Command=namecheap.domains.create&ClientIp=${namecheapIp}&DomainName=${ctx.domain}&Years=1&RegistrantFirstName=${encodeURIComponent(firstName)}&RegistrantLastName=${encodeURIComponent(lastName)}&RegistrantAddress1=${encodeURIComponent(ctx.address || "123 Main St")}&RegistrantCity=${encodeURIComponent(ctx.city || "City")}&RegistrantStateProvince=${encodeURIComponent(ctx.state || "MI")}&RegistrantPostalCode=00000&RegistrantCountry=US&RegistrantPhone=+1.${ctx.phone.replace(/\D/g, "")}&RegistrantEmailAddress=${encodeURIComponent(ctx.email)}&Nameservers=ada.ns.cloudflare.com,bart.ns.cloudflare.com`,
+      `https://api.namecheap.com/xml.response?ApiUser=${namecheapUser}&ApiKey=${namecheapKey}&UserName=${namecheapUser}&Command=namecheap.domains.create&ClientIp=${namecheapIp}&DomainName=${ctx.domain}&Years=1&RegistrantFirstName=${encodeURIComponent(firstName)}&RegistrantLastName=${encodeURIComponent(lastName)}&RegistrantAddress1=${encodeURIComponent(ctx.address || "123 Main St")}&RegistrantCity=${encodeURIComponent(ctx.city || "City")}&RegistrantStateProvince=${encodeURIComponent(ctx.state || "MI")}&RegistrantPostalCode=00000&RegistrantCountry=US&RegistrantPhone=+1.${ctx.phone.replace(/\D/g, "")}&RegistrantEmailAddress=${encodeURIComponent(ctx.email)}&Nameservers=${CLOUDFLARE_NS1},${CLOUDFLARE_NS2}`,
     );
     const regText = await registerRes.text();
     const success = regText.includes('Registered="true"') || regText.includes("<Status>OK</Status>");
@@ -389,7 +390,8 @@ Need help? Reply to your welcome email and we'll walk you through it.`;
 
 async function setupGoogleAnalytics(ctx: OrchestrationContext, log: Function): Promise<void> {
   try {
-    log("google_analytics", true, "GA4 embed ready — customer connects account in portal");
+    // GA4 tag injection into deployed HTML is not yet automated. Pending manual setup.
+    log("google_analytics", false, "GA4 tracking requires manual tag injection — our team will add it within 24 hours");
   } catch (e: any) {
     log("google_analytics", false, undefined, e.message);
   }
@@ -398,8 +400,9 @@ async function setupGoogleAnalytics(ctx: OrchestrationContext, log: Function): P
 async function setupFacebookPixel(ctx: OrchestrationContext, log: Function): Promise<void> {
   try {
     const pixelId = ctx.questionnaire.facebookPixelId;
-    if (!pixelId) { log("facebook_pixel", true, "No pixel ID provided — skipped"); return; }
-    log("facebook_pixel", true, `Pixel ${pixelId} embedded in site`);
+    if (!pixelId) { log("facebook_pixel", false, "No Pixel ID provided — add it in portal settings when ready"); return; }
+    // Pixel injection into deployed HTML is not yet automated. Pending manual setup.
+    log("facebook_pixel", false, `Pixel ID ${pixelId} noted — our team will inject it into your site within 24 hours`);
   } catch (e: any) {
     log("facebook_pixel", false, undefined, e.message);
   }
@@ -407,8 +410,9 @@ async function setupFacebookPixel(ctx: OrchestrationContext, log: Function): Pro
 
 async function setupSmsLeadAlerts(ctx: OrchestrationContext, log: Function): Promise<void> {
   try {
-    if (!ctx.phone) { log("sms_lead_alerts", false, undefined, "No phone number in customer profile"); return; }
-    log("sms_lead_alerts", true, `SMS alerts configured → ${ctx.phone}`);
+    if (!ctx.phone) { log("sms_lead_alerts", false, "No phone number in customer profile — add it in the portal to receive SMS alerts"); return; }
+    // SMS lead alert wiring is not yet automated. Pending manual Twilio configuration.
+    log("sms_lead_alerts", false, `SMS lead alerts to ${ctx.phone} require Twilio setup — our team will configure within 24 hours`);
   } catch (e: any) {
     log("sms_lead_alerts", false, undefined, e.message);
   }
@@ -426,7 +430,7 @@ async function setupReviewCollector(ctx: OrchestrationContext, log: Function): P
     const reviewMessage =
       `Hi! Thanks for choosing ${ctx.businessName}. ` +
       `If you had a great experience, we'd love a Google review — it takes 30 seconds: ${gbpUrl} 🙏`;
-    log("review_collector", true, `Review request SMS configured. Message: "${reviewMessage.slice(0, 60)}..."`);
+    log("review_collector", false, `Review request message ready: "${reviewMessage.slice(0, 60)}..." — SMS automation requires Twilio setup (our team will activate within 24 hours)`);
   } catch (e: any) {
     log("review_collector", false, undefined, e.message);
   }
@@ -434,9 +438,8 @@ async function setupReviewCollector(ctx: OrchestrationContext, log: Function): P
 
 async function setupAiChatbot(ctx: OrchestrationContext, log: Function): Promise<void> {
   try {
-    const services = ctx.services.join(", ") || "various services";
-    // Chatbot prompt stored — chat widget on site calls /api/chat/:customerId
-    log("ai_chatbot", true, `Chatbot trained on ${ctx.businessName} data. Widget embedded on all pages.`);
+    // Chat widget embed into deployed site is not yet automated. Pending manual setup.
+    log("ai_chatbot", false, `AI chatbot for ${ctx.businessName} requires manual widget embed — our team will configure within 24 hours`);
   } catch (e: any) {
     log("ai_chatbot", false, undefined, e.message);
   }
@@ -468,7 +471,7 @@ async function setupEmailMarketing(ctx: OrchestrationContext, log: Function): Pr
       maxTokens: 2000,
     });
 
-    log("email_marketing_setup", true, `Resend audience created${audienceId ? ` (${audienceId})` : ""}. Welcome sequence generated.`);
+    log("email_marketing_setup", true, `Resend audience created${audienceId ? ` (${audienceId})` : ""}. Welcome sequence written — contact us to activate sending.`);
   } catch (e: any) {
     log("email_marketing_setup", false, undefined, e.message);
   }
@@ -495,7 +498,7 @@ async function setupSeoAutopilot(ctx: OrchestrationContext, log: Function): Prom
       posts = parsed.posts || [];
     } catch { /* use default count */ }
 
-    log("seo_autopilot", true, `${posts.length} blog posts generated. Monthly schedule: 2 posts/mo targeting "${ctx.businessType} ${ctx.city}" keywords.`);
+    log("seo_autopilot", true, `${posts.length} blog posts written. Review and publish from your portal — ongoing monthly publishing requires activation.`);
   } catch (e: any) {
     log("seo_autopilot", false, undefined, e.message);
   }
@@ -527,7 +530,7 @@ async function setupCompetitorMonitoring(ctx: OrchestrationContext, log: Functio
       maxTokens: 1000,
     });
 
-    log("competitor_monitoring", true, `Month 1 competitor analysis complete. Monthly reports scheduled. Found ${competitors.length} competitors.`);
+    log("competitor_monitoring", true, `Month 1 competitor analysis complete. Found ${competitors.length} competitors. Ongoing monthly reports require activation.`);
   } catch (e: any) {
     log("competitor_monitoring", false, undefined, e.message);
   }
@@ -535,8 +538,9 @@ async function setupCompetitorMonitoring(ctx: OrchestrationContext, log: Functio
 
 async function setupAiPhotography(ctx: OrchestrationContext, log: Function): Promise<void> {
   try {
-    if (!ENV.geminiApiKey) { log("ai_photography", false, undefined, "GEMINI_API_KEY not configured"); return; }
-    log("ai_photography", true, "20-image pack queued for generation. Delivered to portal within 30 minutes.");
+    if (!ENV.geminiApiKey) { log("ai_photography", false, "GEMINI_API_KEY not configured — our team will generate your images manually"); return; }
+    // AI image generation is not yet automated. Pending manual delivery.
+    log("ai_photography", false, "AI photography requires manual generation — our team will deliver your image pack to the portal within 24 hours");
   } catch (e: any) {
     log("ai_photography", false, undefined, e.message);
   }
@@ -556,13 +560,13 @@ async function setupVideoBackground(ctx: OrchestrationContext, log: Function): P
         const videos = await pexelsRes.json();
         const videoUrl = videos?.videos?.[0]?.video_files?.[0]?.link || "";
         if (videoUrl) {
-          log("video_background", true, `Video sourced: ${videoUrl.slice(0, 60)}. Injecting into hero section.`);
+          log("video_background", true, `Video sourced: ${videoUrl.slice(0, 60)}. Injection requires a site rebuild — our team will apply it shortly.`);
           return;
         }
       }
     }
 
-    log("video_background", true, `Video background configured for ${ctx.businessType} hero section.`);
+    log("video_background", false, `No Pexels video found for ${ctx.businessType} — our team will source and inject one manually`);
   } catch (e: any) {
     log("video_background", false, undefined, e.message);
   }
@@ -596,7 +600,7 @@ You get an SMS + email for every booking.`,
     );
     pending.push({ title: "Set your booking availability", actionUrl: portalUrl, actionLabel: "Set My Hours" });
     const services = ctx.services.slice(0, 8).join("|");
-    log("booking_widget", true, `/book page created. Services: ${services}. Checklist item created for availability setup.`);
+    log("booking_widget", true, `Booking setup checklist created. Services noted: ${services}. Complete your availability in the portal to activate the booking page.`);
   } catch (e: any) {
     log("booking_widget", false, undefined, e.message);
   }
@@ -604,7 +608,8 @@ You get an SMS + email for every booking.`,
 
 async function setupEventCalendar(ctx: OrchestrationContext, log: Function): Promise<void> {
   try {
-    log("event_calendar", true, "/events page created. Manage events from your portal.");
+    // Event calendar page is not generated automatically. Pending manual creation.
+    log("event_calendar", false, "Event calendar requires manual page creation — our team will set it up within 24 hours");
   } catch (e: any) {
     log("event_calendar", false, undefined, e.message);
   }
@@ -745,8 +750,9 @@ To switch: Instagram → Settings → Account → Switch to Professional Account
 
 async function setupLogoDesign(ctx: OrchestrationContext, log: Function): Promise<void> {
   try {
-    if (!ENV.geminiApiKey) { log("logo_design", false, undefined, "GEMINI_API_KEY not configured"); return; }
-    log("logo_design", true, "3 logo concepts queued for generation. Delivered to portal within 60 minutes.");
+    if (!ENV.geminiApiKey) { log("logo_design", false, "GEMINI_API_KEY not configured — our team will create your logos manually"); return; }
+    // AI logo generation is not yet automated. Pending manual design delivery.
+    log("logo_design", false, "Logo design requires manual creation — our team will deliver 3 concepts to your portal within 24 hours");
   } catch (e: any) {
     log("logo_design", false, undefined, e.message);
   }
@@ -833,13 +839,13 @@ async function sendYoureLiveEmail(
       .join("");
 
     const failedRows = failed.length > 0
-      ? `<h3 style="color:#f87171;margin:24px 0 12px;font-size:16px;">Had trouble with:</h3>
+      ? `<h3 style="color:#f59e0b;margin:24px 0 12px;font-size:16px;">Being completed by our team (${failed.length}):</h3>
         <table style="width:100%;border-collapse:collapse;">
           ${failed.map(r => `<tr>
-            <td style="padding:10px 16px;border-bottom:1px solid #2d2d45;width:24px;"><span style="color:#f87171;">!</span></td>
+            <td style="padding:10px 16px;border-bottom:1px solid #2d2d45;width:24px;"><span style="color:#f59e0b;">⟳</span></td>
             <td style="padding:10px 16px;border-bottom:1px solid #2d2d45;">
               <strong style="color:#eaeaf0;">${formatAddonName(r.addon)}</strong><br/>
-              <span style="color:#9898a8;font-size:13px;">Our team will follow up within 24 hours.</span>
+              <span style="color:#9898a8;font-size:13px;">${r.details || "Our team will complete this within 24 hours."}</span>
             </td>
           </tr>`).join("")}
         </table>` : "";
@@ -860,9 +866,9 @@ async function sendYoureLiveEmail(
         </div>` : "";
 
     const html = brandWrap(`
-      <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Everything's Ready, ${ctx.contactName}!</h2>
+      <h2 style="color:#eaeaf0;margin:0 0 16px;font-size:24px;">Your site is live, ${ctx.contactName}!</h2>
       <p style="margin:0 0 16px;color:#c8c8d8;">
-        Your website for <strong style="color:#eaeaf0;">${ctx.businessName}</strong> is live and all your add-ons have been configured. Here's a summary:
+        Your website for <strong style="color:#eaeaf0;">${ctx.businessName}</strong> is deployed. Here's the status of your add-ons — some are ready immediately, others our team will complete within 24 hours:
       </p>
 
       ${ctx.siteUrl ? `<div style="margin:0 0 24px;padding:16px;background:#222240;border-radius:8px;border-left:4px solid #4a9eff;">
@@ -872,7 +878,7 @@ async function sendYoureLiveEmail(
         </p>
       </div>` : ""}
 
-      <h3 style="color:#4ade80;margin:0 0 12px;font-size:16px;">Completed Automatically (${succeeded.length})</h3>
+      <h3 style="color:#4ade80;margin:0 0 12px;font-size:16px;">Ready (${succeeded.length})</h3>
       <table style="width:100%;border-collapse:collapse;">${successRows}</table>
 
       ${failedRows}

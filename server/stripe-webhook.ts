@@ -480,21 +480,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.warn("[Stripe] Coupon code present but coupon_id missing/invalid; skipping usedCount increment", { couponCode: metaCouponCode });
   }
 
-  // ── 7. Send welcome email (with credentials if available) ─────────
+  // ── 7. Send welcome email ─────────────────────────────────────────
+  // temp_password is never written to Stripe metadata in the current checkout
+  // flow — accounts are created before checkout via registerMutation. No
+  // credential injection here.
   try {
     if (customerEmail) {
-      const tempPw = session.metadata?.temp_password || undefined;
       const origin = ENV.appUrl || "https://www.minimorphstudios.net";
       await sendWelcomeEmail({
         to: customerEmail,
         customerName,
         packageTier,
         businessName: businessName || undefined,
-        tempPassword: tempPw,
         portalUrl: `${origin}/portal`,
       });
-      // Log recipient and whether credentials were included — never log the password itself
-      console.log(`[Stripe] Welcome email queued — recipient=${customerEmail}, credentials=${tempPw ? "included" : "omitted"}`);
+      console.log(`[Stripe] Welcome email queued — recipient=${customerEmail}`);
     }
   } catch (emailErr) {
     console.error("[Stripe] Failed to send welcome email:", emailErr);

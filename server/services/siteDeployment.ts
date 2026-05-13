@@ -1,6 +1,7 @@
 import { createPagesProject, deployToPages, addCustomDomain, getProjectName, redeployPages } from "./cloudflareDeployment";
 import * as db from "../db";
 import { ENV } from "../_core/env";
+import { CLOUDFLARE_NS1, CLOUDFLARE_NS2 } from "../config/domain";
 
 export async function deployApprovedSite(projectId: number): Promise<void> {
   const project = await db.getOnboardingProjectById(projectId);
@@ -90,7 +91,7 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
   <li>Find <strong>Domain Settings</strong> or <strong>Name Servers</strong></li>
   <li>Replace whatever's there with these two addresses:<br>
     <div style="background:#222240;padding:12px 16px;border-radius:6px;font-family:monospace;margin:8px 0;font-size:15px">
-      vera.ns.cloudflare.com<br>wade.ns.cloudflare.com
+      ${CLOUDFLARE_NS1}<br>${CLOUDFLARE_NS2}
     </div>
   </li>
   <li>Save and you're done — we'll handle the rest</li>
@@ -114,20 +115,23 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
       }
     }
 
-    // Mark project as complete
+    // Mark project as complete (Cloudflare Pages deployment is done)
     await db.updateOnboardingProject(projectId, {
       stage: "complete",
       liveUrl,
       launchedAt: new Date(),
-      generationLog: `Live at ${liveUrl}`,
+      generationLog: `Deployed at ${liveUrl}`,
       generatedSiteUrl: liveUrl,
     });
 
     // Activate nurturing pipeline
     await activateNurturing(projectId, project.customerId!, project.contractId);
 
-    // Send celebration email
-    if (project.contactEmail) {
+    // Send celebration email only when there is no pending custom domain DNS step.
+    // If a domain is set, the customer already received DNS setup instructions above.
+    // We do not claim the site is live at the custom domain until DNS has propagated.
+    const hasPendingDomain = !!domainName;
+    if (!hasPendingDomain && project.contactEmail) {
       try {
         const { sendSiteLiveEmail } = await import("./customerEmails");
         await sendSiteLiveEmail({
@@ -142,12 +146,17 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
       }
     }
 
-    // Notify admin
+    // Notify admin — distinguish deployed-pending-dns from fully live
     try {
       const { notifyOwner } = await import("../_core/notification");
+      const statusNote = hasPendingDomain
+        ? `DNS setup email sent to customer. Site will be live once they update nameservers to ${CLOUDFLARE_NS1} / ${CLOUDFLARE_NS2}.`
+        : "Site is live immediately (no custom domain). Celebration email sent to customer.";
       await notifyOwner({
-        title: "Site Auto-Deployed — Customer Added to Nurturing",
-        content: `${businessName} (#${projectId}) is live at ${liveUrl}. Deployment was automatic via Cloudflare Pages.`,
+        title: hasPendingDomain
+          ? `Site Deployed — Awaiting DNS: ${businessName}`
+          : "Site Auto-Deployed — Customer Added to Nurturing",
+        content: `${businessName} (#${projectId}) deployed to ${liveUrl}.\n\n${statusNote}`,
       });
     } catch {}
 

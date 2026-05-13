@@ -726,69 +726,14 @@ Return [] if clean.` }],
 }
 
 /* ── Auto-fix Engine ───────────────────────────────────────────────────── */
-async function applyAutoFix(issue: QAIssue, ctx: QAContext, reporter: BuildReporter, _db: any): Promise<boolean> {
+// No automated HTML patching is implemented. Every case returns false so
+// issues remain in the needsRebuild bucket and are reported honestly.
+async function applyAutoFix(issue: QAIssue, _ctx: QAContext, reporter: BuildReporter, _db: any): Promise<boolean> {
   try {
-    await reporter.fix("auto_fix", `Flagging for manual review: ${issue.autoFixAction}`, issue.description);
-    switch (issue.autoFixAction) {
-      case "generate_meta_description":
-        await reporter.fix("auto_fix", "Meta description generated and logged for patch"); return true;
-      case "fix_meta_title":
-        await reporter.fix("auto_fix", "Meta title fix logged for patch"); return true;
-      case "fix_copyright_year":
-        await reporter.fix("auto_fix", `Copyright year updated to ${new Date().getFullYear()}`); return true;
-      case "inject_age_gate":
-        await reporter.fix("auto_fix", "Age verification gate logged for injection"); return true;
-      case "inject_cookie_banner":
-        await reporter.fix("auto_fix", "Cookie consent banner logged for injection"); return true;
-      case "add_drink_responsibly":
-        await reporter.fix("auto_fix", "Drink responsibly message logged for footer"); return true;
-      case "add_attorney_disclaimer":
-        await reporter.fix("auto_fix", "Attorney Advertising disclaimer logged for addition"); return true;
-      case "add_results_disclaimer":
-        await reporter.fix("auto_fix", "Past results disclaimer logged for addition"); return true;
-      case "add_legal_advice_disclaimer":
-        await reporter.fix("auto_fix", "Not legal advice disclaimer logged for addition"); return true;
-      case "add_attorney_client_disclaimer":
-        await reporter.fix("auto_fix", "Attorney-client disclaimer logged for form"); return true;
-      case "add_hipaa_notice":
-        await reporter.fix("auto_fix", "HIPAA Privacy Notice logged for addition"); return true;
-      case "add_results_may_vary":
-        await reporter.fix("auto_fix", "Results may vary disclaimer logged for testimonials"); return true;
-      case "add_equal_housing":
-        await reporter.fix("auto_fix", "Equal Housing Opportunity statement logged for addition"); return true;
-      case "add_allergen_disclaimer":
-        await reporter.fix("auto_fix", "Allergen disclaimer logged for menu"); return true;
-      case "add_past_performance_disclaimer":
-        await reporter.fix("auto_fix", "Past performance disclaimer logged for addition"); return true;
-      case "inject_security_headers":
-        await reporter.fix("auto_fix", "Security headers logged for Cloudflare _headers injection"); return true;
-      case "generate_privacy_policy":
-        await reporter.fix("auto_fix", "Privacy policy generation logged"); return true;
-      case "generate_terms":
-        await reporter.fix("auto_fix", "Terms of service generation logged"); return true;
-      case "generate_alt_text":
-        await reporter.fix("auto_fix", "Alt text generation logged for images"); return true;
-      case "fix_og_tags":
-        await reporter.fix("auto_fix", "Open Graph tags fix logged"); return true;
-      case "add_canonical":
-        await reporter.fix("auto_fix", "Canonical URL tag logged for addition"); return true;
-      case "add_schema_markup":
-        await reporter.fix("auto_fix", "JSON-LD schema markup logged for addition"); return true;
-      case "generate_sitemap":
-        await reporter.fix("auto_fix", "sitemap.xml generation logged"); return true;
-      case "add_viewport_tag":
-        await reporter.fix("auto_fix", "Viewport meta tag logged for addition"); return true;
-      case "generate_favicon":
-        await reporter.fix("auto_fix", "Favicon generation logged"); return true;
-      case "generate_robots_txt":
-        await reporter.fix("auto_fix", "robots.txt generation logged"); return true;
-      case "fix_mixed_content":
-        await reporter.fix("auto_fix", "Mixed content fix logged"); return true;
-      default:
-        return false;
-    }
+    await reporter.warn("auto_fix", `Manual review required: ${issue.autoFixAction}`, issue.description);
+    return false;
   } catch (e: any) {
-    await reporter.error("auto_fix", `Fix failed: ${issue.autoFixAction}`, e.message);
+    await reporter.error("auto_fix", `Auto-fix hook failed: ${issue.autoFixAction}`, e.message);
     return false;
   }
 }
