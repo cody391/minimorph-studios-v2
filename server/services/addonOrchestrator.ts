@@ -682,8 +682,8 @@ async function setupOnlineStore(
       ctx.customerId,
       "online_store",
       "Add your products to the store",
-      "Your store is built — add what you're selling.",
-      `Your online store is live at: ${ctx.siteUrl}/shop
+      "Your store setup has started. Our team will publish your shop page after product review.",
+      `Your store will be published at: ${ctx.siteUrl}/shop — our team activates it after product review.
 
 To add your products:
 1. Click "Add Products" below
@@ -692,7 +692,7 @@ To add your products:
    - Write a short description
    - Set your price
    - Add inventory count (or set unlimited)
-3. Products appear on your store instantly
+3. Once you've added products, our team will publish the /shop page
 4. Payments go directly to your Stripe account
 
 Tip: Start with your 3-5 best sellers. You can always add more later.`,
@@ -701,9 +701,9 @@ Tip: Start with your 3-5 best sellers. You can always add more later.`,
     );
     pending.push({ title: "Add your products to the store", actionUrl: portalUrl, actionLabel: "Add Products" });
     if (createdProducts.length > 0) {
-      log("online_store", true, `${createdProducts.length} Stripe product${createdProducts.length !== 1 ? "s" : ""} created. Product upload checklist ready. Note: /shop page requires manual deployment.`);
+      log("online_store", false, `${createdProducts.length} Stripe product${createdProducts.length !== 1 ? "s" : ""} created. Store setup started — our team will publish /shop after product review.`);
     } else {
-      log("online_store", false, "Shop checklist created — add your products in the portal. /shop page requires manual deployment by our team.");
+      log("online_store", false, "Shop checklist created — add your products in the portal. Our team will publish /shop after product review.");
     }
   } catch (e: any) {
     log("online_store", false, undefined, e.message);

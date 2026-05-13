@@ -3,6 +3,29 @@ import * as db from "../db";
 import { ENV } from "../_core/env";
 import { CLOUDFLARE_NS1, CLOUDFLARE_NS2 } from "../config/domain";
 
+export interface VerifyResult {
+  live: boolean;
+  status?: number;
+  error?: string;
+}
+
+/** Fetches the URL and returns whether it resolves with a 2xx/3xx response. */
+export async function verifyLiveUrl(url: string): Promise<VerifyResult> {
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.status >= 200 && res.status < 400) {
+      return { live: true, status: res.status };
+    }
+    return { live: false, status: res.status };
+  } catch (err: any) {
+    return { live: false, error: String(err?.message ?? err) };
+  }
+}
+
 export async function deployApprovedSite(projectId: number): Promise<void> {
   const project = await db.getOnboardingProjectById(projectId);
   if (!project) throw new Error(`Project ${projectId} not found`);

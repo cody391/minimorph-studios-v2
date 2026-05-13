@@ -181,12 +181,27 @@ export default function LaunchReadiness() {
   };
 
   const handleConfirmDomainLive = async (projectId: number, businessName: string, domain: string) => {
-    if (!window.confirm(`Confirm that ${domain} is live and DNS has propagated?\n\nThis will:\n• Mark project as complete\n• Send the "you're live" celebration email to the customer\n• Activate the nurturing pipeline\n\nOnly confirm if you have verified the domain resolves correctly.`)) return;
+    if (!window.confirm(`Verify Domain Live: ${domain}\n\nThis will attempt to automatically verify ${domain} is reachable. If verification fails, you will be asked for a manual override reason.\n\nThis action will:\n• Mark project as complete\n• Send the "you're live" celebration email\n• Activate the nurturing pipeline\n\nOnly confirm if DNS has propagated.`)) return;
     try {
       await adminConfirmDomainLiveMutation.mutateAsync({ projectId });
-      toast.success(`Domain confirmed live for ${businessName}`);
+      toast.success(`Domain verified and confirmed live for ${businessName}`);
     } catch (e: any) {
-      toast.error(e?.message || "Failed to confirm domain live");
+      const msg: string = e?.message || "";
+      if (msg.includes("not yet reachable") || msg.includes("DNS may still")) {
+        const reason = window.prompt(`Manual override reason required (min 20 chars):\n\n${msg}\n\nProvide a reason why you're confirming this domain as live despite the failed check:`);
+        if (!reason || reason.trim().length < 20) {
+          toast.error("Override cancelled — reason must be at least 20 characters.");
+          return;
+        }
+        try {
+          await adminConfirmDomainLiveMutation.mutateAsync({ projectId, overrideReason: reason.trim() });
+          toast.success(`Domain confirmed live for ${businessName} (manual override recorded)`);
+        } catch (e2: any) {
+          toast.error(e2?.message || "Override failed");
+        }
+      } else {
+        toast.error(msg || "Failed to confirm domain live");
+      }
     }
   };
 

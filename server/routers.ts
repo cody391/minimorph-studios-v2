@@ -28,6 +28,7 @@ import { invokeLLM } from "./_core/llm";
 import { formatAnswerBankForPrompt } from "../shared/answerBank";
 import { formatIntegrationMatrixForPrompt } from "../shared/integrationMatrix";
 import { assertRepOwnership, assertCustomerOwnership, assertProjectOwnership, assertLeadOwnership, assertAssetOwnership } from "./ownership";
+import { validateRevisionAvailability, computeNewRevisionCounts } from "./helpers/revisions";
 import { ENV } from "./_core/env";
 import { generateSiteForProject, stripDemoBanner } from "./services/siteGenerator";
 import { processSiteChangeRequest } from "./services/siteUpdater";
@@ -2939,8 +2940,12 @@ const onboardingRouter = router({
     }),
 
   // Admin: confirm custom domain DNS has propagated and mark project complete/live
+  // Requires either automatic live-verification (HTTP 2xx/3xx) OR a typed override reason (min 20 chars).
   adminConfirmDomainLive: adminProcedure
-    .input(z.object({ projectId: z.number() }))
+    .input(z.object({
+      projectId: z.number(),
+      overrideReason: z.string().min(20).optional(),
+    }))
     .mutation(async ({ input }) => {
       const project = await db.getOnboardingProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
@@ -2951,12 +2956,32 @@ const onboardingRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "No custom domain to verify. Use adminReleaseLaunch for domain-less deployments." });
       }
       const liveUrl = `https://${project.domainName}`;
+
+      // Attempt live verification before marking complete
+      const { verifyLiveUrl } = await import("./services/siteDeployment");
+      const verification = await verifyLiveUrl(liveUrl);
+      let confirmedByOverride = false;
+
+      if (!verification.live) {
+        if (!input.overrideReason || input.overrideReason.trim().length < 20) {
+          const statusNote = verification.status ? `HTTP ${verification.status}` : (verification.error ?? "unreachable");
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Domain ${project.domainName} is not yet reachable (${statusNote}). DNS may still be propagating. Provide an override reason (min 20 chars) to confirm manually.`,
+          });
+        }
+        confirmedByOverride = true;
+        console.warn(`[adminConfirmDomainLive] OVERRIDE used for project ${input.projectId} (${project.domainName}): ${input.overrideReason}`);
+      }
+
       await db.updateOnboardingProject(input.projectId, {
         stage: "complete",
         launchedAt: new Date(),
         liveUrl,
         generatedSiteUrl: liveUrl,
-        generationLog: `Live at ${liveUrl} (domain confirmed by admin)`,
+        generationLog: confirmedByOverride
+          ? `Live at ${liveUrl} (admin override: ${input.overrideReason!.slice(0, 100)})`
+          : `Live at ${liveUrl} (domain verified by admin)`,
       });
       // Activate nurturing now that domain is confirmed live
       try {
@@ -2981,12 +3006,16 @@ const onboardingRouter = router({
       try {
         const { notifyOwner } = await import("./_core/notification");
         await notifyOwner({
-          title: `Domain Live Confirmed: ${project.businessName}`,
-          content: `${project.businessName} (#${input.projectId}) is confirmed live at ${liveUrl}. Celebration email sent to customer. Nurturing activated.`,
+          title: confirmedByOverride
+            ? `Domain Confirmed (Override): ${project.businessName}`
+            : `Domain Live Confirmed: ${project.businessName}`,
+          content: confirmedByOverride
+            ? `${project.businessName} (#${input.projectId}) confirmed live at ${liveUrl} via ADMIN OVERRIDE.\nOverride reason: ${input.overrideReason}`
+            : `${project.businessName} (#${input.projectId}) is confirmed live at ${liveUrl}. Domain auto-verified. Celebration email sent to customer. Nurturing activated.`,
         });
       } catch {}
-      console.log(`[adminConfirmDomainLive] Project ${input.projectId} confirmed live at ${liveUrl}`);
-      return { success: true, liveUrl };
+      console.log(`[adminConfirmDomainLive] Project ${input.projectId} confirmed live at ${liveUrl}${confirmedByOverride ? " (override)" : ""}`);
+      return { success: true, liveUrl, confirmedByOverride };
     }),
 
   // Admin: list site version snapshots for a project
@@ -3386,11 +3415,11 @@ const onboardingRouter = router({
       if (project.generationStatus !== "complete") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Site generation is not yet complete" });
       }
-      if ((project.revisionsCount || 0) >= (project.maxRevisions || 3)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Maximum revisions reached. Please contact support." });
+      const revCheck = validateRevisionAvailability(project);
+      if (!revCheck.allowed) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: revCheck.reason! });
       }
-      const newRevisionsCount = (project.revisionsCount || 0) + 1;
-      const newRevisionsRemaining = Math.max(0, (project.revisionsRemaining ?? project.maxRevisions ?? 3) - 1);
+      const { newRevisionsCount, newRevisionsRemaining } = computeNewRevisionCounts(project);
       await db.updateOnboardingProject(input.projectId, {
         lastChangeRequest: input.changeRequest,
         revisionsCount: newRevisionsCount,
