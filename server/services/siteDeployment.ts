@@ -115,50 +115,63 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
       }
     }
 
-    // Mark project as complete (Cloudflare Pages deployment is done)
-    await db.updateOnboardingProject(projectId, {
-      stage: "complete",
-      liveUrl,
-      launchedAt: new Date(),
-      generationLog: `Deployed at ${liveUrl}`,
-      generatedSiteUrl: liveUrl,
-    });
-
-    // Activate nurturing pipeline
-    await activateNurturing(projectId, project.customerId!, project.contractId);
-
-    // Send celebration email only when there is no pending custom domain DNS step.
-    // If a domain is set, the customer already received DNS setup instructions above.
-    // We do not claim the site is live at the custom domain until DNS has propagated.
     const hasPendingDomain = !!domainName;
-    if (!hasPendingDomain && project.contactEmail) {
-      try {
-        const { sendSiteLiveEmail } = await import("./customerEmails");
-        await sendSiteLiveEmail({
-          to: project.contactEmail,
-          customerName: project.contactName,
-          businessName,
-          liveUrl,
-          portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
-        });
-      } catch (emailErr) {
-        console.error("[Deploy] Live email failed:", emailErr);
-      }
-    }
 
-    // Notify admin — distinguish deployed-pending-dns from fully live
-    try {
-      const { notifyOwner } = await import("../_core/notification");
-      const statusNote = hasPendingDomain
-        ? `DNS setup email sent to customer. Site will be live once they update nameservers to ${CLOUDFLARE_NS1} / ${CLOUDFLARE_NS2}.`
-        : "Site is live immediately (no custom domain). Celebration email sent to customer.";
-      await notifyOwner({
-        title: hasPendingDomain
-          ? `Site Deployed — Awaiting DNS: ${businessName}`
-          : "Site Auto-Deployed — Customer Added to Nurturing",
-        content: `${businessName} (#${projectId}) deployed to ${liveUrl}.\n\n${statusNote}`,
+    if (hasPendingDomain) {
+      // Custom domain: deployment done but DNS not yet propagated.
+      // Stage stays at "launch" until admin confirms via adminConfirmDomainLive.
+      // liveUrl is the immediately-reachable CF Pages URL until DNS is confirmed.
+      await db.updateOnboardingProject(projectId, {
+        stage: "launch",
+        liveUrl,              // CF Pages URL — reachable now
+        generatedSiteUrl: liveUrl,
+        generationLog: `Pages deployed at ${liveUrl} — custom domain ${domainName} DNS pending`,
       });
-    } catch {}
+      // DNS email was already sent above. Notify admin only.
+      try {
+        const { notifyOwner } = await import("../_core/notification");
+        await notifyOwner({
+          title: `Site Deployed — DNS Pending: ${businessName}`,
+          content: `${businessName} (#${projectId}) deployed to Cloudflare Pages at ${liveUrl}.\n\nCustom domain ${domainName} DNS setup email sent to customer.\nSite is NOT complete until admin confirms domain is live via Admin → Launch Readiness → Confirm Domain Live.\n\nNameservers to verify: ${CLOUDFLARE_NS1} / ${CLOUDFLARE_NS2}`,
+        });
+      } catch {}
+    } else {
+      // No custom domain — CF Pages URL is immediately live. Mark complete.
+      await db.updateOnboardingProject(projectId, {
+        stage: "complete",
+        liveUrl,
+        launchedAt: new Date(),
+        generationLog: `Live at ${liveUrl}`,
+        generatedSiteUrl: liveUrl,
+      });
+
+      // Activate nurturing pipeline only on confirmed-live projects
+      await activateNurturing(projectId, project.customerId!, project.contractId);
+
+      // Send celebration email — site is genuinely live right now
+      if (project.contactEmail) {
+        try {
+          const { sendSiteLiveEmail } = await import("./customerEmails");
+          await sendSiteLiveEmail({
+            to: project.contactEmail,
+            customerName: project.contactName,
+            businessName,
+            liveUrl,
+            portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
+          });
+        } catch (emailErr) {
+          console.error("[Deploy] Live email failed:", emailErr);
+        }
+      }
+
+      try {
+        const { notifyOwner } = await import("../_core/notification");
+        await notifyOwner({
+          title: "Site Live — Customer Added to Nurturing",
+          content: `${businessName} (#${projectId}) is live at ${liveUrl}. Celebration email sent to customer.`,
+        });
+      } catch {}
+    }
 
     console.log(`[Deploy] Project ${projectId} is live at ${liveUrl}`);
   } catch (err) {
@@ -176,6 +189,15 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
     } catch {}
     throw err;
   }
+}
+
+// Exported so adminConfirmDomainLive in routers.ts can activate nurturing after DNS confirmation
+export async function activateNurturingForProject(
+  projectId: number,
+  customerId: number,
+  contractId: number | null | undefined
+): Promise<void> {
+  return activateNurturing(projectId, customerId, contractId);
 }
 
 async function activateNurturing(

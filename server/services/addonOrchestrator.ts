@@ -153,7 +153,7 @@ Facebook and Instagram ads that target people who visited your site.`,
       actionUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal?tab=setup`,
       actionLabel: "Add Pixel ID",
     });
-    logResult("facebook_pixel", true, "Checklist item created — customer will add pixel ID");
+    logResult("facebook_pixel", false, "Pixel ID not provided — checklist created, customer action required");
   }
 
   await setupSmsLeadAlerts(ctx, logResult);
@@ -195,7 +195,7 @@ Businesses with a verified GBP get 5-7x more local discovery than those without.
     actionUrl: "https://business.google.com",
     actionLabel: "Open Google Business",
   });
-  logResult("google_business_profile", true, "Checklist item created — Google Business Profile setup guide");
+  logResult("google_business_profile", false, "GBP setup guide added to checklist — requires customer verification (not yet live on Google Maps)");
 
   // ── Purchased addon setups (parallel) ───────────────────────────────────
   const addons = ctx.purchasedAddons;
@@ -323,7 +323,7 @@ Need help? Reply to your welcome email and we'll walk you through it.`;
       "View Instructions",
     );
     pending.push({ title: "Connect your domain", actionUrl: portalUrl, actionLabel: "View Instructions" });
-    log("domain_registration", true, "Checklist item created — customer will connect domain manually");
+    log("domain_registration", false, "DNS setup checklist created — customer must update nameservers (not yet connected)");
     return;
   }
 
@@ -347,7 +347,7 @@ Need help? Reply to your welcome email and we'll walk you through it.`;
         "View Instructions",
       );
       pending.push({ title: "Connect your domain", actionUrl: portalUrl, actionLabel: "View Instructions" });
-      log("domain_registration", true, `${ctx.domain} already registered — checklist item created for DNS update`);
+      log("domain_registration", false, `${ctx.domain} is already registered — DNS update checklist created, customer must update nameservers`);
       return;
     }
 
@@ -471,7 +471,7 @@ async function setupEmailMarketing(ctx: OrchestrationContext, log: Function): Pr
       maxTokens: 2000,
     });
 
-    log("email_marketing_setup", true, `Resend audience created${audienceId ? ` (${audienceId})` : ""}. Welcome sequence written — contact us to activate sending.`);
+    log("email_marketing_setup", false, `Resend audience created${audienceId ? ` (${audienceId})` : ""}. Welcome sequence written — not yet active (requires activation to send)`);
   } catch (e: any) {
     log("email_marketing_setup", false, undefined, e.message);
   }
@@ -498,7 +498,7 @@ async function setupSeoAutopilot(ctx: OrchestrationContext, log: Function): Prom
       posts = parsed.posts || [];
     } catch { /* use default count */ }
 
-    log("seo_autopilot", true, `${posts.length} blog posts written. Review and publish from your portal — ongoing monthly publishing requires activation.`);
+    log("seo_autopilot", false, `${posts.length} blog posts written — not yet published (our team will publish and activate monthly schedule)`);
   } catch (e: any) {
     log("seo_autopilot", false, undefined, e.message);
   }
@@ -530,7 +530,7 @@ async function setupCompetitorMonitoring(ctx: OrchestrationContext, log: Functio
       maxTokens: 1000,
     });
 
-    log("competitor_monitoring", true, `Month 1 competitor analysis complete. Found ${competitors.length} competitors. Ongoing monthly reports require activation.`);
+    log("competitor_monitoring", false, `Month 1 competitor analysis written. Found ${competitors.length} competitors — not yet delivered (our team will send your report and set up ongoing monitoring)`);
   } catch (e: any) {
     log("competitor_monitoring", false, undefined, e.message);
   }
@@ -560,7 +560,7 @@ async function setupVideoBackground(ctx: OrchestrationContext, log: Function): P
         const videos = await pexelsRes.json();
         const videoUrl = videos?.videos?.[0]?.video_files?.[0]?.link || "";
         if (videoUrl) {
-          log("video_background", true, `Video sourced: ${videoUrl.slice(0, 60)}. Injection requires a site rebuild — our team will apply it shortly.`);
+          log("video_background", false, `Video sourced: ${videoUrl.slice(0, 60)}. Not yet injected — our team will apply it via site rebuild within 24 hours.`);
           return;
         }
       }
@@ -584,7 +584,7 @@ async function setupBookingWidget(
       "booking_widget",
       "Set your booking availability",
       "Tell customers when they can book with you.",
-      `Your booking page is live at: ${ctx.siteUrl}/book
+      `Your booking page will be at: ${ctx.siteUrl}/book — we'll activate it once your availability is set.
 
 To set when customers can book:
 1. Click "Set My Hours" below
@@ -600,7 +600,7 @@ You get an SMS + email for every booking.`,
     );
     pending.push({ title: "Set your booking availability", actionUrl: portalUrl, actionLabel: "Set My Hours" });
     const services = ctx.services.slice(0, 8).join("|");
-    log("booking_widget", true, `Booking setup checklist created. Services noted: ${services}. Complete your availability in the portal to activate the booking page.`);
+    log("booking_widget", false, `Booking is included. Checklist created. Our team will activate the booking page once availability is configured in the portal.`);
   } catch (e: any) {
     log("booking_widget", false, undefined, e.message);
   }
@@ -628,7 +628,7 @@ async function setupMenuPriceList(ctx: OrchestrationContext, log: Function): Pro
       }],
       maxTokens: 1000,
     });
-    log("menu_price_list", true, "/menu page created from your services. Update prices anytime from portal.");
+    log("menu_price_list", false, "Menu/price list content written — not yet published to your site (our team will add it within 24 hours)");
   } catch (e: any) {
     log("menu_price_list", false, undefined, e.message);
   }
@@ -641,7 +641,7 @@ async function setupLeadCaptureBot(ctx: OrchestrationContext, log: Function): Pr
       : ctx.businessType.match(/contractor|plumber|electrician|roofer|hvac/i)
         ? "free estimate"
         : "free quote";
-    log("lead_capture_bot", true, `Exit-intent popup configured. Offer: "${offer}". Leads → SMS alert + portal.`);
+    log("lead_capture_bot", false, `Lead capture offer identified ("${offer}") — popup requires manual implementation by our team within 24 hours`);
   } catch (e: any) {
     log("lead_capture_bot", false, undefined, e.message);
   }
@@ -700,7 +700,11 @@ Tip: Start with your 3-5 best sellers. You can always add more later.`,
       "Add Products",
     );
     pending.push({ title: "Add your products to the store", actionUrl: portalUrl, actionLabel: "Add Products" });
-    log("online_store", true, `/shop page created. ${createdProducts.length} products in Stripe. Checklist item created for product upload.`);
+    if (createdProducts.length > 0) {
+      log("online_store", true, `${createdProducts.length} Stripe product${createdProducts.length !== 1 ? "s" : ""} created. Product upload checklist ready. Note: /shop page requires manual deployment.`);
+    } else {
+      log("online_store", false, "Shop checklist created — add your products in the portal. /shop page requires manual deployment by our team.");
+    }
   } catch (e: any) {
     log("online_store", false, undefined, e.message);
   }
@@ -742,7 +746,7 @@ To switch: Instagram → Settings → Account → Switch to Professional Account
     }
 
     const cleanHandle = String(handle).replace("@", "").trim();
-    log("social_feed_embed", true, `Instagram feed configured for @${cleanHandle}. Grid refreshes daily on your site.`);
+    log("social_feed_embed", false, `Instagram handle @${cleanHandle} noted — feed widget requires manual embed by our team within 24 hours`);
   } catch (e: any) {
     log("social_feed_embed", false, undefined, e.message);
   }
@@ -772,7 +776,7 @@ async function setupBrandStyleGuide(ctx: OrchestrationContext, log: Function): P
       }],
       maxTokens: 1500,
     });
-    log("brand_style_guide", true, "Brand style guide generated and saved to portal. Download anytime.");
+    log("brand_style_guide", false, "Brand style guide written — not yet saved to portal (our team will publish it within 24 hours)");
   } catch (e: any) {
     log("brand_style_guide", false, undefined, e.message);
   }
@@ -804,7 +808,7 @@ async function setupCopywriting(ctx: OrchestrationContext, log: Function): Promi
       pageCount = parsed.pages?.length || 4;
     } catch { /* use default */ }
 
-    log("copywriting", true, `Professional copy written for ${pageCount} pages. Edit anytime from portal.`);
+    log("copywriting", false, `Professional copy written for ${pageCount} pages — not yet integrated into your site (our team will apply it within 24 hours)`);
   } catch (e: any) {
     log("copywriting", false, undefined, e.message);
   }

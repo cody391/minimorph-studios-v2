@@ -116,7 +116,11 @@ function computeProjectVerdict(p: {
   liveUrl: string | null;
   stage: string;
 }): { label: string; color: string } {
-  const live = !!p.liveUrl || p.stage === "launch" || p.stage === "complete";
+  // launch + custom domain = deployed but DNS not yet confirmed
+  if (p.stage === "launch" && p.domainName) {
+    return { label: "DNS PENDING — not yet live", color: "bg-amber-500/15 text-amber-400 border-amber-500/20" };
+  }
+  const live = p.stage === "complete" || (p.stage === "launch" && !p.domainName);
   if (live) return { label: "LIVE", color: "bg-green-500/15 text-green-400 border-green-500/20" };
 
   const hasSite = !!p.generatedSiteUrl || p.generationStatus === "complete";
@@ -154,6 +158,9 @@ export default function LaunchReadiness() {
   const adminReleaseLaunchMutation = trpc.onboarding.adminReleaseLaunch.useMutation({
     onSuccess: () => utils.compliance.listProjectReadiness.invalidate(),
   });
+  const adminConfirmDomainLiveMutation = trpc.onboarding.adminConfirmDomainLive.useMutation({
+    onSuccess: () => utils.compliance.listProjectReadiness.invalidate(),
+  });
 
   const handleApprovePreview = async (projectId: number, businessName: string) => {
     try {
@@ -170,6 +177,16 @@ export default function LaunchReadiness() {
       toast.success(`Launch released for ${businessName}`);
     } catch (e: any) {
       toast.error(e?.message || "Failed to release launch");
+    }
+  };
+
+  const handleConfirmDomainLive = async (projectId: number, businessName: string, domain: string) => {
+    if (!window.confirm(`Confirm that ${domain} is live and DNS has propagated?\n\nThis will:\n• Mark project as complete\n• Send the "you're live" celebration email to the customer\n• Activate the nurturing pipeline\n\nOnly confirm if you have verified the domain resolves correctly.`)) return;
+    try {
+      await adminConfirmDomainLiveMutation.mutateAsync({ projectId });
+      toast.success(`Domain confirmed live for ${businessName}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to confirm domain live");
     }
   };
 
@@ -236,8 +253,9 @@ export default function LaunchReadiness() {
         const needsLaunchRelease = projects.filter((p: any) =>
           p.stage === "final_approval" && p.approvedAt && !p.adminLaunchApprovedAt
         );
+        const dnsPending = projects.filter((p: any) => p.stage === "launch" && p.domainName);
         const failed = projects.filter((p: any) => p.generationStatus === "failed");
-        const totalActions = needsPreviewApproval.length + needsLaunchRelease.length + failed.length;
+        const totalActions = needsPreviewApproval.length + needsLaunchRelease.length + dnsPending.length + failed.length;
         if (totalActions === 0) return null;
         return (
           <Card className="border-orange-500/30">
@@ -286,6 +304,26 @@ export default function LaunchReadiness() {
                       ? <Loader2 size={12} className="animate-spin mr-1" />
                       : <Rocket size={12} className="mr-1" />}
                     Release Launch
+                  </Button>
+                </div>
+              ))}
+              {dnsPending.map((p: any) => (
+                <div key={`dns-${p.id}`} className="flex items-center justify-between py-2 px-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                  <div className="flex items-center gap-2">
+                    <Globe size={14} className="text-amber-400 shrink-0" />
+                    <span className="text-sm font-medium">{p.businessName}</span>
+                    <span className="text-xs text-muted-foreground">— deployed, waiting for DNS propagation on {p.domainName}</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleConfirmDomainLive(p.id, p.businessName, p.domainName)}
+                    disabled={adminConfirmDomainLiveMutation.isPending}
+                    className="bg-amber-600 hover:bg-amber-700 text-white h-7 text-xs"
+                  >
+                    {adminConfirmDomainLiveMutation.isPending
+                      ? <Loader2 size={12} className="animate-spin mr-1" />
+                      : <CheckCircle2 size={12} className="mr-1" />}
+                    Confirm Domain Live
                   </Button>
                 </div>
               ))}
@@ -436,7 +474,8 @@ export default function LaunchReadiness() {
                 const hasSite = !!p.generatedSiteUrl || p.generationStatus === "complete";
                 const hasCloudflare = !!p.cloudflareProjectName;
                 const approved = !!p.approvedAt;
-                const live = !!p.liveUrl || p.stage === "launch" || p.stage === "complete";
+                const dnsPendingProject = p.stage === "launch" && p.domainName;
+                const live = !dnsPendingProject && (p.stage === "complete" || (p.stage === "launch" && !p.domainName));
                 const verdict = computeProjectVerdict(p);
                 const domainDisplay = p.domainName ?? p.existingDomain ?? (p.domainOption === "existing" ? "Existing domain (not set)" : p.domainOption === "new" ? "New domain (not registered)" : "No domain");
 
@@ -479,11 +518,13 @@ export default function LaunchReadiness() {
                       <div className="flex items-center gap-1.5">
                         {live
                           ? <CheckCircle2 size={13} className="text-green-400 shrink-0" />
-                          : approved
-                            ? <AlertTriangle size={13} className="text-yellow-400 shrink-0" />
-                            : <XCircle size={13} className="text-muted-foreground shrink-0" />}
-                        <span className={live ? "text-green-400" : approved ? "text-yellow-400" : "text-muted-foreground"}>
-                          {live ? (p.liveUrl ?? "Live") : approved ? "Awaiting deploy" : "Not launched"}
+                          : dnsPendingProject
+                            ? <AlertTriangle size={13} className="text-amber-400 shrink-0" />
+                            : approved
+                              ? <AlertTriangle size={13} className="text-yellow-400 shrink-0" />
+                              : <XCircle size={13} className="text-muted-foreground shrink-0" />}
+                        <span className={live ? "text-green-400" : dnsPendingProject ? "text-amber-400" : approved ? "text-yellow-400" : "text-muted-foreground"}>
+                          {live ? (p.liveUrl ?? "Live") : dnsPendingProject ? `DNS pending: ${p.domainName}` : approved ? "Awaiting deploy" : "Not launched"}
                         </span>
                       </div>
                     </div>

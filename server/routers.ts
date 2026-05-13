@@ -2938,6 +2938,57 @@ const onboardingRouter = router({
       return { success: true, dryRun: false };
     }),
 
+  // Admin: confirm custom domain DNS has propagated and mark project complete/live
+  adminConfirmDomainLive: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .mutation(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (project.stage !== "launch") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Project is not in launch stage (DNS pending). Only launch-stage projects can be confirmed live." });
+      }
+      if (!project.domainName) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No custom domain to verify. Use adminReleaseLaunch for domain-less deployments." });
+      }
+      const liveUrl = `https://${project.domainName}`;
+      await db.updateOnboardingProject(input.projectId, {
+        stage: "complete",
+        launchedAt: new Date(),
+        liveUrl,
+        generatedSiteUrl: liveUrl,
+        generationLog: `Live at ${liveUrl} (domain confirmed by admin)`,
+      });
+      // Activate nurturing now that domain is confirmed live
+      try {
+        const { activateNurturingForProject } = await import("./services/siteDeployment");
+        await activateNurturingForProject(input.projectId, project.customerId!, project.contractId);
+      } catch (err) {
+        console.error("[adminConfirmDomainLive] Nurturing activation failed:", err);
+      }
+      // Send celebration email
+      if (project.contactEmail) {
+        try {
+          const { sendSiteLiveEmail } = await import("./services/customerEmails");
+          await sendSiteLiveEmail({
+            to: project.contactEmail,
+            customerName: project.contactName,
+            businessName: project.businessName || "",
+            liveUrl,
+            portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
+          });
+        } catch {}
+      }
+      try {
+        const { notifyOwner } = await import("./_core/notification");
+        await notifyOwner({
+          title: `Domain Live Confirmed: ${project.businessName}`,
+          content: `${project.businessName} (#${input.projectId}) is confirmed live at ${liveUrl}. Celebration email sent to customer. Nurturing activated.`,
+        });
+      } catch {}
+      console.log(`[adminConfirmDomainLive] Project ${input.projectId} confirmed live at ${liveUrl}`);
+      return { success: true, liveUrl };
+    }),
+
   // Admin: list site version snapshots for a project
   listSiteVersions: adminProcedure
     .input(z.object({ projectId: z.number() }))
