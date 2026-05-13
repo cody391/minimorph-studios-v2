@@ -38,6 +38,7 @@ const AdminMessages = lazy(() => import("./pages/admin/Messages"));
 const AdminCoupons = lazy(() => import("./pages/admin/Coupons"));
 const AdminHumanReview = lazy(() => import("./pages/admin/HumanReview"));
 const AdminLaunchReadiness = lazy(() => import("./pages/admin/LaunchReadiness"));
+const AdminManualFulfillment = lazy(() => import("./pages/admin/ManualFulfillment"));
 const AdminLegalVault = lazy(() => import("./pages/admin/LegalVault"));
 
 // Lazy-load portals
@@ -192,6 +193,9 @@ function Router() {
       </Route>
       <Route path="/admin/readiness">
         <AdminPage><AdminLaunchReadiness /></AdminPage>
+      </Route>
+      <Route path="/admin/fulfillment">
+        <AdminPage><AdminManualFulfillment /></AdminPage>
       </Route>
       <Route path="/admin/legal">
         <AdminPage><AdminLegalVault /></AdminPage>

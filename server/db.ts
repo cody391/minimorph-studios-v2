@@ -348,6 +348,10 @@ export async function repairSchema(): Promise<void> {
       \`completedAt\` timestamp NULL,
       \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`);
+    await safe("ALTER TABLE `launch_checklist` ADD COLUMN `completedBy` varchar(128) NULL");
+    await safe("ALTER TABLE `launch_checklist` ADD COLUMN `completionNote` text NULL");
+    await safe("ALTER TABLE `launch_checklist` ADD COLUMN `evidenceUrl` varchar(512) NULL");
+    await safe("ALTER TABLE `launch_checklist` ADD COLUMN `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
     await safe("ALTER TABLE `contracts` ADD COLUMN `originalPriceCents` int DEFAULT NULL");
     await safe("ALTER TABLE `contracts` ADD COLUMN `effectivePriceCents` int DEFAULT NULL");

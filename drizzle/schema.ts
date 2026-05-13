@@ -195,6 +195,10 @@ export const launchChecklist = mysqlTable("launch_checklist", {
   actionLabel: varchar("actionLabel", { length: 128 }),
   status: varchar("status", { length: 32 }).default("pending").notNull(),
   completedAt: timestamp("completedAt"),
+  completedBy: varchar("completedBy", { length: 128 }),
+  completionNote: text("completionNote"),
+  evidenceUrl: varchar("evidenceUrl", { length: 512 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

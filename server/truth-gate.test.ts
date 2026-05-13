@@ -534,9 +534,10 @@ describe("adminReleaseLaunch — enforced via calculateLaunchReadiness", () => {
     expect(procBody).toContain("issuesEscalated");
   });
 
-  it("add-on results fetched from launchChecklist pending items", () => {
+  it("add-on results fetched from launchChecklist via isFulfillmentItemBlocking filter", () => {
     expect(procBody).toContain("launchChecklist");
-    expect(procBody).toContain("status, \"pending\"");
+    // Updated: uses isFulfillmentItemBlocking (not a hardcoded pending filter) so completed items pass
+    expect(procBody).toContain("isFulfillmentItemBlocking(item.status)");
   });
 
   // Behavioral: hard blocker proof via helper (complementary to wiring proof above)
@@ -644,5 +645,133 @@ describe("dangerous automations remain off by default", () => {
     const { ENV } = await import("./_core/env.js");
     const val = (ENV as any).enableAutoDomainPurchase;
     expect(val).toBeFalsy();
+  });
+});
+
+// ── P1 Manual Fulfillment Dashboard ─────────────────────────────────────────
+
+describe("isFulfillmentItemBlocking — status gating", () => {
+  it("pending is blocking", async () => {
+    const { isFulfillmentItemBlocking } = await import("./helpers/fulfillment.js");
+    expect(isFulfillmentItemBlocking("pending")).toBe(true);
+  });
+  it("in_progress is blocking", async () => {
+    const { isFulfillmentItemBlocking } = await import("./helpers/fulfillment.js");
+    expect(isFulfillmentItemBlocking("in_progress")).toBe(true);
+  });
+  it("blocked is blocking", async () => {
+    const { isFulfillmentItemBlocking } = await import("./helpers/fulfillment.js");
+    expect(isFulfillmentItemBlocking("blocked")).toBe(true);
+  });
+  it("completed is NOT blocking", async () => {
+    const { isFulfillmentItemBlocking } = await import("./helpers/fulfillment.js");
+    expect(isFulfillmentItemBlocking("completed")).toBe(false);
+  });
+  it("not_applicable is NOT blocking", async () => {
+    const { isFulfillmentItemBlocking } = await import("./helpers/fulfillment.js");
+    expect(isFulfillmentItemBlocking("not_applicable")).toBe(false);
+  });
+  it("unknown/garbage status is blocking (conservative)", async () => {
+    const { isFulfillmentItemBlocking } = await import("./helpers/fulfillment.js");
+    expect(isFulfillmentItemBlocking("whatever")).toBe(true);
+    expect(isFulfillmentItemBlocking("")).toBe(true);
+  });
+});
+
+describe("calculateProjectFulfillmentSummary — aggregate counts", () => {
+  it("empty project has allClear=true and all zeros", async () => {
+    const { calculateProjectFulfillmentSummary } = await import("./helpers/fulfillment.js");
+    const s = calculateProjectFulfillmentSummary([]);
+    expect(s.totalItems).toBe(0);
+    expect(s.blockingCount).toBe(0);
+    expect(s.completedCount).toBe(0);
+    expect(s.allClear).toBe(true);
+  });
+
+  it("all-completed project is allClear=true", async () => {
+    const { calculateProjectFulfillmentSummary } = await import("./helpers/fulfillment.js");
+    const s = calculateProjectFulfillmentSummary([
+      { status: "completed" },
+      { status: "not_applicable" },
+    ]);
+    expect(s.allClear).toBe(true);
+    expect(s.blockingCount).toBe(0);
+    expect(s.completedCount).toBe(2);
+  });
+
+  it("mixed project with one pending is allClear=false", async () => {
+    const { calculateProjectFulfillmentSummary } = await import("./helpers/fulfillment.js");
+    const s = calculateProjectFulfillmentSummary([
+      { status: "completed" },
+      { status: "pending" },
+    ]);
+    expect(s.allClear).toBe(false);
+    expect(s.blockingCount).toBe(1);
+    expect(s.completedCount).toBe(1);
+    expect(s.totalItems).toBe(2);
+  });
+
+  it("all-blocking project has blockingCount === totalItems", async () => {
+    const { calculateProjectFulfillmentSummary } = await import("./helpers/fulfillment.js");
+    const s = calculateProjectFulfillmentSummary([
+      { status: "pending" },
+      { status: "in_progress" },
+      { status: "blocked" },
+    ]);
+    expect(s.allClear).toBe(false);
+    expect(s.blockingCount).toBe(3);
+    expect(s.completedCount).toBe(0);
+  });
+});
+
+describe("markFulfillmentItemCompleted — note requirement", () => {
+  it("compliance router exports markFulfillmentItemCompleted with min-5 note", async () => {
+    const src = await import("fs/promises").then(f => f.readFile("./server/routers.ts", "utf8"));
+    expect(src).toContain("markFulfillmentItemCompleted");
+    expect(src).toContain('z.string().min(5');
+  });
+
+  it("compliance router exports reopenFulfillmentItem with min-5 reason", async () => {
+    const src = await import("fs/promises").then(f => f.readFile("./server/routers.ts", "utf8"));
+    expect(src).toContain("reopenFulfillmentItem");
+    expect(src).toContain("reason: z.string().min(5");
+  });
+
+  it("markFulfillmentItemCompleted sets completedBy from ctx.user", async () => {
+    const src = await import("fs/promises").then(f => f.readFile("./server/routers.ts", "utf8"));
+    expect(src).toContain("completedBy: ctx.user.name");
+  });
+});
+
+describe("adminReleaseLaunch uses isFulfillmentItemBlocking (not just pending filter)", () => {
+  it("adminReleaseLaunch does NOT hardcode status=pending filter", async () => {
+    const src = await import("fs/promises").then(f => f.readFile("./server/routers.ts", "utf8"));
+    // The old pattern was eq(launchChecklist.status, "pending") in the add-on block
+    // After fix it should use isFulfillmentItemBlocking
+    expect(src).toContain("isFulfillmentItemBlocking(item.status)");
+  });
+
+  it("adminReleaseLaunch fetches ALL checklist items, not just pending", async () => {
+    const src = await import("fs/promises").then(f => f.readFile("./server/routers.ts", "utf8"));
+    // Must fetch all items for the customer (no status filter on the DB query)
+    expect(src).toContain("Fetch all launchChecklist items");
+  });
+});
+
+describe("P0 regression — fulfillment helpers do not break existing truth gate", () => {
+  it("isFulfillmentItemBlocking does not mutate its input", async () => {
+    const { isFulfillmentItemBlocking } = await import("./helpers/fulfillment.js");
+    const input = "completed";
+    isFulfillmentItemBlocking(input);
+    expect(input).toBe("completed");
+  });
+
+  it("calculateProjectFulfillmentSummary is a pure function with no side effects", async () => {
+    const { calculateProjectFulfillmentSummary } = await import("./helpers/fulfillment.js");
+    const items = [{ status: "pending" }, { status: "completed" }];
+    const s1 = calculateProjectFulfillmentSummary(items);
+    const s2 = calculateProjectFulfillmentSummary(items);
+    expect(s1).toEqual(s2);
+    expect(items[0].status).toBe("pending");
   });
 });

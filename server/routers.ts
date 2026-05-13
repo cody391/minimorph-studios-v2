@@ -30,6 +30,7 @@ import { formatIntegrationMatrixForPrompt } from "../shared/integrationMatrix";
 import { assertRepOwnership, assertCustomerOwnership, assertProjectOwnership, assertLeadOwnership, assertAssetOwnership } from "./ownership";
 import { validateRevisionAvailability, computeNewRevisionCounts } from "./helpers/revisions";
 import { calculateLaunchReadiness } from "./helpers/launchReadiness";
+import { isFulfillmentItemBlocking, calculateProjectFulfillmentSummary } from "./helpers/fulfillment";
 import { ENV } from "./_core/env";
 import { generateSiteForProject, stripDemoBanner } from "./services/siteGenerator";
 import { processSiteChangeRequest } from "./services/siteUpdater";
@@ -2947,20 +2948,19 @@ const onboardingRouter = router({
           }
         }
 
-        // Fetch pending launchChecklist items as manual-required add-ons
+        // Fetch all launchChecklist items; only blocking statuses produce failure results
         if (project.customerId) {
-          const pendingItems = await database
+          const allItems = await database
             .select()
             .from(launchChecklist)
-            .where(and(
-              eq(launchChecklist.customerId, project.customerId),
-              eq(launchChecklist.status, "pending"),
-            ));
-          addonResults = pendingItems.map(item => ({
-            addon: item.addonKey,
-            success: false,
-            details: item.title,
-          }));
+            .where(eq(launchChecklist.customerId, project.customerId));
+          addonResults = allItems
+            .filter(item => isFulfillmentItemBlocking(item.status))
+            .map(item => ({
+              addon: item.addonKey,
+              success: false,
+              details: item.title,
+            }));
         }
       }
 
@@ -7442,6 +7442,156 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
         mediaReadyForGeneration,
         mediaReadyForCustomerPreview,
         mediaWarnings: warnings,
+      };
+    }),
+
+  // ── Manual Fulfillment Admin Procedures ─────────────────────────────────
+
+  listManualFulfillmentItems: adminProcedure
+    .input(z.object({
+      status: z.enum(["pending", "in_progress", "blocked", "completed", "not_applicable", "all"]).optional().default("all"),
+      projectId: z.number().int().optional(),
+      customerId: z.number().int().optional(),
+      addonKey: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const database = (await getDb())!;
+      const { customers, onboardingProjects } = await import("../drizzle/schema");
+      const { and, eq, inArray } = await import("drizzle-orm");
+
+      const conditions: ReturnType<typeof eq>[] = [];
+      if (input.customerId) conditions.push(eq(launchChecklist.customerId, input.customerId));
+      if (input.addonKey) conditions.push(eq(launchChecklist.addonKey, input.addonKey));
+      if (input.status !== "all") conditions.push(eq(launchChecklist.status, input.status));
+
+      const items = await database
+        .select()
+        .from(launchChecklist)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(launchChecklist.createdAt);
+
+      // Filter by projectId: find the customer linked to that project
+      let projectCustomerId: number | undefined;
+      if (input.projectId) {
+        const [project] = await database
+          .select({ customerId: onboardingProjects.customerId })
+          .from(onboardingProjects)
+          .where(eq(onboardingProjects.id, input.projectId))
+          .limit(1);
+        projectCustomerId = project?.customerId ?? undefined;
+      }
+
+      const filteredItems = input.projectId
+        ? items.filter((i) => i.customerId === projectCustomerId)
+        : items;
+
+      // Enrich with customer business name
+      const customerIds = Array.from(new Set(filteredItems.map((i) => i.customerId)));
+      const customerRows = customerIds.length > 0
+        ? await database
+            .select({ id: customers.id, businessName: customers.businessName })
+            .from(customers)
+            .where(inArray(customers.id, customerIds))
+        : [];
+      const customerMap = new Map(customerRows.map((c) => [c.id, c.businessName]));
+
+      return filteredItems.map((item) => ({
+        ...item,
+        customerName: customerMap.get(item.customerId) ?? `Customer #${item.customerId}`,
+        isBlocking: isFulfillmentItemBlocking(item.status),
+      }));
+    }),
+
+  markFulfillmentItemCompleted: adminProcedure
+    .input(z.object({
+      itemId: z.number().int(),
+      completionNote: z.string().min(5, "Completion note must be at least 5 characters"),
+      evidenceUrl: z.string().url().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = (await getDb())!;
+      const { eq } = await import("drizzle-orm");
+
+      const [item] = await database
+        .select()
+        .from(launchChecklist)
+        .where(eq(launchChecklist.id, input.itemId))
+        .limit(1);
+      if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Fulfillment item not found" });
+
+      await database
+        .update(launchChecklist)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+          completedBy: ctx.user.name ?? ctx.user.email ?? `user:${ctx.user.id}`,
+          completionNote: input.completionNote,
+          evidenceUrl: input.evidenceUrl ?? null,
+        })
+        .where(eq(launchChecklist.id, input.itemId));
+
+      return { success: true, itemId: input.itemId };
+    }),
+
+  reopenFulfillmentItem: adminProcedure
+    .input(z.object({
+      itemId: z.number().int(),
+      reason: z.string().min(5, "Reason must be at least 5 characters"),
+    }))
+    .mutation(async ({ input }) => {
+      const database = (await getDb())!;
+      const { eq } = await import("drizzle-orm");
+
+      const [item] = await database
+        .select()
+        .from(launchChecklist)
+        .where(eq(launchChecklist.id, input.itemId))
+        .limit(1);
+      if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Fulfillment item not found" });
+      if (isFulfillmentItemBlocking(item.status)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Item is already open/blocking — only completed items can be reopened" });
+      }
+
+      await database
+        .update(launchChecklist)
+        .set({
+          status: "pending",
+          completedAt: null,
+          completedBy: null,
+          completionNote: input.reason,
+          evidenceUrl: null,
+        })
+        .where(eq(launchChecklist.id, input.itemId));
+
+      return { success: true, itemId: input.itemId };
+    }),
+
+  getProjectFulfillmentStatus: adminProcedure
+    .input(z.object({ projectId: z.number().int() }))
+    .query(async ({ input }) => {
+      const database = (await getDb())!;
+      const { onboardingProjects } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const [project] = await database
+        .select()
+        .from(onboardingProjects)
+        .where(eq(onboardingProjects.id, input.projectId))
+        .limit(1);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (!project.customerId) throw new TRPCError({ code: "BAD_REQUEST", message: "Project has no associated customer" });
+
+      const items = await database
+        .select()
+        .from(launchChecklist)
+        .where(eq(launchChecklist.customerId, project.customerId));
+
+      const summary = calculateProjectFulfillmentSummary(items);
+      return {
+        projectId: input.projectId,
+        customerId: project.customerId,
+        ...summary,
+        dryRunReady: summary.allClear,
       };
     }),
 });
