@@ -717,10 +717,24 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
       (q.industry as string) ||
       "other";
 
-    // Build asset summary for prompt
-    const assetSummary = assets.length > 0
-      ? assets.map(a => `- ${a.category}: ${a.fileName} (available at: ${a.fileUrl})`).join("\n")
-      : "No assets uploaded — use CSS gradients, shapes, and SVG illustrations as placeholders.";
+    // Media quality gate: only use approved assets in generation
+    // pending_review, rejected, needs_rescue, and replaced assets are excluded
+    const allAssets = assets;
+    const approvedAssets = allAssets.filter((a: any) => a.qualityStatus === "approved");
+    const pendingAssets = allAssets.filter((a: any) => a.qualityStatus === "pending_review");
+    const rejectedAssets = allAssets.filter((a: any) => a.qualityStatus === "rejected" || a.qualityStatus === "needs_rescue");
+
+    if (pendingAssets.length > 0) {
+      console.warn(`[SiteGen] Project ${projectId}: ${pendingAssets.length} asset(s) pending review — excluded from generation. Using only approved media.`);
+    }
+    if (rejectedAssets.length > 0) {
+      console.warn(`[SiteGen] Project ${projectId}: ${rejectedAssets.length} asset(s) rejected/needs_rescue — excluded from generation.`);
+    }
+
+    // Build asset summary using only approved assets
+    const assetSummary = approvedAssets.length > 0
+      ? approvedAssets.map((a: any) => `- ${a.category}${a.intendedUse ? ` (${a.intendedUse})` : ""}: ${a.fileName} (available at: ${a.fileUrl})`).join("\n")
+      : "No approved customer media — use premium CSS gradients, geometric shapes, and SVG illustrations. Do NOT use placeholder fake-proof images (no fake storefronts, fake trucks, fake team photos, fake food, fake before/after photos). Use abstract design elements only.";
 
     // ── Color extraction (Fix 2 & 9: primaryBg, textColor, secondary color) ──
     const brandTone = (q.brandTone as string) || "professional";

@@ -255,12 +255,212 @@ function VersionHistoryPanel({
   );
 }
 
+function AdminMediaPanel({ projectId, enabled }: { projectId: number; enabled: boolean }) {
+  const assetsQuery = trpc.compliance.adminListProjectAssets.useQuery({ projectId }, { enabled });
+  const updateQualityMutation = trpc.compliance.adminUpdateAssetQuality.useMutation();
+  const readinessQuery = trpc.compliance.getProjectMediaReadiness.useQuery({ projectId }, { enabled });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<{
+    qualityStatus: string; qualityScore: string; qualityNotes: string;
+    rejectionReason: string; rescueNotes: string;
+  }>({ qualityStatus: "pending_review", qualityScore: "", qualityNotes: "", rejectionReason: "", rescueNotes: "" });
+
+  const assets = assetsQuery.data ?? [];
+  const readiness = readinessQuery.data;
+
+  const startEdit = (asset: any) => {
+    setEditingId(asset.id);
+    setForm({
+      qualityStatus: asset.qualityStatus ?? "pending_review",
+      qualityScore: asset.qualityScore ? String(asset.qualityScore) : "",
+      qualityNotes: asset.qualityNotes ?? "",
+      rejectionReason: asset.rejectionReason ?? "",
+      rescueNotes: asset.rescueNotes ?? "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    try {
+      await updateQualityMutation.mutateAsync({
+        assetId: editingId,
+        qualityStatus: form.qualityStatus as any,
+        qualityScore: form.qualityScore ? Number(form.qualityScore) : undefined,
+        qualityNotes: form.qualityNotes || undefined,
+        rejectionReason: form.rejectionReason || undefined,
+        rescueNotes: form.rescueNotes || undefined,
+      });
+      toast.success("Asset quality updated");
+      setEditingId(null);
+      assetsQuery.refetch();
+      readinessQuery.refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Update failed");
+    }
+  };
+
+  if (assetsQuery.isLoading) return <div className="text-xs text-gray-400 py-2">Loading media...</div>;
+
+  return (
+    <div className="space-y-3">
+      {/* Readiness summary */}
+      {readiness && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          <div className="rounded bg-gray-50 border border-gray-200 p-2">
+            <div className="font-medium text-gray-700">{readiness.approvedCount}</div>
+            <div className="text-green-600">Approved</div>
+          </div>
+          <div className="rounded bg-gray-50 border border-gray-200 p-2">
+            <div className="font-medium text-gray-700">{readiness.pendingCount}</div>
+            <div className="text-yellow-600">Pending review</div>
+          </div>
+          <div className="rounded bg-gray-50 border border-gray-200 p-2">
+            <div className="font-medium text-gray-700">{readiness.needsRescueCount}</div>
+            <div className="text-orange-600">Needs rescue</div>
+          </div>
+          <div className="rounded bg-gray-50 border border-gray-200 p-2">
+            <div className="font-medium text-gray-700">{readiness.rejectedCount}</div>
+            <div className="text-red-600">Rejected</div>
+          </div>
+        </div>
+      )}
+      {readiness?.mediaWarnings && readiness.mediaWarnings.length > 0 && (
+        <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 space-y-0.5">
+          {readiness.mediaWarnings.map((w: string, i: number) => <div key={i}>⚠ {w}</div>)}
+        </div>
+      )}
+      {readiness?.mediaReadyForGeneration && (
+        <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded p-2">
+          ✓ Media ready for generation ({readiness.approvedCount} approved assets)
+        </div>
+      )}
+
+      {/* Asset list */}
+      {assets.length === 0 ? (
+        <div className="text-xs text-gray-400 py-2">No media uploaded by customer yet.</div>
+      ) : (
+        <div className="space-y-2">
+          {assets.map((asset: any) => (
+            <div key={asset.id} className="rounded border border-gray-200 bg-gray-50/50 p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2 flex-wrap">
+                <div>
+                  <div className="text-xs font-medium text-gray-800 truncate max-w-[220px]">{asset.fileName}</div>
+                  <div className="text-xs text-gray-500 flex gap-2 mt-0.5">
+                    <span className="capitalize">{asset.category}</span>
+                    {asset.intendedUse && <span className="capitalize text-blue-600">{asset.intendedUse.replace("_", " ")}</span>}
+                    <span className="text-gray-400">{asset.source}</span>
+                    {asset.fileSize && <span>{Math.round(asset.fileSize / 1024)}KB</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    asset.qualityStatus === "approved" ? "bg-green-100 text-green-700" :
+                    asset.qualityStatus === "rejected" ? "bg-red-100 text-red-700" :
+                    asset.qualityStatus === "needs_rescue" ? "bg-orange-100 text-orange-700" :
+                    "bg-yellow-100 text-yellow-700"
+                  }`}>{asset.qualityStatus?.replace("_", " ")}</span>
+                  <button
+                    onClick={() => editingId === asset.id ? setEditingId(null) : startEdit(asset)}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    {editingId === asset.id ? "Cancel" : "Review"}
+                  </button>
+                  {asset.fileUrl && (
+                    <a href={asset.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-gray-600">
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {editingId === asset.id && (
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-gray-600 block mb-1">Quality Status</label>
+                      <select
+                        value={form.qualityStatus}
+                        onChange={e => setForm(f => ({ ...f, qualityStatus: e.target.value }))}
+                        className="w-full text-xs border border-gray-200 rounded px-2 py-1 bg-white"
+                      >
+                        <option value="pending_review">Pending review</option>
+                        <option value="approved">Approved</option>
+                        <option value="needs_rescue">Needs rescue</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="replaced">Replaced</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-600 block mb-1">Score (1-10)</label>
+                      <input
+                        type="number" min="1" max="10"
+                        value={form.qualityScore}
+                        onChange={e => setForm(f => ({ ...f, qualityScore: e.target.value }))}
+                        placeholder="e.g. 7"
+                        className="w-full text-xs border border-gray-200 rounded px-2 py-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-600 block mb-1">Quality Notes (internal)</label>
+                    <textarea
+                      value={form.qualityNotes}
+                      onChange={e => setForm(f => ({ ...f, qualityNotes: e.target.value }))}
+                      placeholder="Internal notes about media quality..."
+                      rows={2}
+                      className="w-full text-xs border border-gray-200 rounded px-2 py-1 resize-none"
+                    />
+                  </div>
+                  {(form.qualityStatus === "rejected" || form.qualityStatus === "needs_rescue") && (
+                    <>
+                      <div>
+                        <label className="text-xs text-gray-600 block mb-1">Rejection reason (shown to customer)</label>
+                        <textarea
+                          value={form.rejectionReason}
+                          onChange={e => setForm(f => ({ ...f, rejectionReason: e.target.value }))}
+                          placeholder="e.g. Image is blurry and too dark — a brighter, sharper version will look premium."
+                          rows={2}
+                          className="w-full text-xs border border-gray-200 rounded px-2 py-1 resize-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-600 block mb-1">Rescue / replacement suggestion (shown to customer)</label>
+                        <textarea
+                          value={form.rescueNotes}
+                          onChange={e => setForm(f => ({ ...f, rescueNotes: e.target.value }))}
+                          placeholder="e.g. Try photographing near a window in natural light, centered subject, no clutter in background."
+                          rows={2}
+                          className="w-full text-xs border border-gray-200 rounded px-2 py-1 resize-none"
+                        />
+                      </div>
+                    </>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={saveEdit}
+                    disabled={updateQualityMutation.isPending}
+                    className="text-xs"
+                  >
+                    {updateQualityMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                    Save quality review
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OnboardingProjects() {
   const [filterStage, setFilterStage] = useState<string>("all");
   const [markLiveForms, setMarkLiveForms] = useState<Record<number, { open: boolean; liveUrl: string; domainName: string }>>({});
   const [expandedLogs, setExpandedLogs] = useState<Record<number, boolean>>({});
   const [expandedVersions, setExpandedVersions] = useState<Record<number, boolean>>({});
   const [expandedBlueprintRevisions, setExpandedBlueprintRevisions] = useState<Record<number, boolean>>({});
+  const [expandedMedia, setExpandedMedia] = useState<Record<number, boolean>>({});
   const [newBuildOpen, setNewBuildOpen] = useState(false);
   const [buildForm, setBuildForm] = useState(EMPTY_FORM);
   const [buildStep, setBuildStep] = useState<"idle" | "creating" | "queuing" | "done">("idle");
@@ -868,6 +1068,26 @@ export default function OnboardingProjects() {
                               toast.error(e?.message || "Rollback failed");
                             }
                           }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* Media Review Panel */}
+                  <div className="mt-3 border-t border-gray-100 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedMedia(prev => ({ ...prev, [project.id]: !prev[project.id] }))}
+                      className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <Upload className="w-3 h-3" />
+                      Media Review
+                      {expandedMedia[project.id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                    {expandedMedia[project.id] && (
+                      <div className="mt-2 p-3 rounded-lg border border-gray-200 bg-gray-50/50">
+                        <AdminMediaPanel
+                          projectId={project.id}
+                          enabled={!!expandedMedia[project.id]}
                         />
                       </div>
                     )}

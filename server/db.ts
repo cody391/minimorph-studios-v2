@@ -574,6 +574,20 @@ export async function repairSchema(): Promise<void> {
     // Add blueprint_review to onboarding_projects.stage enum (idempotent MODIFY)
     await safe("ALTER TABLE `onboarding_projects` MODIFY COLUMN `stage` ENUM('intake','questionnaire','blueprint_review','assets_upload','design','pending_admin_review','review','revisions','final_approval','launch','complete') NOT NULL DEFAULT 'intake'");
 
+    // ── Phase 3: project_assets quality gate columns ─────────────────────────
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `uploadedByUserId` int DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `source` enum('customer','admin','stock','ai_support_visual','system') NOT NULL DEFAULT 'customer'");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `intendedUse` enum('hero','gallery','about','services','team','product','background','testimonial','logo','not_sure') DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `qualityStatus` enum('pending_review','approved','needs_rescue','rejected','replaced') NOT NULL DEFAULT 'pending_review'");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `qualityScore` int DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `qualityNotes` text DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `rescueNotes` text DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `rejectionReason` text DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `approvedAt` timestamp NULL DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `approvedByUserId` int DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `rejectedAt` timestamp NULL DEFAULT NULL");
+    await safe("ALTER TABLE `project_assets` ADD COLUMN `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+
     // ── 0053_site_versions: HTML snapshot before each revision ───────────────
     await conn.execute(`CREATE TABLE IF NOT EXISTS \`site_versions\` (
       \`id\` int NOT NULL AUTO_INCREMENT,
@@ -1225,6 +1239,29 @@ export async function listProjectAssets(projectId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(projectAssets).where(eq(projectAssets.projectId, projectId)).orderBy(desc(projectAssets.createdAt));
+}
+
+export async function updateProjectAsset(id: number, data: Partial<InsertProjectAsset>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(projectAssets).set(data).where(eq(projectAssets.id, id));
+}
+
+export async function getProjectAssetById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(projectAssets).where(eq(projectAssets.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function listApprovedProjectAssets(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(projectAssets)
+    .where(and(eq(projectAssets.projectId, projectId), eq(projectAssets.qualityStatus as any, "approved")))
+    .orderBy(desc(projectAssets.createdAt));
 }
 
 export async function deleteProjectAsset(id: number) {

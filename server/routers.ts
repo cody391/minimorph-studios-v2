@@ -2712,26 +2712,53 @@ const onboardingRouter = router({
         fileBase64: z.string(),
         mimeType: z.string().optional(),
         category: z.enum(["logo", "photo", "brand_guidelines", "copy", "document", "other"]).optional(),
+        intendedUse: z.enum(["hero", "gallery", "about", "services", "team", "product", "background", "testimonial", "logo", "not_sure"]).optional(),
         notes: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
-      const { storagePut } = await import("./storage");
+
+      // File security: only allow image/video/document MIME types
+      const mimeType = input.mimeType || "application/octet-stream";
+      const allowedMimeTypes = [
+        "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/heic",
+        "video/mp4", "video/mov", "video/quicktime", "video/webm",
+        "application/pdf",
+        "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (!allowedMimeTypes.some(t => mimeType.startsWith(t.split("/")[0]) && (mimeType.startsWith("image/") || mimeType.startsWith("video/") || mimeType.startsWith("application/")))) {
+        // Allow any image/video/application but block executables
+        const blocked = ["application/x-executable", "application/x-sh", "application/x-bat", "text/x-script"];
+        if (blocked.some(b => mimeType.startsWith(b))) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "File type not allowed." });
+        }
+      }
+
+      // Max file size: 25MB
       const buffer = Buffer.from(input.fileBase64, "base64");
+      if (buffer.length > 25 * 1024 * 1024) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "File too large. Maximum 25 MB." });
+      }
+
+      const { storagePut } = await import("./storage");
       const fileKey = `onboarding/${input.projectId}/${input.fileName}`;
-      const { key, url } = await storagePut(fileKey, buffer, input.mimeType || "application/octet-stream");
+      const { key, url } = await storagePut(fileKey, buffer, mimeType);
 
       return db.createProjectAsset({
         projectId: input.projectId,
+        uploadedByUserId: ctx.user.id,
         fileName: input.fileName,
         fileKey: key,
         fileUrl: url,
         fileSize: buffer.length,
-        mimeType: input.mimeType || "application/octet-stream",
+        mimeType,
         category: input.category || "other",
+        source: "customer",
+        intendedUse: input.intendedUse,
+        qualityStatus: "pending_review",
         notes: input.notes,
-      });
+      } as any);
     }),
 
   // Protected: list assets for a project (ownership check)
@@ -7158,6 +7185,84 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
         });
       } catch {}
       return { success: true, newVersion };
+    }),
+
+  // Admin: list all media assets for a project
+  adminListProjectAssets: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ input }) => {
+      return db.listProjectAssets(input.projectId);
+    }),
+
+  // Admin: update media asset quality status, score, notes
+  adminUpdateAssetQuality: adminProcedure
+    .input(z.object({
+      assetId: z.number(),
+      qualityStatus: z.enum(["pending_review", "approved", "needs_rescue", "rejected", "replaced"]),
+      qualityScore: z.number().min(1).max(10).optional(),
+      qualityNotes: z.string().optional(),
+      rejectionReason: z.string().optional(),
+      rescueNotes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const asset = await db.getProjectAssetById(input.assetId);
+      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
+
+      const update: Record<string, unknown> = {
+        qualityStatus: input.qualityStatus,
+      };
+      if (input.qualityScore !== undefined) update.qualityScore = input.qualityScore;
+      if (input.qualityNotes !== undefined) update.qualityNotes = input.qualityNotes;
+      if (input.rejectionReason !== undefined) update.rejectionReason = input.rejectionReason;
+      if (input.rescueNotes !== undefined) update.rescueNotes = input.rescueNotes;
+
+      if (input.qualityStatus === "approved") {
+        update.approvedAt = new Date();
+        update.approvedByUserId = ctx.user.id;
+        update.rejectedAt = null;
+      } else if (input.qualityStatus === "rejected") {
+        update.rejectedAt = new Date();
+        update.approvedAt = null;
+      }
+
+      await db.updateProjectAsset(input.assetId, update as any);
+      return { success: true };
+    }),
+
+  // Admin: get media readiness for a project
+  getProjectMediaReadiness: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ input }) => {
+      const assets = await db.listProjectAssets(input.projectId);
+      const approved = assets.filter((a: any) => a.qualityStatus === "approved");
+      const pending = assets.filter((a: any) => a.qualityStatus === "pending_review");
+      const needsRescue = assets.filter((a: any) => a.qualityStatus === "needs_rescue");
+      const rejected = assets.filter((a: any) => a.qualityStatus === "rejected");
+
+      const hasApprovedLogo = approved.some((a: any) => a.category === "logo" || a.intendedUse === "logo");
+      const approvedPhotoCount = approved.filter((a: any) => a.category === "photo" || ["hero","gallery","about","services","team","product","background"].includes(a.intendedUse)).length;
+      const mediaReadyForGeneration = approved.length > 0;
+      const mediaReadyForCustomerPreview = approved.length > 0 && pending.length === 0;
+
+      const warnings: string[] = [];
+      if (!hasApprovedLogo && assets.some((a: any) => a.category === "logo")) warnings.push("Logo uploaded but not yet approved");
+      if (pending.length > 0) warnings.push(`${pending.length} asset(s) pending quality review`);
+      if (needsRescue.length > 0) warnings.push(`${needsRescue.length} asset(s) need rescue / replacement`);
+      if (rejected.length > 0) warnings.push(`${rejected.length} asset(s) rejected — customer should upload replacements`);
+
+      return {
+        totalAssets: assets.length,
+        approvedCount: approved.length,
+        pendingCount: pending.length,
+        needsRescueCount: needsRescue.length,
+        rejectedCount: rejected.length,
+        hasLogo: assets.some((a: any) => a.category === "logo"),
+        hasApprovedLogo,
+        approvedPhotoCount,
+        mediaReadyForGeneration,
+        mediaReadyForCustomerPreview,
+        mediaWarnings: warnings,
+      };
     }),
 });
 

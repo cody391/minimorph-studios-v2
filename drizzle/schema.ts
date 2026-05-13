@@ -520,6 +520,7 @@ export const projectAssets = mysqlTable("project_assets", {
   id: int("id").autoincrement().primaryKey(),
   projectId: int("projectId").notNull(),
   customerId: int("customerId"),
+  uploadedByUserId: int("uploadedByUserId"),
 
   // File info
   fileName: varchar("fileName", { length: 512 }).notNull(),
@@ -538,8 +539,49 @@ export const projectAssets = mysqlTable("project_assets", {
     .default("other")
     .notNull(),
 
+  // Source and intended use
+  source: mysqlEnum("source", [
+    "customer",
+    "admin",
+    "stock",
+    "ai_support_visual",
+    "system",
+  ]).default("customer").notNull(),
+
+  intendedUse: mysqlEnum("intendedUse", [
+    "hero",
+    "gallery",
+    "about",
+    "services",
+    "team",
+    "product",
+    "background",
+    "testimonial",
+    "logo",
+    "not_sure",
+  ]),
+
+  // Quality gate
+  qualityStatus: mysqlEnum("qualityStatus", [
+    "pending_review",
+    "approved",
+    "needs_rescue",
+    "rejected",
+    "replaced",
+  ]).default("pending_review").notNull(),
+
+  qualityScore: int("qualityScore"), // 1-10
+  qualityNotes: text("qualityNotes"),
+  rescueNotes: text("rescueNotes"),
+  rejectionReason: text("rejectionReason"),
+
+  approvedAt: timestamp("approvedAt"),
+  approvedByUserId: int("approvedByUserId"),
+  rejectedAt: timestamp("rejectedAt"),
+
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type ProjectAsset = typeof projectAssets.$inferSelect;

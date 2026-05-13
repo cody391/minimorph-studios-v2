@@ -17,7 +17,7 @@ import { useLocation } from "wouter";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { AIChatBox } from "@/components/AIChatBox";
-import { Bot, Loader2, Sparkles, Globe, ExternalLink, RefreshCw, Copy } from "lucide-react";
+import { Bot, Loader2, Sparkles, Globe, ExternalLink, RefreshCw, Copy, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
@@ -577,6 +577,185 @@ export default function CustomerPortal() {
 /* ═══════════════════════════════════════════════════════
    ONBOARDING PROJECT TAB — Generation status + site review
    ═══════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────────────────────
+   ELENA MEDIA SECTION — Customer media/photo/logo upload and quality status
+   ─────────────────────────────────────────────────────────────────────────── */
+const INTENDED_USE_OPTIONS = [
+  { value: "logo", label: "Logo" },
+  { value: "hero", label: "Hero / Banner" },
+  { value: "gallery", label: "Gallery / Portfolio" },
+  { value: "about", label: "About / Team" },
+  { value: "services", label: "Services" },
+  { value: "product", label: "Product" },
+  { value: "background", label: "Background" },
+  { value: "not_sure", label: "Not sure — let the team decide" },
+] as const;
+
+const QUALITY_STATUS_CONFIG: Record<string, { label: string; color: string; guidance?: string }> = {
+  pending_review: { label: "Pending review", color: "text-yellow-400", guidance: "Our team will review this shortly to make sure it meets our quality standard." },
+  approved: { label: "Approved", color: "text-green-400" },
+  needs_rescue: { label: "Needs improvement", color: "text-orange-400", guidance: "Our team has some suggestions to help this file look its best." },
+  rejected: { label: "Please replace", color: "text-red-400", guidance: "This one may not help your site look as premium as it should. You can upload a replacement below." },
+  replaced: { label: "Replaced", color: "text-soft-gray" },
+};
+
+function ElenaMediaSection({ projectId, readOnly = false }: { projectId: number; readOnly?: boolean }) {
+  const [uploading, setUploading] = useState(false);
+  const [selectedUse, setSelectedUse] = useState<string>("not_sure");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadMutation = trpc.onboarding.uploadAsset.useMutation();
+  const { data: assets = [], refetch: refetchAssets } = trpc.onboarding.listAssets.useQuery(
+    { projectId },
+    { enabled: !!projectId }
+  );
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !projectId) return;
+    e.target.value = "";
+
+    // Client-side size check: 25 MB
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("File too large. Maximum 25 MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = (ev.target?.result as string).split(",")[1];
+        const category: "logo" | "photo" | "other" =
+          selectedUse === "logo" ? "logo" : file.type.startsWith("image/") || file.type.startsWith("video/") ? "photo" : "other";
+        await uploadMutation.mutateAsync({
+          projectId,
+          fileName: file.name,
+          fileBase64: base64,
+          mimeType: file.type,
+          category,
+          intendedUse: selectedUse as any,
+        });
+        toast.success(`${file.name} uploaded — our team will review it shortly.`);
+        refetchAssets();
+        setUploading(false);
+      };
+      reader.onerror = () => { toast.error("Failed to read file."); setUploading(false); };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed.");
+      setUploading(false);
+    }
+  };
+
+  const pendingCount = (assets as any[]).filter((a: any) => a.qualityStatus === "pending_review").length;
+  const approvedCount = (assets as any[]).filter((a: any) => a.qualityStatus === "approved").length;
+  const needsActionCount = (assets as any[]).filter((a: any) => ["rejected", "needs_rescue"].includes(a.qualityStatus)).length;
+
+  return (
+    <Card className="border-electric/20 bg-electric/3">
+      <CardHeader className="pb-3">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#4a9eff] to-[#7c5cfc] flex items-center justify-center text-white font-bold text-sm shrink-0">
+            E
+          </div>
+          <div>
+            <CardTitle className="text-off-white font-serif text-base">Media & Photos</CardTitle>
+            <CardDescription className="text-soft-gray text-sm mt-1">
+              Elena guides your media through a quality review before it reaches your website. Upload anything you have — we'll review every file and let you know if anything needs improvement.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Upload summary */}
+        {(assets as any[]).length > 0 && (
+          <div className="flex flex-wrap gap-3 text-xs">
+            {approvedCount > 0 && <span className="text-green-400">{approvedCount} approved</span>}
+            {pendingCount > 0 && <span className="text-yellow-400">{pendingCount} pending review</span>}
+            {needsActionCount > 0 && <span className="text-orange-400">{needsActionCount} need attention</span>}
+          </div>
+        )}
+
+        {/* Asset list */}
+        {(assets as any[]).length > 0 && (
+          <div className="space-y-2">
+            {(assets as any[]).map((asset: any) => {
+              const statusCfg = QUALITY_STATUS_CONFIG[asset.qualityStatus] ?? QUALITY_STATUS_CONFIG.pending_review;
+              return (
+                <div key={asset.id} className="rounded-lg border border-border/30 bg-charcoal/30 p-3 space-y-1">
+                  <div className="flex items-start justify-between gap-2 flex-wrap">
+                    <div className="text-sm text-off-white truncate max-w-[60%]">{asset.fileName}</div>
+                    <span className={`text-xs font-medium ${statusCfg.color}`}>{statusCfg.label}</span>
+                  </div>
+                  {asset.intendedUse && asset.intendedUse !== "not_sure" && (
+                    <div className="text-xs text-soft-gray/60 capitalize">{asset.intendedUse.replace("_", " ")}</div>
+                  )}
+                  {/* Quality guidance for rejected/needs_rescue */}
+                  {(asset.qualityStatus === "rejected" || asset.qualityStatus === "needs_rescue") && (
+                    <div className="mt-2 rounded-md bg-amber-500/10 border border-amber-500/20 p-2 text-xs text-amber-300 space-y-1">
+                      <p>{statusCfg.guidance}</p>
+                      {asset.rejectionReason && <p className="text-soft-gray">Team note: {asset.rejectionReason}</p>}
+                      {asset.rescueNotes && <p className="text-soft-gray">Suggestion: {asset.rescueNotes}</p>}
+                    </div>
+                  )}
+                  {/* Approved: show positive signal */}
+                  {asset.qualityStatus === "approved" && (
+                    <div className="text-xs text-green-400/70">Ready to use in your website.</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Upload UI */}
+        {!readOnly && (
+          <div className="space-y-3 pt-2 border-t border-border/20">
+            <p className="text-xs text-soft-gray">
+              Your media goes through a quality review before it reaches your website. If something won't help your site look premium, we'll guide you through fixing or replacing it — never a problem, always a solution.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <select
+                value={selectedUse}
+                onChange={e => setSelectedUse(e.target.value)}
+                className="flex-1 text-sm bg-charcoal border border-border/50 text-off-white rounded-lg px-3 py-2 min-w-0"
+              >
+                {INTENDED_USE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                variant="outline"
+                size="sm"
+                className="border-electric/40 text-electric hover:bg-electric/10 whitespace-nowrap"
+              >
+                {uploading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Uploading...</> : <><Upload className="h-3 w-3 mr-1" />Upload file</>}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*,video/*,application/pdf,.doc,.docx"
+                onChange={handleFileSelect}
+              />
+            </div>
+            {(assets as any[]).length === 0 && (
+              <p className="text-xs text-soft-gray/50">
+                No files uploaded yet. Upload your logo, photos, or any brand materials and Elena's team will review them for quality.
+              </p>
+            )}
+          </div>
+        )}
+        {readOnly && (assets as any[]).length === 0 && (
+          <p className="text-xs text-soft-gray/50">No media uploaded yet.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function OnboardingProjectTab({
   project,
   onRefetch,
@@ -908,6 +1087,7 @@ function OnboardingProjectTab({
             )}
           </CardContent>
         </Card>
+        <ElenaMediaSection projectId={project.id} />
       </div>
     );
   }
@@ -1002,6 +1182,7 @@ function OnboardingProjectTab({
   // AI is generating
   if (project.generationStatus === "generating") {
     return (
+      <div className="space-y-6">
       <Card className="border-border/50">
         <CardContent className="py-12 text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-electric/10 flex items-center justify-center mx-auto">
@@ -1035,6 +1216,8 @@ function OnboardingProjectTab({
           </Button>
         </CardContent>
       </Card>
+      <ElenaMediaSection projectId={project.id} readOnly />
+      </div>
     );
   }
 
