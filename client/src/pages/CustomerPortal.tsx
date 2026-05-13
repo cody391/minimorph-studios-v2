@@ -601,7 +601,7 @@ function OnboardingProjectTab({
 
   const { data: blueprint, refetch: refetchBlueprint } = trpc.onboarding.getBlueprint.useQuery(
     { projectId: project?.id ?? 0 },
-    { enabled: !!project?.id && (project?.stage === "blueprint_review" || project?.stage === "questionnaire") }
+    { enabled: !!project?.id }
   );
 
   // Parse generated pages (stable across re-renders)
