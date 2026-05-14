@@ -216,24 +216,6 @@ footer { background: #040404; padding: 5rem 5% 2rem; border-top: 1px solid var(-
   </div>
 </section>
 
-<section class="results-section">
-  <div class="section-label" data-animate>Real Results</div>
-  <div class="section-title" style="font-family:Barlow Condensed,sans-serif;text-transform:uppercase;" data-animate>What Our Members Achieve</div>
-  <div class="results-grid">
-    <div class="result-item" data-animate>
-      <div class="result-num">18 LBS</div>
-      <div class="result-label">Average lost in first 90 days</div>
-    </div>
-    <div class="result-item" data-animate>
-      <div class="result-num">94%</div>
-      <div class="result-label">Member retention after month one</div>
-    </div>
-    <div class="result-item" data-animate>
-      <div class="result-num">500+</div>
-      <div class="result-label">Active members</div>
-    </div>
-  </div>
-</section>
 
 <section class="trainers-section">
   <div class="section-label" data-animate>Our Coaches</div>
@@ -309,19 +291,6 @@ footer { background: #040404; padding: 5rem 5% 2rem; border-top: 1px solid var(-
   </div>
 </section>
 
-<section class="trial-section" id="trial">
-  <div class="trial-inner" data-animate>
-    <div class="section-label">No Risk</div>
-    <h2>Start Your Free Week</h2>
-    <p>One week. Unlimited classes. Zero commitment. Come see what the difference feels like.</p>
-    <form class="trial-form" id="trial-form">
-      <input class="trial-input" name="name" type="text" placeholder="Your Name" required>
-      <input class="trial-input" name="email" type="email" placeholder="Email Address" required>
-      <input class="trial-input" name="phone" type="tel" placeholder="Phone Number" required>
-      <button class="trial-submit" type="submit">Claim Your Free Week →</button>
-    </form>
-  </div>
-</section>
 
 <footer>
   <div class="footer-inner">
@@ -366,21 +335,6 @@ footer { background: #040404; padding: 5rem 5% 2rem; border-top: 1px solid var(-
 </footer>
 
 <script>
-(function(){
-  var form=document.getElementById('trial-form');
-  if(!form) return;
-  form.addEventListener('submit',function(e){
-    e.preventDefault();
-    var btn=form.querySelector('button');
-    var fd=new FormData(form);
-    btn.textContent='Sending...'; btn.disabled=true;
-    fetch('APP_URL_PLACEHOLDER/api/contact-submit',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:fd.get('name'),email:fd.get('email'),phone:fd.get('phone'),message:'Free trial request',businessName:'BUSINESS_NAME'})
-    }).then(function(r){return r.json();}).then(function(res){
-      if(res.success){form.innerHTML='<p style="text-align:center;font-family:Barlow Condensed,sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;color:var(--primary)">YOUR TRIAL IS CONFIRMED. WE\'LL TEXT YOU WITHIN 5 MINUTES.</p>';}
-    }).catch(function(){btn.textContent='Claim Your Free Week →';btn.disabled=false;});
-  });
-})();
 var obs=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
 document.querySelectorAll('[data-animate]').forEach(function(el){obs.observe(el)});
 </script>
