@@ -470,6 +470,13 @@ ${brief.testimonials?.[0] ? `Real testimonial: "${brief.testimonials[0].quote}" 
 
 Write compelling, specific, non-generic copy. Avoid clichés. Sound human.
 
+HONESTY RULES (absolute — never break these):
+- Do NOT invent member counts, customer counts, satisfaction percentages, or volume claims (e.g. "847+ members", "500 clients").
+- Do NOT invent ratings, stars, or review scores.
+- Do NOT reference "Best in [city]", "Top-rated", "#1", or any superlative claim.
+- Do NOT offer a free trial, discount, guarantee, or promotion unless the customer explicitly provided it.
+- TESTIMONIAL fields must use only the real testimonial from the brief. If no testimonial was provided, output empty strings for TESTIMONIAL_1, TESTIMONIAL_1_NAME, TESTIMONIAL_1_CONTEXT.
+
 Return this exact JSON structure:
 {
   "HEADLINE": "5-9 word hero headline (power verb + specific benefit)",

@@ -1007,7 +1007,7 @@ ${assetSummary}`;
           testimonials,
           competitiveIntel: competitiveIntel ?? undefined,
           imageDirection,
-          appUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
+          appUrl: (ENV.appUrl || "https://www.minimorphstudios.net").replace(/\/portal\/?$/, "").replace(/\/$/, ""),
           subNiche,
           // Elena-sourced fields — wire every field she collects
           addonsSelected: addonsSelectedRaw,
