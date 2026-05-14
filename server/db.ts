@@ -1136,6 +1136,13 @@ export async function getOnboardingProjectByCustomerId(customerId: number) {
   return result[0];
 }
 
+export async function getOnboardingProjectByBusinessName(businessName: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(onboardingProjects).where(eq(onboardingProjects.businessName, businessName)).orderBy(desc(onboardingProjects.createdAt)).limit(1);
+  return result[0];
+}
+
 export async function listOnboardingProjects(stageFilter?: string) {
   const db = await getDb();
   if (!db) return [];

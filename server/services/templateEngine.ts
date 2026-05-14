@@ -2,6 +2,15 @@ import * as fs from "fs";
 import * as path from "path";
 import { ENV } from "../_core/env";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export interface SiteBrief {
   businessName: string;
   businessType: string;
@@ -350,7 +359,7 @@ CSS REQUIREMENTS:
 - Scroll-triggered fade-in: [data-animate] { opacity:0; transform:translateY(24px); transition: opacity 0.6s, transform 0.6s; }
   [data-animate].visible { opacity:1; transform:translateY(0); }
   Use IntersectionObserver in <script> at bottom of body
-- Mobile: hide nav links below 900px (just hide them, no hamburger needed), stack grids to 1 column
+- Mobile: below 900px, hide nav links and show a visible hamburger button (☰) that toggles them open/closed using a JS click handler. Never hide navigation without a working toggle replacement. Stack grids to 1 column.
 - Choose 1-2 Google Fonts that suit a ${brief.businessType} aesthetic
 - Design should feel specifically tailored to ${brief.businessType} — colors, typography, layout, and copy style all appropriate for that industry and its customers
 
@@ -471,9 +480,9 @@ Return this exact JSON structure:
   "SERVICE_1_DESC": "Short name for service 1 (3-5 words max)",
   "SERVICE_2_DESC": "Short name for service 2 (3-5 words max)",
   "SERVICE_3_DESC": "Short name for service 3 (3-5 words max)",
-  "TESTIMONIAL_1": "${brief.testimonials?.[0]?.quote ?? "Write a realistic 1-2 sentence customer testimonial"}",
-  "TESTIMONIAL_1_NAME": "${brief.testimonials?.[0]?.name ?? "Customer Name"}",
-  "TESTIMONIAL_1_CONTEXT": "${brief.testimonials?.[0]?.context ?? "Satisfied Customer"}",
+  "TESTIMONIAL_1": "${brief.testimonials?.[0]?.quote ?? ""}",
+  "TESTIMONIAL_1_NAME": "${brief.testimonials?.[0]?.name ?? ""}",
+  "TESTIMONIAL_1_CONTEXT": "${brief.testimonials?.[0]?.context ?? ""}",
   "FAQ_1_Q": "Most common question this business gets",
   "FAQ_1_A": "Clear, helpful 2-3 sentence answer"
 }`;
@@ -528,27 +537,29 @@ export async function injectContentIntoTemplate(
   // Strip package-gated sections
   html = stripPackageSections(html, brief.packageTier);
 
-  // Build the full token map
+  const e = escapeHtml;
+
+  // Build the full token map — customer-provided text fields are HTML-escaped
   const tokens: Record<string, string> = {
-    BUSINESS_NAME:       brief.businessName,
-    PHONE:               brief.phone,
-    EMAIL:               brief.email,
-    ADDRESS:             brief.address,
-    HOURS:               brief.hours,
-    SERVICE_AREA:        brief.serviceArea,
-    YEARS_IN_BUSINESS:   brief.yearsInBusiness,
-    OWNER_NAME:          brief.ownerName,
-    LICENSE_NUMBER:      brief.licenseNumber ?? "",
+    BUSINESS_NAME:       e(brief.businessName),
+    PHONE:               e(brief.phone),
+    EMAIL:               e(brief.email),
+    ADDRESS:             e(brief.address),
+    HOURS:               e(brief.hours),
+    SERVICE_AREA:        e(brief.serviceArea),
+    YEARS_IN_BUSINESS:   e(brief.yearsInBusiness),
+    OWNER_NAME:          e(brief.ownerName),
+    LICENSE_NUMBER:      e(brief.licenseNumber ?? ""),
     PACKAGE_TIER:        capitalizeFirst(brief.packageTier),
     APP_URL_PLACEHOLDER: brief.appUrl ?? "#",
     PRIMARY_COLOR:       brief.primaryColor,
     SECONDARY_COLOR:     brief.secondaryColor,
-    SERVICE_1_DESC:      brief.servicesOffered[0] ?? "",
-    SERVICE_2_DESC:      brief.servicesOffered[1] ?? "",
-    SERVICE_3_DESC:      brief.servicesOffered[2] ?? "",
-    SERVICE_4_DESC:      brief.servicesOffered[3] ?? brief.servicesOffered[0] ?? "",
-    SERVICE_5_DESC:      brief.servicesOffered[4] ?? brief.servicesOffered[1] ?? "",
-    SERVICE_6_DESC:      brief.servicesOffered[5] ?? brief.servicesOffered[2] ?? "",
+    SERVICE_1_DESC:      e(brief.servicesOffered[0] ?? ""),
+    SERVICE_2_DESC:      e(brief.servicesOffered[1] ?? ""),
+    SERVICE_3_DESC:      e(brief.servicesOffered[2] ?? ""),
+    SERVICE_4_DESC:      e(brief.servicesOffered[3] ?? brief.servicesOffered[0] ?? ""),
+    SERVICE_5_DESC:      e(brief.servicesOffered[4] ?? brief.servicesOffered[1] ?? ""),
+    SERVICE_6_DESC:      e(brief.servicesOffered[5] ?? brief.servicesOffered[2] ?? ""),
     NAV_LINKS:           navLinks,
     NAV_CTA_HREF:        navCtaHref,
     NAV_CTA_TEXT:        navCtaText,
@@ -630,9 +641,12 @@ export async function injectContentIntoTemplate(
     ([k]) => brief.businessType.toLowerCase().includes(k),
   )?.[1] ?? "LocalBusiness";
 
-  const foundingYear = new Date().getFullYear() - (parseInt(brief.yearsInBusiness) || 5);
+  const yearsNum = parseInt(brief.yearsInBusiness);
+  const foundingYear = !isNaN(yearsNum) && yearsNum > 0
+    ? new Date().getFullYear() - yearsNum
+    : null;
 
-  const schema = {
+  const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": schemaType,
     name: brief.businessName,
@@ -647,10 +661,12 @@ export async function injectContentIntoTemplate(
     openingHours: brief.hours,
     areaServed: brief.serviceArea,
     founder: { "@type": "Person", name: brief.ownerName },
-    foundingDate: String(foundingYear),
     priceRange: "$$",
     image: heroImage,
   };
+  if (foundingYear !== null) {
+    schema.foundingDate = String(foundingYear);
+  }
 
   html = html.replace(
     "</head>",
@@ -797,6 +813,51 @@ h1,h2,h3{page-break-after:avoid}
     html = html.replace("</head>", printStyles + "\n</head>");
   }
 
+  // ── UPGRADE 11: Mobile hamburger nav overlay ──────────────────────────────
+  // Universal mobile nav that works regardless of the underlying template
+  // structure. Injects a fixed hamburger button (visible only on mobile) and
+  // a full-screen overlay with all nav links and the primary CTA.
+
+  if (!html.includes("mm-hamburger")) {
+    const safeNavCta = escapeHtml(navCtaText);
+    const safeNavCtaHref = navCtaHref.replace(/"/g, "&quot;");
+    const mobileNav = `
+<style>
+#mm-hamburger{display:none;position:fixed;top:12px;right:12px;z-index:9500;background:${brief.primaryColor};color:#fff;border:none;border-radius:8px;padding:10px 14px;font-size:20px;line-height:1;cursor:pointer;min-width:44px;min-height:44px;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25)}
+#mm-nav-overlay{display:none;position:fixed;inset:0;z-index:9400;background:rgba(10,10,10,0.97);flex-direction:column;align-items:center;justify-content:center;gap:0;overflow-y:auto}
+#mm-nav-overlay.mm-open{display:flex}
+#mm-nav-close{position:absolute;top:16px;right:16px;background:transparent;border:none;color:#fff;font-size:28px;line-height:1;cursor:pointer;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
+#mm-nav-links-mobile a{display:block;color:#fff;text-decoration:none;font-size:1.4rem;font-weight:600;padding:16px 32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.08)}
+#mm-nav-links-mobile a:hover{background:rgba(255,255,255,0.07)}
+#mm-nav-cta-mobile{display:inline-block;margin-top:28px;background:${brief.primaryColor};color:#fff;text-decoration:none;font-size:1.1rem;font-weight:700;padding:14px 36px;border-radius:50px}
+@media(max-width:900px){#mm-hamburger{display:flex}}
+</style>
+<button id="mm-hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mm-nav-overlay">&#9776;</button>
+<div id="mm-nav-overlay" role="dialog" aria-modal="true" aria-label="Navigation">
+  <button id="mm-nav-close" aria-label="Close navigation menu">&#10005;</button>
+  <nav id="mm-nav-links-mobile">
+    ${navLinks.replace(/<li>/g, "").replace(/<\/li>/g, "").replace(/<ul[^>]*>/g, "").replace(/<\/ul>/g, "")}
+  </nav>
+  <a href="${safeNavCtaHref}" class="mm-nav-cta-mobile" id="mm-nav-cta-mobile">${safeNavCta}</a>
+</div>
+<script>
+(function(){
+  var btn=document.getElementById('mm-hamburger');
+  var overlay=document.getElementById('mm-nav-overlay');
+  var close=document.getElementById('mm-nav-close');
+  if(!btn||!overlay)return;
+  function open(){overlay.classList.add('mm-open');btn.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';}
+  function close_(){overlay.classList.remove('mm-open');btn.setAttribute('aria-expanded','false');document.body.style.overflow='';}
+  btn.addEventListener('click',open);
+  if(close)close.addEventListener('click',close_);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)close_();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay.classList.contains('mm-open'))close_();});
+  overlay.querySelectorAll('a').forEach(function(a){a.addEventListener('click',close_);});
+})();
+</script>`;
+    html = html.replace("</body>", mobileNav + "\n</body>");
+  }
+
   return html;
 }
 
@@ -820,22 +881,19 @@ function buildAddonWidgets(brief: SiteBrief): string {
       const cards = reviews.length
         ? reviews.map(t => `
             <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
-              <div style="color:#fbbc04;font-size:18px;margin-bottom:8px">★★★★★</div>
-              <p style="font-style:italic;margin:0 0 10px;color:#333;font-size:15px">"${t.quote}"</p>
-              <p style="font-weight:600;margin:0;font-size:14px">${t.name}</p>
-              <p style="color:#888;font-size:13px;margin:2px 0 0">via Google Reviews · ${t.context}</p>
+              <p style="font-style:italic;margin:0 0 10px;color:#333;font-size:15px">"${escapeHtml(t.quote)}"</p>
+              <p style="font-weight:600;margin:0;font-size:14px">${escapeHtml(t.name)}</p>
+              ${t.context ? `<p style="color:#888;font-size:13px;margin:2px 0 0">${escapeHtml(t.context)}</p>` : ""}
             </div>`).join("")
-        : `<div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
-            <div style="color:#fbbc04;font-size:18px;margin-bottom:8px">★★★★★</div>
-            <p style="font-style:italic;margin:0 0 10px;color:#333">"${brief.businessName} exceeded every expectation. Truly exceptional service."</p>
-            <p style="font-weight:600;margin:0;font-size:14px">Verified Customer</p>
-            <p style="color:#888;font-size:13px;margin:2px 0 0">via Google Reviews</p>
+        : `<div style="background:#fff;border-radius:16px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.08);text-align:center;max-width:400px;margin:0 auto">
+            <p style="font-weight:600;color:#1a1a1a;margin:0 0 8px">Reviews coming soon</p>
+            <p style="color:#888;font-size:14px;margin:0 0 0">We&rsquo;d love to hear what you think &mdash; ask us how to get set up on Google!</p>
           </div>`;
+      const sectionLabel = reviews.length ? "Customer Reviews" : "Reviews";
       widgets.push(`
 <section id="mm-reviews" style="padding:60px 20px;background:#f8f9fa">
   <div style="max-width:900px;margin:0 auto;text-align:center">
-    <p style="text-align:center;color:#888;font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px">Google Reviews</p>
-    <h2 style="text-align:center;font-size:2rem;font-weight:700;margin:0 0 40px;color:#1a1a1a">What Our Customers Say</h2>
+    <h2 style="text-align:center;font-size:2rem;font-weight:700;margin:0 0 40px;color:#1a1a1a">${sectionLabel}</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
       ${cards}
     </div>
@@ -844,28 +902,17 @@ function buildAddonWidgets(brief: SiteBrief): string {
     }
 
     if (name.includes("booking") || name.includes("appointment")) {
-      const services = brief.servicesOffered?.slice(0, 5) || ["Service"];
+      const contactPhone = brief.phone || "";
+      const contactEmail = brief.email || "";
       widgets.push(`
 <section id="mm-booking" style="padding:60px 20px;background:#fff">
-  <div style="max-width:480px;margin:0 auto">
-    <h2 style="text-align:center;font-size:2rem;font-weight:700;margin:0 0 8px;color:#1a1a1a">Book Your Appointment</h2>
-    <p style="text-align:center;color:#666;margin:0 0 32px">Choose a service and pick a time that works for you.</p>
-    <div style="background:#fff;border:2px solid ${primary};border-radius:16px;padding:36px;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
-      <label style="display:block;font-weight:600;margin-bottom:6px;color:#1a1a1a">Service</label>
-      <select style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #ddd;font-size:16px">
-        <option>Select a service</option>
-        ${services.map(s => `<option>${s}</option>`).join("")}
-      </select>
-      <label style="display:block;font-weight:600;margin-bottom:6px;color:#1a1a1a">Preferred Date</label>
-      <input type="date" style="width:100%;padding:12px;margin-bottom:16px;border-radius:8px;border:1px solid #ddd;font-size:16px;box-sizing:border-box">
-      <label style="display:block;font-weight:600;margin-bottom:6px;color:#1a1a1a">Preferred Time</label>
-      <select style="width:100%;padding:12px;margin-bottom:24px;border-radius:8px;border:1px solid #ddd;font-size:16px">
-        <option>Morning (8am–12pm)</option>
-        <option>Afternoon (12pm–5pm)</option>
-        <option>Evening (5pm–8pm)</option>
-      </select>
-      <button style="width:100%;padding:16px;background:${primary};color:#fff;border:none;border-radius:10px;font-size:17px;font-weight:600;cursor:pointer">Confirm Booking →</button>
-      <p style="text-align:center;font-size:13px;color:#888;margin:12px 0 0">⚡ We confirm within 2 hours during business hours</p>
+  <div style="max-width:480px;margin:0 auto;text-align:center">
+    <h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;color:#1a1a1a">Book an Appointment</h2>
+    <p style="color:#666;margin:0 0 28px">Ready to get started? Reach out and we'll get you on the schedule.</p>
+    <div style="background:#f8f9fa;border-radius:16px;padding:32px;display:flex;flex-direction:column;gap:16px">
+      ${contactPhone ? `<a href="tel:${contactPhone}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:${primary};color:#fff;padding:16px 24px;border-radius:10px;font-size:17px;font-weight:600;text-decoration:none">📞 Call to Book — ${contactPhone}</a>` : ""}
+      ${contactEmail ? `<a href="mailto:${contactEmail}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;border:2px solid ${primary};color:${primary};padding:14px 24px;border-radius:10px;font-size:16px;font-weight:600;text-decoration:none">✉️ Email Us — ${contactEmail}</a>` : ""}
+      <p style="font-size:13px;color:#888;margin:4px 0 0">We typically respond within 2 hours during business hours.</p>
     </div>
   </div>
 </section>`);
@@ -953,18 +1000,33 @@ function buildAddonWidgets(brief: SiteBrief): string {
     }
 
     if (name.includes("email") || name.includes("newsletter")) {
+      const appUrl = brief.appUrl || "";
+      const safeBusinessName = escapeHtml(brief.businessName);
       widgets.push(`
 <section id="mm-newsletter" style="padding:60px 20px;background:linear-gradient(135deg,${primary}22,${secondary}22)">
   <div style="max-width:520px;margin:0 auto;text-align:center">
     <h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;color:#1a1a1a">Stay in the Loop</h2>
-    <p style="color:#555;margin:0 0 28px">Get updates, tips, and exclusive offers from ${brief.businessName} — straight to your inbox.</p>
-    <form id="mm-newsletter-form" style="display:flex;gap:10px;max-width:440px;margin:0 auto">
+    <p style="color:#555;margin:0 0 28px">Get updates, tips, and exclusive offers from ${safeBusinessName} — straight to your inbox.</p>
+    <form id="mm-newsletter-form" action="${appUrl}/api/contact-submit" method="POST" style="display:flex;gap:10px;max-width:440px;margin:0 auto" onsubmit="mmNewsletterSubmit(event)">
+      <input type="hidden" name="businessName" value="${safeBusinessName}">
+      <input type="hidden" name="name" value="Newsletter Subscriber">
       <input name="email" type="email" placeholder="Your email address" required style="flex:1;padding:14px 18px;border-radius:50px;border:2px solid ${primary};font-size:15px;outline:none;box-sizing:border-box">
       <button type="submit" style="padding:14px 24px;background:${primary};color:#fff;border:none;border-radius:50px;font-weight:600;font-size:15px;cursor:pointer;white-space:nowrap">Subscribe</button>
     </form>
-    <p style="font-size:12px;color:#999;margin:14px 0 0">No spam ever. Unsubscribe at any time.</p>
+    <p id="mm-newsletter-msg" style="font-size:13px;color:#666;margin:14px 0 0;min-height:20px"></p>
+    <p style="font-size:12px;color:#999;margin:8px 0 0">No spam ever. Unsubscribe at any time.</p>
   </div>
-</section>`);
+</section>
+<script>
+function mmNewsletterSubmit(ev){
+  ev.preventDefault();
+  var form=ev.target,msg=document.getElementById('mm-newsletter-msg');
+  var email=form.querySelector('[name="email"]').value;
+  fetch('${appUrl}/api/contact-submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Newsletter Subscriber',email:email,businessName:'${safeBusinessName}',message:'Newsletter signup'})})
+    .then(function(){if(msg){msg.textContent='Thanks! You\\'re on the list.';msg.style.color='#16a34a';}form.reset();})
+    .catch(function(){if(msg){msg.textContent='Something went wrong — please try again.';msg.style.color='#dc2626';}});
+}
+</script>`);
     }
   }
 

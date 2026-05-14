@@ -19,10 +19,19 @@ import { registerStripeWebhook } from "../stripe-webhook";
 import { registerTwilioWebhooks } from "../twilio-webhooks";
 import { registerResendWebhooks } from "../resend-webhooks";
 import { registerScheduledRoutes } from "../scheduled-routes";
-import { bootstrapAdminUser, seedProductCatalog, seedRegulatoryRules, getSupportTicketByRatingToken, updateSupportTicketRating, repairSchema, createContactSubmission } from "../db";
+import { bootstrapAdminUser, seedProductCatalog, seedRegulatoryRules, getSupportTicketByRatingToken, updateSupportTicketRating, repairSchema, createContactSubmission, getOnboardingProjectByBusinessName } from "../db";
 import { notifyOwner } from "./notification";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function escapeHtmlForEmail(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 async function runMigrations(): Promise<void> {
   const dbUrl = process.env.DATABASE_URL;
@@ -197,10 +206,43 @@ async function startServer() {
         businessName: businessName?.trim() || undefined,
         message: fullMessage || undefined,
       });
+      const adminContent = `Business: ${businessName || "N/A"}\nFrom: ${name}\nEmail: ${email}\n${phone ? `Phone: ${phone}\n` : ""}${message ? `Message: ${message}` : ""}`;
       notifyOwner({
         title: `Contact Form: ${name.trim()}`,
-        content: `Business: ${businessName || "N/A"}\nEmail: ${email}\n${phone ? `Phone: ${phone}\n` : ""}${message ? `Message: ${message}` : ""}`,
+        content: adminContent,
       }).catch(() => {});
+      // Notify the business owner if we can identify their project
+      if (businessName?.trim()) {
+        getOnboardingProjectByBusinessName(businessName.trim()).then(async (project) => {
+          if (!project?.contactEmail) return;
+          try {
+            const { sendEmail } = await import("../services/email");
+            const ownerFirst = escapeHtmlForEmail((project.contactName || "there").split(" ")[0]);
+            const safeName = escapeHtmlForEmail(name.trim());
+            const safeEmail = escapeHtmlForEmail(email.trim());
+            const safePhone = phone?.trim() ? escapeHtmlForEmail(phone.trim()) : "";
+            const safeMessage = message?.trim()
+              ? escapeHtmlForEmail(message.trim()).replace(/\n/g, "<br>")
+              : "";
+            await sendEmail({
+              to: project.contactEmail,
+              subject: `New contact from ${safeName} via your website`,
+              html: `<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:580px;margin:0 auto;padding:24px;background:#f9f9fb;color:#1a1a2e">
+<h2 style="color:#1a1a2e;margin:0 0 16px">New Website Contact</h2>
+<p>Hi ${ownerFirst}, someone reached out through your website.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e5f0">
+  <tr><td style="padding:12px 16px;font-weight:600;background:#f5f5fa;width:120px;border-bottom:1px solid #e5e5f0">Name</td><td style="padding:12px 16px;border-bottom:1px solid #e5e5f0">${safeName}</td></tr>
+  <tr><td style="padding:12px 16px;font-weight:600;background:#f5f5fa;border-bottom:1px solid #e5e5f0">Email</td><td style="padding:12px 16px;border-bottom:1px solid #e5e5f0"><a href="mailto:${safeEmail}" style="color:#2563eb">${safeEmail}</a></td></tr>
+  ${safePhone ? `<tr><td style="padding:12px 16px;font-weight:600;background:#f5f5fa;border-bottom:1px solid #e5e5f0">Phone</td><td style="padding:12px 16px;border-bottom:1px solid #e5e5f0"><a href="tel:${safePhone}" style="color:#2563eb">${safePhone}</a></td></tr>` : ""}
+  ${safeMessage ? `<tr><td style="padding:12px 16px;font-weight:600;background:#f5f5fa;vertical-align:top">Message</td><td style="padding:12px 16px">${safeMessage}</td></tr>` : ""}
+</table>
+<p style="color:#666;font-size:14px">Reply directly to this email to respond to ${safeName}.</p>
+<p style="color:#999;font-size:12px;margin-top:24px">Sent via your MiniMorph Studios website · <a href="https://www.minimorphstudios.net/portal" style="color:#999">Manage your site</a></p>
+</body></html>`,
+            });
+          } catch {}
+        }).catch(() => {});
+      }
       return res.json({ success: true });
     } catch (err) {
       console.error("[ContactSubmit]", err);

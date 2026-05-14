@@ -31,37 +31,55 @@ TAILWIND DESIGN STANDARDS:
 SECTION D — CONTENT RULES (zero exceptions):
 - ZERO placeholder text — every word is specific to this exact business
 - Real service names with real prices from questionnaire data
-- Real testimonials from questionnaire — specific results and numbers
 - Real origin story and differentiators from questionnaire
 - Specific CTAs for this business type (not "Learn More" — be concrete)
 - Real phone/email/address if provided in questionnaire
 
+HONESTY RULES (absolute — violating these is a critical failure):
+- Do NOT invent testimonials. Do NOT invent reviews. Do NOT invent ratings.
+- Do NOT invent Google Reviews, Yelp reviews, or any other platform reviews.
+- Do NOT invent awards, certifications, accreditations, or badges.
+- Do NOT invent licenses or insurance claims.
+- Do NOT invent years in business or founding dates.
+- Do NOT invent guarantees or warranties.
+- Do NOT invent prices or fee ranges.
+- Do NOT invent team members, staff, or employee counts.
+- If testimonials are provided in questionnaire data, use only those exact quotes.
+- If no testimonials are provided, omit the testimonials/reviews section entirely.
+- If an add-on widget has no live backend, show an honest "Contact us" CTA instead.
+- Never show star ratings (★) without real review data provided by the customer.
+- Never attribute a quote to "via Google Reviews" unless the customer confirmed it came from Google.
+
 ADD-ON SHOWCASE REQUIREMENTS:
-Each add-on must be VISUALLY PRESENT on the page.
+Each purchased add-on must be VISUALLY PRESENT on the page using these honest patterns:
 
-Review Collector widget:
+Review Collector widget (only if real testimonials are in questionnaire data):
 <div style='background:#f8f9fa;border-radius:12px;padding:24px;max-width:480px'>
-<div style='color:#fbbc04;font-size:20px'>★★★★★</div>
-<p style='font-style:italic;margin:8px 0'>[specific review text for this business]</p>
-<p style='font-weight:600'>[Reviewer Name]</p>
-<p style='font-size:13px;color:#666'>via Google Reviews</p>
+<p style='font-style:italic;margin:0 0 10px'>"[exact quote from questionnaire]"</p>
+<p style='font-weight:600'>[Reviewer Name from questionnaire]</p>
+<p style='font-size:13px;color:#666'>[context from questionnaire, e.g. "Regular Customer"]</p>
+</div>
+If no testimonials in questionnaire, show instead:
+<div style='background:#f8f9fa;border-radius:12px;padding:24px;max-width:480px;text-align:center'>
+<p style='font-weight:600;margin:0 0 8px'>Reviews coming soon</p>
+<p style='color:#666;font-size:14px'>Ask us how to get your Google Review collector set up!</p>
 </div>
 
-Booking Widget:
-<div style='background:#fff;border:2px solid [primary];border-radius:12px;padding:32px;max-width:420px'>
+Booking Widget (no live booking backend exists yet — show contact CTA only):
+<div style='background:#fff;border:2px solid [primary];border-radius:12px;padding:32px;max-width:420px;text-align:center'>
 <h3>Book Your Appointment</h3>
-<select style='width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #ddd'>
-<option>Select Service</option>[real services for this business]</select>
-<input type='date' style='width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #ddd'>
-<button style='width:100%;padding:14px;background:[primary color];color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer'>Confirm Booking</button>
+<p style='color:#666;margin-bottom:24px'>Ready to get started? Reach out and we'll get you on the schedule.</p>
+<a href='tel:[phone]' style='display:block;background:[primary];color:#fff;padding:14px;border-radius:8px;font-weight:600;text-decoration:none;margin-bottom:12px'>📞 Call to Book — [phone]</a>
+<a href='mailto:[email]' style='display:block;border:2px solid [primary];color:[primary];padding:12px;border-radius:8px;font-weight:600;text-decoration:none'>✉️ Email Us</a>
 </div>
 
-AI Chat Widget (bottom right fixed):
+AI Chat Widget (bottom right fixed — honest placeholder only):
 <div style='position:fixed;bottom:24px;right:24px;z-index:1000'>
 <div style='background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:320px;overflow:hidden'>
 <div style='background:[primary];padding:16px;color:#fff;font-weight:600'>💬 Chat with us</div>
 <div style='padding:16px'>
 <div style='background:#f0f0f0;border-radius:8px;padding:12px;margin-bottom:8px;font-size:14px'>Hi! How can I help you today?</div>
+<p style='font-size:12px;color:#888;margin:8px 0 0'>A team member will respond to messages — or call [phone] for immediate help.</p>
 </div>
 </div>
 </div>
@@ -70,7 +88,7 @@ Lead Capture Form:
 <form style='background:[secondary];border-radius:16px;padding:40px;max-width:500px'>
 <h3 style='margin-bottom:24px'>[CTA headline]</h3>
 [name, email, phone, relevant dropdown, submit button]
-<p style='font-size:13px;margin-top:12px;opacity:0.7'>⚡ We respond within 5 minutes during business hours</p>
+<p style='font-size:13px;margin-top:12px;opacity:0.7'>We respond within 2 hours during business hours</p>
 </form>
 
 Instagram Feed:
@@ -79,19 +97,19 @@ Instagram Feed:
 </div>
 <p style='text-align:center;margin-top:12px'>Follow us @[handle]</p>
 
-Email Newsletter:
+Email Newsletter (no live newsletter backend — collect email via contact form):
 <div style='background:[gradient];padding:60px 40px;text-align:center;border-radius:16px'>
 <h3>[Newsletter headline for this business]</h3>
 <p>[Value proposition]</p>
 <div style='display:flex;gap:12px;max-width:400px;margin:24px auto 0'>
-<input placeholder='Your email address' style='flex:1;padding:14px;border-radius:8px;border:none;font-size:16px'>
-<button style='padding:14px 24px;background:[primary];color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer'>Subscribe</button>
+<input name='email' type='email' placeholder='Your email address' style='flex:1;padding:14px;border-radius:8px;border:none;font-size:16px'>
+<button type='submit' style='padding:14px 24px;background:[primary];color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer'>Subscribe</button>
 </div>
 </div>
 
-Google Reviews Section:
+Customer Reviews Section (ONLY if testimonials exist in questionnaire data — otherwise omit entirely):
 <div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px'>
-[4-5 review cards with stars, review text specific to this business, reviewer name, date]
+[use only real quotes from questionnaire — no invented text, no star ratings without confirmed rating]
 </div>
 
 SEO Blog Section:
