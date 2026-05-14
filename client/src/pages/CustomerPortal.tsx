@@ -39,12 +39,25 @@ export default function CustomerPortal() {
   const [paymentBannerVisible, setPaymentBannerVisible] = useState(
     () => new URLSearchParams(window.location.search).get("payment") === "success"
   );
+  const [paymentSetupTimedOut, setPaymentSetupTimedOut] = useState(false);
 
-  // Look up the customer record linked to the logged-in user
+  // Look up the customer record linked to the logged-in user.
+  // When redirected from Stripe (?payment=success) the webhook may still be running,
+  // so poll every 2 s until the customer row appears, stopping after 30 s.
   const { data: customer, isLoading: custLoading } = trpc.customers.me.useQuery(
     undefined,
-    { enabled: isAuthenticated }
+    {
+      enabled: isAuthenticated,
+      refetchInterval: paymentBannerVisible && !paymentSetupTimedOut ? 2000 : false,
+    }
   );
+
+  // 30-second timeout: stop polling and show a support message instead
+  useEffect(() => {
+    if (!paymentBannerVisible || customer || paymentSetupTimedOut) return;
+    const timer = setTimeout(() => setPaymentSetupTimedOut(true), 30_000);
+    return () => clearTimeout(timer);
+  }, [paymentBannerVisible, customer, paymentSetupTimedOut]);
 
   // Load persisted portal chat history from DB on mount
   const { data: chatHistory } = trpc.ai.history.useQuery(
@@ -170,6 +183,52 @@ export default function CustomerPortal() {
   }
 
   if (!customer) {
+    // Post-payment setup: polling while webhook creates the customer row
+    if (paymentBannerVisible && !paymentSetupTimedOut) {
+      return (
+        <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
+          <Card className="max-w-md w-full border-border/50">
+            <CardContent className="p-8 text-center">
+              <Loader2 className="h-12 w-12 text-electric/50 mx-auto mb-4 animate-spin" />
+              <h2 className="text-xl font-serif text-off-white mb-2">Setting up your account…</h2>
+              <p className="text-sm text-soft-gray font-sans">
+                Payment confirmed. We're activating your account — this usually takes just a moment.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Post-payment timeout: webhook took too long
+    if (paymentBannerVisible && paymentSetupTimedOut) {
+      return (
+        <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
+          <Card className="max-w-md w-full border-border/50">
+            <CardContent className="p-8 text-center">
+              <CheckCircle className="h-12 w-12 text-green-500/70 mx-auto mb-4" />
+              <h2 className="text-xl font-serif text-off-white mb-2">Payment confirmed</h2>
+              <p className="text-sm text-soft-gray font-sans mb-6">
+                Your payment went through, but your account is still being set up. Please refresh in a minute or contact us at{" "}
+                <a href="mailto:hello@minimorphstudios.net" className="text-electric underline underline-offset-2">
+                  hello@minimorphstudios.net
+                </a>
+                .
+              </p>
+              <Button
+                onClick={() => window.location.reload()}
+                className="bg-electric hover:bg-electric-light text-white font-sans rounded-full px-8"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Normal no-account state (no payment redirect)
     return (
       <div className="min-h-screen bg-midnight flex items-center justify-center px-4">
         <Card className="max-w-md w-full border-border/50">

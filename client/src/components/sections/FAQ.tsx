@@ -52,11 +52,11 @@ const faqs = [
   },
   {
     q: "What add-ons do you offer?",
-    a: "We have 15+ optional add-ons — from booking widgets and AI chatbots to review collectors, event calendars, live chat, and email marketing. Elena recommends the right ones for your specific business during onboarding. You only pay for what you actually add.",
+    a: "We have 15+ optional add-ons — from booking widgets and chat tools to review collectors, event calendars, live chat, and email marketing. We recommend the right ones for your specific business during onboarding. You only pay for what you actually add.",
   },
   {
     q: "Do I have to pick add-ons upfront?",
-    a: "No. You can add them anytime through your customer portal — before launch, after launch, whenever you're ready. Elena will walk you through the options that make sense for your business type. There's no pressure to decide on day one.",
+    a: "No. You can add them anytime through your customer portal — before launch, after launch, whenever you're ready. We'll walk you through the options that make sense for your business type. There's no pressure to decide on day one.",
   },
   {
     q: "What's included in every plan?",

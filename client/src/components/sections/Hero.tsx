@@ -69,18 +69,18 @@ export default function Hero() {
               <Button
                 size="lg"
                 className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-base px-8 py-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300 group"
-                onClick={() => setLocation("/free-audit")}
+                onClick={() => setLocation("/get-started")}
               >
-                Get a Free Website Audit
+                Get Started
                 <ArrowRight size={18} className="ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 className="border-off-white/20 text-off-white hover:bg-off-white/5 font-sans text-base px-8 py-6 rounded-full transition-all duration-300"
-                onClick={() => scrollTo("#pricing")}
+                onClick={() => setLocation("/free-audit")}
               >
-                See Pricing
+                Get a Free Audit
               </Button>
             </motion.div>
 
@@ -185,7 +185,7 @@ export default function Hero() {
                 <div className="p-3 rounded-lg bg-off-white/5 border border-off-white/10">
                   <div className="flex items-center gap-2">
                     <Zap size={14} className="text-gold" />
-                    <span className="text-xs font-sans text-off-white/60">AI Recommendation:</span>
+                    <span className="text-xs font-sans text-off-white/60">Growth Recommendation:</span>
                   </div>
                   <p className="text-sm font-sans text-off-white/70 mt-1">
                     "Your contact form is your top lead source. Adding a booking widget could convert 23% more mobile visitors into customers."

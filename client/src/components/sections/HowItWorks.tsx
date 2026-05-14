@@ -22,15 +22,15 @@ const steps = [
   {
     icon: ClipboardList,
     number: "02",
-    title: "Elena Gathers Everything",
-    description: "Elena learns your business, recommends the right plan and add-ons, and collects everything needed to build your site — colors, content, competitors, goals. She'll even pull up your existing site and competitors in real time.",
+    title: "Your Guided Intake",
+    description: "A guided intake session learns your business, recommends the right plan and add-ons, and collects everything needed to build your site — colors, content, competitors, goals. We even pull up your current site and competitors in real time.",
     aside: "15–20 minutes, fully guided",
   },
   {
     icon: PenTool,
     number: "03",
     title: "We Build It",
-    description: "We combine professionally designed industry templates with AI that writes copy specific to your business — your services, your story, your voice. The result looks custom because the content is custom.",
+    description: "We combine professionally designed industry templates with copy written specifically for your business — your services, your story, your voice. The result looks custom because the content is custom.",
     aside: "First draft after onboarding is complete",
   },
   {

@@ -1,7 +1,24 @@
 import { createPagesProject, deployToPages, addCustomDomain, getProjectName, redeployPages } from "./cloudflareDeployment";
+import { stripDemoBanner } from "./siteGenerator";
 import * as db from "../db";
 import { ENV } from "../_core/env";
 import { CLOUDFLARE_NS1, CLOUDFLARE_NS2 } from "../config/domain";
+
+function looksLikeHtmlDocument(value: string): boolean {
+  const t = value.trimStart().toLowerCase();
+  return t.startsWith("<!doctype") || t.startsWith("<html") || t.includes("<body");
+}
+
+function stripBannersFromPages(pages: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(pages).map(([key, val]) => {
+      if (typeof val === "string" && looksLikeHtmlDocument(val)) {
+        return [key, stripDemoBanner(val)];
+      }
+      return [key, val];
+    })
+  );
+}
 
 export interface VerifyResult {
   live: boolean;
@@ -75,8 +92,8 @@ export async function deployApprovedSite(projectId: number): Promise<void> {
       }
     }
 
-    // Deploy all pages
-    const deployment = await deployToPages({ projectName: cfProjectName, pages });
+    // Deploy all pages — strip demo banners from HTML before upload
+    const deployment = await deployToPages({ projectName: cfProjectName, pages: stripBannersFromPages(pages) });
     if (!deployment.success) throw new Error("Cloudflare deployment returned failure");
 
     let liveUrl = deployment.deploymentUrl;
@@ -280,6 +297,6 @@ export async function redeploySite(projectId: number): Promise<void> {
 
   if (Object.keys(pages).length === 0) return;
 
-  await redeployPages({ projectName: cfProjectName, pages });
+  await redeployPages({ projectName: cfProjectName, pages: stripBannersFromPages(pages) });
   console.log(`[Deploy] Redeployed project ${projectId} to ${cfProjectName}`);
 }

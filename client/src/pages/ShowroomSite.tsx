@@ -163,6 +163,12 @@ function BlogPreview({ site, posts }: { site: SiteType; posts: { title: string; 
 
 function ContactFormSection({ site, fields, title, subtitle, buttonText }: { site: SiteType; fields: { label: string; type: string; placeholder: string }[]; title?: string; subtitle?: string; buttonText?: string }) {
   const isLight = site.slug === "clover-and-thistle";
+  const handleDemoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    import("sonner").then(({ toast }) => {
+      toast("Demo form only — your real MiniMorph site includes a working contact form.", { duration: 4000 });
+    });
+  };
   return (
     <section className="py-20 lg:py-24" style={{ borderBottom: `1px solid ${site.palette.border}` }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -196,7 +202,7 @@ function ContactFormSection({ site, fields, title, subtitle, buttonText }: { sit
             </div>
           </div>
           <div className="p-6 rounded-xl" style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}>
-            <div className="space-y-4">
+            <form onSubmit={handleDemoSubmit} className="space-y-4">
               {fields.map((f) => (
                 <div key={f.label}>
                   <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: site.palette.muted }}>{f.label}</label>
@@ -223,12 +229,13 @@ function ContactFormSection({ site, fields, title, subtitle, buttonText }: { sit
                 </div>
               ))}
               <button
+                type="submit"
                 className="w-full text-sm font-semibold px-6 py-3 rounded-lg transition-all hover:opacity-90"
                 style={{ backgroundColor: site.palette.accent, color: isLight ? "#fff" : site.palette.bg }}
               >
                 {buttonText || "Send Message"}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
@@ -264,16 +271,22 @@ function LocationSection({ site, hours, mapNote }: { site: SiteType; hours: { da
             </p>
           </div>
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: site.palette.card, border: `1px solid ${site.palette.border}` }}>
-            <div className="aspect-[4/3] flex items-center justify-center" style={{ backgroundColor: site.palette.bg }}>
-              <div className="text-center p-8">
-                <MapPin size={32} style={{ color: site.palette.accent }} className="mx-auto mb-3 opacity-40" />
-                <p className="text-sm font-semibold mb-1">{site.name}</p>
-                <p className="text-xs" style={{ color: site.palette.muted }}>{site.location}</p>
-                <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs" style={{ backgroundColor: site.palette.accent + "10", border: `1px solid ${site.palette.accent}25` }}>
-                  <Globe size={10} style={{ color: site.palette.accent }} />
-                  <span style={{ color: site.palette.accent }}>Google Maps Embed</span>
-                </div>
+            <div className="aspect-[4/3] flex flex-col items-center justify-center gap-4 p-8" style={{ backgroundColor: site.palette.bg }}>
+              <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: site.palette.accent + "18", border: `2px solid ${site.palette.accent}30` }}>
+                <MapPin size={28} style={{ color: site.palette.accent }} />
               </div>
+              <div className="text-center">
+                <p className="text-base font-semibold mb-1" style={{ fontFamily: site.font.heading }}>{site.name}</p>
+                <p className="text-sm mb-1" style={{ color: site.palette.muted }}>{site.location}</p>
+              </div>
+              <div className="w-full max-w-[200px] space-y-1.5">
+                <div className="h-1.5 rounded-full w-full" style={{ backgroundColor: site.palette.border }} />
+                <div className="h-1.5 rounded-full w-4/5 mx-auto" style={{ backgroundColor: site.palette.border }} />
+                <div className="h-1.5 rounded-full w-3/5 mx-auto" style={{ backgroundColor: site.palette.border }} />
+              </div>
+              <p className="text-[10px] text-center" style={{ color: site.palette.muted }}>
+                Your real site includes an embedded Google Map
+              </p>
             </div>
           </div>
         </div>
@@ -318,6 +331,14 @@ function NewsletterSection({ site, headline, sub }: { site: SiteType; headline?:
 }
 
 function InstagramFeed({ site }: { site: SiteType }) {
+  const sampleCaptions = [
+    "Behind the scenes today →",
+    "New arrivals just dropped.",
+    "The process matters.",
+    "Customer love ❤",
+    "This week's work.",
+    "Stop by and see us.",
+  ];
   return (
     <section className="py-20 lg:py-24" style={{ borderBottom: `1px solid ${site.palette.border}` }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -325,12 +346,15 @@ function InstagramFeed({ site }: { site: SiteType }) {
           <div className="flex items-center justify-center gap-2 mb-4">
             <Camera size={16} style={{ color: site.palette.accent }} />
             <span className="text-sm font-medium uppercase tracking-widest" style={{ color: site.palette.accent }}>
-              @{site.slug.replace(/-/g, "")}
+              Social Feed
             </span>
           </div>
           <h2 className="text-2xl sm:text-3xl leading-tight" style={{ fontFamily: site.font.heading }}>
             Follow along.
           </h2>
+          <p className="text-sm mt-2" style={{ color: site.palette.muted }}>
+            @{site.slug.replace(/-/g, "")} — sample feed preview
+          </p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 max-w-5xl mx-auto">
           {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -340,20 +364,21 @@ function InstagramFeed({ site }: { site: SiteType }) {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
-              className="aspect-square rounded-lg overflow-hidden group cursor-pointer relative"
+              className="aspect-square rounded-lg overflow-hidden group cursor-pointer relative flex flex-col items-center justify-end"
+              style={{ background: `linear-gradient(${150 + i * 25}deg, ${site.palette.accent}22 0%, ${site.palette.card} 100%)`, border: `1px solid ${site.palette.border}` }}
             >
-<div className="w-full h-full" style={{ background: `linear-gradient(${i * 60}deg, ${site.palette.accent}${i % 2 === 0 ? "28" : "15"}, ${site.palette.bg})` }} />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
-                <Heart size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
+              <Camera size={20} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15" style={{ color: site.palette.accent }} />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all" />
+              <p className="relative z-10 text-[9px] text-center px-1.5 pb-2 leading-tight opacity-0 group-hover:opacity-100 transition-opacity font-medium" style={{ color: site.palette.text }}>
+                {sampleCaptions[i]}
+              </p>
             </motion.div>
           ))}
         </div>
         <div className="text-center mt-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs" style={{ backgroundColor: site.palette.accent + "10", border: `1px solid ${site.palette.accent}25` }}>
-            <Camera size={12} style={{ color: site.palette.accent }} />
-            <span style={{ color: site.palette.accent }}>Instagram Feed Integration</span>
-          </div>
+          <p className="text-xs" style={{ color: site.palette.muted }}>
+            Your real site connects a live Instagram feed — this is a sample layout.
+          </p>
         </div>
       </div>
     </section>

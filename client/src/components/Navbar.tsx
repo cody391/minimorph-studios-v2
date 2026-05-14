@@ -89,11 +89,17 @@ export default function Navbar() {
           >
             Client Portal
           </a>
+          <button
+            onClick={() => setLocation("/free-audit")}
+            className="text-sm font-medium font-sans text-off-white/60 hover:text-off-white transition-colors duration-300"
+          >
+            Free Audit
+          </button>
           <Button
             className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold text-sm px-6 rounded-full shadow-none hover:shadow-lg hover:shadow-electric/20 transition-all duration-300"
-            onClick={() => setLocation("/free-audit")}
+            onClick={() => setLocation("/get-started")}
           >
-            Get Free Audit
+            Get Started
           </Button>
         </div>
 
@@ -139,14 +145,20 @@ export default function Navbar() {
                 >
                   Client Portal
                 </a>
+                <button
+                  className="w-full text-center text-base font-medium font-sans text-off-white/60 hover:text-off-white py-2 transition-colors"
+                  onClick={() => { setMobileOpen(false); setLocation("/free-audit"); }}
+                >
+                  Get Free Audit
+                </button>
                 <Button
                   className="bg-electric hover:bg-electric-light text-midnight font-sans font-semibold rounded-full"
                   onClick={() => {
                     setMobileOpen(false);
-                    setLocation("/free-audit");
+                    setLocation("/get-started");
                   }}
                 >
-                  Get Free Audit
+                  Get Started
                 </Button>
               </div>
             </div>

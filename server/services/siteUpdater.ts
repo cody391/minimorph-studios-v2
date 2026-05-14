@@ -149,24 +149,10 @@ Only return pages that are in the input — do not invent new pages.`;
 
     // For live sites: redeploy only after admin approves via adminReleaseLaunch
     // (redeploy-on-approval is handled in adminApprovePreview + adminReleaseLaunch flow)
+    // Updated preview email is sent by adminApprovePreview after admin reviews the revision —
+    // not here, because the customer cannot see the revision until admin approves.
 
-    // Send updated preview email
-    try {
-      const { sendUpdatedPreviewReadyEmail } = await import("./customerEmails");
-      const updatedProject = await db.getOnboardingProjectById(projectId);
-      const revisionsRemaining = updatedProject?.revisionsRemaining ?? 0;
-      await sendUpdatedPreviewReadyEmail({
-        to: project.contactEmail,
-        customerName: project.contactName,
-        businessName: project.businessName,
-        portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
-        revisionsRemaining,
-      });
-    } catch (emailErr) {
-      console.error("[SiteUpdater] Updated preview email failed:", emailErr);
-    }
-
-    console.log(`[SiteUpdater] Project ${projectId} updated successfully.`);
+    console.log(`[SiteUpdater] Project ${projectId} updated successfully — parked at pending_admin_review.`);
   } catch (err) {
     console.error(`[SiteUpdater] Project ${projectId} update failed:`, err);
     await db.updateOnboardingProject(projectId, {

@@ -2885,19 +2885,36 @@ const onboardingRouter = router({
         stage: "review",
         previewReadyAt: (project.previewReadyAt as Date | null) ?? now,
       });
-      // Send preview ready email to customer now that admin has approved
+      // Send the correct email based on whether this is a first preview or a revised preview.
+      // Revised preview: revisionsCount > 0 or changeHistory is non-empty — customer has already
+      // seen the first preview and submitted at least one change request.
+      const isRevisionApproval =
+        (project.revisionsCount ?? 0) > 0 ||
+        (Array.isArray(project.changeHistory) && project.changeHistory.length > 0);
       try {
-        const pages = project.generatedSiteHtml ? Object.keys(JSON.parse(project.generatedSiteHtml as string)) : ["index"];
         const revisionsRemaining = project.revisionsRemaining ?? 3;
-        const { sendPreviewReadyEmail } = await import("./services/customerEmails");
-        await sendPreviewReadyEmail({
-          to: project.contactEmail,
-          customerName: project.contactName,
-          businessName: project.businessName,
-          pageNames: pages,
-          portalUrl: `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`,
-          revisionsRemaining,
-        });
+        const portalUrl = `${ENV.appUrl || "https://www.minimorphstudios.net"}/portal`;
+        if (isRevisionApproval) {
+          const { sendUpdatedPreviewReadyEmail } = await import("./services/customerEmails");
+          await sendUpdatedPreviewReadyEmail({
+            to: project.contactEmail,
+            customerName: project.contactName,
+            businessName: project.businessName,
+            portalUrl,
+            revisionsRemaining,
+          });
+        } else {
+          const pages = project.generatedSiteHtml ? Object.keys(JSON.parse(project.generatedSiteHtml as string)) : ["index"];
+          const { sendPreviewReadyEmail } = await import("./services/customerEmails");
+          await sendPreviewReadyEmail({
+            to: project.contactEmail,
+            customerName: project.contactName,
+            businessName: project.businessName,
+            pageNames: pages,
+            portalUrl,
+            revisionsRemaining,
+          });
+        }
       } catch (emailErr) {
         console.error("[adminApprovePreview] Preview email failed:", emailErr);
       }
