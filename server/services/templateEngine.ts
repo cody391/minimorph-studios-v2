@@ -150,8 +150,8 @@ export function stripPackageSections(html: string, packageTier: string): string 
 const INDUSTRY_PAGES: Record<string, string[]> = {
   contractor: ["services", "gallery", "about", "quote", "contact"],
   restaurant:  ["menu", "reservations", "about"],
-  gym:         ["classes", "about"],
-  salon:       ["services", "gallery", "about"],
+  gym:         ["classes", "about", "contact"],
+  salon:       ["services", "gallery", "about", "contact"],
   coffee:      ["menu", "about"],
   boutique:    ["contact"],
   ecommerce:   ["product", "about", "contact"],
@@ -348,7 +348,31 @@ REQUIRED SECTIONS (in order):
 6. <!-- IF_GROWTH_PLUS_START --> Gallery: 3-image grid using GALLERY_IMAGE_1/2/3 <!-- IF_GROWTH_PLUS_END -->
 7. <!-- IF_PREMIUM_PLUS_START --> Testimonials: TESTIMONIAL_1 by TESTIMONIAL_1_NAME (TESTIMONIAL_1_CONTEXT) <!-- IF_PREMIUM_PLUS_END -->
 8. FAQ: FAQ_1_Q / FAQ_1_A plus 2 hardcoded FAQs relevant to ${brief.businessType}. Accordion with JS toggle.
-9. Contact / CTA: PHONE, EMAIL, ADDRESS, HOURS, SERVICE_AREA + simple contact form (name, email, message, submit)
+9. Contact / CTA: PHONE, EMAIL, ADDRESS, HOURS, SERVICE_AREA + contact form.
+   The form MUST use id="contact-form" and submit via JavaScript fetch — NOT a native form POST, NOT Formspree, NOT onsubmit="return false", NOT a mailto link.
+   Required form pattern (copy exactly, replace only token strings):
+   <form id="contact-form">
+     <input name="name" type="text" placeholder="Your Name" required>
+     <input name="email" type="email" placeholder="Email Address" required>
+     <input name="phone" type="tel" placeholder="Phone Number">
+     <textarea name="message" placeholder="How can we help?" required></textarea>
+     <button type="submit">Send Message</button>
+   </form>
+   <script>
+   (function(){var f=document.getElementById('contact-form');if(!f)return;
+   f.addEventListener('submit',function(e){e.preventDefault();
+   var fd=new FormData(f),btn=f.querySelector('button[type=submit]');
+   btn.disabled=true;btn.textContent='Sending...';
+   fetch('APP_URL_PLACEHOLDER/api/contact-submit',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({name:fd.get('name'),email:fd.get('email'),
+   phone:fd.get('phone'),message:fd.get('message'),businessName:'BUSINESS_NAME'})
+   }).then(function(r){return r.json();}).then(function(res){
+   if(res.success){f.innerHTML='<p style="text-align:center;padding:2rem">Thanks! We will be in touch within 24 hours.</p>';}
+   else{btn.disabled=false;btn.textContent='Send Message';}
+   }).catch(function(){btn.disabled=false;btn.textContent='Send Message';});});
+   })();
+   </script>
 10. Footer: 3-4 columns — brand+TAGLINE, <ul class="footer-links">NAV_FOOTER_LINKS</ul>, contact info (PHONE, EMAIL, ADDRESS), HOURS
     Footer bottom row: © 2025 BUSINESS_NAME. All rights reserved. | PACKAGE_TIER Plan · Built by MiniMorph Studios
 
