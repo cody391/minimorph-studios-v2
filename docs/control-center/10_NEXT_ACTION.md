@@ -22,7 +22,7 @@
 | Service Template Routing Repair | ✅ Done (`aaaa3ac`) |
 | B5 Service Template Content Repair | ✅ Done (`2850228`) |
 | Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
-| Elena Promise Safety Hotfix | ✅ Done (pending push) |
+| Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
 
 ### Why this gate is open
 
@@ -76,7 +76,7 @@ After B6 is closed, proceed to B7 (Admin Blueprint Gate), then B8, B9, B10, B11 
         ↓
 [DONE]  Elena Promise Enforcement Audit ✅ (35+ promises audited, B6-B11 opened)
         ↓
-[DONE]  Elena Promise Safety Hotfix ✅ (all unsupported promises removed, 38 safety tests)
+[DONE]  Elena Promise Safety Hotfix ✅ (all unsupported promises removed, 38 safety tests, f29e7a6)
         ↓
 [ACTIVE] Blueprint Schema Gate (B6) — extend blueprintJson to all 9 sections
         ↓
@@ -117,7 +117,7 @@ After B6 is closed, proceed to B7 (Admin Blueprint Gate), then B8, B9, B10, B11 
 | Service template routing repaired | ✅ Done (service/agency → professional template, 37 tests) |
 | B5 service template content repaired | ✅ Done (contractor language removed, 2850228) |
 | Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
-| Elena Promise Safety Hotfix | ✅ Done (pending push) |
+| Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
 | B6 Blueprint Schema Gap resolved | ❌ Pending (active gate) |
 | B7 Admin Blueprint Gate implemented | ❌ Pending |
 | B8 Claim/Proof Validation implemented | ❌ Pending |

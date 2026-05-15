@@ -8,6 +8,7 @@ For full git history: `git log --oneline`
 ## Elena Promise Safety Hotfix — 2026-05-15
 
 **Gate:** Elena Promise Safety Hotfix Gate
+**Commit:** `f29e7a6`
 **Status:** COMPLETE
 
 **What changed:**
