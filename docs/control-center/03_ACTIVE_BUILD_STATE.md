@@ -21,9 +21,9 @@ Previous lanes completed:
 
 | Field | Value |
 |---|---|
-| HEAD | pending portal patch commit |
+| HEAD | `22b95a2` |
 | Branch | `main` |
-| origin/main | `a0a2cf1` |
+| origin/main | `a0a2cf1` (portal patch not yet pushed) |
 | Message | fix: make customer portal build experience clear after payment |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
