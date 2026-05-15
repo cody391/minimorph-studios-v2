@@ -109,7 +109,7 @@ After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
         ↓
 [DONE]  B-Card Gate (checkout/contract integrity) ✅ (643ca4e)
         ↓
-[DONE]  Customer Site Preview Approval Gate (B10) ✅ (TBD)
+[DONE]  Customer Site Preview Approval Gate (B10) ✅ (ecab8a9)
         ↓
 [ACTIVE] Blueprint → Generator Handoff Gate (B11) — full Blueprint consumed by generator/prompt
         ↓
@@ -146,7 +146,7 @@ After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
 | B8 Claim/Proof Validation implemented | ✅ Done (`70acded`) |
 | B9 Add-On Truth/Fulfillment Gap resolved | ✅ Done (2484fbe) |
 | B-Card Gate (checkout/contract integrity) | ✅ Done |
-| B10 Customer Site Preview Approval implemented | ✅ Done (TBD) |
+| B10 Customer Site Preview Approval implemented | ✅ Done (ecab8a9) |
 | B11 Blueprint → Generator Handoff complete | ❌ Pending |
 | MiniMorph internal dogfood gate | ❌ Pending (after B6–B11) |
 | Admin explicitly approves outside first customer | ❌ Pending (after dogfood) |
