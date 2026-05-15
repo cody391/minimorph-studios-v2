@@ -148,23 +148,30 @@ Additionally: `generateRepPaymentLink` agreement creation was non-fatal (could s
 
 ---
 
-### B10 — Customer Blueprint Approval Gap
+### B10 — Customer Site Preview Approval Gap
 
-**Severity:** P1 — blocks truth alignment
-**Status:** OPEN
+**Severity:** P1 — blocks first customer
+**Status:** RESOLVED (B10 commit)
 **Discovered:** 2026-05-15 Elena Promise Enforcement Audit
+**Closed:** 2026-05-15 Customer Site Preview Approval Gate
 
-#### Symptom
+#### What was fixed
 
-Customers currently have no mechanism to view, correct, or approve the structured Blueprint that Elena assembled from their conversation. The customer portal shows build stages but not the business truth Elena recorded. A customer cannot say "that's not what I said" before generation begins.
+- `server/routers.ts` — `approveLaunch`: Added `adminPreviewApprovedAt` guard — customer cannot call approveLaunch until admin has approved the built preview. Throws `BAD_REQUEST: "Admin review is required before you can approve this site for launch."`.
+- `server/routers.ts` — `requestChange`: Added optional `changeCategory` field to input schema (enum: text_copy, design_style, photo_media, business_info, contact_form, other).
+- `client/src/pages/admin/OnboardingProjects.tsx`: Added `adminDenyPreviewMutation` + `handleAdminDenyPreview` handler + "Deny — Needs Changes" button alongside "Approve Preview for Customer" in `pending_admin_review` stage. Admin can now deny a preview via UI (uses window.prompt for reason, same pattern as blueprint return/block).
+- `server/services/siteUpdater.ts`: Already correctly clears `adminPreviewApprovedAt: null`, `approvedAt: null`, and sets `stage: "pending_admin_review"` when a revision rebuild completes — the revision loop already routes back through admin.
+- `server/customerSitePreviewApproval.test.ts` (NEW): 58 tests across 13 sections (A–M) covering all approval lifecycle states, ownership checks, launch blocking, revision loop, category field, admin visibility packet, and full sequence.
 
-#### Fix Required
+#### No new schema columns needed
 
-Add a Blueprint review step to the customer portal. Customer must be able to read the structured summary of what Elena understood, correct any errors, and explicitly approve before generation. This approval must be recorded and versioned.
-
-#### Impact
-
-Without customer Blueprint approval, MiniMorph may generate a website based on misunderstood or incorrect information with no consent record.
+All approval state is derivable from existing fields:
+- `not_ready` = generationStatus ≠ "complete"
+- `waiting_for_admin` = complete + no adminPreviewApprovedAt
+- `ready_for_customer_review` = adminPreviewApprovedAt set + no approvedAt + stage = "review"
+- `customer_requested_revisions` = stage = "revisions"
+- `customer_approved_for_launch` = approvedAt set or stage = "final_approval"
+- `launched` = stage = "launch" or "complete"
 
 ---
 

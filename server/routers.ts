@@ -3035,11 +3035,19 @@ const onboardingRouter = router({
     .input(z.object({ projectId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await assertProjectOwnership(ctx.user, input.projectId);
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      // B10: Admin must approve preview before customer can approve for launch
+      if (!project.adminPreviewApprovedAt) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Admin review is required before you can approve this site for launch. Please wait — the MiniMorph team will notify you when your preview is ready.",
+        });
+      }
       await db.updateOnboardingProject(input.projectId, {
         stage: "final_approval",
         approvedAt: new Date(),
       });
-      const project = await db.getOnboardingProjectById(input.projectId);
       // Calculate expected launch date (2 business days out)
       const launchDate = new Date();
       launchDate.setDate(launchDate.getDate() + 2);
@@ -3815,6 +3823,7 @@ const onboardingRouter = router({
       z.object({
         projectId: z.number(),
         changeRequest: z.string().min(1),
+        changeCategory: z.enum(["text_copy", "design_style", "photo_media", "business_info", "contact_form", "other"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

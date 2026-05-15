@@ -5,6 +5,28 @@ For full git history: `git log --oneline`
 
 ---
 
+## Customer Site Preview Approval Gate (B10) — 2026-05-15
+
+**Gate:** B10 — Customer Site Preview Approval
+**Commit:** TBD (feat: add customer site preview approval gate)
+**Status:** COMPLETE
+
+**What changed:**
+
+- `server/routers.ts` — `approveLaunch`: Added B10 guard — fetches project before update; throws `BAD_REQUEST` if `adminPreviewApprovedAt` is null. Customer cannot approve the site for launch without admin having first reviewed and approved the built preview.
+- `server/routers.ts` — `requestChange`: Added optional `changeCategory` field (enum: text_copy, design_style, photo_media, business_info, contact_form, other). Backward-compatible — category is optional, existing callers unaffected.
+- `client/src/pages/admin/OnboardingProjects.tsx`: Added `adminDenyPreviewMutation`, `handleAdminDenyPreview` handler (uses `window.prompt` for reason, same pattern as blueprint return/block buttons), and "Deny — Needs Changes" button rendered alongside "Approve Preview for Customer" when `stage === "pending_admin_review"`. Admin can now deny a preview from the UI, returning the site to revisions stage.
+- `server/services/siteUpdater.ts` (existing — confirmed correct): Already clears `adminPreviewApprovedAt: null`, `previewReadyAt: null`, and sets `stage: "pending_admin_review"` when a revision rebuild completes. Every revision rebuild routes back through admin review before customer can see the updated preview.
+- `server/customerSitePreviewApproval.test.ts` (NEW): 58 tests across 13 sections (A–M). Sections: A (customer blocked from approving before admin approval), B (customer cannot see preview HTML before admin approval), C (approval status derivation from existing fields), D (ownership check on approval), E (launch gate requires customer approval), F (launch blocked when revisions open), G (ownership check on revision request), H (revision request rejected when generation not complete), I (revision rebuild clears adminPreviewApprovedAt — admin must re-review), J (revision category field), K (admin visibility packet completeness), L (revision exhaustion), M (full lifecycle sequence).
+
+**What this proves:** Customer cannot approve a site for launch unless admin has first reviewed and approved the built preview. Admin can now deny a preview via the admin UI. Every revision rebuild returns to admin review before customer can see the updated version. Launch is hard-blocked until customer approves. Revision requests block launch. Approval status is derivable from existing schema fields — no new columns needed. 58 B10 tests + 488 prior gate tests = 488 gate tests passing. pnpm check clean. pnpm build PASS.
+
+**What this does NOT prove:** B11 full Blueprint → generator handoff. B2 ecommerce fix. Dogfood readiness. Those gates follow.
+
+**Remaining open blockers:** B11 Blueprint → Generator Handoff, B2 ecommerce return false.
+
+---
+
 ## Lead-to-Customer Card / Contract Checkout Integrity Gate — 2026-05-15
 
 **Gate:** B-Card Gate — Customer Card and Contract Integrity

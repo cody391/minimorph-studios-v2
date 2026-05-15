@@ -474,6 +474,7 @@ export default function OnboardingProjects() {
   const createMutation = trpc.onboarding.create.useMutation();
   const questMutation = trpc.onboarding.submitQuestionnaire.useMutation();
   const adminApprovePreviewMutation = trpc.onboarding.adminApprovePreview.useMutation();
+  const adminDenyPreviewMutation = trpc.onboarding.adminDenyPreview.useMutation();
   const adminReleaseLaunchMutation = trpc.onboarding.adminReleaseLaunch.useMutation();
   const rollbackMutation = trpc.onboarding.rollbackToVersion.useMutation();
   const updateBlueprintForReviewMutation = trpc.compliance.updateBlueprintForReview.useMutation();
@@ -518,6 +519,18 @@ export default function OnboardingProjects() {
       projectsQuery.refetch();
     } catch (e: any) {
       toast.error(e?.message || "Failed to approve preview");
+    }
+  };
+
+  const handleAdminDenyPreview = async (projectId: number) => {
+    const reason = window.prompt("Deny reason (required — describe what needs to be fixed before customer review):");
+    if (!reason?.trim()) return;
+    try {
+      await adminDenyPreviewMutation.mutateAsync({ projectId, reason: reason.trim() });
+      toast.success("Preview denied — site returned to revisions");
+      projectsQuery.refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to deny preview");
     }
   };
 
@@ -943,19 +956,33 @@ export default function OnboardingProjects() {
                       </Button>
                     )}
 
-                    {/* Admin: approve preview for customer */}
+                    {/* Admin: approve or deny preview for customer */}
                     {project.stage === "pending_admin_review" && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleAdminApprovePreview(project.id)}
-                        disabled={adminApprovePreviewMutation.isPending}
-                        className="bg-rose-600 hover:bg-rose-700 text-white h-8"
-                      >
-                        {adminApprovePreviewMutation.isPending
-                          ? <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                          : <Eye className="w-3 h-3 mr-1" />}
-                        Approve Preview for Customer
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => handleAdminApprovePreview(project.id)}
+                          disabled={adminApprovePreviewMutation.isPending}
+                          className="bg-rose-600 hover:bg-rose-700 text-white h-8"
+                        >
+                          {adminApprovePreviewMutation.isPending
+                            ? <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                            : <Eye className="w-3 h-3 mr-1" />}
+                          Approve Preview for Customer
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAdminDenyPreview(project.id)}
+                          disabled={adminDenyPreviewMutation.isPending}
+                          className="border-orange-500 text-orange-600 hover:bg-orange-50 h-8"
+                        >
+                          {adminDenyPreviewMutation.isPending
+                            ? <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                            : null}
+                          Deny — Needs Changes
+                        </Button>
+                      </>
                     )}
 
                     {/* Admin: release to launch (after customer approval) */}

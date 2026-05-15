@@ -107,11 +107,11 @@ After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
         ↓
 [DONE]  Add-On Fulfillment Truth Gate (B9) ✅ (2484fbe)
         ↓
-[DONE]  B-Card Gate (checkout/contract integrity) ✅ (TBD)
+[DONE]  B-Card Gate (checkout/contract integrity) ✅ (643ca4e)
         ↓
-[ACTIVE] Customer Site Preview Approval Gate (B10) — customer views/approves built site
+[DONE]  Customer Site Preview Approval Gate (B10) ✅ (TBD)
         ↓
-        Blueprint → Generator Handoff Gate (B11) — full Blueprint consumed by generator/prompt
+[ACTIVE] Blueprint → Generator Handoff Gate (B11) — full Blueprint consumed by generator/prompt
         ↓
         MiniMorph Internal Dogfood Gate — reset project 34, run Elena, generate, QA
         ↓
@@ -146,7 +146,7 @@ After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
 | B8 Claim/Proof Validation implemented | ✅ Done (`70acded`) |
 | B9 Add-On Truth/Fulfillment Gap resolved | ✅ Done (2484fbe) |
 | B-Card Gate (checkout/contract integrity) | ✅ Done |
-| B10 Customer Site Preview Approval implemented | ❌ Pending |
+| B10 Customer Site Preview Approval implemented | ✅ Done (TBD) |
 | B11 Blueprint → Generator Handoff complete | ❌ Pending |
 | MiniMorph internal dogfood gate | ❌ Pending (after B6–B11) |
 | Admin explicitly approves outside first customer | ❌ Pending (after dogfood) |
