@@ -22,7 +22,7 @@ Previous lanes completed:
 
 | Field | Value |
 |---|---|
-| HEAD | pending service routing commit |
+| HEAD | `aaaa3ac` |
 | Branch | `main` |
 | origin/main | `eac497e` |
 | Message | fix: route service businesses to professional template |
