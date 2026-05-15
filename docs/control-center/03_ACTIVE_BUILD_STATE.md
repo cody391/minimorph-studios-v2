@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Claim/Proof Validation Gate (B8)** — Admin Blueprint Gate (B7) is complete. Generation is now hard-blocked until admin explicitly approves the Blueprint. Next gate is B8: claims/proof source tracking.
+**Add-On Fulfillment Truth Gate (B9)** — Claim/Proof Validation Gate (B8) is complete. Every Blueprint now carries a structured claim/proof inventory. Next gate is B9: add-on fulfillment truth.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -22,14 +22,15 @@ Previous lanes completed:
 - Elena Promise Safety Hotfix ✅ (all unsupported automation promises removed, safety test suite added, pnpm check clean)
 - **Blueprint Schema Gate (B6) ✅** (CustomerRealityBlueprint type, 9-section builder, 85 tests, pnpm check + build clean)
 - **Admin Blueprint Gate (B7) ✅** (hard adminBlueprintApprovedAt gate, 4 admin procedures, 48 tests, pnpm check + build clean)
+- **Claim/Proof Validation Gate (B8) ✅** (ClaimProofRecord, ClaimProofInventory, 7 claim sources, RISKY_CLAIM_WORDS scanner, 90 tests, pnpm check + build clean)
 
 ## Latest Known Commit
 
 | Field | Value |
 |---|---|
-| HEAD | 2682cfb |
+| HEAD | TBD (B8 commit) |
 | Branch | `main` |
-| Message | feat: require admin Blueprint approval before generation |
+| Message | feat: add claim proof validation to Blueprint (B8) |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
 | Production deploy confirmed | `2026-05-15 07:42:58 GMT` ✅ |
@@ -73,7 +74,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**Claim/Proof Validation Gate (B8)** — Claims, credentials, testimonials, certifications, guarantees, and proof items collected by Elena are not validated or flagged for admin review. Add a Claims/Proof section to the Blueprint. Each claim must have a source (customer-provided, skipped, admin-verified). Generator must treat unverified claims as either blank or flagged.
+**Add-On Fulfillment Truth Gate (B9)** — Elena may mention or recommend add-ons that the platform cannot fully fulfill. There is no end-to-end check verifying a recommended add-on is supported by billing, portal, admin, and generator before Elena offers it.
 
 ## First Customer Status
 
@@ -91,6 +92,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 - [x] Elena Promise Safety Hotfix — all unsupported automation, compliance, report, and "instant" promises removed from Elena prompt; ADDON HONESTY RULE, FIT-BASED RECOMMENDATION RULE, REGULATED INDUSTRY AWARENESS, BLOCKED ADD-ONS added; safety test suite (38 tests) passing ✅
 - [x] Blueprint Schema Gate (B6) — CustomerRealityBlueprint type (9 sections), buildBlueprintFromQuestionnaire() updated, industry/risk derivation helpers, add-on fulfillment registry, completeness scorer, backward compat with all legacy portal keys, 85 blueprint tests passing ✅
 - [x] Admin Blueprint Gate (B7) — hard adminBlueprintApprovedAt gate in generateSiteForProject() (Gate 1.5), 4 admin procedures (adminApproveBlueprint, adminReturnBlueprint, adminBlockBlueprint, adminAddBlueprintFlags), 7 DB fields (migration 0057), admin UI review status badge + Approve/Return/Block buttons in OnboardingProjects, 48 tests passing ✅
+- [x] Claim/Proof Validation Gate (B8) — ClaimProofRecord type (23 fields), ClaimProofInventory, 7 claim source types, RISKY_CLAIM_WORDS scanner (3 risk tiers), buildClaimProofInventory() + extractGeneratorClaimLists() helpers; Blueprint now carries structured claim inventory in positioning.claimProofInventory; riskCompliance.claimsSummary; generatorInstructions.claimsSafeToUse/claimsToOmit/claimsNeedingAdminReview; 90 tests passing ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

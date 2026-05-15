@@ -5,6 +5,26 @@ For full git history: `git log --oneline`
 
 ---
 
+## Claim/Proof Validation Gate (B8) — 2026-05-15
+
+**Gate:** Claim/Proof Validation Gate (B8)
+**Commit:** TBD (B8 commit)
+**Status:** COMPLETE
+
+**What changed:**
+
+- `shared/blueprintTypes.ts`: New types — `ClaimType` (19 values), `ClaimSource` (8 values), `ClaimSourceStatus` (5 values), `ClaimRiskLevel` (4 values), `ClaimAdminReviewStatus` (8 values), `ClaimGeneratorUseStatus` (5 values), `ClaimProofRecord` (23 fields), `ClaimProofInventory` (8 fields). `RISKY_CLAIM_WORDS` constant with 3 risk tiers: `regulated_sensitive` (cure, diagnose, treat, heal), `high` (100% guaranteed, money-back, FDA approved, clinically proven, attorney-client, legal advice), `medium` (guarantee, guaranteed, warranty, #1, number one, best, fastest, award-winning, top-rated, compliant, results, win). Private helpers: `scanRiskLevel()`, `riskToAdminStatus()`, `riskToGeneratorStatus()`, `detectClaimType()` (priority-ordered: health_medical → regulatory → best_or_number_one → guarantee → result_or_outcome → other). `buildClaimProofInventory(q, regulated, overallRiskLevel)` processes 7 claim sources (testimonials, license, yearsInBusiness, certifications, awards, uniqueDifferentiator, specialRequests) and returns a `ClaimProofInventory` with all records + 6 counters. `extractGeneratorClaimLists(inventory)` returns 4 string arrays: `claimsSafeToUse`, `claimsToOmit`, `claimsNeedingAdminReview`, `claimsNeedingCustomerAcknowledgment`. Optional additions to `Positioning` (`claimProofInventory`), `RiskCompliance` (`claimsSummary`), and `GeneratorInstructions` (`claimsSafeToUse`, `claimsToOmit`, `claimsNeedingAdminReview`, `claimsNeedingCustomerAcknowledgment`) — all `?` to preserve B6 backward compat.
+- `server/routers.ts`: `buildBlueprintFromQuestionnaire()` updated to call `buildClaimProofInventory()` and `extractGeneratorClaimLists()`. `positioning.claimProofInventory` populated. `riskCompliance.claimsSummary` populated. `generatorInstructions.claimsSafeToUse` / `claimsToOmit` / `claimsNeedingAdminReview` / `claimsNeedingCustomerAcknowledgment` populated. `adminReviewRecommended` now also triggers when `claimsRequiringReview > 0`. `reviewFlags` gains `"claims_require_admin_review"` when applicable.
+- `server/claimProofValidation.test.ts` (NEW): 90 tests across 14 sections (A–N) — inventory structure, testimonial records, license claim, years-in-business claim, certifications, award claims, uniqueDifferentiator scan, specialRequests scan, customer-claim doctrine (customerDirected flag, claimText preservation, no overwriting), generator instruction lists, summary counts, RISKY_CLAIM_WORDS coverage, ClaimProofRecord shape, static file assertions (blueprintTypes.ts exports, routers.ts wiring).
+
+**What this proves:** Every Blueprint from this commit forward carries a structured claim/proof inventory. Claims are never deleted — they are typed, risk-classified (low/medium/high/regulated_sensitive), admin-status-flagged (approved/pending_review/blocked/etc.), and generator-instruction-tagged (use_as_written/flag_for_admin/omit_from_output/etc.). The generator now has four named claim lists to consume (B11 wiring pending). Admin knows exactly which claims need review before approval. Customer-directed claims are preserved with `customerDirected: true` and are never overwritten by MiniMorph. All 90 B8 tests + 48 B7 tests + 85 B6 tests + 38 Elena safety tests pass. pnpm check clean. pnpm build PASS.
+
+**What this does NOT prove:** B9 add-on fulfillment is built. B10 customer Blueprint approval UI shows claim inventory. B11 generator actually consumes the claim lists. Dogfood readiness. Those gates follow in sequence.
+
+**Remaining open blockers:** B9 Add-On Fulfillment Gap, B10 Customer Blueprint Approval, B11 Blueprint → Generator Handoff, B2 ecommerce return false.
+
+---
+
 ## Admin Blueprint Gate (B7) — 2026-05-15
 
 **Gate:** Admin Blueprint Gate (B7)

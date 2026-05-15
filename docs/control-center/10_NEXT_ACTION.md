@@ -4,10 +4,10 @@
 
 ---
 
-## Current Gate: Claim/Proof Validation Gate (B8)
+## Current Gate: Add-On Fulfillment Truth Gate (B9)
 
-**Priority:** P0
-**Status:** OPEN — next gate after B7 Admin Blueprint Gate
+**Priority:** P1
+**Status:** OPEN — next gate after B8 Claim/Proof Validation Gate
 
 ### What was completed before this gate
 
@@ -24,25 +24,25 @@
 | Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
 | Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
 | Blueprint Schema Gate (B6) | ✅ Done (`26aaf12`) |
-| Admin Blueprint Gate (B7) | ✅ Done (B7 commit) |
+| Admin Blueprint Gate (B7) | ✅ Done (`2682cfb`) |
+| Claim/Proof Validation Gate (B8) | ✅ Done (B8 commit) |
 
 ### Why this gate is open
 
-Claims, credentials, testimonials, certifications, guarantees, and proof items collected by Elena are not validated or flagged for admin review. The generator may use unverified claims without a source-of-truth check. Some template fallbacks can still produce unvalidated claim language.
+Elena may mention or recommend add-ons (ecommerce, booking, SEO, photography, etc.) that the platform cannot fully fulfill. There is no structured `recommendedAddOns` / `acceptedAddOns` / `declinedAddOns` storage in the Blueprint beyond the schema stub. There is no end-to-end check that verifies a recommended add-on is supported by billing, portal, admin, and generator before Elena offers it.
 
 ---
 
 ## Required Next Action
 
-**Claim/Proof Validation Gate (B8)** — Add a Claims/Proof section to the Blueprint. Each claim must have a source (customer-provided, skipped, admin-verified). Generator must treat unverified claims as either blank or flagged. Admin review must show all claims with their source status.
+**Add-On Fulfillment Truth Gate (B9)** — Add a complete add-on fulfillment registry to the Blueprint. Elena must only recommend add-ons whose `generatorSupported` and `billingSupported` flags are true. Blueprint must carry `recommendedAddOns`, `acceptedAddOns`, and `declinedAddOns` with fulfillment status per add-on.
 
-After B8 is closed, proceed to B9 (Add-On Fulfillment), then B10, B11 in order.
+After B9 is closed, proceed to B10 (Customer Blueprint Approval), then B11 in order.
 
 ---
 
 ## Remaining Known Blockers Before MiniMorph Dogfood
 
-- B8: Claim/Proof Validation Missing — claims flow into generator without verification
 - B9: Add-On Truth/Fulfillment Gap — Elena may recommend unimplemented add-ons
 - B10: Customer Blueprint Approval Gap — customer cannot review/correct Blueprint before generation
 - B11: Blueprint → Generator Instruction Gap — SiteBrief does not carry full Blueprint to generator
@@ -78,11 +78,11 @@ After B8 is closed, proceed to B9 (Add-On Fulfillment), then B10, B11 in order.
         ↓
 [DONE]  Blueprint Schema Gate (B6) ✅ (CustomerRealityBlueprint type, 9 sections, 85 tests, 26aaf12)
         ↓
-[DONE]  Admin Blueprint Gate (B7) ✅ (B7 commit)
+[DONE]  Admin Blueprint Gate (B7) ✅ (`2682cfb`)
         ↓
-[ACTIVE] Claim/Proof Validation Gate (B8) — claims section with source tracking
+[DONE]  Claim/Proof Validation Gate (B8) ✅ (B8 commit)
         ↓
-        Add-On Fulfillment Truth Gate (B9) — recommendedAddOns/acceptedAddOns in Blueprint
+[ACTIVE] Add-On Fulfillment Truth Gate (B9) — recommendedAddOns/acceptedAddOns in Blueprint
         ↓
         Customer Blueprint Approval Gate (B10) — customer can view/correct/approve Blueprint
         ↓
@@ -117,8 +117,8 @@ After B8 is closed, proceed to B9 (Add-On Fulfillment), then B10, B11 in order.
 | Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
 | Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
 | B6 Blueprint Schema Gap resolved | ✅ Done (26aaf12) |
-| B7 Admin Blueprint Gate implemented | ✅ Done (B7 commit) |
-| B8 Claim/Proof Validation implemented | ❌ Pending |
+| B7 Admin Blueprint Gate implemented | ✅ Done (`2682cfb`) |
+| B8 Claim/Proof Validation implemented | ✅ Done (B8 commit) |
 | B9 Add-On Truth/Fulfillment Gap resolved | ❌ Pending |
 | B10 Customer Blueprint Approval implemented | ❌ Pending |
 | B11 Blueprint → Generator Handoff complete | ❌ Pending |

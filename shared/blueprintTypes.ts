@@ -4,6 +4,16 @@
  * B6 Blueprint Schema Gate: extends the stored Blueprint so every new
  * Blueprint contains all 9 required sections from the Elena Master Baseline.
  *
+ * B8 Claim/Proof Validation Gate: adds ClaimProofRecord, ClaimProofInventory,
+ * and buildClaimProofInventory() helper so every Blueprint carries a structured
+ * inventory of claims with source, risk level, customer-direction doctrine, and
+ * generator-use instructions.
+ *
+ * DOCTRINE: MiniMorph does not police customer claims. The customer owns their
+ * claims. MiniMorph records them, flags risk, offers safer alternatives, and
+ * documents the customer's direction. These types capture that documentation —
+ * not approvals or denials.
+ *
  * BACKWARD COMPAT: buildBlueprintFromQuestionnaire() still emits the legacy
  * top-level keys (businessName, websiteType, packageTier, designDirection,
  * contentPlan, features, businessDetails, competitiveStrategy, inspirationSites,
@@ -87,6 +97,126 @@ export interface CustomerDirectedClaim {
   sourceNotes: string[];
 }
 
+// ── B8 Claim / Proof Validation Types ────────────────────────────────────────
+//
+// Structured claim/proof tracking. Every proof item and risky claim gets a
+// ClaimProofRecord in the Blueprint's claimProofInventory. These records tell
+// the generator and admin exactly what was claimed, where it came from, how
+// risky it is, and what to do with it.
+//
+// DOCTRINE: "customerDirected: true" means the customer owns the claim.
+// MiniMorph records it, flags risk, offers safer wording, and documents
+// acknowledgment. It does NOT delete, block, or police the claim unless
+// MiniMorph chooses not to participate because the content is illegal,
+// deceptive, harmful, or outside MiniMorph publish standards.
+
+export type ClaimType =
+  | "testimonial"
+  | "review_rating"
+  | "license"
+  | "certification"
+  | "award"
+  | "years_in_business"
+  | "guarantee"
+  | "warranty"
+  | "pricing"
+  | "result_or_outcome"
+  | "best_or_number_one"
+  | "health_medical"
+  | "legal"
+  | "financial"
+  | "regulatory"
+  | "safety"
+  | "environmental"
+  | "product_claim"
+  | "platform_promise"
+  | "other";
+
+export type ClaimSource =
+  | "customer_provided"
+  | "customer_uploaded_asset"
+  | "scraped_existing_site"
+  | "competitor_research"
+  | "elena_inferred"
+  | "minimorph_generated"
+  | "admin_added"
+  | "unknown";
+
+export type ClaimSourceStatus =
+  | "provided_unverified"
+  | "customer_confirmed"
+  | "admin_verified"
+  | "unsupported"
+  | "unknown";
+
+export type ClaimRiskLevel =
+  | "low"
+  | "medium"
+  | "high"
+  | "regulated_sensitive";
+
+export type ClaimAdminReviewStatus =
+  | "not_required"
+  | "pending_review"
+  | "verified"
+  | "needs_customer_acknowledgment"
+  | "customer_acknowledged"
+  | "use_safer_alternative"
+  | "omit_from_generation"
+  | "blocked_by_minimorph_standard";
+
+export type ClaimGeneratorUseStatus =
+  | "use_as_written"
+  | "use_safer_alternative"
+  | "omit"
+  | "flag_for_admin"
+  | "customer_acknowledgment_required";
+
+export interface ClaimProofRecord {
+  id: string;
+  claimText: string;
+  claimType: ClaimType;
+  source: ClaimSource;
+  sourceDetail: string | null;
+  sourceField: string | null;
+  sourceStatus: ClaimSourceStatus;
+  riskLevel: ClaimRiskLevel;
+  customerDirected: boolean;
+  miniMorphOwnedPromise: boolean;
+  requiresCourtesyNotice: boolean;
+  courtesyNoticeGiven: boolean;
+  saferAlternativeSuggested: boolean;
+  saferAlternativeText: string | null;
+  customerAcceptedSaferAlternative: boolean | null;
+  customerDirectedOriginalWording: boolean;
+  customerAcknowledgedRisk: boolean;
+  adminReviewStatus: ClaimAdminReviewStatus;
+  adminReviewNotes: string | null;
+  generatorUseStatus: ClaimGeneratorUseStatus;
+  generatorInstruction: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClaimProofInventory {
+  claims: ClaimProofRecord[];
+  claimsTotal: number;
+  claimsRequiringReview: number;
+  claimsRequiringCustomerAcknowledgment: number;
+  claimsSafeForGeneration: number;
+  claimsToOmit: number;
+  miniMorphOwnedPromisesDetected: number;
+  lastScannedAt: string;
+}
+
+// Words that trigger elevated risk classification when found in free-text fields.
+// Used by buildClaimProofInventory() to scan uniqueDifferentiator, specialRequests, etc.
+export const RISKY_CLAIM_WORDS = {
+  regulated_sensitive: ["cure", "diagnose", "treat", "heal from", "prevent disease", "no side effects", "clinically proven"],
+  high: ["100% guaranteed", "money-back guarantee", "money back", "risk-free", "no risk ", "guaranteed outcome", "guaranteed results", "no obligation"],
+  medium: ["guarantee", "guaranteed", "warranty", "#1", "number one", "best ", "fastest", "award-winning", "top-rated", "compliant", "results ", "win "],
+} as const;
+
 export interface Positioning {
   uniqueDifferentiator: string | null;
   primaryPromise: string | null;
@@ -101,6 +231,8 @@ export interface Positioning {
   competitorSites: Array<{ url?: string; whatYouWantToBeat?: string; featuresYouWish?: string }>;
   competitiveAdvantages: string[];
   sourceNotes: string[];
+  // B8: structured claim/proof inventory (optional for backward compat with B6 test helper)
+  claimProofInventory?: ClaimProofInventory;
 }
 
 // ── 5. Website Strategy ──────────────────────────────────────────────────────
@@ -160,6 +292,15 @@ export interface RiskCompliance {
   adminReviewRecommended: boolean;
   adminReviewReason: string | null;
   sourceNotes: string[];
+  // B8: claim/proof summary (optional for backward compat with B6 test helper)
+  claimsSummary?: {
+    claimsTotal: number;
+    claimsRequiringReview: number;
+    claimsRequiringCustomerAcknowledgment: number;
+    claimsSafeForGeneration: number;
+    claimsToOmit: number;
+    miniMorphOwnedPromisesDetected: number;
+  };
 }
 
 // ── 8. Generator Instructions ────────────────────────────────────────────────
@@ -177,6 +318,11 @@ export interface GeneratorInstructions {
   factsNotToInvent: string[];
   reviewFlags: string[];
   sourceNotes: string[];
+  // B8: per-claim generator instructions (optional for backward compat with B6 test helper)
+  claimsSafeToUse?: string[];
+  claimsToOmit?: string[];
+  claimsNeedingAdminReview?: string[];
+  claimsNeedingCustomerAcknowledgment?: string[];
 }
 
 // ── 9. Add-On / Upsell Fit ──────────────────────────────────────────────────
@@ -388,6 +534,318 @@ export function buildAddOnRecords(
       setupDisclosureGiven: false,
     };
   });
+}
+
+// ── B8: Claim / Proof Validation Helpers ─────────────────────────────────────
+
+function scanRiskLevel(text: string): ClaimRiskLevel {
+  const lower = text.toLowerCase();
+  for (const w of RISKY_CLAIM_WORDS.regulated_sensitive) {
+    if (lower.includes(w)) return "regulated_sensitive";
+  }
+  for (const w of RISKY_CLAIM_WORDS.high) {
+    if (lower.includes(w)) return "high";
+  }
+  for (const w of RISKY_CLAIM_WORDS.medium) {
+    if (lower.includes(w)) return "medium";
+  }
+  return "low";
+}
+
+function riskToAdminStatus(risk: ClaimRiskLevel): ClaimAdminReviewStatus {
+  if (risk === "regulated_sensitive" || risk === "high" || risk === "medium") return "pending_review";
+  return "not_required";
+}
+
+function riskToGeneratorStatus(risk: ClaimRiskLevel): ClaimGeneratorUseStatus {
+  if (risk === "regulated_sensitive" || risk === "high" || risk === "medium") return "flag_for_admin";
+  return "use_as_written";
+}
+
+function detectClaimType(text: string): ClaimType {
+  const lower = text.toLowerCase();
+  // Check most specific / distinctive types first
+  if (/cure|diagnose|treat|heal/.test(lower)) return "health_medical";
+  if (/compliant|compliance|regulatory/.test(lower)) return "regulatory";
+  if (/#1|number one|best |fastest|award.winning|top.rated/.test(lower)) return "best_or_number_one";
+  if (/guarantee|guaranteed|warranty/.test(lower)) return "guarantee";
+  if (/result|outcome|proven/.test(lower)) return "result_or_outcome";
+  return "other";
+}
+
+export function buildClaimProofInventory(
+  q: Record<string, unknown>,
+  regulated: boolean,
+  overallRiskLevel: RiskLevel
+): ClaimProofInventory {
+  const now = new Date().toISOString();
+  const claims: ClaimProofRecord[] = [];
+  let idx = 0;
+  const id = (tag: string) => `claim_${tag}_${idx++}`;
+
+  // ── 1. Testimonials ────────────────────────────────────────────────────────
+  const testimonials = Array.isArray(q.testimonials) ? q.testimonials as any[] : [];
+  for (const t of testimonials) {
+    if (!t || (!t.quote && !t.name)) continue;
+    const parts = [t.quote, t.name ? `— ${t.name}` : null, t.context ? `(${t.context})` : null].filter(Boolean);
+    const text = parts.join(" ");
+    claims.push({
+      id: id("testimonial"),
+      claimText: text,
+      claimType: "testimonial",
+      source: "customer_provided",
+      sourceDetail: "testimonials array",
+      sourceField: "q.testimonials",
+      sourceStatus: "provided_unverified",
+      riskLevel: "low",
+      customerDirected: true,
+      miniMorphOwnedPromise: false,
+      requiresCourtesyNotice: false,
+      courtesyNoticeGiven: false,
+      saferAlternativeSuggested: false,
+      saferAlternativeText: null,
+      customerAcceptedSaferAlternative: null,
+      customerDirectedOriginalWording: true,
+      customerAcknowledgedRisk: false,
+      adminReviewStatus: "not_required",
+      adminReviewNotes: null,
+      generatorUseStatus: "use_as_written",
+      generatorInstruction: "Use customer testimonial as provided. Do not modify the quote or invent context.",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // ── 2. License number ──────────────────────────────────────────────────────
+  if (q.licenseNumber && typeof q.licenseNumber === "string" && q.licenseNumber.trim()) {
+    const risk: ClaimRiskLevel = regulated ? "medium" : "low";
+    claims.push({
+      id: id("license"),
+      claimText: `Licensed: ${q.licenseNumber.trim()}`,
+      claimType: "license",
+      source: "customer_provided",
+      sourceDetail: "licenseNumber field",
+      sourceField: "q.licenseNumber",
+      sourceStatus: "provided_unverified",
+      riskLevel: risk,
+      customerDirected: true,
+      miniMorphOwnedPromise: false,
+      requiresCourtesyNotice: false,
+      courtesyNoticeGiven: false,
+      saferAlternativeSuggested: false,
+      saferAlternativeText: null,
+      customerAcceptedSaferAlternative: null,
+      customerDirectedOriginalWording: true,
+      customerAcknowledgedRisk: false,
+      adminReviewStatus: regulated ? "pending_review" : "not_required",
+      adminReviewNotes: null,
+      generatorUseStatus: "use_as_written",
+      generatorInstruction: "Display license number as provided by customer. Do not verify or alter.",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // ── 3. Years in business ───────────────────────────────────────────────────
+  if (q.yearsInBusiness && typeof q.yearsInBusiness === "string" && q.yearsInBusiness.trim()) {
+    claims.push({
+      id: id("years_in_business"),
+      claimText: `${q.yearsInBusiness.trim()} in business`,
+      claimType: "years_in_business",
+      source: "customer_provided",
+      sourceDetail: "yearsInBusiness field",
+      sourceField: "q.yearsInBusiness",
+      sourceStatus: "provided_unverified",
+      riskLevel: "low",
+      customerDirected: true,
+      miniMorphOwnedPromise: false,
+      requiresCourtesyNotice: false,
+      courtesyNoticeGiven: false,
+      saferAlternativeSuggested: false,
+      saferAlternativeText: null,
+      customerAcceptedSaferAlternative: null,
+      customerDirectedOriginalWording: true,
+      customerAcknowledgedRisk: false,
+      adminReviewStatus: "not_required",
+      adminReviewNotes: null,
+      generatorUseStatus: "use_as_written",
+      generatorInstruction: "Use years-in-business as stated by customer.",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // ── 4. Certifications ──────────────────────────────────────────────────────
+  const certifications = Array.isArray(q.certifications) ? q.certifications as string[] : [];
+  for (const cert of certifications) {
+    if (!cert || !cert.trim()) continue;
+    const risk: ClaimRiskLevel = regulated ? "medium" : "low";
+    claims.push({
+      id: id("certification"),
+      claimText: `Certified: ${cert.trim()}`,
+      claimType: "certification",
+      source: "customer_provided",
+      sourceDetail: "certifications array",
+      sourceField: "q.certifications",
+      sourceStatus: "provided_unverified",
+      riskLevel: risk,
+      customerDirected: true,
+      miniMorphOwnedPromise: false,
+      requiresCourtesyNotice: false,
+      courtesyNoticeGiven: false,
+      saferAlternativeSuggested: false,
+      saferAlternativeText: null,
+      customerAcceptedSaferAlternative: null,
+      customerDirectedOriginalWording: true,
+      customerAcknowledgedRisk: false,
+      adminReviewStatus: regulated ? "pending_review" : "not_required",
+      adminReviewNotes: null,
+      generatorUseStatus: "use_as_written",
+      generatorInstruction: "Use certification as provided. Do not verify or alter.",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // ── 5. Awards ─────────────────────────────────────────────────────────────
+  const awards = Array.isArray(q.awards) ? q.awards as string[] : [];
+  for (const award of awards) {
+    if (!award || !award.trim()) continue;
+    claims.push({
+      id: id("award"),
+      claimText: `Award: ${award.trim()}`,
+      claimType: "award",
+      source: "customer_provided",
+      sourceDetail: "awards array",
+      sourceField: "q.awards",
+      sourceStatus: "provided_unverified",
+      riskLevel: "medium",
+      customerDirected: true,
+      miniMorphOwnedPromise: false,
+      requiresCourtesyNotice: true,
+      courtesyNoticeGiven: false,
+      saferAlternativeSuggested: false,
+      saferAlternativeText: null,
+      customerAcceptedSaferAlternative: null,
+      customerDirectedOriginalWording: true,
+      customerAcknowledgedRisk: false,
+      adminReviewStatus: "pending_review",
+      adminReviewNotes: null,
+      generatorUseStatus: "flag_for_admin",
+      generatorInstruction: "Award claim — requires admin review before publishing. Customer provided this claim.",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // ── 6. uniqueDifferentiator — scan for risky words ─────────────────────────
+  if (q.uniqueDifferentiator && typeof q.uniqueDifferentiator === "string" && q.uniqueDifferentiator.trim()) {
+    const text = q.uniqueDifferentiator.trim();
+    const risk = scanRiskLevel(text);
+    const isRisky = risk !== "low";
+    claims.push({
+      id: id("differentiator"),
+      claimText: text,
+      claimType: isRisky ? detectClaimType(text) : "other",
+      source: "customer_provided",
+      sourceDetail: "uniqueDifferentiator field",
+      sourceField: "q.uniqueDifferentiator",
+      sourceStatus: "provided_unverified",
+      riskLevel: risk,
+      customerDirected: true,
+      miniMorphOwnedPromise: false,
+      requiresCourtesyNotice: isRisky,
+      courtesyNoticeGiven: false,
+      saferAlternativeSuggested: isRisky,
+      saferAlternativeText: null,
+      customerAcceptedSaferAlternative: null,
+      customerDirectedOriginalWording: true,
+      customerAcknowledgedRisk: false,
+      adminReviewStatus: riskToAdminStatus(risk),
+      adminReviewNotes: null,
+      generatorUseStatus: riskToGeneratorStatus(risk),
+      generatorInstruction: isRisky
+        ? `Unique differentiator contains ${risk}-risk language. Admin review before using in generation. Customer owns this claim.`
+        : "Use differentiator as provided.",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // ── 7. specialRequests — scan for risky words (only record if risky) ────────
+  if (q.specialRequests && typeof q.specialRequests === "string" && q.specialRequests.trim()) {
+    const text = q.specialRequests.trim();
+    const risk = scanRiskLevel(text);
+    if (risk !== "low") {
+      claims.push({
+        id: id("special_requests"),
+        claimText: text,
+        claimType: detectClaimType(text),
+        source: "customer_provided",
+        sourceDetail: "specialRequests field",
+        sourceField: "q.specialRequests",
+        sourceStatus: "provided_unverified",
+        riskLevel: risk,
+        customerDirected: true,
+        miniMorphOwnedPromise: false,
+        requiresCourtesyNotice: true,
+        courtesyNoticeGiven: false,
+        saferAlternativeSuggested: true,
+        saferAlternativeText: null,
+        customerAcceptedSaferAlternative: null,
+        customerDirectedOriginalWording: true,
+        customerAcknowledgedRisk: false,
+        adminReviewStatus: "pending_review",
+        adminReviewNotes: null,
+        generatorUseStatus: riskToGeneratorStatus(risk),
+        generatorInstruction: `Special request contains ${risk}-risk language. Admin review before using in generation. Customer owns this claim.`,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  // ── Compute summary ────────────────────────────────────────────────────────
+  const claimsTotal = claims.length;
+  const claimsRequiringReview = claims.filter(c => c.adminReviewStatus === "pending_review").length;
+  const claimsRequiringCustomerAcknowledgment = claims.filter(c => c.requiresCourtesyNotice && !c.customerAcknowledgedRisk).length;
+  const claimsSafeForGeneration = claims.filter(c => c.generatorUseStatus === "use_as_written").length;
+  const claimsToOmit = claims.filter(c => c.generatorUseStatus === "omit").length;
+  const miniMorphOwnedPromisesDetected = claims.filter(c => c.miniMorphOwnedPromise).length;
+
+  return {
+    claims,
+    claimsTotal,
+    claimsRequiringReview,
+    claimsRequiringCustomerAcknowledgment,
+    claimsSafeForGeneration,
+    claimsToOmit,
+    miniMorphOwnedPromisesDetected,
+    lastScannedAt: now,
+  };
+}
+
+// Extract generator-facing claim lists from a completed inventory.
+export function extractGeneratorClaimLists(inventory: ClaimProofInventory): {
+  claimsSafeToUse: string[];
+  claimsToOmit: string[];
+  claimsNeedingAdminReview: string[];
+  claimsNeedingCustomerAcknowledgment: string[];
+} {
+  return {
+    claimsSafeToUse: inventory.claims
+      .filter(c => c.generatorUseStatus === "use_as_written")
+      .map(c => c.claimText),
+    claimsToOmit: inventory.claims
+      .filter(c => c.generatorUseStatus === "omit")
+      .map(c => c.claimText),
+    claimsNeedingAdminReview: inventory.claims
+      .filter(c => c.adminReviewStatus === "pending_review" || c.generatorUseStatus === "flag_for_admin")
+      .map(c => c.claimText),
+    claimsNeedingCustomerAcknowledgment: inventory.claims
+      .filter(c => c.requiresCourtesyNotice && !c.customerAcknowledgedRisk)
+      .map(c => c.claimText),
+  };
 }
 
 // ── Completeness scoring ─────────────────────────────────────────────────────

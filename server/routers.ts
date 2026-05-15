@@ -57,6 +57,8 @@ function buildBlueprintFromQuestionnaire(
     deriveRegulatedIndustry,
     deriveTemplateLane,
     buildAddOnRecords,
+    buildClaimProofInventory,
+    extractGeneratorClaimLists,
     scoreBlueprint,
   } = require("../shared/blueprintTypes");
 
@@ -78,6 +80,10 @@ function buildBlueprintFromQuestionnaire(
   const inspirationSites     = Array.isArray(q.inspirationSites) ? q.inspirationSites as any[] : [];
 
   const addOnRecords = buildAddOnRecords(addonsSelected, "accepted");
+
+  // ── B8: Claim/Proof Inventory ─────────────────────────────────────────────
+  const claimProofInventory = buildClaimProofInventory(q, regulated, riskLevel);
+  const generatorClaimLists = extractGeneratorClaimLists(claimProofInventory);
 
   // ── 9-section Customer Reality Blueprint ─────────────────────────────────
 
@@ -137,7 +143,7 @@ function buildBlueprintFromQuestionnaire(
     primaryPromise: null,
     brandTone: brandTone || null,
     brandPersonality: null,
-    safeClaims: [],
+    safeClaims: generatorClaimLists.claimsSafeToUse,
     riskyCustomerDirectedClaims: [],
     courtesyRiskNotices: regulated
       ? [`Industry "${websiteType}" flagged for compliance review. Admin review recommended before launch.`]
@@ -148,6 +154,8 @@ function buildBlueprintFromQuestionnaire(
     competitorSites,
     competitiveAdvantages: [],
     sourceNotes: ["elena_onboarding"],
+    // B8: structured claim/proof inventory
+    claimProofInventory,
   };
 
   const websiteStrategy = {
@@ -189,18 +197,29 @@ function buildBlueprintFromQuestionnaire(
     riskReasons: regulated ? [`Industry type "${websiteType}" requires compliance review`] : [],
     courtesyNoticesGiven: regulated ? ["Regulated industry notice given during onboarding"] : [],
     customerDirectedClaims: [],
-    claimsRequiringAcknowledgment: [],
+    claimsRequiringAcknowledgment: generatorClaimLists.claimsNeedingCustomerAcknowledgment,
     customerAcknowledgments: [],
     unsupportedFeaturesRequested: addOnRecords.filter((a: any) => a.fulfillmentType === "blocked").map((a: any) => a.product),
     unsupportedFeatureAcknowledgments: [],
     requiredDisclaimersSuggested: [],
-    adminReviewRecommended: regulated || riskLevel === "high",
+    adminReviewRecommended: regulated || riskLevel === "high" || claimProofInventory.claimsRequiringReview > 0,
     adminReviewReason: regulated
       ? `Industry "${websiteType}" flagged as regulated — requires admin review before launch`
       : riskLevel === "high"
         ? `Risk level "high" for "${websiteType}" — admin review recommended`
-        : null,
+        : claimProofInventory.claimsRequiringReview > 0
+          ? `${claimProofInventory.claimsRequiringReview} claim(s) require admin review before generation`
+          : null,
     sourceNotes: ["elena_onboarding"],
+    // B8: claim/proof summary for admin visibility
+    claimsSummary: {
+      claimsTotal: claimProofInventory.claimsTotal,
+      claimsRequiringReview: claimProofInventory.claimsRequiringReview,
+      claimsRequiringCustomerAcknowledgment: claimProofInventory.claimsRequiringCustomerAcknowledgment,
+      claimsSafeForGeneration: claimProofInventory.claimsSafeForGeneration,
+      claimsToOmit: claimProofInventory.claimsToOmit,
+      miniMorphOwnedPromisesDetected: claimProofInventory.miniMorphOwnedPromisesDetected,
+    },
   };
 
   const generatorInstructions = {
@@ -216,6 +235,7 @@ function buildBlueprintFromQuestionnaire(
     claimHandlingRules: [
       "Do not invent testimonials, credentials, awards, or guarantees not provided by the customer.",
       "Use only customer-provided proof items from the testimonials field.",
+      "Claims marked flag_for_admin must not appear in generated output until admin review is complete.",
     ],
     toneRules: brandTone ? [`Brand tone: ${brandTone}`] : [],
     proofRules: [
@@ -230,8 +250,14 @@ function buildBlueprintFromQuestionnaire(
       ...(regulated ? ["regulated_industry"] : []),
       ...(riskLevel === "high" || riskLevel === "regulated_review_required" ? ["high_risk"] : []),
       ...(addOnRecords.some((a: any) => a.fulfillmentType === "blocked") ? ["blocked_addon_requested"] : []),
+      ...(claimProofInventory.claimsRequiringReview > 0 ? ["claims_require_admin_review"] : []),
     ],
     sourceNotes: ["elena_onboarding"],
+    // B8: per-claim generator instructions
+    claimsSafeToUse: generatorClaimLists.claimsSafeToUse,
+    claimsToOmit: generatorClaimLists.claimsToOmit,
+    claimsNeedingAdminReview: generatorClaimLists.claimsNeedingAdminReview,
+    claimsNeedingCustomerAcknowledgment: generatorClaimLists.claimsNeedingCustomerAcknowledgment,
   };
 
   const addOnUpsellFit = {

@@ -49,7 +49,7 @@
 
 #### Remaining gaps (require later gates)
 
-- B8: Claims/proof source tracking not wired — fields exist in schema but Elena does not populate them.
+- B8: Claims/proof source tracking now wired in Blueprint (B8 RESOLVED).
 - B9: Add-on fulfillment not built.
 - B10: Customer Blueprint approval UI does not show all 9 sections.
 - B11: Generator still receives SiteBrief, not full Blueprint.
@@ -59,20 +59,22 @@
 ### B8 — Claim / Proof Validation Missing
 
 **Severity:** P0 — creates legal/trust risk
-**Status:** OPEN
+**Status:** RESOLVED (B8 commit)
 **Discovered:** 2026-05-15 Elena Promise Enforcement Audit
+**Closed:** 2026-05-15 Claim/Proof Validation Gate
 
-#### Symptom
+#### What was fixed
 
-Claims, credentials, testimonials, certifications, guarantees, and proof items collected by Elena are not explicitly validated or flagged for admin review. The generator may use them without a source-of-truth check. Some template fallbacks can still produce unvalidated claim language.
+- `shared/blueprintTypes.ts`: New types — `ClaimType` (19 values), `ClaimSource` (8 values), `ClaimSourceStatus` (5 values), `ClaimRiskLevel` (4 values), `ClaimAdminReviewStatus` (8 values), `ClaimGeneratorUseStatus` (5 values), `ClaimProofRecord` (23 fields), `ClaimProofInventory` (8 fields). `RISKY_CLAIM_WORDS` constant with 3 risk tiers (regulated_sensitive, high, medium). `buildClaimProofInventory()` helper builds structured claim records from questionnaire data (testimonials, license, years-in-business, certifications, awards, uniqueDifferentiator scan, specialRequests scan). `extractGeneratorClaimLists()` helper produces `claimsSafeToUse`, `claimsToOmit`, `claimsNeedingAdminReview`, `claimsNeedingCustomerAcknowledgment`. `Positioning` interface gains optional `claimProofInventory` field. `RiskCompliance` gains optional `claimsSummary` field. `GeneratorInstructions` gains optional `claimsSafeToUse`, `claimsToOmit`, `claimsNeedingAdminReview`, `claimsNeedingCustomerAcknowledgment`.
+- `server/routers.ts`: `buildBlueprintFromQuestionnaire()` updated to call `buildClaimProofInventory()` and `extractGeneratorClaimLists()`. `positioning.claimProofInventory` populated. `riskCompliance.claimsSummary` populated. `generatorInstructions.claimsSafeToUse` / `claimsToOmit` / `claimsNeedingAdminReview` / `claimsNeedingCustomerAcknowledgment` populated. `adminReviewRecommended` now also triggers when claim inventory has pending review items.
+- `server/claimProofValidation.test.ts` (NEW): 90 tests covering inventory structure, testimonials, license, years-in-business, certifications, guarantee/superlative language, medical/regulatory-sensitive claims, customer-claim doctrine preservation, generator instruction flags, summary counts, RISKY_CLAIM_WORDS, ClaimProofRecord shape, and routers.ts wiring.
+- All 90 B8 tests + 48 B7 tests + 85 B6 tests + 38 Elena safety tests pass. pnpm check clean. pnpm build PASS.
 
-#### Fix Required
+#### Remaining gaps (require later gates)
 
-Add a Claims/Proof section to the Blueprint. Each claim must have a source (customer-provided, skipped, admin-verified). Generator must treat unverified claims as either blank or flagged. Admin review must show all claims with their source status.
-
-#### Impact
-
-MiniMorph could publish false testimonials, invented credentials, or unsupported guarantees on customer websites.
+- B9: Add-on fulfillment systems not built — schema captures accepted add-ons but fulfillment not wired.
+- B10: Customer Blueprint approval UI does not show all 9 sections including claim inventory.
+- B11: Generator still receives SiteBrief — Blueprint claim lists not yet consumed by generator prompt.
 
 ---
 
