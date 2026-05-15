@@ -30,7 +30,7 @@ export const PACKAGES = {
       "Contact/quote form",
       "Basic SEO setup",
       "Customer portal access",
-      "Monthly performance report",
+      "Customer portal with build tracking",
       "1 content update per month",
       "Email support",
     ],

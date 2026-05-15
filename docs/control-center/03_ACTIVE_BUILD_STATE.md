@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Elena Promise Enforcement / Truth Alignment** — Every Elena promise and platform capability is being audited for end-to-end support before any customer is onboarded. MiniMorph Internal Dogfood is paused pending promise enforcement audit, Blueprint schema gate, admin gate, customer approval gate, and Blueprint → generator handoff gate.
+**Blueprint Schema Gate (B6)** — Elena promise safety hotfix is complete. Elena wording is now safe for internal testing. Next gate is extending blueprintJson to all 9 Master Baseline sections (B6).
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -18,15 +18,16 @@ Previous lanes completed:
 - Customer Portal Reality Patch ✅ (BuildCommandCenter, tab reorder, safe empty states, CheckoutSuccess rewrite, E2E tests)
 - Service Template Routing Repair ✅ (selectTemplate service/agency branch, 37 routing tests, P0 guarantee fix)
 - B5 Service Template Content Repair ✅ (contractor-specific language removed from service/professional.html)
+- Elena Promise Enforcement Audit ✅ (audit completed, all 35+ promises categorized vs. platform reality)
+- **Elena Promise Safety Hotfix ✅** (all unsupported automation promises removed, safety test suite added, pnpm check clean)
 
 ## Latest Known Commit
 
 | Field | Value |
 |---|---|
-| HEAD | `6b74713` |
+| HEAD | pending push |
 | Branch | `main` |
-| origin/main | `6b74713` |
-| Message | docs: close B5 blocker, advance gate to MiniMorph Internal Dogfood |
+| Message | fix: soften Elena promises to match platform reality |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
 | Production deploy confirmed | `2026-05-15 07:42:58 GMT` ✅ |
@@ -70,7 +71,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**Elena Promise Enforcement Audit** — Audit every Elena promise and platform capability for end-to-end support. Produce the Promise Enforcement Report. Identify gaps. Correct Elena wording, Blueprint schema, admin gate, customer approval, and generator handoff before any customer is onboarded.
+**Blueprint Schema Gate (B6)** — Extend blueprintJson to all 9 Master Baseline sections: Customer Psychology, Risk/Compliance, Generator Instructions, Add-On/Upsell Fit. Update Elena's prompt to populate them. Update the generator to consume them. B7–B11 follow in sequence.
 
 ## First Customer Status
 
@@ -84,6 +85,8 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 - [x] Service Template Routing Repair — service/agency/consulting/technology/cleaning/landscaping businesses now route to `service/professional.html` instead of LLM fallback ✅
 - [x] B5 Service Template Content Repair — removed all contractor-specific language from service/professional.html ("job site", "homeowners", "Licensed specialists", "Same-Day Available", "Weekends", LICENSE_NUMBER stat blocks) ✅
+- [x] Elena Promise Enforcement Audit — all 35+ Elena promises audited vs. platform reality, gaps categorized ✅
+- [x] Elena Promise Safety Hotfix — all unsupported automation, compliance, report, and "instant" promises removed from Elena prompt; ADDON HONESTY RULE, FIT-BASED RECOMMENDATION RULE, REGULATED INDUSTRY AWARENESS, BLOCKED ADD-ONS added; safety test suite (38 tests) passing ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

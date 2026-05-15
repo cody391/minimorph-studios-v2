@@ -4,10 +4,10 @@
 
 ---
 
-## Current Gate: Elena Promise Enforcement Audit
+## Current Gate: Blueprint Schema Gate (B6)
 
 **Priority:** P0
-**Status:** IN PROGRESS — audit running
+**Status:** OPEN — next gate after Elena promise safety hotfix
 
 ### What was completed before this gate
 
@@ -21,23 +21,22 @@
 | Customer Portal Reality Patch | ✅ Done (`22b95a2`) |
 | Service Template Routing Repair | ✅ Done (`aaaa3ac`) |
 | B5 Service Template Content Repair | ✅ Done (`2850228`) |
+| Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
+| Elena Promise Safety Hotfix | ✅ Done (pending push) |
 
-### Why this gate was opened
+### Why this gate is open
 
-The Control Center advanced prematurely to MiniMorph Internal Dogfood. Under the Elena Master Baseline, that gate cannot open until Elena's promises are audited for end-to-end support and all truth/Blueprint/admin/customer-approval gaps are resolved.
-
-Blockers B6 (Blueprint Schema Gap), B7 (Admin Blueprint Gate Missing), B8 (Claim/Proof Validation Missing), B9 (Add-On Truth/Fulfillment Gap), B10 (Customer Blueprint Approval Gap), and B11 (Blueprint → Generator Instruction Gap) are all open.
+Elena promise wording is now safe for internal testing — all unsupported automation, compliance, report, and "instant" promises have been removed. The platform still has structural gaps in the Blueprint schema (B6), admin gate (B7), claims validation (B8), add-on fulfillment (B9), customer approval sections (B10), and generator handoff (B11). These must be closed before dogfood or first customer.
 
 ---
 
 ## Required Next Action
 
-**Elena Promise Enforcement Audit** — Produce the full audit report. For every Elena promise, capability, add-on recommendation, and implied commitment, determine whether the end-to-end chain (Conversation → Collection → Storage → Blueprint → Admin → Customer Approval → Generator → QA → Portal → Billing/Support) actually exists.
+**Blueprint Schema Gate (B6)** — Extend `blueprintJson` to include all 9 Elena Master Baseline sections: Business Identity (extend), Offer Strategy (extend), Customer Psychology (add), Positioning (extend), Website Strategy (extend), Media/Visuals (add), Risk/Compliance (add), Generator Instructions (add), Add-On/Upsell Fit (add).
 
-After audit report is complete:
-1. Deliver audit findings to Cody
-2. Cody reviews and prioritizes which gaps must close before dogfood
-3. Proceed gate by gate in order below
+Update Elena's prompt to populate the new sections. Update `buildBlueprintFromQuestionnaire()` to build the full schema. Update the generator to consume all Blueprint fields.
+
+After B6 is closed, proceed to B7 (Admin Blueprint Gate), then B8, B9, B10, B11 in order.
 
 ---
 
@@ -75,15 +74,21 @@ After audit report is complete:
         ↓
 [DONE]  B5 Service Template Content Repair ✅ (contractor language removed)
         ↓
-[ACTIVE] Elena Promise Enforcement Audit — audit all Elena promises vs. platform reality
+[DONE]  Elena Promise Enforcement Audit ✅ (35+ promises audited, B6-B11 opened)
         ↓
-        Customer Reality Blueprint Schema Gate — extend blueprintJson to all 9 sections
+[DONE]  Elena Promise Safety Hotfix ✅ (all unsupported promises removed, 38 safety tests)
         ↓
-        Admin Blueprint Gate — hard adminBlueprintApprovedAt gate before generation
+[ACTIVE] Blueprint Schema Gate (B6) — extend blueprintJson to all 9 sections
         ↓
-        Customer Blueprint Approval Gate — customer can view/correct/approve Blueprint
+        Admin Blueprint Gate (B7) — hard adminBlueprintApprovedAt gate before generation
         ↓
-        Blueprint → Generator Handoff Gate — full Blueprint consumed by generator/prompt
+        Claim/Proof Validation Gate (B8) — claims section with source tracking
+        ↓
+        Add-On Fulfillment Truth Gate (B9) — recommendedAddOns/acceptedAddOns in Blueprint
+        ↓
+        Customer Blueprint Approval Gate (B10) — customer can view/correct/approve Blueprint
+        ↓
+        Blueprint → Generator Handoff Gate (B11) — full Blueprint consumed by generator/prompt
         ↓
         MiniMorph Internal Dogfood Gate — reset project 34, run Elena, generate, QA
         ↓
@@ -111,8 +116,9 @@ After audit report is complete:
 | Customer portal clarity patch deployed | ✅ Done (BuildCommandCenter, tab reorder, E2E tests) |
 | Service template routing repaired | ✅ Done (service/agency → professional template, 37 tests) |
 | B5 service template content repaired | ✅ Done (contractor language removed, 2850228) |
-| Elena Promise Enforcement Audit | ❌ Pending (active gate) |
-| B6 Blueprint Schema Gap resolved | ❌ Pending |
+| Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
+| Elena Promise Safety Hotfix | ✅ Done (pending push) |
+| B6 Blueprint Schema Gap resolved | ❌ Pending (active gate) |
 | B7 Admin Blueprint Gate implemented | ❌ Pending |
 | B8 Claim/Proof Validation implemented | ❌ Pending |
 | B9 Add-On Truth/Fulfillment Gap resolved | ❌ Pending |

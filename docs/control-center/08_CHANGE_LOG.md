@@ -5,6 +5,39 @@ For full git history: `git log --oneline`
 
 ---
 
+## Elena Promise Safety Hotfix — 2026-05-15
+
+**Gate:** Elena Promise Safety Hotfix Gate
+**Status:** COMPLETE
+
+**What changed:**
+
+- `server/routers.ts` — Elena system prompt patched in 15+ surgical locations:
+  - Removed all "automatic from day one" language from add-on descriptions
+  - Removed "ADDONS THAT ARE FULLY AUTOMATIC" block entirely — replaced with ADDON HONESTY RULE disclosing team setup requirements per add-on
+  - Replaced "6-layer automated quality inspection" with honest team-review description
+  - Removed automated compliance promises (HIPAA, ABA, TTB, HUD, FDA) from REGULATORY COMPLIANCE AWARENESS section — replaced with REGULATED INDUSTRY AWARENESS requiring admin flagging for regulated businesses
+  - Removed monthly performance report and monthly competitor analysis promises from capability education, closing speech, and ONGOING RELATIONSHIP sections
+  - Removed "runs itself," "nothing you need to do," and "live on launch day" from TRANSPARENCY RULE
+  - Replaced per-business "✓ automatic" pitch order labels with honest team-setup disclosures
+  - Added FIT-BASED RECOMMENDATION RULE: add-ons only recommended when they fit customer's specific situation, with setup disclosure required
+  - Added BLOCKED ADD-ONS list: online_store, event_calendar, menu_price_list require admin review before being promised
+  - Fixed image rights: "You own the rights to use everything" → "Our team selects visuals that fit your brand and licensing needs"
+  - Fixed timeline guarantee: "2–3 business days" → "typically within a few business days" (not tracked/enforced by system)
+  - Fixed domain/email: DNS instructions now note project manager checks email before connecting domain
+  - Removed "monthly reports" from 12-month agreement pitch and portal description
+  - Added REGULATED INDUSTRY AWARENESS with explicit flagging for medical, legal, finance, alcohol, cannabis, supplements
+- `shared/pricing.ts` — "Monthly performance report" removed from Starter features list → "Customer portal with build tracking"
+- `server/elenaPromiseSafety.test.ts` (NEW) — Static phrase scanner: 38 tests scanning Elena prompt and pricing copy for blocked phrases and required guardrails
+
+**What this proves:** Elena can no longer promise unsupported automation, instant add-on delivery, automatic compliance, automated monthly reports, email safety, or "fully ready on launch" for any add-on. All 38 safety tests pass. pnpm check clean.
+
+**What this does NOT prove:** Add-on fulfillment is built. B6–B11 are closed. Dogfood is ready. These blockers remain open and must be closed before any customer is onboarded.
+
+**Remaining open blockers:** B6 Blueprint Schema Gap, B7 Admin Blueprint Gate, B8 Claim/Proof Validation, B9 Add-On Fulfillment Gap, B10 Customer Blueprint Approval, B11 Blueprint → Generator Handoff, B2 ecommerce return false.
+
+---
+
 ## `2850228` — fix: remove contractor-specific language from service/professional.html (B5)
 
 **Date:** 2026-05-15
