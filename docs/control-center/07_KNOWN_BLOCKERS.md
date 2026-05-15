@@ -4,47 +4,6 @@
 
 ---
 
-## P0 — Contact Flow: Formspree / Broken Forms
-
-**Severity:** P0 — blocks first customer delivery  
-**Status:** OPEN  
-**Gate:** Contact Flow P0 Repair Gate (Gate 1)
-
-### Affected Files
-
-| File | Issue |
-|---|---|
-| `server/templates/shared/contact.html` | `action="https://formspree.io/f/placeholder"` |
-| `server/templates/contractor/contact.html` | `action="https://formspree.io/f/placeholder"` |
-| `server/templates/contractor/quote.html` | `action="https://formspree.io/f/placeholder"` |
-| `server/templates/service/quote.html` | `action="https://formspree.io/f/placeholder"` |
-| `server/templates/restaurant/reservations.html` | `action="https://formspree.io/f/placeholder"` |
-| `server/templates/service/professional.html` | Index page main form: `onsubmit="return false;"` |
-| `server/templates/boutique/warm-lifestyle.html` | Email signup: `onsubmit="return false;"` |
-| `server/templates/gym/bold-energetic.html` | No index contact form; all CTAs link to `shared/contact.html` (which is broken) |
-
-### Fix Required
-
-Replace every broken form action with:
-```html
-<form action="APP_URL_PLACEHOLDER/api/contact-submit" method="POST">
-```
-
-For `onsubmit="return false;"` forms: remove the `onsubmit` attribute and add the correct `action`.
-
-For `gym/bold-energetic.html`: add a contact form section to the index page, OR confirm CTAs link to a fixed `shared/contact.html`.
-
-### Verification Command
-
-```bash
-grep -r "formspree" server/templates/
-grep -rn "return false" server/templates/
-```
-
-Both must return zero results when this gate is closed.
-
----
-
 ## P1 — Railway CLI Unauthorized
 
 **Severity:** P1 — blocks Quality Lab rerun (not first-customer delivery)  
@@ -113,6 +72,28 @@ Local QA only. Production admin login works via Railway env vars.
 | Invented trust stats (500+, 1,200+, 4.9★) in index and about sub-pages | Removed all invented counts and stars from trust bars + about stats | `88c1425` |
 | Free trial section with JS handler in gym/bold-energetic.html | Removed entire trial-section and JS handler | `88c1425` |
 | Gym pricing CTA links pointing to non-existent free-trial.html | Redirected to contact.html | `f1f67c5` |
+| Formspree placeholders and `onsubmit="return false;"` forms in 9 generated-site templates | Replaced with JS fetch handler POSTing to `APP_URL_PLACEHOLDER/api/contact-submit`; added success/error UX; added hidden businessName field; added email field where missing | `0c1440d` |
+
+---
+
+## P2 — Boutique/warm-lifestyle.html: Hardcoded Seasonal Banner
+
+**Severity:** P2 — will fail Quality Lab rubric; does not block current gate  
+**Status:** OPEN  
+**Gate:** Quality Lab Gate
+
+### Symptom
+
+`server/templates/boutique/warm-lifestyle.html` contains a hardcoded promotional banner:
+```html
+<strong>Summer Sale — Up to 40% off!</strong> Limited time. Shop before it's gone.
+```
+
+This is invented promotional content not supplied by the customer. It violates Rule 3 (No Fake Proof) and will fail the Quality Lab 95/100 rubric.
+
+### Fix Required
+
+Replace the hardcoded text with a token (e.g. `PROMO_BANNER`) that the template engine can fill from questionnaire data, or remove the `.seasonal-banner` section entirely if no promo data is collected.
 
 ---
 

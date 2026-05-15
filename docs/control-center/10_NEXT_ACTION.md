@@ -4,77 +4,57 @@
 
 ---
 
-## Current Gate: Contact Flow P0 Repair Gate
+## Current Gate: Quality Lab Gate
 
-**Priority:** P0 — blocks first customer delivery  
-**Status:** OPEN
+**Priority:** P1 — blocks first customer delivery
+**Status:** BLOCKED on user action (`railway login`)
 
-### What to do
+### Prerequisite (user must do this)
 
-Fix all broken contact/quote/reservation forms in HTML templates so every form POSTs to:
+```bash
+railway login
 ```
-APP_URL_PLACEHOLDER/api/contact-submit
+
+Run this in an interactive terminal. This restores Railway CLI authorization so live site generation can be triggered. After login, verify with:
+
+```bash
+railway status
 ```
 
-### Exact files to fix
+Should return project `fabulous-dedication`, service `minimorph-studios-v2`.
 
-| File | Current issue | Required fix |
-|---|---|---|
-| `server/templates/shared/contact.html` | `action="https://formspree.io/f/placeholder"` | Replace with `action="APP_URL_PLACEHOLDER/api/contact-submit"` |
-| `server/templates/contractor/contact.html` | `action="https://formspree.io/f/placeholder"` | Replace with `action="APP_URL_PLACEHOLDER/api/contact-submit"` |
-| `server/templates/contractor/quote.html` | `action="https://formspree.io/f/placeholder"` | Replace with `action="APP_URL_PLACEHOLDER/api/contact-submit"` |
-| `server/templates/service/quote.html` | `action="https://formspree.io/f/placeholder"` | Replace with `action="APP_URL_PLACEHOLDER/api/contact-submit"` |
-| `server/templates/restaurant/reservations.html` | `action="https://formspree.io/f/placeholder"` | Replace with `action="APP_URL_PLACEHOLDER/api/contact-submit"` |
-| `server/templates/service/professional.html` | Index main form: `onsubmit="return false;"` | Remove `onsubmit`; add `action="APP_URL_PLACEHOLDER/api/contact-submit" method="POST"` |
-| `server/templates/boutique/warm-lifestyle.html` | Email signup: `onsubmit="return false;"` | Remove `onsubmit`; add `action="APP_URL_PLACEHOLDER/api/contact-submit" method="POST"` |
-| `server/templates/gym/bold-energetic.html` | No index contact form; all CTAs link to broken `shared/contact.html` | Verify CTAs now link to fixed `shared/contact.html` after that file is fixed. No additional index form required IF shared/contact.html works. |
+### What to do (after `railway login`)
 
-### Step-by-step execution
+Trigger 5 live site generations via the admin panel or API and score each against the 95/100 rubric in `06_QUALITY_RULES.md`. All 5 must pass before first customer proceeds.
 
-1. Open each file. Find the broken form tag.
-2. Replace `action="https://formspree.io/f/placeholder"` with `action="APP_URL_PLACEHOLDER/api/contact-submit"`.
-3. For `onsubmit="return false;"` forms: remove `onsubmit` attribute; set `action="APP_URL_PLACEHOLDER/api/contact-submit" method="POST"`.
-4. After all files are fixed, run verification grep:
-   ```bash
-   grep -r "formspree" server/templates/
-   grep -rn "return false" server/templates/
-   ```
-   Both must return zero results.
-5. Run build:
-   ```bash
-   pnpm check && pnpm build
-   ```
-6. Commit:
-   ```bash
-   git add server/templates/
-   git commit -m "Fix P0: replace all Formspree placeholders and broken form handlers with APP_URL_PLACEHOLDER/api/contact-submit"
-   ```
-7. Push:
-   ```bash
-   git push origin main
-   ```
-8. Confirm Railway deployment via HTTP header check.
-9. Update control center:
-   - `03_ACTIVE_BUILD_STATE.md` — new HEAD, mark Contact Flow P0 as resolved, set next lane to Quality Lab
-   - `07_KNOWN_BLOCKERS.md` — move Formspree blocker to "Resolved"
-   - `08_CHANGE_LOG.md` — add entry for this commit
-   - `10_NEXT_ACTION.md` — update to Quality Lab gate
+### Known issue to check during Quality Lab
 
-### After this gate: Quality Lab Gate
+- `boutique/warm-lifestyle.html` has a hardcoded seasonal banner (`"Summer Sale — Up to 40% off!"`) — this will fail the Quality Lab rubric. See `07_KNOWN_BLOCKERS.md` for fix details. **Fix this before or during Quality Lab.**
 
-- Requires `railway login` to be restored (user must run this)
-- Trigger 5 live generations via `onboarding.triggerGeneration`
-- Score each site against the 95/100 rubric in `06_QUALITY_RULES.md`
-- All 5 must pass before first customer proceeds
+### Deployment confirmation (do this first)
+
+Before running Quality Lab, confirm the `0c1440d` commit deployed to production:
+
+```bash
+curl -sI https://www.minimorphstudios.net/health | grep last-modified
+```
+
+Timestamp must be newer than the pre-push value.
+
+### After this gate: First Controlled Customer
+
+- Admin explicitly approves first customer
+- Use a real (trusted) first customer, not a test account
+- Confirm `RESEND_API_KEY` is set in Railway env vars before delivery
 
 ---
 
 ## Gate Sequence (reminder)
 
 ```
-[CURRENT]  Contact Flow P0 Repair
+[DONE]     Contact Flow P0 Repair ✅ (commit 0c1440d)
            ↓
-           Quality Lab (95+/100, all 5 sites)
+[CURRENT]  Quality Lab (95+/100, all 5 sites) — blocked on railway login
            ↓
            First Controlled Customer
            ↓

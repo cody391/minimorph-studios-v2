@@ -5,6 +5,28 @@ For full git history: `git log --oneline`
 
 ---
 
+## `0c1440d` — Fix generated-site contact forms
+
+**Date:** 2026-05-15  
+**Gate:** Contact Flow P0 Repair Gate
+
+**What changed:**
+- `server/templates/shared/contact.html`: Removed Formspree action; converted to JS fetch handler posting to `APP_URL_PLACEHOLDER/api/contact-submit`; added hidden `businessName` field; added success/error UX
+- `server/templates/contractor/contact.html`: Same fix; dark-theme success/error styling
+- `server/templates/contractor/quote.html`: Same fix; quote-specific fields serialized into readable message string
+- `server/templates/service/quote.html`: Same fix
+- `server/templates/restaurant/reservations.html`: Same fix; reservation fields (date, time, party size, occasion, notes) serialized into readable message string
+- `server/templates/service/professional.html`: Removed `onsubmit="return false;"`; added `name`/`id`/`required` attributes; added email field (was missing); wired to fetch handler
+- `server/templates/boutique/warm-lifestyle.html`: Removed `onsubmit="return false;"` from email signup; wired to fetch handler with `message: "Newsletter/signup request."`
+- `server/templates/boutique/minimal-editorial.html`: Discovered and fixed additional newsletter signup with `onsubmit="return false;"`
+- `server/templates/service/friendly-local.html`: Discovered and fixed additional index contact form with `onsubmit="return false;"`; added email field (was missing); combined first/last name in JS
+
+**What this proves:** All generated-site forms now POST lead data to `APP_URL_PLACEHOLDER/api/contact-submit`. Zero Formspree references. Zero `return false` handlers in templates. Zero `/portal/api/contact-submit` references. `pnpm check` and `pnpm build` pass.
+
+**What this does NOT prove:** Live generation works (Railway CLI still unauthorized; Quality Lab not retested). Deployment confirmation pending Railway autodeploy of this push.
+
+---
+
 ## `b947256` — Fix missed P0: replace fake testimonials in contractor/dark-industrial.html
 
 **Date:** 2026-05-15  
