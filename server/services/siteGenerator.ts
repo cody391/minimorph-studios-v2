@@ -654,13 +654,16 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     return;
   }
 
-  // Gate 1.5 — Admin must explicitly approve the Blueprint before generation (B7)
+  // Gate 1.5 — Hard-block ONLY when admin has explicitly blocked this Blueprint.
+  // Lifecycle realignment: admin reviews the BUILT site (step 8), not the pre-generation Blueprint.
+  // "pending" / "needs_changes" / "approved" all allow generation.
+  // "blocked" = admin has serious concerns — never generate under any circumstances.
   const bp = blueprint as any;
-  if (bp.adminBlueprintReviewStatus !== "approved" || !bp.adminBlueprintApprovedAt) {
-    console.warn(`[SiteGenerator] Project ${projectId}: blocked — admin Blueprint approval required (adminBlueprintReviewStatus: ${bp.adminBlueprintReviewStatus ?? "pending"})`);
+  if (bp.adminBlueprintReviewStatus === "blocked") {
+    console.warn(`[SiteGenerator] Project ${projectId}: hard-blocked — Blueprint explicitly blocked by admin.`);
     await db.updateOnboardingProject(projectId, {
       generationStatus: "idle",
-      generationLog: "Admin Blueprint approval required before generation.",
+      generationLog: "Blueprint has been blocked by admin. Contact your account manager for details.",
       stage: "blueprint_review",
     });
     return;

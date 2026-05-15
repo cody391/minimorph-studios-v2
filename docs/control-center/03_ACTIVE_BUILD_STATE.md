@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Add-On Fulfillment Truth Gate (B9)** — Claim/Proof Validation Gate (B8) is complete. Every Blueprint now carries a structured claim/proof inventory. Next gate is B9: add-on fulfillment truth.
+**Add-On Fulfillment Truth Gate (B9)** — Lifecycle Realignment Gate is complete. Platform is now architecturally aligned with the correct MiniMorph operating model. Next gate is B9: add-on fulfillment truth.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -23,6 +23,7 @@ Previous lanes completed:
 - **Blueprint Schema Gate (B6) ✅** (CustomerRealityBlueprint type, 9-section builder, 85 tests, pnpm check + build clean)
 - **Admin Blueprint Gate (B7) ✅** (hard adminBlueprintApprovedAt gate, 4 admin procedures, 48 tests, pnpm check + build clean)
 - **Claim/Proof Validation Gate (B8) ✅** (ClaimProofRecord, ClaimProofInventory, 7 claim sources, RISKY_CLAIM_WORDS scanner, 90 tests, pnpm check + build clean)
+- **Lifecycle Realignment Gate ✅** (Gate 1.5 corrected to block-only-on-blocked, Blueprint auto-approval via completenessScore ≥ 60, adminDenyPreview added, 273 tests, pnpm check + build clean)
 
 ## Latest Known Commit
 
@@ -93,6 +94,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 - [x] Blueprint Schema Gate (B6) — CustomerRealityBlueprint type (9 sections), buildBlueprintFromQuestionnaire() updated, industry/risk derivation helpers, add-on fulfillment registry, completeness scorer, backward compat with all legacy portal keys, 85 blueprint tests passing ✅
 - [x] Admin Blueprint Gate (B7) — hard adminBlueprintApprovedAt gate in generateSiteForProject() (Gate 1.5), 4 admin procedures (adminApproveBlueprint, adminReturnBlueprint, adminBlockBlueprint, adminAddBlueprintFlags), 7 DB fields (migration 0057), admin UI review status badge + Approve/Return/Block buttons in OnboardingProjects, 48 tests passing ✅
 - [x] Claim/Proof Validation Gate (B8) — ClaimProofRecord type (23 fields), ClaimProofInventory, 7 claim source types, RISKY_CLAIM_WORDS scanner (3 risk tiers), buildClaimProofInventory() + extractGeneratorClaimLists() helpers; Blueprint now carries structured claim inventory in positioning.claimProofInventory; riskCompliance.claimsSummary; generatorInstructions.claimsSafeToUse/claimsToOmit/claimsNeedingAdminReview; 90 tests passing ✅
+- [x] Lifecycle Realignment Gate — Gate 1.5 corrected (only "blocked" stops generation; admin reviews built site at step 8, not Blueprint pre-generation); saveQuestionnaire now auto-approves Blueprint when completenessScore ≥ 60 (Elena conversation = customer confirmation); adminDenyPreview() added (step-9 deny path → revisions stage); B10 redefined as customer site approval (not Blueprint approval); 273 gate tests passing ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

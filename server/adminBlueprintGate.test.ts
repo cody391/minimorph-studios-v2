@@ -1,7 +1,20 @@
 /**
- * Admin Blueprint Gate (B7) — Tests proving generation is hard-blocked until
- * admin explicitly approves the Blueprint. Customer approval alone is not enough.
- * Customer-directed claim documentation must survive admin approval.
+ * Admin Blueprint Gate — Lifecycle-Realigned Tests
+ *
+ * Correct lifecycle (steps 4–9):
+ *   4. System automatically checks Blueprint readiness (completenessScore ≥ 60 → auto-approve)
+ *   5. If not ready, Elena asks more questions
+ *   6. If ready, builder builds automatically
+ *   7. Build report created
+ *   8. Admin reviews BUILT site + Elena chat + Blueprint summary + build report
+ *   9. Admin approves or DENIES
+ *
+ * Gate 1.5 correct behavior (lifecycle realignment):
+ *   "blocked"       → HARD BLOCK — admin has serious concerns, never generate
+ *   "pending"       → ALLOW — admin has not yet reviewed; admin reviews the built site at step 8
+ *   "needs_changes" → ALLOW — admin noted information but did not hard-block; reviews built site
+ *   "approved"      → ALLOW — admin explicitly pre-approved; still generates
+ *   null/undefined  → ALLOW — same as pending (default for new blueprints)
  */
 
 import { describe, it, expect } from "vitest";
@@ -17,7 +30,7 @@ function makeBlueprintRow(overrides: Record<string, unknown> = {}) {
     userId: 10,
     status: "approved",
     versionNumber: 1,
-    blueprintJson: { businessName: "Test Co", websiteType: "plumber" },
+    blueprintJson: { businessName: "Test Co", websiteType: "plumber", metadata: { completenessScore: 75 } },
     approvedAt: new Date(),
     approvedByUserId: 10,
     lockedForGeneration: true,
@@ -43,18 +56,27 @@ function makeAdminApprovedBlueprint(overrides: Record<string, unknown> = {}) {
   });
 }
 
-// ── Gate logic (mirrors siteGenerator.ts Gate 1.5) ───────────────────────────
+function makeAdminBlockedBlueprint(overrides: Record<string, unknown> = {}) {
+  return makeBlueprintRow({
+    adminBlueprintReviewStatus: "blocked",
+    adminBlueprintReturnReason: "Content outside MiniMorph standards",
+    ...overrides,
+  });
+}
+
+// ── Gate logic (mirrors siteGenerator.ts Gate 1.5 after lifecycle realignment) ──
+// Only "blocked" stops generation. Admin reviews the BUILT site at step 8.
 
 function checkAdminGate(blueprint: Record<string, unknown>): { blocked: boolean; reason: string } {
-  if (blueprint.adminBlueprintReviewStatus !== "approved" || !blueprint.adminBlueprintApprovedAt) {
-    return { blocked: true, reason: "Admin Blueprint approval required before generation." };
+  if (blueprint.adminBlueprintReviewStatus === "blocked") {
+    return { blocked: true, reason: "Blueprint explicitly blocked by admin — contact your account manager." };
   }
   return { blocked: false, reason: "" };
 }
 
 function checkCustomerGate(blueprint: Record<string, unknown>): { blocked: boolean; reason: string } {
   if (blueprint.status !== "approved") {
-    return { blocked: true, reason: "Waiting for customer blueprint approval." };
+    return { blocked: true, reason: "Waiting for Blueprint readiness (Elena conversation incomplete)." };
   }
   return { blocked: false, reason: "" };
 }
@@ -65,87 +87,103 @@ function checkFullGate(blueprint: Record<string, unknown>): { blocked: boolean; 
   return checkAdminGate(blueprint);
 }
 
-// ── Section A: Generation blocked without admin approval ─────────────────────
+// ── Blueprint readiness auto-approval logic (mirrors saveQuestionnaire) ──────
 
-describe("A — Generation gate: admin approval required", () => {
-  it("blocks generation when adminBlueprintReviewStatus is pending", () => {
+function checkBlueprintReadiness(blueprintJson: Record<string, unknown>): { ready: boolean; score: number } {
+  const score = (blueprintJson as any)?.metadata?.completenessScore ?? 0;
+  return { ready: score >= 60, score };
+}
+
+// ── Section A: Hard-block gate — only "blocked" stops generation ─────────────
+
+describe("A — Gate 1.5: only 'blocked' status stops generation", () => {
+  it("'pending' admin status allows generation (admin reviews built site at step 8)", () => {
     const bp = makeBlueprintRow({ adminBlueprintReviewStatus: "pending", adminBlueprintApprovedAt: null });
     const result = checkAdminGate(bp);
-    expect(result.blocked).toBe(true);
-    expect(result.reason).toContain("Admin Blueprint approval required");
+    expect(result.blocked).toBe(false);
   });
 
-  it("blocks generation when adminBlueprintReviewStatus is needs_changes", () => {
+  it("'needs_changes' admin status allows generation (informational, not a hard block)", () => {
     const bp = makeBlueprintRow({ adminBlueprintReviewStatus: "needs_changes", adminBlueprintApprovedAt: null });
     const result = checkAdminGate(bp);
-    expect(result.blocked).toBe(true);
+    expect(result.blocked).toBe(false);
   });
 
-  it("blocks generation when adminBlueprintReviewStatus is blocked", () => {
-    const bp = makeBlueprintRow({ adminBlueprintReviewStatus: "blocked", adminBlueprintApprovedAt: null });
-    const result = checkAdminGate(bp);
-    expect(result.blocked).toBe(true);
-  });
-
-  it("blocks generation when adminBlueprintApprovedAt is missing even if status says approved", () => {
-    const bp = makeBlueprintRow({ adminBlueprintReviewStatus: "approved", adminBlueprintApprovedAt: null });
-    const result = checkAdminGate(bp);
-    expect(result.blocked).toBe(true);
-  });
-
-  it("blocks generation when adminBlueprintApprovedAt is undefined", () => {
-    const bp = makeBlueprintRow({ adminBlueprintReviewStatus: "approved", adminBlueprintApprovedAt: undefined });
-    const result = checkAdminGate(bp);
-    expect(result.blocked).toBe(true);
-  });
-
-  it("allows generation when admin has approved and timestamp is present", () => {
+  it("'approved' admin status allows generation", () => {
     const bp = makeAdminApprovedBlueprint();
     const result = checkAdminGate(bp);
     expect(result.blocked).toBe(false);
   });
+
+  it("null admin status allows generation (defaults to pending)", () => {
+    const bp = makeBlueprintRow({ adminBlueprintReviewStatus: null, adminBlueprintApprovedAt: null });
+    const result = checkAdminGate(bp);
+    expect(result.blocked).toBe(false);
+  });
+
+  it("undefined admin status allows generation (defaults to pending)", () => {
+    const bp = makeBlueprintRow({ adminBlueprintReviewStatus: undefined, adminBlueprintApprovedAt: undefined });
+    const result = checkAdminGate(bp);
+    expect(result.blocked).toBe(false);
+  });
+
+  it("'blocked' admin status STOPS generation — only hard block", () => {
+    const bp = makeAdminBlockedBlueprint();
+    const result = checkAdminGate(bp);
+    expect(result.blocked).toBe(true);
+    expect(result.reason).toContain("blocked");
+  });
 });
 
-// ── Section B: Customer approval alone is not enough ─────────────────────────
+// ── Section B: Blueprint auto-approval via readiness score ────────────────────
 
-describe("B — Customer-only approval does not unblock generation", () => {
-  it("blocks when customer has approved but admin has not", () => {
-    const bp = makeBlueprintRow({
-      status: "approved",
-      approvedAt: new Date(),
-      adminBlueprintReviewStatus: "pending",
-      adminBlueprintApprovedAt: null,
-    });
-    const result = checkFullGate(bp);
-    expect(result.blocked).toBe(true);
-    expect(result.reason).toContain("Admin Blueprint approval required");
+describe("B — Blueprint auto-approval: Elena submission = customer confirmation", () => {
+  it("Blueprint with completenessScore ≥ 60 is auto-approved", () => {
+    const bpJson = { metadata: { completenessScore: 75 } };
+    const { ready, score } = checkBlueprintReadiness(bpJson);
+    expect(ready).toBe(true);
+    expect(score).toBe(75);
   });
 
-  it("blocks when customer is in customer_review and admin is approved (no customer approval)", () => {
-    const bp = makeBlueprintRow({
-      status: "customer_review",
-      approvedAt: null,
-      adminBlueprintReviewStatus: "approved",
-      adminBlueprintApprovedAt: new Date(),
-    });
-    const result = checkFullGate(bp);
-    expect(result.blocked).toBe(true);
-    expect(result.reason).toContain("customer blueprint approval");
+  it("Blueprint with completenessScore < 60 is NOT auto-approved (needs more Elena info)", () => {
+    const bpJson = { metadata: { completenessScore: 45 } };
+    const { ready } = checkBlueprintReadiness(bpJson);
+    expect(ready).toBe(false);
   });
 
-  it("allows generation only when BOTH customer AND admin have approved", () => {
-    const bp = makeBlueprintRow({
-      status: "approved",
-      approvedAt: new Date(),
-      adminBlueprintReviewStatus: "approved",
-      adminBlueprintApprovedAt: new Date(),
-    });
+  it("Blueprint at exactly 60 is auto-approved", () => {
+    const bpJson = { metadata: { completenessScore: 60 } };
+    const { ready } = checkBlueprintReadiness(bpJson);
+    expect(ready).toBe(true);
+  });
+
+  it("Blueprint missing metadata.completenessScore treated as score 0 (not ready)", () => {
+    const bpJson = { businessName: "Test Co" };
+    const { ready, score } = checkBlueprintReadiness(bpJson);
+    expect(ready).toBe(false);
+    expect(score).toBe(0);
+  });
+
+  it("auto-approved Blueprint (status='approved') + non-blocked admin = generation allowed", () => {
+    const bp = makeBlueprintRow({ status: "approved", adminBlueprintReviewStatus: "pending" });
     const result = checkFullGate(bp);
     expect(result.blocked).toBe(false);
   });
+
+  it("auto-approved Blueprint + admin 'blocked' = STILL BLOCKED (admin hard block wins)", () => {
+    const bp = makeBlueprintRow({ status: "approved", adminBlueprintReviewStatus: "blocked" });
+    const result = checkFullGate(bp);
+    expect(result.blocked).toBe(true);
+  });
+
+  it("Blueprint in 'customer_review' (incomplete) cannot generate yet", () => {
+    const bp = makeBlueprintRow({ status: "customer_review", approvedAt: null });
+    const result = checkCustomerGate(bp);
+    expect(result.blocked).toBe(true);
+  });
 });
 
-// ── Section C: Admin approval records ─────────────────────────────────────────
+// ── Section C: Admin approval records are preserved ────────────────────────────
 
 describe("C — Admin approval records timestamp, user, and notes", () => {
   it("records adminBlueprintApprovedAt timestamp", () => {
@@ -170,51 +208,47 @@ describe("C — Admin approval records timestamp, user, and notes", () => {
   });
 });
 
-// ── Section D: Admin return sets needs_changes ─────────────────────────────────
+// ── Section D: "needs_changes" is informational — does not block generation ───
 
-describe("D — Admin return blocks generation and records reason", () => {
-  it("needs_changes status blocks generation", () => {
+describe("D — 'needs_changes' is informational, not a generation hard block", () => {
+  it("needs_changes status allows generation (admin reviews built site)", () => {
     const bp = makeBlueprintRow({
       adminBlueprintReviewStatus: "needs_changes",
       adminBlueprintReturnedAt: new Date(),
       adminBlueprintReturnReason: "Please clarify the services offered section",
     });
     const result = checkAdminGate(bp);
-    expect(result.blocked).toBe(true);
+    expect(result.blocked).toBe(false);
   });
 
-  it("records adminBlueprintReturnedAt timestamp", () => {
+  it("needs_changes records adminBlueprintReturnedAt timestamp for audit trail", () => {
     const ts = new Date("2026-05-15T11:00:00Z");
     const bp = makeBlueprintRow({
       adminBlueprintReviewStatus: "needs_changes",
       adminBlueprintReturnedAt: ts,
-      adminBlueprintReturnReason: "Needs clarification",
     });
     expect(bp.adminBlueprintReturnedAt).toEqual(ts);
   });
 
-  it("records adminBlueprintReturnReason", () => {
+  it("needs_changes records adminBlueprintReturnReason for admin reference", () => {
     const bp = makeBlueprintRow({
       adminBlueprintReviewStatus: "needs_changes",
-      adminBlueprintReturnReason: "Regulated industry — needs admin review of riskCompliance section",
+      adminBlueprintReturnReason: "Regulated industry — verify riskCompliance section before generation",
     });
     expect(bp.adminBlueprintReturnReason).toBeTruthy();
   });
 });
 
-// ── Section E: Blocked status prevents generation ─────────────────────────────
+// ── Section E: "blocked" is the ONLY hard block ──────────────────────────────
 
-describe("E — Blocked Blueprint prevents generation", () => {
+describe("E — 'blocked' is the only admin status that prevents generation", () => {
   it("blocked status is rejected by admin gate", () => {
-    const bp = makeBlueprintRow({
-      adminBlueprintReviewStatus: "blocked",
-      adminBlueprintReturnReason: "Content cannot be published — outside MiniMorph standards",
-    });
+    const bp = makeAdminBlockedBlueprint();
     const result = checkAdminGate(bp);
     expect(result.blocked).toBe(true);
   });
 
-  it("blocked status with adminBlueprintApprovedAt still blocks (timestamp alone is not enough)", () => {
+  it("blocked status with adminBlueprintApprovedAt still blocks (status wins over timestamp)", () => {
     const bp = makeBlueprintRow({
       adminBlueprintReviewStatus: "blocked",
       adminBlueprintApprovedAt: new Date(),
@@ -222,12 +256,22 @@ describe("E — Blocked Blueprint prevents generation", () => {
     const result = checkAdminGate(bp);
     expect(result.blocked).toBe(true);
   });
+
+  it("blocked status blocks even if Blueprint is customer-approved", () => {
+    const bp = makeBlueprintRow({
+      status: "approved",
+      approvedAt: new Date(),
+      adminBlueprintReviewStatus: "blocked",
+    });
+    const result = checkFullGate(bp);
+    expect(result.blocked).toBe(true);
+  });
 });
 
-// ── Section F: Regulated/high-risk Blueprint flags ───────────────────────────
+// ── Section F: Regulated/high-risk Blueprints — flagged but not pre-blocked ───
 
-describe("F — Regulated and high-risk Blueprints require admin review", () => {
-  it("regulated industry Blueprint has adminReviewRecommended in riskCompliance", () => {
+describe("F — High-risk Blueprints: admin review flag present, generation proceeds, admin reviews built site", () => {
+  it("regulated industry Blueprint has adminReviewRecommended flag in riskCompliance", () => {
     const bpJson = {
       businessName: "Austin Family Dental",
       websiteType: "dental",
@@ -237,6 +281,7 @@ describe("F — Regulated and high-risk Blueprints require admin review", () => 
         adminReviewRecommended: true,
         adminReviewReason: "Regulated health industry — dental practice",
       },
+      metadata: { completenessScore: 80 },
     };
     const bp = makeBlueprintRow({ blueprintJson: bpJson });
     const riskCompliance = (bp.blueprintJson as any).riskCompliance;
@@ -244,33 +289,25 @@ describe("F — Regulated and high-risk Blueprints require admin review", () => 
     expect(riskCompliance.regulatedIndustry).toBe(true);
   });
 
-  it("high-risk Blueprint has adminReviewRecommended flag", () => {
-    const bpJson = {
-      businessName: "Green Valley Dispensary",
-      websiteType: "cannabis",
-      riskCompliance: {
-        regulatedIndustry: true,
-        riskLevel: "high",
-        adminReviewRecommended: true,
-        adminReviewReason: "Cannabis industry — high regulatory and legal risk",
-      },
-    };
-    const bp = makeBlueprintRow({ blueprintJson: bpJson });
-    const riskCompliance = (bp.blueprintJson as any).riskCompliance;
-    expect(riskCompliance.adminReviewRecommended).toBe(true);
-    expect(checkAdminGate(bp).blocked).toBe(true);
-  });
-
-  it("high-risk Blueprint still requires admin approval to generate", () => {
+  it("high-risk Blueprint with pending admin status ALLOWS generation (admin reviews built site)", () => {
     const bp = makeBlueprintRow({
       adminBlueprintReviewStatus: "pending",
       adminBlueprintApprovedAt: null,
     });
     const result = checkAdminGate(bp);
+    expect(result.blocked).toBe(false);
+  });
+
+  it("high-risk Blueprint with blocked admin status PREVENTS generation", () => {
+    const bp = makeBlueprintRow({
+      adminBlueprintReviewStatus: "blocked",
+      adminBlueprintReturnReason: "Cannabis dispensary — legal review required before site is built",
+    });
+    const result = checkAdminGate(bp);
     expect(result.blocked).toBe(true);
   });
 
-  it("high-risk Blueprint can generate after explicit admin approval", () => {
+  it("high-risk Blueprint with approved admin status allows generation", () => {
     const bp = makeAdminApprovedBlueprint();
     const result = checkAdminGate(bp);
     expect(result.blocked).toBe(false);
@@ -296,6 +333,7 @@ describe("G — Admin approval does not erase customer-directed claim documentat
       courtesyRiskNotices: ["Superlative claim (#1 rated) cannot be verified. Customer acknowledged."],
       customerAcknowledgments: ["customer_directed_superlative_2026-05-15"],
     },
+    metadata: { completenessScore: 85 },
   };
 
   it("blueprintJson positioning fields survive admin approval update", () => {
@@ -331,7 +369,7 @@ describe("G — Admin approval does not erase customer-directed claim documentat
     const adminReturnUpdate = {
       adminBlueprintReviewStatus: "needs_changes",
       adminBlueprintReturnedAt: new Date(),
-      adminBlueprintReturnReason: "Superlative claim needs customer acknowledgment note",
+      adminBlueprintReturnReason: "Superlative claim noted — will review in built site QA",
       adminBlueprintApprovedAt: null,
       adminBlueprintApprovedBy: null,
     };
@@ -342,34 +380,34 @@ describe("G — Admin approval does not erase customer-directed claim documentat
   });
 });
 
-// ── Section H: Legacy blueprints are backward compatible ─────────────────────
+// ── Section H: Legacy Blueprints without admin fields proceed normally ─────────
 
-describe("H — Legacy Blueprint records without admin fields do not crash gate", () => {
-  it("legacy blueprint missing adminBlueprintReviewStatus is treated as pending", () => {
+describe("H — Legacy Blueprint records without admin fields allow generation", () => {
+  it("legacy blueprint missing adminBlueprintReviewStatus is treated as pending — allows generation", () => {
     const legacyBp = {
       id: 99,
       projectId: 1,
       status: "approved",
-      blueprintJson: { businessName: "Old Business" },
+      blueprintJson: { businessName: "Old Business", metadata: { completenessScore: 70 } },
       approvedAt: new Date("2026-01-01"),
       adminBlueprintReviewStatus: undefined,
       adminBlueprintApprovedAt: undefined,
     };
     const result = checkAdminGate(legacyBp);
-    expect(result.blocked).toBe(true);
+    expect(result.blocked).toBe(false);
   });
 
-  it("legacy blueprint with null admin fields is safely blocked", () => {
+  it("legacy blueprint with null admin fields allows generation", () => {
     const legacyBp = makeBlueprintRow({
       adminBlueprintReviewStatus: null,
       adminBlueprintApprovedAt: null,
     });
     const result = checkAdminGate(legacyBp);
-    expect(result.blocked).toBe(true);
+    expect(result.blocked).toBe(false);
   });
 });
 
-// ── Section I: Review flags ────────────────────────────────────────────────────
+// ── Section I: Review flags are stored and preserved ──────────────────────────
 
 describe("I — Admin review flags are stored and preserved", () => {
   it("review flags array is preserved in blueprint row", () => {
@@ -433,9 +471,9 @@ describe("J — Drizzle schema includes admin Blueprint gate fields", () => {
   });
 });
 
-// ── Section K: siteGenerator.ts has admin gate ────────────────────────────────
+// ── Section K: siteGenerator.ts gate — lifecycle-realigned ───────────────────
 
-describe("K — siteGenerator.ts enforces admin Blueprint gate", () => {
+describe("K — siteGenerator.ts Gate 1.5: only 'blocked' prevents generation", () => {
   const generatorSource = readFileSync(
     join(__dirname, "services/siteGenerator.ts"),
     "utf-8"
@@ -445,17 +483,17 @@ describe("K — siteGenerator.ts enforces admin Blueprint gate", () => {
     expect(generatorSource).toContain("adminBlueprintReviewStatus");
   });
 
-  it("gate checks adminBlueprintApprovedAt", () => {
-    expect(generatorSource).toContain("adminBlueprintApprovedAt");
+  it("gate only hard-blocks on 'blocked' status", () => {
+    expect(generatorSource).toContain('adminBlueprintReviewStatus === "blocked"');
   });
 
-  it("gate error message references admin approval requirement", () => {
-    expect(generatorSource).toContain("Admin Blueprint approval required before generation");
+  it("gate error message references explicit admin block", () => {
+    expect(generatorSource).toContain("hard-blocked");
   });
 
-  it("gate is placed before generation starts (Gate 1.5)", () => {
+  it("gate is placed before generation starts (Gate 1.5 comment present)", () => {
     const gate15Idx = generatorSource.indexOf("Gate 1.5");
-    const generatingIdx = generatorSource.indexOf("generationStatus: \"generating\"");
+    const generatingIdx = generatorSource.indexOf('generationStatus: "generating"');
     expect(gate15Idx).toBeGreaterThan(0);
     expect(gate15Idx).toBeLessThan(generatingIdx);
   });
@@ -482,17 +520,67 @@ describe("L — routers.ts admin procedures are wired", () => {
     expect(routersSource).toContain("adminAddBlueprintFlags:");
   });
 
-  it("triggerGeneration checks admin blueprint approval", () => {
-    const trigIdx = routersSource.indexOf("triggerGeneration: adminProcedure");
-    const trigSection = routersSource.slice(trigIdx, trigIdx + 800);
-    expect(trigSection).toContain("adminBlueprintReviewStatus");
-    expect(trigSection).toContain("Admin Blueprint approval required before generation");
+  it("adminDenyPreview procedure exists (lifecycle step 9 deny path)", () => {
+    expect(routersSource).toContain("adminDenyPreview:");
   });
 
-  it("approveBlueprint (customer) checks admin approval before firing generation", () => {
-    const approveIdx = routersSource.indexOf("approveBlueprint: protectedProcedure");
-    const approveSection = routersSource.slice(approveIdx, approveIdx + 2000);
-    expect(approveSection).toContain("adminBlueprintReviewStatus");
-    expect(approveSection).toContain("adminApproved");
+  it("triggerGeneration only blocks on 'blocked' status (not pending/approved)", () => {
+    const trigIdx = routersSource.indexOf("triggerGeneration: adminProcedure");
+    const trigSection = routersSource.slice(trigIdx, trigIdx + 800);
+    expect(trigSection).toContain('adminBlueprintReviewStatus === "blocked"');
+    expect(trigSection).not.toContain('"Admin Blueprint approval required before generation."');
+  });
+
+  it("saveQuestionnaire auto-approves Blueprint when readiness ≥ 60", () => {
+    expect(routersSource).toContain("completenessScore");
+    expect(routersSource).toContain("blueprintAutoApproved");
+  });
+});
+
+// ── Section M: adminDenyPreview — step-9 deny path ───────────────────────────
+
+describe("M — adminDenyPreview: lifecycle step 9 deny path", () => {
+  it("adminDenyPreview procedure is present in routers.ts", () => {
+    const routersSource = readFileSync(join(__dirname, "routers.ts"), "utf-8");
+    expect(routersSource).toContain("adminDenyPreview:");
+  });
+
+  it("adminDenyPreview sets stage to 'revisions'", () => {
+    const routersSource = readFileSync(join(__dirname, "routers.ts"), "utf-8");
+    const denyIdx = routersSource.indexOf("adminDenyPreview:");
+    const denySection = routersSource.slice(denyIdx, denyIdx + 1200);
+    expect(denySection).toContain('"revisions"');
+  });
+
+  it("adminDenyPreview sets generationStatus to 'idle'", () => {
+    const routersSource = readFileSync(join(__dirname, "routers.ts"), "utf-8");
+    const denyIdx = routersSource.indexOf("adminDenyPreview:");
+    const denySection = routersSource.slice(denyIdx, denyIdx + 1200);
+    expect(denySection).toContain('"idle"');
+  });
+
+  it("adminDenyPreview requires a reason string", () => {
+    const routersSource = readFileSync(join(__dirname, "routers.ts"), "utf-8");
+    const denyIdx = routersSource.indexOf("adminDenyPreview:");
+    const denySection = routersSource.slice(denyIdx, denyIdx + 600);
+    expect(denySection).toContain("reason:");
+    expect(denySection).toContain("min(1)");
+  });
+
+  it("adminDenyPreview only works when generationStatus is 'complete'", () => {
+    const routersSource = readFileSync(join(__dirname, "routers.ts"), "utf-8");
+    const denyIdx = routersSource.indexOf("adminDenyPreview:");
+    const denySection = routersSource.slice(denyIdx, denyIdx + 1200);
+    expect(denySection).toContain("generationStatus !== \"complete\"");
+  });
+
+  it("deny path model: stage=revisions, status=idle, log contains reason", () => {
+    const reason = "Hero section copy does not match questionnaire — service descriptions are generic";
+    const stage = "revisions";
+    const status = "idle";
+    const log = `Admin review: changes required — ${reason}.`;
+    expect(log).toContain(reason);
+    expect(stage).toBe("revisions");
+    expect(status).toBe("idle");
   });
 });

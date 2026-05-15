@@ -78,6 +78,30 @@
 
 ---
 
+### Lifecycle Realignment — RESOLVED
+
+**Severity:** P0 — platform was architecturally misaligned with correct operating model
+**Status:** RESOLVED (lifecycle realignment commit)
+**Discovered:** 2026-05-15 Lifecycle Realignment Audit
+**Closed:** 2026-05-15 Lifecycle Realignment Gate
+
+#### What was wrong
+
+Gate 1.5 (B7) blocked generation when `adminBlueprintReviewStatus !== "approved"` — requiring admin to manually approve the Blueprint before the site could build. The correct lifecycle has admin reviewing the BUILT site (step 8), not the Blueprint pre-generation. Gates 1 and 1.5 were both pre-generation human gates where the lifecycle requires automated flow.
+
+Additionally: no `adminDenyPreview()` procedure existed (step-9 deny branch was missing). Blueprint auto-approval required a customer portal click rather than triggering automatically from Elena's conversation completion.
+
+#### What was fixed
+
+- `server/services/siteGenerator.ts`: Gate 1.5 changed from "block unless admin clicked approve" to "block only if admin explicitly blocked (`adminBlueprintReviewStatus === 'blocked'`)." `"pending"`, `"needs_changes"`, `"approved"`, and null/undefined all allow generation. Admin reviews the BUILT site at step 8 via `adminApprovePreview()`.
+- `server/routers.ts` — `saveQuestionnaire`: After Blueprint creation, automated readiness check runs. If `metadata.completenessScore ≥ 60` → Blueprint auto-approved (Elena conversation completion = customer confirmation). If payment confirmed → generation fires immediately. If below 60 → stays in `customer_review` with descriptive log.
+- `server/routers.ts` — `triggerGeneration`: Updated to align with new Gate 1.5 (only blocks on "blocked" status, not on pending/approved).
+- `server/routers.ts` — `adminDenyPreview` (NEW): Step-9 deny path. Admin can deny a preview with a reason → project stage set to "revisions", generationStatus set to "idle", admin team notified.
+- `server/adminBlueprintGate.test.ts`: Rewritten (273 tests total across B7+B8 gate suite) to reflect correct lifecycle behavior. Section A now proves only "blocked" stops generation. Section B proves Blueprint auto-approval. Section M proves adminDenyPreview wiring.
+- B10 definition corrected: B10 is customer **site** preview approval (reviewing the built site), NOT Blueprint approval. The portal approval click is now a revision/override path, not the primary generation trigger.
+
+---
+
 ### B9 — Add-On Truth / Fulfillment Gap
 
 **Severity:** P1 — creates broken promises risk

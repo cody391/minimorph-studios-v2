@@ -3174,6 +3174,36 @@ const onboardingRouter = router({
       return { success: true };
     }),
 
+  // Admin: deny preview — site needs changes before customer can see it (lifecycle step 9 deny)
+  adminDenyPreview: adminProcedure
+    .input(z.object({
+      projectId: z.number(),
+      reason: z.string().min(1),
+      fixInstructions: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (project.generationStatus !== "complete") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Site generation is not complete — nothing to deny" });
+      }
+      const fixNote = input.fixInstructions ? ` Fix instructions: ${input.fixInstructions}` : "";
+      await db.updateOnboardingProject(input.projectId, {
+        stage: "revisions",
+        generationStatus: "idle",
+        generationLog: `Admin review: changes required — ${input.reason}.${fixNote}`,
+      });
+      try {
+        const { notifyOwner } = await import("./_core/notification");
+        await notifyOwner({
+          title: `Site Changes Required: ${project.businessName ?? input.projectId}`,
+          content: `Admin denied preview for project #${input.projectId}.\nReason: ${input.reason}${fixNote}\n\nStage set to: revisions — schedule fix work before re-submitting for admin review.`,
+        });
+      } catch {}
+      console.log(`[adminDenyPreview] Project ${input.projectId} preview denied — stage: revisions`);
+      return { success: true };
+    }),
+
   // Admin: release customer-approved site for deployment
   // dryRun: true validates all gates and returns verdict without deploying.
   // acknowledgeManualAddons + overrideReason (min 20 chars) allows override of manual add-on warnings only.
@@ -3648,7 +3678,7 @@ const onboardingRouter = router({
         questionnaire: input.questionnaire,
         stage: "blueprint_review",
         generationStatus: "idle",
-        generationLog: "Waiting for customer blueprint approval.",
+        generationLog: "Blueprint assembled — assessing readiness.",
       });
 
       // Build a customer-readable blueprint from the questionnaire
@@ -3674,7 +3704,51 @@ const onboardingRouter = router({
         createdBy: "elena",
       });
 
-      return { success: true, blueprintPending: true };
+      // Lifecycle step 4: automated Blueprint readiness check.
+      // Elena conversation submission = customer confirmation of Blueprint content.
+      // Score is embedded in metadata.completenessScore by buildBlueprintFromQuestionnaire.
+      // ≥ 60 = enough to build. Admin reviews the BUILT site (step 8), not the Blueprint pre-gen.
+      let blueprintAutoApproved = false;
+      const freshBp = await db.getBlueprintByProjectId(input.projectId);
+      if (freshBp) {
+        const parsedBpJson = typeof freshBp.blueprintJson === "string"
+          ? JSON.parse(freshBp.blueprintJson as string)
+          : (freshBp.blueprintJson as Record<string, unknown> | null);
+        const completenessScore = (parsedBpJson as any)?.metadata?.completenessScore ?? 0;
+
+        if (completenessScore >= 60) {
+          blueprintAutoApproved = true;
+          await db.updateBlueprint(freshBp.id, {
+            status: "approved",
+            approvedAt: new Date(),
+            approvedByUserId: ctx.user.id,
+            lockedForGeneration: true,
+          });
+          const projectForGen = await db.getOnboardingProjectById(input.projectId);
+          const paymentRequired = (projectForGen as any)?.source === "self_service";
+          const paymentConfirmed = !!(projectForGen as any)?.paymentConfirmedAt;
+          if (!paymentRequired || paymentConfirmed) {
+            await db.updateOnboardingProject(input.projectId, {
+              stage: "design",
+              generationStatus: "generating",
+              generationLog: "Blueprint assembled from your Elena conversation — building your website now.",
+            });
+            generateSiteForProject(input.projectId).catch(err =>
+              console.error("[onboarding.saveQuestionnaire] Generation error:", err)
+            );
+          } else {
+            await db.updateOnboardingProject(input.projectId, {
+              generationLog: "Blueprint ready — your site build will begin after payment confirmation.",
+            });
+          }
+        } else {
+          await db.updateOnboardingProject(input.projectId, {
+            generationLog: `Blueprint needs more detail (readiness: ${completenessScore}/100). Elena will follow up with additional questions.`,
+          });
+        }
+      }
+
+      return { success: true, blueprintPending: !blueprintAutoApproved, blueprintAutoApproved };
     }),
 
   // Protected: get the current blueprint for a project
@@ -3844,11 +3918,11 @@ const onboardingRouter = router({
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       const blueprint = await db.getBlueprintByProjectId(input.projectId);
       if (!blueprint) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Admin Blueprint approval required before generation. No blueprint found for this project." });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No blueprint found for this project." });
       }
       const bp = blueprint as any;
-      if (bp.adminBlueprintReviewStatus !== "approved" || !bp.adminBlueprintApprovedAt) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Admin Blueprint approval required before generation." });
+      if (bp.adminBlueprintReviewStatus === "blocked") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Blueprint is explicitly blocked by admin. Cannot trigger generation." });
       }
       await db.updateOnboardingProject(input.projectId, {
         generationStatus: "generating",

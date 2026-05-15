@@ -5,6 +5,29 @@ For full git history: `git log --oneline`
 
 ---
 
+## Lifecycle Realignment Gate — 2026-05-15
+
+**Gate:** MMV4 End-to-End Lifecycle Realignment
+**Commit:** TBD (lifecycle commit)
+**Status:** COMPLETE
+
+**What changed:**
+
+- `server/services/siteGenerator.ts` — Gate 1.5 corrected: changed from "block unless `adminBlueprintReviewStatus === 'approved'`" to "block only if `adminBlueprintReviewStatus === 'blocked'`." The `"blocked"` status is an explicit admin hard block (serious concerns). `"pending"` / `"needs_changes"` / `"approved"` / null/undefined all allow generation — admin reviews the BUILT site at step 8 via `adminApprovePreview()`, not the Blueprint pre-generation.
+- `server/routers.ts` — `saveQuestionnaire`: After Blueprint creation, automated readiness check runs against `metadata.completenessScore`. If score ≥ 60: Blueprint auto-approved (`status: "approved"`, `approvedAt: new Date()`), generation fires if payment confirmed (self-service), otherwise parks with "Blueprint ready — build begins after payment." If score < 60: stays `customer_review`, logs "needs more detail."
+- `server/routers.ts` — `triggerGeneration`: Updated to align with new Gate 1.5. No longer requires `adminBlueprintReviewStatus === "approved"` before admin can manually trigger. Only blocks if status is `"blocked"`.
+- `server/routers.ts` — `adminDenyPreview` (NEW): Lifecycle step-9 deny path. Admin denies a preview with a required `reason` and optional `fixInstructions`. Sets `stage: "revisions"`, `generationStatus: "idle"`, `generationLog` containing reason. Notifies admin team. Only fires when `generationStatus === "complete"`.
+- `server/adminBlueprintGate.test.ts` — Rewritten to reflect correct lifecycle: Section A proves only `"blocked"` stops generation (pending/needs_changes/approved/null all allow). Section B proves Blueprint auto-approval readiness check (score ≥ 60 → ready). Section D proves needs_changes is informational. Section F proves high-risk Blueprints generate (admin reviews built site). Section H proves legacy Blueprints without admin fields allow generation. Section K proves siteGenerator.ts only hard-blocks on `"blocked"`. Section M proves adminDenyPreview wiring. 273 tests across 4 gate suites pass.
+- B10 definition corrected: B10 is customer **site** preview approval (reviewing the built output), NOT Blueprint approval before generation.
+
+**What this proves:** Platform is now architecturally aligned with the correct MiniMorph operating model. Elena conversation completion auto-triggers generation for ready Blueprints. Admin reviews the built site. Admin has a hard-block for serious concerns and a deny path for built-site rejection. 273 gate tests + pnpm check clean + pnpm build PASS.
+
+**What this does NOT prove:** B9 add-on fulfillment, B10 customer site preview UI polish, B11 Blueprint → generator handoff, nurture/support pipeline, or dogfood readiness. Those gates follow.
+
+**Remaining open blockers:** B9 Add-On Fulfillment, B10 Customer Site Preview Approval, B11 Blueprint → Generator Handoff, B2 ecommerce return false.
+
+---
+
 ## Claim/Proof Validation Gate (B8) — 2026-05-15
 
 **Gate:** Claim/Proof Validation Gate (B8)

@@ -7,7 +7,7 @@
 ## Current Gate: Add-On Fulfillment Truth Gate (B9)
 
 **Priority:** P1
-**Status:** OPEN — next gate after B8 Claim/Proof Validation Gate
+**Status:** OPEN — next gate after Lifecycle Realignment Gate
 
 ### What was completed before this gate
 
@@ -26,10 +26,30 @@
 | Blueprint Schema Gate (B6) | ✅ Done (`26aaf12`) |
 | Admin Blueprint Gate (B7) | ✅ Done (`2682cfb`) |
 | Claim/Proof Validation Gate (B8) | ✅ Done (`70acded`) |
+| Lifecycle Realignment Gate | ✅ Done (lifecycle commit) |
 
-### Why this gate is open
+### Lifecycle Realignment — what changed
 
-Elena may mention or recommend add-ons (ecommerce, booking, SEO, photography, etc.) that the platform cannot fully fulfill. There is no structured `recommendedAddOns` / `acceptedAddOns` / `declinedAddOns` storage in the Blueprint beyond the schema stub. There is no end-to-end check that verifies a recommended add-on is supported by billing, portal, admin, and generator before Elena offers it.
+The correct MiniMorph operating model is:
+1. Customer/lead talks to Elena
+2. Elena gathers truth → Blueprint created
+3. System auto-checks Blueprint readiness (completenessScore ≥ 60 → auto-approve, auto-generate)
+4. Builder builds the site
+5. Build report created
+6. Admin reviews BUILT site + Elena chat + Blueprint summary + build report
+7. Admin approves or denies
+8. If approved → customer reviews built site
+9. If admin denies → site routes to revisions stage
+
+**Corrections made:**
+- Gate 1.5 changed: no longer blocks on "pending"/"needs_changes" — only hard-blocks on admin "blocked" status. Admin reviews the built site (step 6), not the Blueprint pre-generation.
+- `saveQuestionnaire` now auto-approves Blueprint when completenessScore ≥ 60. Elena conversation completion = customer confirmation. If payment confirmed, generation fires immediately.
+- `adminDenyPreview()` added: lifecycle step 7 deny path → routes project to "revisions" stage.
+- B10 redefined: customer reviews the **built site** (not Blueprint). Portal "approve site" flow, not "approve Blueprint."
+
+### Why B9 is the next gate
+
+Elena may recommend add-ons (ecommerce, booking, SEO, photography, etc.) that the platform cannot fully fulfill. There is no end-to-end check verifying a recommended add-on is supported by billing, portal, admin, and generator before Elena offers it.
 
 ---
 
@@ -37,14 +57,14 @@ Elena may mention or recommend add-ons (ecommerce, booking, SEO, photography, et
 
 **Add-On Fulfillment Truth Gate (B9)** — Add a complete add-on fulfillment registry to the Blueprint. Elena must only recommend add-ons whose `generatorSupported` and `billingSupported` flags are true. Blueprint must carry `recommendedAddOns`, `acceptedAddOns`, and `declinedAddOns` with fulfillment status per add-on.
 
-After B9 is closed, proceed to B10 (Customer Blueprint Approval), then B11 in order.
+After B9 is closed, proceed to B10 (customer site preview approval polish), then B11.
 
 ---
 
 ## Remaining Known Blockers Before MiniMorph Dogfood
 
 - B9: Add-On Truth/Fulfillment Gap — Elena may recommend unimplemented add-ons
-- B10: Customer Blueprint Approval Gap — customer cannot review/correct Blueprint before generation
+- B10: Customer site preview approval — customer reviews and approves the built site before launch (B10 is customer site review, NOT Blueprint approval)
 - B11: Blueprint → Generator Instruction Gap — SiteBrief does not carry full Blueprint to generator
 
 ## Remaining Known Blockers Before Ecommerce Customers
@@ -81,6 +101,8 @@ After B9 is closed, proceed to B10 (Customer Blueprint Approval), then B11 in or
 [DONE]  Admin Blueprint Gate (B7) ✅ (`2682cfb`)
         ↓
 [DONE]  Claim/Proof Validation Gate (B8) ✅ (`70acded`)
+        ↓
+[DONE]  Lifecycle Realignment Gate ✅ (lifecycle commit)
         ↓
 [ACTIVE] Add-On Fulfillment Truth Gate (B9) — recommendedAddOns/acceptedAddOns in Blueprint
         ↓
