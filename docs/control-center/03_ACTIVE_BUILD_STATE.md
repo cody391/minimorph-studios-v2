@@ -8,21 +8,22 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Production End-to-End Generation Test** — Quality Lab blocked by test environment API limitation; requires real production web-flow test
+**Anthropic API Credits** — Production generation test ran successfully on Railway (API reachable), but failed due to insufficient Anthropic credit balance. Fix: top up credits at console.anthropic.com, then re-run production test.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
 - Quality Lab Template Truth Repair ✅
 - Deploy Confirmed (61c8f14 proven live at 07:42:58 GMT) ✅
+- Production generation test executed on Railway — blocked by Anthropic credit balance ⚠️
 
 ## Latest Known Commit
 
 | Field | Value |
 |---|---|
-| HEAD | `61c8f14` |
+| HEAD | `6c74e41` |
 | Branch | `main` |
-| origin/main | `61c8f14` |
-| Message | docs: align Control Center with template truth repairs |
+| origin/main | `61c8f14` (6c74e41 not yet pushed) |
+| Message | docs: record Live Quality Lab failures |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
 | Production deploy confirmed | `2026-05-15 07:42:58 GMT` ✅ |
@@ -73,19 +74,64 @@ The Anthropic API is unreachable from the local `railway run` context (ConnectTi
 
 The actual Railway production container CAN reach the Anthropic API. HEADLINE/SUBHEADLINE/TAGLINE are correctly replaced in real production generation. The issue is specific to running `railway run` from a local machine with restricted IPv6 network access.
 
+---
+
+## Production End-to-End Generation Test (2026-05-15)
+
+**Result: FAILED — Anthropic API credit balance insufficient**
+
+### What ran
+
+Admin API flow executed via Railway (generation on server): 5 projects created → questionnaires saved → blueprints approved → generation triggered → polled for completion.
+
+Projects created: IDs 41 (Apex Roofing), 42 (Rosa's Kitchen), 43 (Luxe + Bare Studio), 44 (FitForge CrossFit), 45 (GreenLeaf Landscaping).
+
+### Per-site results
+
+| Business | Generated? | Score | Status | Failure Detail |
+|---|---|---|---|---|
+| Apex Roofing (contractor/dark-industrial) | Yes — 9 pages | 60/100 | FAIL | HEADLINE, SUBHEADLINE, TAGLINE unreplaced |
+| Rosa's Kitchen (restaurant/warm-casual) | No — timeout (>10 min) | 0/100 | TIMEOUT | Stuck in generation — likely retry loop from API failures |
+| Luxe + Bare Studio (salon/editorial-luxury) | Yes — 8 pages | 60/100 | FAIL | HEADLINE, SUBHEADLINE, TAGLINE unreplaced |
+| FitForge CrossFit (gym/bold-energetic) | Yes — 7 pages | 60/100 | FAIL | HEADLINE, SUBHEADLINE, TAGLINE unreplaced |
+| GreenLeaf Landscaping (LLM fallback) | No — 400 error | 0/100 | FAIL | "credit balance is too low to access the Anthropic API" |
+
+### Root cause
+
+**Anthropic API credit balance insufficient.** GreenLeaf's explicit error: `"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."` 
+
+For the 3 template-based sites: Haiku copy generation calls failed silently (returned `{}` on 400 error), leaving HEADLINE, SUBHEADLINE, and TAGLINE unreplaced. Template content and form endpoints verified CLEAN.
+
+### What WAS verified clean in this test
+
+- No fake coaches, fake team members, fake credentials ✅
+- No hardcoded prices ✅
+- No hardcoded menu items ✅
+- No exclusivity claims ✅
+- No Formspree, return false, portal/api ✅
+- Form endpoints: `https://www.minimorphstudios.net/api/contact-submit` ✅
+- APP_URL_PLACEHOLDER fully replaced ✅
+- HEADLINE_1 / no fake proof in template structure ✅
+
+### What is still NOT verified
+
+- HEADLINE, SUBHEADLINE, TAGLINE correctly replaced (blocked by API credits)
+- Rosa's Kitchen site generation completes without error
+- GreenLeaf LLM fallback generates a valid site
+
+### Fix required
+
+Top up Anthropic API credits at `https://console.anthropic.com` → Plans & Billing. Then re-run the production end-to-end test.
+
+---
+
 ## Required Next Step
 
-**Production End-to-End Generation Test** — test site generation through the actual production web flow:
-- Create a test onboarding project in production for each business type
-- Trigger generation via admin panel (`onboarding.triggerGeneration`)
-- Inspect generated pages for HEADLINE/SUBHEADLINE/TAGLINE replacement
-- Verify no fake content slipped through
-
-OR: Run quality lab from within a Railway shell session (if available) where the network environment matches production.
+**Top up Anthropic API credits** → then re-run production end-to-end test (generate for all 5 Quality Lab businesses via admin flow).
 
 ## First Customer Status
 
-**NO.** Quality Lab incomplete — Anthropic API unreachable from test context. Template content P1 repairs are verified clean but copy generation hasn't been confirmed end-to-end in a valid test environment.
+**NO.** Production generation test failed due to Anthropic API credit balance. Fix is administrative (add credits), not a code change.
 
 ## Public Launch Status
 

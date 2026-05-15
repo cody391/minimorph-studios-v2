@@ -6,42 +6,41 @@
 
 ## Active Blockers
 
-### B1 — Quality Lab Incomplete: Anthropic API Unreachable from `railway run` Test Context
+### B4 — Anthropic API Credit Balance Insufficient
 
-**Severity:** P1 — blocks confirming first customer readiness
+**Severity:** P0 — blocks all AI copy generation and LLM fallback generation
 **Status:** OPEN
-**Discovered:** 2026-05-15 Live Quality Lab run
+**Discovered:** 2026-05-15 Production End-to-End Generation Test
 
 #### Symptom
 
-`railway run npx tsx server/scripts/_qualityLabRun.ts` produces:
-- `ConnectTimeoutError: Connect Timeout Error (attempted addresses: 2607:6bc0::10:443, timeout: 10000ms)`
-- `[PromptGen] FALLBACK TRIGGERED — [industry] / [slot] — Claude API failed. Length: 0 Using hardcoded fallback.`
-- Result: HEADLINE, SUBHEADLINE, TAGLINE tokens unreplaced as literal text in generated HTML
-- Rosa's Kitchen: `fetch failed` — full generation failure
-- GreenLeaf: `Custom template generation failed for 'landscaping': response too short (0 chars). Raw: `
+Production test (generation triggered via Railway admin API flow) produced:
+- GreenLeaf Landscaping (LLM fallback): `400 Bad Request — "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."`
+- Apex Roofing, Luxe + Bare Studio, FitForge CrossFit: HEADLINE, SUBHEADLINE, TAGLINE tokens unreplaced in generated HTML — Haiku copy generation failed silently (returns `{}` on API error)
 
 #### Root Cause
 
-`railway run` injects Railway env vars but executes code on the local machine. The local machine cannot reach the Anthropic API via IPv6. The actual Railway production container runs in Railway's cloud network and CAN reach Anthropic. This is a **test environment limitation, not a production bug**.
+Anthropic API account has insufficient prepaid credits. All API calls (both Haiku for copy generation and Sonnet for LLM fallback) fail with a 400 credit balance error.
 
 #### Fix Required
 
-One of:
-1. Run generation test via admin panel in production (create test project, trigger via `onboarding.triggerGeneration`)
-2. Run the quality lab script from within a Railway container shell where network matches production
-3. Set a valid `ANTHROPIC_API_KEY` in local `.env` and run `npx tsx server/scripts/_qualityLabRun.ts` directly
+Top up Anthropic API credits at `https://console.anthropic.com` → Plans & Billing. Once credits are added, re-run the production end-to-end generation test.
 
-#### What was verified clean
+#### Impact
 
-Template content P1 repairs confirmed via generated output and static grep:
-- No fake coaches, fake team members, fake credentials ✅
-- No hardcoded prices ✅
-- No hardcoded menu items ✅
-- No exclusivity claims ✅
-- Form endpoints: `https://www.minimorphstudios.net/api/contact-submit` ✅
-- businessName in forms ✅
-- No Formspree / return false / portal/api ✅
+Blocks generation quality for ALL customers until resolved. Template content checks (no fake proof, correct form endpoints) passed — only the AI copy generation is blocked.
+
+---
+
+### B1 — Quality Lab Incomplete: Anthropic API Unreachable from `railway run` Test Context
+
+**Severity:** P1 — SUPERSEDED by B4
+**Status:** CLOSED — root cause resolved by switching to production admin API flow
+**Discovered:** 2026-05-15 Live Quality Lab run
+
+#### Resolution
+
+Production End-to-End Generation Test (2026-05-15) proved that generating via the Railway admin API flow (HTTP requests to production server) works correctly — the Anthropic API IS reachable from the Railway server. The local `railway run` context was the problem, not the production environment. B4 (Anthropic credit balance) is the new blocking issue.
 
 ---
 

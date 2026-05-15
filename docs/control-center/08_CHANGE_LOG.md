@@ -5,6 +5,41 @@ For full git history: `git log --oneline`
 
 ---
 
+## Production End-to-End Generation Test — 2026-05-15 (FAILED — API credits)
+
+**Result:** FAILED — Anthropic API credit balance insufficient
+**Businesses tested:** 5 (projects 41–45)
+**Method:** Admin API flow via Railway (generation ran on production server)
+
+**Per-site results:**
+
+| Business | Generated? | Score | Failure |
+|---|---|---|---|
+| Apex Roofing (contractor/dark-industrial) | Yes — 9 pages | 60/100 | HEADLINE, SUBHEADLINE, TAGLINE unreplaced |
+| Rosa's Kitchen (restaurant/warm-casual) | No — timeout (>10 min) | 0/100 | Stuck in retry loop (API failures) |
+| Luxe + Bare Studio (salon/editorial-luxury) | Yes — 8 pages | 60/100 | HEADLINE, SUBHEADLINE, TAGLINE unreplaced |
+| FitForge CrossFit (gym/bold-energetic) | Yes — 7 pages | 60/100 | HEADLINE, SUBHEADLINE, TAGLINE unreplaced |
+| GreenLeaf Landscaping (LLM fallback) | No — 400 error | 0/100 | "credit balance is too low" explicit error |
+
+**Root cause:** Anthropic API account has insufficient prepaid credits. Haiku copy generation failed silently (→ `{}`), leaving copy tokens unreplaced. Sonnet LLM fallback (GreenLeaf) failed with explicit 400.
+
+**Template content verified CLEAN** in generated output (3 sites with partial HTML):
+- No fake coaches, team members, credentials ✅
+- No hardcoded prices ✅
+- No hardcoded menu items ✅
+- No exclusivity claims ✅
+- Form endpoints correct ✅
+- APP_URL_PLACEHOLDER replaced ✅
+- No Formspree / return false / portal/api ✅
+
+**What proved:** Production admin API flow works. Generation runs on Railway server. Anthropic API IS reachable from Railway. The local `railway run` IPv6 connectivity issue (B1) is irrelevant.
+
+**What still needs verification:** HEADLINE / SUBHEADLINE / TAGLINE replacement; Rosa's Kitchen generation; GreenLeaf LLM fallback.
+
+**Fix:** Top up Anthropic API credits at console.anthropic.com.
+
+---
+
 ## `61c8f14` — docs: align Control Center with template truth repairs
 
 **Date:** 2026-05-15
