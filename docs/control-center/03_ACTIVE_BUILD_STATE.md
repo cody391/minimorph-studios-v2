@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**MiniMorph Internal Dogfood** — Service template routing repaired. MiniMorph Studios (and all service/agency businesses) now route to `service/professional.html` instead of the 2-page LLM fallback. Project 34 reset with MiniMorph truth data is the next step before generation.
+**MiniMorph Internal Dogfood** — Service template routing repaired + B5 contractor language removed. service/professional.html is now contextually neutral for all service/agency businesses. Project 34 reset with MiniMorph truth data is the next step before generation.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -17,6 +17,7 @@ Previous lanes completed:
 - Production generation test — failed (Anthropic credits) ⚠️ → credits topped up → **PASSED 5/5 ✅**
 - Customer Portal Reality Patch ✅ (BuildCommandCenter, tab reorder, safe empty states, CheckoutSuccess rewrite, E2E tests)
 - Service Template Routing Repair ✅ (selectTemplate service/agency branch, 37 routing tests, P0 guarantee fix)
+- B5 Service Template Content Repair ✅ (contractor-specific language removed from service/professional.html)
 
 ## Latest Known Commit
 
@@ -82,6 +83,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 ## What Was Already Completed
 
 - [x] Service Template Routing Repair — service/agency/consulting/technology/cleaning/landscaping businesses now route to `service/professional.html` instead of LLM fallback ✅
+- [x] B5 Service Template Content Repair — removed all contractor-specific language from service/professional.html ("job site", "homeowners", "Licensed specialists", "Same-Day Available", "Weekends", LICENSE_NUMBER stat blocks) ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

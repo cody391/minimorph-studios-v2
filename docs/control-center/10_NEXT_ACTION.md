@@ -60,6 +60,8 @@ When ready:
         ↓
 [DONE]  Service Template Routing Repair ✅ (service/agency → professional template, 37 tests)
         ↓
+[DONE]  B5 Service Template Content Repair ✅ (contractor language removed from service/professional.html)
+        ↓
 [READY] MiniMorph Internal Dogfood Gate — reset project 34, run Elena, generate, QA
         ↓
         First Outside Controlled Customer
@@ -85,5 +87,6 @@ When ready:
 | Production generation test — all 5 sites score 95+/100 | ✅ Done (100/100 each, 2026-05-15) |
 | Customer portal clarity patch deployed | ✅ Done (BuildCommandCenter, tab reorder, E2E tests) |
 | Service template routing repaired | ✅ Done (service/agency → professional template, 37 tests) |
+| B5 service template content repaired | ✅ Done (contractor language removed, 2850228) |
 | MiniMorph internal dogfood gate | ❌ Pending (next gate) |
 | Admin explicitly approves outside first customer | ❌ Pending (after dogfood) |

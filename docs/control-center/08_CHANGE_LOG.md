@@ -5,6 +5,20 @@ For full git history: `git log --oneline`
 
 ---
 
+## `2850228` — fix: remove contractor-specific language from service/professional.html (B5)
+
+**Date:** 2026-05-15
+**Gate:** B5 Service Template Content Repair Gate
+
+**What changed:**
+- `server/templates/service/professional.html`: Removed all contractor-specific hardcoded phrases: "Licensed specialists with the right tools and experience to get the job done right" → generic; "Our licensed team shows up on time with everything needed to complete the job" → generic; "We're proud to serve homeowners and businesses throughout SERVICE_AREA. Licensed, insured, and committed to quality work at every job site." → "We work with businesses and individuals throughout SERVICE_AREA, bringing the same standard of professionalism to every engagement."; "Same-Day Available" and "Weekends" area tags removed; "Licensed / LICENSE_NUMBER" about stat removed; "Licensed and insured" from footer desc removed; "License: LICENSE_NUMBER" from footer bottom removed; "Licensed & Insured" hero trust stat removed; "Get a Free Quote" contact form title → "Get in Touch"; "Service Needed" field label → "How Can We Help".
+
+**What this proves:** service/professional.html is now contextually neutral — it will not produce trade-contractor language for web agencies, consultants, cleaning services, or any non-trade service business. All 37 routing tests pass. pnpm check clean.
+
+**What this does NOT prove:** MiniMorph dogfood gate complete. B5 was the last known blocker before dogfood QA — that gate can now proceed.
+
+---
+
 ## Service Template Routing Repair — 2026-05-15
 
 **Gate:** Service Template Routing Repair Gate
