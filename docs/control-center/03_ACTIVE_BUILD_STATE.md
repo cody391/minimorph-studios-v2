@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**MiniMorph Internal Dogfood** — Service template routing repaired + B5 contractor language removed. service/professional.html is now contextually neutral for all service/agency businesses. Project 34 reset with MiniMorph truth data is the next step before generation.
+**Elena Promise Enforcement / Truth Alignment** — Every Elena promise and platform capability is being audited for end-to-end support before any customer is onboarded. MiniMorph Internal Dogfood is paused pending promise enforcement audit, Blueprint schema gate, admin gate, customer approval gate, and Blueprint → generator handoff gate.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -23,10 +23,10 @@ Previous lanes completed:
 
 | Field | Value |
 |---|---|
-| HEAD | `aaaa3ac` |
+| HEAD | `6b74713` |
 | Branch | `main` |
-| origin/main | `eac497e` |
-| Message | fix: route service businesses to professional template |
+| origin/main | `6b74713` |
+| Message | docs: close B5 blocker, advance gate to MiniMorph Internal Dogfood |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
 | Production deploy confirmed | `2026-05-15 07:42:58 GMT` ✅ |
@@ -70,15 +70,15 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**First Controlled Customer** — system is ready. Admin must approve and onboard first real customer.
+**Elena Promise Enforcement Audit** — Audit every Elena promise and platform capability for end-to-end support. Produce the Promise Enforcement Report. Identify gaps. Correct Elena wording, Blueprint schema, admin gate, customer approval, and generator handoff before any customer is onboarded.
 
 ## First Customer Status
 
-**YES — pending admin approval.** Production generation test passed 5/5 (100/100). No code changes required.
+**NO — Elena promise enforcement audit must complete first.** Blockers B6–B11 are open. Platform cannot guarantee what Elena currently promises.
 
 ## Public Launch Status
 
-**NO — first controlled customer must complete onboarding successfully before public launch.**
+**NO — first controlled customer must complete the full gate sequence, including Elena promise enforcement, Blueprint schema, admin gate, customer approval, and generator handoff verification.**
 
 ## What Was Already Completed
 
