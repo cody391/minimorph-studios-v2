@@ -28,6 +28,7 @@
 | Claim/Proof Validation Gate (B8) | ✅ Done (`70acded`) |
 | Lifecycle Realignment Gate | ✅ Done (`96952f9`) |
 | Add-On Fulfillment Truth Gate (B9) | ✅ Done (2484fbe) |
+| B-Card Gate (checkout/contract integrity) | ✅ Done (TBD) |
 
 ### Lifecycle Realignment — what changed
 
@@ -106,6 +107,8 @@ After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
         ↓
 [DONE]  Add-On Fulfillment Truth Gate (B9) ✅ (2484fbe)
         ↓
+[DONE]  B-Card Gate (checkout/contract integrity) ✅ (TBD)
+        ↓
 [ACTIVE] Customer Site Preview Approval Gate (B10) — customer views/approves built site
         ↓
         Blueprint → Generator Handoff Gate (B11) — full Blueprint consumed by generator/prompt
@@ -142,6 +145,7 @@ After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
 | B7 Admin Blueprint Gate implemented | ✅ Done (`2682cfb`) |
 | B8 Claim/Proof Validation implemented | ✅ Done (`70acded`) |
 | B9 Add-On Truth/Fulfillment Gap resolved | ✅ Done (2484fbe) |
+| B-Card Gate (checkout/contract integrity) | ✅ Done |
 | B10 Customer Site Preview Approval implemented | ❌ Pending |
 | B11 Blueprint → Generator Handoff complete | ❌ Pending |
 | MiniMorph internal dogfood gate | ❌ Pending (after B6–B11) |

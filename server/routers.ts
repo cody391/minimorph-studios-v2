@@ -1514,7 +1514,12 @@ const leadsRouter = router({
           repDealAgreementId = repAgreement.id;
         }
       } catch (agreementErr) {
-        console.warn("[generateRepPaymentLink] Agreement creation failed (non-fatal):", agreementErr instanceof Error ? agreementErr.message : String(agreementErr));
+        // B-Card Gate: Agreement creation is required before sending payment link.
+        // A customer must not pay without a contract acceptance record tied to their card.
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Cannot generate payment link — agreement record creation failed: ${agreementErr instanceof Error ? agreementErr.message : String(agreementErr)}. Ensure the customer has a portal account and an existing onboarding project before sending a payment link.`,
+        });
       }
 
       // 4. Create Stripe checkout session — mirrors resendPaymentLink exactly
@@ -1928,6 +1933,27 @@ const contractsRouter = router({
         if (rep) repName = rep.fullName;
       }
 
+      // 3b. Look up existing agreement for this contract's project (B-Card Gate)
+      let resendAgreementId: string | null = null;
+      try {
+        const { customerAgreements: caTable } = await import("../drizzle/schema");
+        const { eq: eqFn, desc: descFn } = await import("drizzle-orm");
+        const projectRow = await db.getOnboardingProjectByCustomerId(customer.id);
+        if (projectRow) {
+          const [existingAgreement] = await database
+            .select({ id: caTable.id })
+            .from(caTable)
+            .where(eqFn(caTable.projectId, projectRow.id))
+            .orderBy(descFn(caTable.createdAt))
+            .limit(1);
+          if (existingAgreement) {
+            resendAgreementId = String(existingAgreement.id);
+          }
+        }
+      } catch (e) {
+        console.warn("[resendPaymentLink] Agreement lookup failed (will proceed without):", e instanceof Error ? e.message : String(e));
+      }
+
       // 4. Create new Stripe checkout session (does NOT create duplicate contract/customer)
       const Stripe = (await import("stripe")).default;
       const { PACKAGES } = await import("../shared/pricing");
@@ -1960,6 +1986,7 @@ const contractsRouter = router({
             customer_id: String(customer.id),
             rep_closed: "true",
             self_sourced: isSelfSourced ? "true" : "false",
+            ...(resendAgreementId ? { agreement_id: resendAgreementId } : {}),
           },
         },
         metadata: {
@@ -1974,6 +2001,7 @@ const contractsRouter = router({
           customer_id: String(customer.id),
           rep_closed: "true",
           self_sourced: isSelfSourced ? "true" : "false",
+          ...(resendAgreementId ? { agreement_id: resendAgreementId } : {}),
         },
         line_items: (() => {
           const priceId = getStripePriceId(contract.packageTier);
@@ -2625,85 +2653,15 @@ const ordersRouter = router({
         businessName: z.string().optional(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      const Stripe = (await import("stripe")).default;
-      const { getPackage } = await import("./stripe-products");
-      const { getCheckoutPriceId } = await import("./services/stripePriceSync");
-
-      const stripeKey = ENV.stripeSecretKey;
-      if (!stripeKey) throw new Error("Stripe not configured");
-
-      const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
-      const pkg = getPackage(input.packageTier);
-      if (!pkg) throw new Error("Invalid package tier");
-
-      const origin = ctx.req.headers.origin || ctx.req.headers.referer || "http://localhost:3000";
-
-      // Look up the product in the catalog for up-to-date Stripe price IDs
-      const catalog = await db.getProductCatalog();
-      const catalogProduct = catalog.find(
-        (p: any) => p.productKey === input.packageTier && p.category === "package"
-      );
-
-      // Use DB price ID (discount or base) when available, fall back to ENV/price_data
-      const dbPriceId = catalogProduct ? getCheckoutPriceId(catalogProduct as any) : null;
-      const envPriceId = getStripePriceId(input.packageTier);
-      const resolvedPriceId = dbPriceId || envPriceId;
-
-      const lineItems = resolvedPriceId
-        ? [{ price: resolvedPriceId, quantity: 1 as const }]
-        : [{
-            price_data: {
-              currency: "usd",
-              product_data: { name: pkg.name, description: pkg.description },
-              unit_amount: pkg.monthlyPriceInCents,
-              recurring: { interval: "month" as const },
-            },
-            quantity: 1 as const,
-          }];
-
-      // Create the checkout session — monthly subscription
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        ui_mode: "embedded_page",
-        customer_email: ctx.user.email || undefined,
-        client_reference_id: ctx.user.id.toString(),
-        allow_promotion_codes: true,
-        subscription_data: {
-          metadata: {
-            user_id: ctx.user.id.toString(),
-            package_tier: input.packageTier,
-            business_name: input.businessName || "",
-          },
-        },
-        metadata: {
-          user_id: ctx.user.id.toString(),
-          customer_email: ctx.user.email || "",
-          customer_name: ctx.user.name || "",
-          package_tier: input.packageTier,
-          business_name: input.businessName || "",
-        },
-        line_items: lineItems,
-        return_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    .mutation(async () => {
+      // B-Card Gate: Legacy createCheckout is disabled. Every checkout must go through
+      // the Elena onboarding flow (createCheckoutAfterElena) which requires a project,
+      // a recorded agreement, and B9-valid add-ons before a Stripe session is created.
+      // This path allowed checkout without contract acceptance — that gap is now closed.
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Direct checkout is no longer available. Please complete the Elena onboarding conversation to set up your website, then proceed to checkout from your project portal. If you need assistance, contact support@minimorphstudios.com.",
       });
-
-      // Create a pending order in the database
-      const effectivePriceCents = catalogProduct
-        ? Math.round(parseFloat(catalogProduct.basePrice as string) * (1 - (catalogProduct.discountPercent || 0) / 100) * 100)
-        : pkg.monthlyPriceInCents;
-
-      const dbModule = await import("./db");
-      await dbModule.createOrder({
-        userId: ctx.user.id,
-        stripeCheckoutSessionId: session.id,
-        packageTier: input.packageTier,
-        amount: effectivePriceCents,
-        customerEmail: ctx.user.email || undefined,
-        customerName: ctx.user.name || undefined,
-        businessName: input.businessName || undefined,
-      });
-
-      return { clientSecret: session.client_secret, checkoutUrl: null };
     }),
 
   // Protected: create a Stripe Customer Portal session so customers can manage billing

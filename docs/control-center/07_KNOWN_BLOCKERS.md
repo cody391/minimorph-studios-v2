@@ -124,6 +124,30 @@ Additionally: no `adminDenyPreview()` procedure existed (step-9 deny branch was 
 
 ---
 
+### B-Card Gate — Checkout Without Contract (Real Incident)
+
+**Severity:** P0 — real buyer paid without signing a contract
+**Status:** RESOLVED (B-Card Gate commit)
+**Discovered:** 2026-05-15 (real checkout-without-contract incident)
+**Closed:** 2026-05-15 Lead-to-Customer Card / Contract Checkout Integrity Gate
+
+#### What was wrong
+
+A real buyer completed checkout using the legacy `createCheckout` path, which had no agreement, no customer card requirement, and no project requirement. This meant a paying customer had no contract acceptance record tied to their payment.
+
+Additionally: `generateRepPaymentLink` agreement creation was non-fatal (could silently skip), `resendPaymentLink` had no agreement handling at all, and the Stripe webhook silently created contracts without linking them to agreement records for self-service sessions.
+
+#### What was fixed
+
+- `server/routers.ts` — `createCheckout`: Now immediately throws `BAD_REQUEST`. No checkout without Elena onboarding flow.
+- `server/routers.ts` — `generateRepPaymentLink`: Agreement creation (step 3b) is now fatal. Throws if agreement cannot be recorded.
+- `server/routers.ts` — `resendPaymentLink`: Now looks up existing agreement and passes `agreement_id` in Stripe session metadata so webhook can link contract to agreement.
+- `server/stripe-webhook.ts` — `handleCheckoutCompleted`: Logs `[COMPLIANCE_ALERT]` when session metadata has no `agreement_id` (self-service legacy path detected).
+- `server/db.ts` — `getCustomerCardPacket()` (NEW): Admin helper returning complete lifetime customer packet: identity, source, costs, contracts, projects (with agreements/blueprint/buildReports), supportTickets, lifecycleStatus.
+- `server/customerCardContractIntegrity.test.ts` (NEW): 52 tests, pnpm check clean, pnpm build PASS.
+
+---
+
 ### B10 — Customer Blueprint Approval Gap
 
 **Severity:** P1 — blocks truth alignment

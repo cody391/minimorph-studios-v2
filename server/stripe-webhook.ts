@@ -356,8 +356,20 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       contractId = newContract.id;
       console.log(`[Stripe] Contract created: contract=${contractId}, customer=${customerId}, package=${packageTier}, sub=${stripeSubscriptionId}`);
 
-      // Link customer agreement to this contract if one was recorded pre-checkout
+      // B-Card Gate: self-service checkout MUST have carried an agreement_id in metadata.
+      // If missing, this is a compliance violation — log it prominently.
+      // (We cannot reject the payment after it completes, but we flag it for admin review.)
       const rawAgreementId = session.metadata?.agreement_id;
+      if (!rawAgreementId) {
+        console.error(
+          `[COMPLIANCE_ALERT] [Stripe] Contract ${contractId} created WITHOUT an agreement record. ` +
+          `Session ${session.id}, customer=${customerId}, package=${packageTier}. ` +
+          `This indicates checkout was initiated outside the Elena onboarding flow (legacy createCheckout path or similar). ` +
+          `Admin must collect manual signature and attach to contract ${contractId} before site launch.`
+        );
+      }
+
+      // Link customer agreement to this contract if one was recorded pre-checkout
       const parsedAgreementId = rawAgreementId ? parseInt(rawAgreementId) : NaN;
       if (!isNaN(parsedAgreementId) && parsedAgreementId > 0) {
         try {

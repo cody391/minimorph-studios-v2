@@ -84,6 +84,7 @@ import {
   InsertSiteVersion,
   websiteBlueprints,
   InsertWebsiteBlueprint,
+  siteBuildReports,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import mysql from "mysql2/promise";
@@ -1349,6 +1350,153 @@ export async function getCustomerByUserId(userId: number) {
   if (!db) return undefined;
   const result = await db.select().from(customers).where(eq(customers.userId, userId as any)).limit(1);
   return result[0];
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOMER CARD PACKET — B-Card Gate admin helper
+   Returns the complete lifetime customer card for a given
+   customer/user/project, covering identity, source, lead,
+   rep attribution, contracts, agreements, projects,
+   blueprints, build reports, and communication summary.
+   ═══════════════════════════════════════════════════════ */
+export async function getCustomerCardPacket(opts: {
+  customerId?: number;
+  userId?: number;
+  projectId?: number;
+  email?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Resolve customer
+  let customer: any = null;
+  if (opts.customerId) {
+    [customer] = await db.select().from(customers).where(eq(customers.id, opts.customerId)).limit(1);
+  } else if (opts.userId) {
+    [customer] = await db.select().from(customers).where(eq(customers.userId, opts.userId as any)).limit(1);
+  } else if (opts.email) {
+    [customer] = await db.select().from(customers).where(eq(customers.email, opts.email)).limit(1);
+  } else if (opts.projectId) {
+    const [proj] = await db.select({ customerId: onboardingProjects.customerId })
+      .from(onboardingProjects).where(eq(onboardingProjects.id, opts.projectId)).limit(1);
+    if (proj?.customerId) {
+      [customer] = await db.select().from(customers).where(eq(customers.id, proj.customerId)).limit(1);
+    }
+  }
+  if (!customer) return null;
+
+  // Lead (origination)
+  const lead = customer.leadId
+    ? (await db.select().from(leads).where(eq(leads.id, customer.leadId)).limit(1))[0] ?? null
+    : null;
+
+  // Contracts
+  const customerContracts = await db.select().from(contracts)
+    .where(eq(contracts.customerId, customer.id)).orderBy(desc(contracts.createdAt));
+
+  // Onboarding projects
+  const projects = await db.select().from(onboardingProjects)
+    .where(eq(onboardingProjects.customerId, customer.id)).orderBy(desc(onboardingProjects.createdAt));
+
+  // Agreements (per project)
+  const agreementsByProject: Record<number, any[]> = {};
+  for (const proj of projects) {
+    agreementsByProject[proj.id] = await db.select().from(customerAgreements)
+      .where(eq(customerAgreements.projectId, proj.id)).orderBy(desc(customerAgreements.createdAt));
+  }
+
+  // Blueprints (per project)
+  const blueprintsByProject: Record<number, any> = {};
+  for (const proj of projects) {
+    const [bp] = await db.select({
+      id: websiteBlueprints.id,
+      status: websiteBlueprints.status,
+      versionNumber: websiteBlueprints.versionNumber,
+      approvedAt: websiteBlueprints.approvedAt,
+      adminBlueprintReviewStatus: websiteBlueprints.adminBlueprintReviewStatus,
+      createdAt: websiteBlueprints.createdAt,
+    }).from(websiteBlueprints).where(eq(websiteBlueprints.projectId, proj.id)).limit(1);
+    if (bp) blueprintsByProject[proj.id] = bp;
+  }
+
+  // Build reports (per project)
+  const buildReportsByProject: Record<number, any[]> = {};
+  for (const proj of projects) {
+    buildReportsByProject[proj.id] = await db.select().from(siteBuildReports)
+      .where(eq(siteBuildReports.projectId, proj.id)).orderBy(desc(siteBuildReports.createdAt));
+  }
+
+  // Support tickets
+  const tickets = await db.select().from(supportTickets)
+    .where(eq(supportTickets.customerId, customer.id)).orderBy(desc(supportTickets.createdAt));
+
+  // Lead costs (acquisition cost records)
+  const leadCostSummary = { totalCostCents: customer.totalLifetimeCostCents ?? 0, totalRevenueCents: customer.totalLifetimeRevenueCents ?? 0 };
+
+  // Contract agreements status
+  const hasAcceptedAgreement = Object.values(agreementsByProject)
+    .some(list => list.some((a: any) => a.acceptedAt));
+
+  return {
+    identity: {
+      customerId: customer.id,
+      userId: customer.userId,
+      businessName: customer.businessName,
+      contactName: customer.contactName,
+      email: customer.email,
+      phone: customer.phone,
+      status: customer.status,
+      healthScore: customer.healthScore,
+    },
+    source: {
+      acquisitionSource: customer.acquisitionSource,
+      leadId: customer.leadId,
+      leadSource: lead?.source ?? null,
+      leadChannel: lead?.acquisitionChannel ?? null,
+      leadCreatedAt: lead?.createdAt ?? null,
+      leadStage: lead?.stage ?? null,
+      repId: lead?.assignedRepId ?? null,
+    },
+    costs: leadCostSummary,
+    contracts: customerContracts.map((c: any) => ({
+      id: c.id,
+      packageTier: c.packageTier,
+      monthlyPrice: c.monthlyPrice,
+      status: c.status,
+      stripeSubscriptionId: c.stripeSubscriptionId,
+      contractSignedAt: c.contractSignedAt,
+      startDate: c.startDate,
+      endDate: c.endDate,
+      renewalStatus: c.renewalStatus,
+    })),
+    agreementStatus: {
+      hasAcceptedAgreement,
+      totalAgreements: Object.values(agreementsByProject).reduce((s, l) => s + l.length, 0),
+    },
+    projects: projects.map((p: any) => ({
+      id: p.id,
+      businessName: p.businessName,
+      packageTier: p.packageTier,
+      stage: p.stage,
+      generationStatus: p.generationStatus,
+      paymentConfirmedAt: p.paymentConfirmedAt,
+      adminPreviewApprovedAt: p.adminPreviewApprovedAt,
+      launchedAt: p.launchedAt,
+      createdAt: p.createdAt,
+      agreements: agreementsByProject[p.id] ?? [],
+      blueprint: blueprintsByProject[p.id] ?? null,
+      buildReports: buildReportsByProject[p.id] ?? [],
+    })),
+    supportTickets: tickets.map((t: any) => ({
+      id: t.id,
+      subject: t.subject,
+      status: t.status,
+      priority: t.priority,
+      createdAt: t.createdAt,
+    })),
+    lifecycleStatus: customer.status,
+    createdAt: customer.createdAt,
+  };
 }
 
 /* ═══════════════════════════════════════════════════════

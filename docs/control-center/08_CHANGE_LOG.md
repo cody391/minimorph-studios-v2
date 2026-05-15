@@ -5,6 +5,29 @@ For full git history: `git log --oneline`
 
 ---
 
+## Lead-to-Customer Card / Contract Checkout Integrity Gate — 2026-05-15
+
+**Gate:** B-Card Gate — Customer Card and Contract Integrity
+**Commit:** TBD (feat: enforce customer card and contract integrity before checkout)
+**Status:** COMPLETE
+
+**What changed:**
+
+- `server/routers.ts` — `createCheckout` (legacy self-service path) now immediately throws `BAD_REQUEST`. No customer can initiate checkout without going through the Elena onboarding flow. The dead code body of the original implementation was removed.
+- `server/routers.ts` — `generateRepPaymentLink`: Agreement creation step (step 3b) is now fatal. If `createCustomerAgreement()` fails, the mutation throws `INTERNAL_SERVER_ERROR` with an actionable message. A payment link can no longer be sent if the agreement record could not be recorded.
+- `server/routers.ts` — `resendPaymentLink`: Added step 3b — looks up the most recent agreement for the contract's project and passes `agreement_id` in both `subscription_data.metadata` and top-level `metadata`. Webhook can now link contracts to agreements for resent sessions.
+- `server/stripe-webhook.ts` — `handleCheckoutCompleted`: Added `COMPLIANCE_ALERT` logging block after contract creation. If a self-service session arrives without `agreement_id` in metadata, a structured `[COMPLIANCE_ALERT]` error log fires naming the contractId, session id, customerId, and package tier. Requires manual admin follow-up before site launch.
+- `server/db.ts` — `getCustomerCardPacket()` (NEW): Admin helper that resolves a customer by `customerId`, `userId`, `projectId`, or `email` and returns their complete lifetime card packet: `identity`, `source` (lead, rep, channel), `costs`, `contracts`, `projects` (each with agreements, blueprint, buildReports), `supportTickets`, `lifecycleStatus` (hasCard, hasAcceptedAgreement, hasActiveContract, hasProject, isLaunched). Also added `siteBuildReports` to the db.ts schema import.
+- `server/customerCardContractIntegrity.test.ts` (NEW): 52 tests across 12 sections (A–L). Sections: A (legacy createCheckout permanently disabled), B (agreement required for createCheckoutAfterElena), C (agreement ownership and project binding), D (acceptedAt required), E (signerName must be real legal name — rejects null/empty/sentinel values), F (B9-blocked add-ons rejected at checkout), G (webhook compliance check), H (card packet structural completeness), I (multiple projects per card), J (lifecycleStatus flags), K (project-agreement binding), L (blocked add-on registry invariants).
+
+**What this proves:** No customer can complete a paid checkout without (1) a customer card, (2) an accepted agreement with a real signer name tied to that card, and (3) B9-valid add-ons. The legacy `createCheckout` path that allowed checkout without any of these is permanently closed. Rep-initiated payment links cannot be sent if the agreement record creation fails. The admin `getCustomerCardPacket()` helper provides a single-call view of every customer's full lifecycle history. 52 B-Card tests + 378 prior gate tests = 430 gate tests passing. pnpm check clean. pnpm build PASS.
+
+**What this does NOT prove:** B10 customer site preview approval UI. B11 Blueprint → generator handoff. Dogfood readiness. Those gates follow.
+
+**Remaining open blockers:** B10 Customer Site Preview Approval, B11 Blueprint → Generator Handoff, B2 ecommerce return false.
+
+---
+
 ## Add-On Fulfillment Truth Gate (B9) — 2026-05-15
 
 **Gate:** B9 — Add-On Fulfillment Truth Gate
