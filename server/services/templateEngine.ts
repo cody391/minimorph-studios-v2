@@ -108,6 +108,33 @@ export function selectTemplate(businessType: string, brandTone: string): string 
     return "ecommerce/catalog.html";
   }
 
+  if (
+    type === "service" || type === "services" || type === "service business" ||
+    type === "local service" || type === "professional service" || type === "professional services" ||
+    type === "agency" || type === "web design" || type === "website design" ||
+    type === "website service" || type === "web services" ||
+    type === "marketing" || type === "digital marketing" || type === "seo" ||
+    type === "consulting" || type === "consultant" || type === "consultancy" ||
+    type === "technology" || type === "tech" || type === "saas" || type === "software" ||
+    type === "it services" || type === "managed services" ||
+    type === "cleaning" || type === "cleaning service" || type === "cleaning services" ||
+    type === "janitorial" || type === "maid service" ||
+    type === "landscaping" || type === "lawn care" || type === "lawn service" ||
+    type === "handyman" || type === "handyman service" || type === "home services" ||
+    type === "photography" || type === "videography" || type === "media production" ||
+    type === "accounting" || type === "bookkeeping" || type === "cpa" || type === "tax preparation" ||
+    type === "insurance" || type === "real estate" || type === "property management" ||
+    type === "tutoring" || type === "coaching" || type === "education" ||
+    type === "wellness" || type === "nutrition" || type === "catering" ||
+    type === "event planning" || type === "pest control" || type === "moving" ||
+    type.includes("agency") || type.includes("consult")
+  ) {
+    const friendlyTones = ["friendly", "local", "warm", "casual", "neighborhood", "community"];
+    return friendlyTones.some(t => tone.includes(t))
+      ? "service/friendly-local.html"
+      : "service/professional.html";
+  }
+
   // No hand-crafted template — signal the caller to generate a custom one
   return null;
 }

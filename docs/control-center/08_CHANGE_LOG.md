@@ -5,6 +5,23 @@ For full git history: `git log --oneline`
 
 ---
 
+## Service Template Routing Repair — 2026-05-15
+
+**Gate:** Service Template Routing Repair Gate
+
+**What changed:**
+- `server/services/templateEngine.ts`: Added service/agency/professional routing branch to `selectTemplate()`. Business types now routed to `service/professional.html` (professional tone) or `service/friendly-local.html` (warm/local tone): service, service business, local service, professional service/services, agency, web design, website design, marketing, consulting, consultant, technology, tech, saas, software, it services, cleaning, landscaping, lawn care, handyman, home services, photography, videography, accounting, bookkeeping, insurance, real estate, tutoring, coaching, wellness, catering, event planning, pest control, moving, plus `type.includes("agency")` and `type.includes("consult")`.
+- `server/templates/service/professional.html`: Removed hardcoded `"100% Satisfaction Guarantee"` stat block (P0 quality rules violation — hardcoded guarantee not provided by customer questionnaire).
+- `server/templateRouting.test.ts` (NEW): 37 routing tests covering service/agency types, tone-based variant selection, all existing industry mappings preserved, ecommerce not affected, unknown types still fall to LLM fallback.
+
+**What this proves:** Service/agency businesses (including MiniMorph Studios) route to the existing structured service template (5+ pages on Growth tier) instead of the 2-page LLM fallback. All 37 tests pass. pnpm check PASS. pnpm build PASS.
+
+**What this does NOT prove:** Service template content is fully appropriate for all service business types. Known P1 issues remain (B5): trade-contractor language hardcoded in service/professional.html ("job site", "homeowners", "Licensed specialists", "Same-Day Available"). These must be caught by admin QA before any service business site is delivered.
+
+**Next step:** MiniMorph Internal Dogfood Gate — reset project 34, run Elena with MiniMorph truth, inspect blueprint, generate, run admin QA (which will note B5 language as expected P1 findings).
+
+---
+
 ## Customer Portal Reality Patch — 2026-05-15
 
 **Gate:** Customer Portal Reality Patch Gate

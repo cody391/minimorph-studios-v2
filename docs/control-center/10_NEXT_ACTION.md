@@ -58,7 +58,11 @@ When ready:
         ↓
 [DONE]  Customer Portal Reality Patch ✅ (BuildCommandCenter, tab reorder, E2E suite)
         ↓
-[READY] First Controlled Customer — admin approval required
+[DONE]  Service Template Routing Repair ✅ (service/agency → professional template, 37 tests)
+        ↓
+[READY] MiniMorph Internal Dogfood Gate — reset project 34, run Elena, generate, QA
+        ↓
+        First Outside Controlled Customer
         ↓
         Public Launch
 ```
@@ -80,4 +84,6 @@ When ready:
 | Anthropic API credits sufficient | ✅ Done (credits topped up 2026-05-15) |
 | Production generation test — all 5 sites score 95+/100 | ✅ Done (100/100 each, 2026-05-15) |
 | Customer portal clarity patch deployed | ✅ Done (BuildCommandCenter, tab reorder, E2E tests) |
-| Admin explicitly approves first customer | ❌ Pending |
+| Service template routing repaired | ✅ Done (service/agency → professional template, 37 tests) |
+| MiniMorph internal dogfood gate | ❌ Pending (next gate) |
+| Admin explicitly approves outside first customer | ❌ Pending (after dogfood) |

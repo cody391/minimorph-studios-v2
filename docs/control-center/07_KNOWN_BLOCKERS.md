@@ -6,6 +6,33 @@
 
 ## Active Blockers
 
+### B5 — service/professional.html: Contractor-Specific Hardcoded Language
+
+**Severity:** P1 — will produce wrong-context copy for non-contractor service businesses (web design, agencies, cleaning, etc.)
+**Status:** OPEN
+**Discovered:** 2026-05-15 dogfood gate template inspection
+
+#### Symptom
+
+`server/templates/service/professional.html` contains several hardcoded phrases written for trade-contractor businesses that are contextually wrong for service/agency businesses:
+
+- `"Licensed specialists with the right tools and experience to get the job done right."` (implies physical job)
+- `"Our licensed team shows up on time with everything needed to complete the job."` (implies physical presence)
+- `"We're proud to serve homeowners and businesses throughout SERVICE_AREA. Licensed, insured, and committed to quality work at every job site."` (homeowners, job site — trade language)
+- `"Same-Day Available"` hardcoded area tag (may be false for many service businesses)
+- `"Weekends"` hardcoded area tag (may be false)
+- `"Licensed"` stat with `LICENSE_NUMBER` (trade-specific license; may be N/A for agencies)
+
+#### Fix Required
+
+Replace hardcoded trade language with generic service language or token-based content. Admin QA must catch these before any service business site is delivered.
+
+#### Impact
+
+Blocks clean dogfood QA for MiniMorph Studios (a digital agency). Admin QA in the dogfood gate must manually note these as known P1 issues. Does NOT block routing or generation — only admin QA pass.
+
+---
+
 ### B2 — ecommerce/product.html: `return false` in Form Handler
 
 **Severity:** P1 for ecommerce customers (not currently in Quality Lab test set)

@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**First Controlled Customer** — All pre-customer gates complete. Customer portal rebuilt for clarity (portal patch committed). First real customer may be onboarded pending admin approval.
+**MiniMorph Internal Dogfood** — Service template routing repaired. MiniMorph Studios (and all service/agency businesses) now route to `service/professional.html` instead of the 2-page LLM fallback. Project 34 reset with MiniMorph truth data is the next step before generation.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -16,15 +16,16 @@ Previous lanes completed:
 - Deploy Confirmed (61c8f14 proven live at 07:42:58 GMT) ✅
 - Production generation test — failed (Anthropic credits) ⚠️ → credits topped up → **PASSED 5/5 ✅**
 - Customer Portal Reality Patch ✅ (BuildCommandCenter, tab reorder, safe empty states, CheckoutSuccess rewrite, E2E tests)
+- Service Template Routing Repair ✅ (selectTemplate service/agency branch, 37 routing tests, P0 guarantee fix)
 
 ## Latest Known Commit
 
 | Field | Value |
 |---|---|
-| HEAD | `22b95a2` |
+| HEAD | pending service routing commit |
 | Branch | `main` |
-| origin/main | `a0a2cf1` (portal patch not yet pushed) |
-| Message | fix: make customer portal build experience clear after payment |
+| origin/main | `eac497e` |
+| Message | fix: route service businesses to professional template |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
 | Production deploy confirmed | `2026-05-15 07:42:58 GMT` ✅ |
@@ -80,6 +81,9 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## What Was Already Completed
 
+- [x] Service Template Routing Repair — service/agency/consulting/technology/cleaning/landscaping businesses now route to `service/professional.html` instead of LLM fallback ✅
+- [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
+- [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅
 - [x] BuildCommandCenter component — stage card + 7-step progress timeline + "What You Purchased" + "Need Help?" two-column layout ✅
 - [x] "Your Website" tab first (renamed from "Onboarding") with electric indicator dot ✅
