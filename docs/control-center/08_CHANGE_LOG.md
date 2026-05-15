@@ -5,6 +5,42 @@ For full git history: `git log --oneline`
 
 ---
 
+## Production End-to-End Generation Test Rerun — 2026-05-15 (PASSED 5/5)
+
+**Result:** PASSED — 5/5 sites, 100/100 each
+**Businesses tested:** 5 (projects 46–50)
+**Method:** Admin API flow via Railway (generation ran on production server)
+
+**Per-site results:**
+
+| Business | Pages | Score | Hero H1 |
+|---|---|---|---|
+| Apex Roofing (contractor/dark-industrial) | 9 | 100/100 | "Roofs and exteriors that actually last" |
+| Rosa's Kitchen (restaurant/warm-casual) | 7 | 100/100 | "Real food made today in Austin" |
+| Luxe + Bare Studio (salon/editorial-luxury) | 8 | 100/100 | "Refined salon services for Austin professionals" |
+| FitForge CrossFit (gym/bold-energetic) | 7 | 100/100 | "Earn your strength. Every rep." |
+| GreenLeaf Landscaping (LLM fallback) | 5 | 100/100 | "Your yard. Exactly as it'll look." |
+
+**All quality checks passed:**
+- No unreplaced tokens (HEADLINE, SUBHEADLINE, TAGLINE, PHONE, EMAIL, ADDRESS, etc.) ✅
+- No fake coaches, team members, credentials ✅
+- No hardcoded prices, menu items, calorie claims ✅
+- No exclusivity claims ✅
+- Form endpoints correct (https://www.minimorphstudios.net/api/contact-submit) ✅
+- businessName in form payloads ✅
+- No Formspree / return false / portal/api ✅
+- restaurant/menu.html CLEAN ✅
+- gym/classes.html CLEAN ✅
+- GreenLeaf LLM fallback: genuine content, no bracket placeholders ✅
+
+**What proved:** System is fully production-ready. Anthropic API credits restored. All 5 Quality Lab businesses generate clean sites with genuine AI copy.
+
+**Blockers closed:** B4 (Anthropic API credits insufficient).
+
+**Gate advanced to:** First Controlled Customer — pending admin approval.
+
+---
+
 ## Production End-to-End Generation Test — 2026-05-15 (FAILED — API credits)
 
 **Result:** FAILED — Anthropic API credit balance insufficient

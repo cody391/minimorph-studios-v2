@@ -6,44 +6,6 @@
 
 ## Active Blockers
 
-### B4 — Anthropic API Credit Balance Insufficient
-
-**Severity:** P0 — blocks all AI copy generation and LLM fallback generation
-**Status:** OPEN
-**Discovered:** 2026-05-15 Production End-to-End Generation Test
-
-#### Symptom
-
-Production test (generation triggered via Railway admin API flow) produced:
-- GreenLeaf Landscaping (LLM fallback): `400 Bad Request — "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."`
-- Apex Roofing, Luxe + Bare Studio, FitForge CrossFit: HEADLINE, SUBHEADLINE, TAGLINE tokens unreplaced in generated HTML — Haiku copy generation failed silently (returns `{}` on API error)
-
-#### Root Cause
-
-Anthropic API account has insufficient prepaid credits. All API calls (both Haiku for copy generation and Sonnet for LLM fallback) fail with a 400 credit balance error.
-
-#### Fix Required
-
-Top up Anthropic API credits at `https://console.anthropic.com` → Plans & Billing. Once credits are added, re-run the production end-to-end generation test.
-
-#### Impact
-
-Blocks generation quality for ALL customers until resolved. Template content checks (no fake proof, correct form endpoints) passed — only the AI copy generation is blocked.
-
----
-
-### B1 — Quality Lab Incomplete: Anthropic API Unreachable from `railway run` Test Context
-
-**Severity:** P1 — SUPERSEDED by B4
-**Status:** CLOSED — root cause resolved by switching to production admin API flow
-**Discovered:** 2026-05-15 Live Quality Lab run
-
-#### Resolution
-
-Production End-to-End Generation Test (2026-05-15) proved that generating via the Railway admin API flow (HTTP requests to production server) works correctly — the Anthropic API IS reachable from the Railway server. The local `railway run` context was the problem, not the production environment. B4 (Anthropic credit balance) is the new blocking issue.
-
----
-
 ### B2 — ecommerce/product.html: `return false` in Form Handler
 
 **Severity:** P1 for ecommerce customers (not currently in Quality Lab test set)
@@ -95,6 +57,8 @@ Cannot test admin-gated procedures locally. Production admin login works via Rai
 | **P2** boutique/warm-lifestyle: Summer Sale banner | Removed | `86105c5` |
 | restaurant/menu.html: hardcoded food items and drink prices | Replaced with SERVICE tokens + neutral CTA | `8f11c2b` |
 | gym/classes.html: $25/$149/$199 pricing grid and calorie claim | Replaced with neutral membership CTA | `8f11c2b` |
+| **B1** Quality Lab: Anthropic API unreachable from `railway run` test context | Switched to production admin API flow (HTTP requests to Railway server) | — |
+| **B4** Anthropic API credit balance insufficient — blocked HEADLINE/SUBHEADLINE/TAGLINE generation and LLM fallback | Credits topped up; production rerun passed 5/5 (100/100) | — |
 
 ---
 

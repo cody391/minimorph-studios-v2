@@ -4,78 +4,61 @@
 
 ---
 
-## Current Gate: Anthropic API Credits → Production Generation Test Rerun
+## Current Gate: First Controlled Customer
 
-**Priority:** P0 — blocks all AI generation
-**Status:** BLOCKED — Anthropic API credit balance insufficient
+**Priority:** P0
+**Status:** READY — pending admin approval to onboard first real customer
 
-### What happened
+### What was completed
 
-Production End-to-End Generation Test executed on 2026-05-15. Generation was triggered via the Railway admin API flow (not `railway run` — actual production server). This proved Anthropic API IS reachable from Railway. However, all AI calls failed with:
+Production End-to-End Generation Test passed 5/5 on 2026-05-15 with Anthropic credits restored.
 
-```
-400 Bad Request — "Your credit balance is too low to access the Anthropic API.
-Please go to Plans & Billing to upgrade or purchase credits."
-```
+| Business | Template | Pages | Score |
+|---|---|---|---|
+| Apex Roofing & Exteriors MN | contractor/dark-industrial | 9 | 100/100 |
+| Rosa's Kitchen | restaurant/warm-casual | 7 | 100/100 |
+| Luxe + Bare Studio | salon/editorial-luxury | 8 | 100/100 |
+| FitForge CrossFit | gym/bold-energetic | 7 | 100/100 |
+| GreenLeaf Landscaping Co. | LLM fallback | 5 | 100/100 |
 
-- **GreenLeaf Landscaping (LLM fallback):** Explicit 400 credit error — generation failed
-- **Apex Roofing, Luxe + Bare Studio, FitForge CrossFit:** Haiku copy generation failed silently → HEADLINE, SUBHEADLINE, TAGLINE unreplaced
-- **Rosa's Kitchen:** Generation timed out (>10 min) — likely stuck in retry loop due to API failures
-
-### Template content verified CLEAN
-
-All P1 template content issues confirmed clean:
-- No fake coaches, fake team members, fake credentials ✅
-- No hardcoded prices ✅
-- No hardcoded menu items ✅
-- No exclusivity claims ✅
-- No Formspree, return false, portal/api ✅
-- Form endpoints: `https://www.minimorphstudios.net/api/contact-submit` ✅
-- APP_URL_PLACEHOLDER fully replaced ✅
+All quality checks passed: no unreplaced tokens, no fake proof, no hardcoded prices/dishes/coaches, correct form endpoints, businessName in payloads, sub-pages clean, GreenLeaf LLM output genuine.
 
 ---
 
-## Required Next Action (1 step)
+## Required Next Action
 
-**Top up Anthropic API credits** at `https://console.anthropic.com` → Plans & Billing.
+**Admin approval to onboard first real customer.** No code changes required.
 
-Once credits are added, re-run the production generation test using the same admin API flow:
-
-```
-1. Log in as admin (localAuth.login)
-2. For each of 5 businesses: onboarding.create → onboarding.saveQuestionnaire → compliance.adminApproveBlueprint → onboarding.triggerGeneration
-3. Poll onboarding.viewGeneratedSite until generationStatus === "complete"
-4. Score against 06_QUALITY_RULES.md (95/100 minimum)
-```
-
-Projects 41–45 from the 2026-05-15 test run are still in the DB (generation failed, HTML is empty). You may reuse them or create new ones.
+When ready:
+1. Select a real business to onboard (contractor, restaurant, salon, gym, or service industry)
+2. Run them through the Elena onboarding chat flow as a real customer would
+3. Verify generated site before delivering
+4. Monitor contact form submissions land at the correct endpoint
 
 ---
 
-## Additional Risk Found
+## Remaining Known Blockers Before Ecommerce Customers
 
-`server/templates/ecommerce/product.html:741` contains `return false;` in a form handler. Not part of the 5 Quality Lab test businesses but will affect ecommerce customers. Fix before any ecommerce customer is onboarded.
+- B2: `server/templates/ecommerce/product.html:741` — `return false` in form handler. Must be fixed before any ecommerce customer is onboarded. Fix: replace with JS fetch handler pattern.
 
 ---
 
 ## Gate Sequence
 
 ```
-[DONE]     Contact Flow P0 Repair ✅ (commit 0c1440d)
-           ↓
-[DONE]     Template Truth Repair ✅ (commits 86105c5 + 8f11c2b)
-           ↓
-[DONE]     Deploy Confirmed ✅ (commit 61c8f14, live at 07:42:58 GMT)
-           ↓
-[DONE]     Production API flow proved working ✅ (generation runs on server, Anthropic IS reachable)
-           ↓
-[BLOCKED]  Anthropic API credits insufficient — top up, then re-run 5-site generation test
-           ↓
-           Production Generation Test: all 5 sites score 95+/100
-           ↓
-           First Controlled Customer (requires admin approval)
-           ↓
-           Public Launch
+[DONE]  Contact Flow P0 Repair ✅ (commit 0c1440d)
+        ↓
+[DONE]  Template Truth Repair ✅ (commits 86105c5 + 8f11c2b)
+        ↓
+[DONE]  Deploy Confirmed ✅ (commit 61c8f14, live at 07:42:58 GMT)
+        ↓
+[DONE]  Production API flow proved working ✅ (generation runs on server)
+        ↓
+[DONE]  Production Generation Test: 5/5 PASS, 100/100 ✅ (projects 46-50, 2026-05-15)
+        ↓
+[READY] First Controlled Customer — admin approval required
+        ↓
+        Public Launch
 ```
 
 ---
@@ -91,7 +74,7 @@ Projects 41–45 from the 2026-05-15 test run are still in the DB (generation fa
 | Committed and pushed to origin/main | ✅ Done (61c8f14) |
 | Railway deploy confirmed | ✅ Done (07:42:58 GMT) |
 | Template content P1 repairs verified clean | ✅ Done (static + generation inspection) |
-| Production admin API flow working (generation on server) | ✅ Done (proved 2026-05-15) |
-| Anthropic API credits sufficient | ❌ Credit balance too low — add credits |
-| Production generation test — all 5 sites score 95+/100 | ❌ Pending credits top-up |
-| Admin explicitly approves first customer | ❌ Pending generation test pass |
+| Production admin API flow working (generation on server) | ✅ Done |
+| Anthropic API credits sufficient | ✅ Done (credits topped up 2026-05-15) |
+| Production generation test — all 5 sites score 95+/100 | ✅ Done (100/100 each, 2026-05-15) |
+| Admin explicitly approves first customer | ❌ Pending |
