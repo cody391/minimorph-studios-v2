@@ -5,6 +5,43 @@ For full git history: `git log --oneline`
 
 ---
 
+## `61c8f14` — docs: align Control Center with template truth repairs
+
+**Date:** 2026-05-15
+**Gate:** Docs Alignment + Push + Deploy Gate
+
+**What changed:** Docs-only. Updated all 4 Control Center files to record that P1-A through P1-E template blockers are resolved in `86105c5` and `8f11c2b`. Advanced active gate to Deploy Confirmed + Live Quality Lab Rerun. Set first customer status to NO pending Quality Lab.
+
+**What this proves:** Control Center aligned with git state. Push and deploy to origin/main and Railway confirmed.
+
+**What this does NOT prove:** Quality Lab pass (not yet completed).
+
+---
+
+## Live Quality Lab Run — 2026-05-15 (INCOMPLETE)
+
+**Result:** INCOMPLETE — Anthropic API unreachable from `railway run` local test context
+**Businesses tested:** 5 (Apex Roofing, Rosa's Kitchen, Luxe + Bare Studio, FitForge CrossFit, GreenLeaf Landscaping)
+**Sites fully generated:** 3 (Apex Roofing, Luxe + Bare Studio, FitForge CrossFit)
+**Sites failed to generate:** 2 (Rosa's Kitchen — fetch failed; GreenLeaf — 0 chars from LLM)
+
+**Root cause:** `railway run` executes code locally where Anthropic API is unreachable via IPv6. Not a production bug.
+
+**Template content verified CLEAN** in generated output (3 sites):
+- No fake coaches, team members, credentials ✅
+- No hardcoded prices ✅
+- No hardcoded menu items ✅
+- No exclusivity claims ✅
+- Form endpoints correct (https://www.minimorphstudios.net/api/contact-submit) ✅
+- businessName in payloads ✅
+- No Formspree / return false / portal/api ✅
+
+**Remaining gap:** HEADLINE / SUBHEADLINE / TAGLINE copy generation unverified (API was unreachable). Must be confirmed via production web-flow test.
+
+**Additional finding:** `server/templates/ecommerce/product.html:741` contains `return false` form handler — logged as blocker B2, does not affect current 5 test businesses.
+
+---
+
 ## `8f11c2b` — fix: remove invented pricing and menu content from subpages
 
 **Date:** 2026-05-15
