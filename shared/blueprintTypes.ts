@@ -9,6 +9,10 @@
  * inventory of claims with source, risk level, customer-direction doctrine, and
  * generator-use instructions.
  *
+ * B9 Add-On Fulfillment Truth Gate: AddOnRecord and AddOnUpsellFit now import
+ * fulfillment truth from shared/addonFulfillment.ts. buildAddOnRecords() uses
+ * the canonical registry. ADDON_FULFILLMENT_MAP removed.
+ *
  * DOCTRINE: MiniMorph does not police customer claims. The customer owns their
  * claims. MiniMorph records them, flags risk, offers safer alternatives, and
  * documents the customer's direction. These types capture that documentation —
@@ -20,6 +24,12 @@
  * testimonials, hasCustomPhotos) so existing portal/admin/generator readers
  * continue working without changes.
  */
+
+import {
+  lookupAddonFulfillment as lookupAddonFulfillmentRecord,
+  type AddonPublicOfferStatus,
+  type AddonSupportTaskType,
+} from "./addonFulfillment";
 
 // ── 1. Business Identity ─────────────────────────────────────────────────────
 
@@ -342,6 +352,18 @@ export interface AddOnRecord {
   adminSupportRequired: boolean;
   fulfillmentType: AddOnFulfillmentType;
   setupDisclosureGiven: boolean;
+  // B9: fulfillment truth fields
+  canElenaRecommend: boolean;
+  canCheckoutPurchase: boolean;
+  canAppearOnGeneratedSite: boolean;
+  canAppearInPortal: boolean;
+  publicOfferStatus: AddonPublicOfferStatus;
+  elenaSafePitch: string | null;
+  elenaDoNotSay: string | null;
+  buildReportLabel: string | null;
+  portalStatusLabel: string | null;
+  supportTaskType: AddonSupportTaskType | null;
+  blockedReason: string | null;
 }
 
 export interface AddOnUpsellFit {
@@ -350,6 +372,33 @@ export interface AddOnUpsellFit {
   declinedAddOns: AddOnRecord[];
   addOnsRequiringReview: AddOnRecord[];
   sourceNotes: string[];
+  // B9: fulfillment classification buckets
+  addOnsTeamSetup: AddOnRecord[];
+  addOnsCustomerAction: AddOnRecord[];
+  addOnsBlocked: AddOnRecord[];
+  addOnsNotSupported: AddOnRecord[];
+  fulfillmentSummary: {
+    total: number;
+    teamSetup: number;
+    customerAction: number;
+    instant: number;
+    blocked: number;
+  };
+  billingSummary: {
+    total: number;
+    billingSupported: number;
+    billingUnsupported: number;
+  };
+  generatorSummary: {
+    total: number;
+    generatorSupported: number;
+    generatorUnsupported: number;
+  };
+  portalSummary: {
+    total: number;
+    portalSupported: number;
+  };
+  supportTasksNeeded: string[];
 }
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
@@ -480,45 +529,14 @@ export function deriveTemplateLane(websiteType: string): string {
   return "llm_fallback";
 }
 
-// ── Add-on fulfillment registry (what the platform actually supports) ────────
-
-const ADDON_FULFILLMENT_MAP: Record<string, {
-  generatorSupported: boolean;
-  billingSupported: boolean;
-  adminSupportRequired: boolean;
-  fulfillmentType: AddOnFulfillmentType;
-}> = {
-  "review collector":       { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "seo autopilot":          { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "email marketing setup":  { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "ai chatbot":             { generatorSupported: true,  billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "competitor monitoring":  { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "booking widget":         { generatorSupported: true,  billingSupported: true,  adminSupportRequired: false, fulfillmentType: "customer_action" },
-  "social feed":            { generatorSupported: true,  billingSupported: true,  adminSupportRequired: false, fulfillmentType: "customer_action" },
-  "lead capture bot":       { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "sms lead alerts":        { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "logo design":            { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "professional copywriting":{ generatorSupported: false, billingSupported: true, adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "brand style guide":      { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "team_setup" },
-  "online store":           { generatorSupported: false, billingSupported: true,  adminSupportRequired: true,  fulfillmentType: "admin_review_required" },
-  "event calendar":         { generatorSupported: false, billingSupported: false, adminSupportRequired: true,  fulfillmentType: "blocked" },
-  "menu price list":        { generatorSupported: false, billingSupported: false, adminSupportRequired: true,  fulfillmentType: "blocked" },
-};
-
-function lookupAddonFulfillment(productName: string) {
-  const normalized = productName.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim();
-  for (const [key, val] of Object.entries(ADDON_FULFILLMENT_MAP)) {
-    if (normalized.includes(key) || key.includes(normalized)) return val;
-  }
-  return { generatorSupported: false, billingSupported: true, adminSupportRequired: true, fulfillmentType: "unknown" as AddOnFulfillmentType };
-}
+// ── Add-on fulfillment — delegates to canonical registry in addonFulfillment.ts ─
 
 export function buildAddOnRecords(
   addonsSelected: Array<{ product: string; price?: string; label?: string }>,
   interestLevel: "accepted"
 ): AddOnRecord[] {
   return addonsSelected.map(a => {
-    const fulfillment = lookupAddonFulfillment(a.product);
+    const reg = lookupAddonFulfillmentRecord(a.product);
     return {
       product: a.product,
       price: a.price ?? null,
@@ -527,13 +545,80 @@ export function buildAddOnRecords(
       businessNeedConnectedTo: null,
       customerInterestLevel: interestLevel,
       implementationStatus: "not_started",
-      billingSupported: fulfillment.billingSupported,
-      generatorSupported: fulfillment.generatorSupported,
-      adminSupportRequired: fulfillment.adminSupportRequired,
-      fulfillmentType: fulfillment.fulfillmentType,
+      billingSupported: reg?.billingSupported ?? true,
+      generatorSupported: reg?.generatorSupported ?? false,
+      adminSupportRequired: reg?.requiresTeamSetup ?? true,
+      fulfillmentType: (reg?.fulfillmentType ?? "unknown") as AddOnFulfillmentType,
       setupDisclosureGiven: false,
+      // B9 fulfillment truth fields
+      canElenaRecommend: reg?.canElenaRecommend ?? false,
+      canCheckoutPurchase: reg?.canCheckoutPurchase ?? false,
+      canAppearOnGeneratedSite: reg?.generatorSupported ?? false,
+      canAppearInPortal: reg?.portalSupported ?? false,
+      publicOfferStatus: (reg?.publicOfferStatus ?? "not_supported") as AddonPublicOfferStatus,
+      elenaSafePitch: reg?.elenaSafePitch ?? null,
+      elenaDoNotSay: reg?.elenaDoNotSay ?? null,
+      buildReportLabel: reg?.buildReportLabel ?? null,
+      portalStatusLabel: reg?.portalStatusLabel ?? null,
+      supportTaskType: (reg?.supportTaskType ?? "none") as AddonSupportTaskType,
+      blockedReason: reg?.blockedReason ?? null,
     };
   });
+}
+
+/**
+ * Build the full AddOnUpsellFit with B9 classification buckets and summaries.
+ */
+export function buildAddOnUpsellFit(
+  acceptedAddons: AddOnRecord[],
+  recommendedAddons: AddOnRecord[],
+  declinedAddons: AddOnRecord[],
+  sourceNotes: string[]
+): AddOnUpsellFit {
+  const all = [...acceptedAddons, ...recommendedAddons];
+
+  const addOnsTeamSetup = all.filter(a => a.fulfillmentType === "team_setup");
+  const addOnsCustomerAction = all.filter(a => a.fulfillmentType === "customer_action");
+  const addOnsBlocked = all.filter(a => a.fulfillmentType === "blocked" || a.publicOfferStatus === "blocked");
+  const addOnsNotSupported = all.filter(a => a.publicOfferStatus === "not_supported");
+
+  const supportTasksNeeded = addOnsTeamSetup
+    .filter(a => a.supportTaskType && a.supportTaskType !== "none")
+    .map(a => `${a.product}: ${a.supportTaskType}`);
+
+  return {
+    recommendedAddOns: recommendedAddons,
+    acceptedAddOns: acceptedAddons,
+    declinedAddOns: declinedAddons,
+    addOnsRequiringReview: all.filter(a => a.fulfillmentType === "admin_review_required"),
+    sourceNotes,
+    addOnsTeamSetup,
+    addOnsCustomerAction,
+    addOnsBlocked,
+    addOnsNotSupported,
+    fulfillmentSummary: {
+      total: all.length,
+      teamSetup: addOnsTeamSetup.length,
+      customerAction: addOnsCustomerAction.length,
+      instant: all.filter(a => a.fulfillmentType === "instant").length,
+      blocked: addOnsBlocked.length,
+    },
+    billingSummary: {
+      total: all.length,
+      billingSupported: all.filter(a => a.billingSupported).length,
+      billingUnsupported: all.filter(a => !a.billingSupported).length,
+    },
+    generatorSummary: {
+      total: all.length,
+      generatorSupported: all.filter(a => a.generatorSupported).length,
+      generatorUnsupported: all.filter(a => !a.generatorSupported).length,
+    },
+    portalSummary: {
+      total: all.length,
+      portalSupported: all.filter(a => a.canAppearInPortal).length,
+    },
+    supportTasksNeeded,
+  };
 }
 
 // ── B8: Claim / Proof Validation Helpers ─────────────────────────────────────

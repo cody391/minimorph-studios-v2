@@ -57,6 +57,7 @@ function buildBlueprintFromQuestionnaire(
     deriveRegulatedIndustry,
     deriveTemplateLane,
     buildAddOnRecords,
+    buildAddOnUpsellFit,
     buildClaimProofInventory,
     extractGeneratorClaimLists,
     scoreBlueprint,
@@ -260,13 +261,12 @@ function buildBlueprintFromQuestionnaire(
     claimsNeedingCustomerAcknowledgment: generatorClaimLists.claimsNeedingCustomerAcknowledgment,
   };
 
-  const addOnUpsellFit = {
-    recommendedAddOns: [],
-    acceptedAddOns: addOnRecords,
-    declinedAddOns: [],
-    addOnsRequiringReview: addOnRecords.filter((a: any) => a.fulfillmentType === "admin_review_required" || a.fulfillmentType === "blocked"),
-    sourceNotes: ["elena_onboarding"],
-  };
+  const addOnUpsellFit = buildAddOnUpsellFit(
+    addOnRecords,   // acceptedAddOns
+    [],             // recommendedAddOns (Elena-recommended but not yet accepted)
+    [],             // declinedAddOns
+    ["elena_onboarding"]
+  );
 
   // Build the full blueprint object
   const fullBlueprint: Record<string, unknown> = {
@@ -4046,10 +4046,19 @@ const onboardingRouter = router({
       if (!stripeKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Stripe not configured" });
       const stripe = new Stripe(stripeKey, { apiVersion: "2026-03-25.dahlia" as any });
       const { PACKAGES, calculateCheckoutTotals } = await import("../shared/pricing");
+      const { findNonPurchasableAddons } = await import("../shared/addonFulfillment");
       const pkg = PACKAGES[packageTier as keyof typeof PACKAGES] ?? PACKAGES.starter;
 
       // Use server-side catalog as source of truth for pricing — not Elena's price strings
       const addonsSelected = (q.addonsSelected as Array<{ product: string; price?: string; label?: string }> | undefined) ?? [];
+
+      // B9: Checkout guardrail — block add-ons that cannot be purchased
+      const nonPurchasable = findNonPurchasableAddons(addonsSelected.map(a => a.product));
+      if (nonPurchasable.length > 0) {
+        const reasons = nonPurchasable.map(np => `${np.product}: ${np.reason}`).join("; ");
+        throw new TRPCError({ code: "BAD_REQUEST", message: `One or more add-ons are not available for purchase: ${reasons}` });
+      }
+
       const totals = calculateCheckoutTotals(packageTier as any, addonsSelected);
 
       // Stripe Checkout Session line_items:
@@ -5025,6 +5034,13 @@ HOW TO USE THIS:
         return block;
       }).join("\n\n");
 
+      // B9: Generate blocked add-ons section from canonical registry
+      const { getBlockedAddons: getBlockedAddonsFn, getElenaRecommendableAddons: getElenaRecommendableAddonsFn } = await import("../shared/addonFulfillment");
+      const blockedAddonsList = getBlockedAddonsFn()
+        .map(r => `- ${r.displayName}: ${r.blockedReason ?? "not available"} — say "${r.elenaDoNotSay ?? "I'll flag this for our team instead of promising it here."}"`)
+        .join("\n");
+      const recommendableIds = new Set(getElenaRecommendableAddonsFn().map(r => r.id));
+
       const systemPrompt = `You are Elena Brooks — lead creative director and onboarding specialist at MiniMorph Studios. You are a world-class design strategist: warm, sharp, genuinely curious, occasionally funny. You talk like the best designer a client has ever worked with. You use contractions. You celebrate when customers share something cool about their business. You ask ONE question at a time but go deep. You never say "I can't" — you always redirect naturally.
 
 == WEBSITE ACCESS — READ THIS FIRST ==
@@ -5217,10 +5233,8 @@ For every add-on recommendation, always include:
 3. Whether it requires team setup after launch or customer action (be honest — say "our team sets this up after launch" or "you'll do X in your portal")
 4. That they can decline it without affecting the core website build
 
-BLOCKED ADD-ONS — Do NOT recommend these without admin review:
-- online_store / ecommerce: requires custom admin review — say "Ecommerce requires a custom review. I'll flag this for the MiniMorph team before we promise store, cart, checkout, or inventory features."
-- event_calendar: platform support is limited — say "That may require custom setup. I'll flag it for review instead of promising it here."
-- menu_price_list: platform support is limited — say "That may require custom setup. I'll flag it for review instead of promising it here."
+BLOCKED ADD-ONS — Do NOT recommend, pitch, or accept these. If a customer asks about one, say you will flag this for our team to review rather than promising the feature.
+${blockedAddonsList}
 
 == TRANSPARENCY RULE — ALWAYS APPLY ==
 Before pitching any add-on, briefly mention what the setup involves in ONE sentence before the ROI pitch. Be honest about whether it is instant, team-setup, or requires customer action:

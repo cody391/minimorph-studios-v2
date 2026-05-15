@@ -5,6 +5,30 @@ For full git history: `git log --oneline`
 
 ---
 
+## Add-On Fulfillment Truth Gate (B9) — 2026-05-15
+
+**Gate:** B9 — Add-On Fulfillment Truth Gate
+**Commit:** TBD (feat: add add-on fulfillment truth registry)
+**Status:** COMPLETE
+
+**What changed:**
+
+- `shared/addonFulfillment.ts` (NEW): Canonical add-on fulfillment registry with 20 add-ons (12 purchasable, 2 internal_only, 3 blocked, 1 not_supported, 2 internal-auto). Every add-on has 28 fields including `canElenaRecommend`, `canCheckoutPurchase`, `generatorSupported`, `billingSupported`, `adminSupported`, `portalSupported`, `supportWorkflowSupported`, `requiresTeamSetup`, `requiresCustomerAction`, `requiresAdminReview`, `requiresCustomQuote`, `publicOfferStatus`, `fulfillmentType`, `elenaSafePitch`, `elenaDoNotSay`, `adminNotes`, `buildReportLabel`, `portalStatusLabel`, `supportTaskType`, `blockedReason`. Exports: `lookupAddonFulfillment()`, `getElenaRecommendableAddons()`, `getCheckoutPurchasableAddons()`, `getGeneratorSupportedAddons()`, `getBlockedAddons()`, `findNonPurchasableAddons()`.
+- `shared/blueprintTypes.ts`: Imports canonical registry from `addonFulfillment.ts`. Removed private `ADDON_FULFILLMENT_MAP` (15-entry map, replaced by registry). `AddOnRecord` extended with 11 B9 fields: `canElenaRecommend`, `canCheckoutPurchase`, `canAppearOnGeneratedSite`, `canAppearInPortal`, `publicOfferStatus`, `elenaSafePitch`, `elenaDoNotSay`, `buildReportLabel`, `portalStatusLabel`, `supportTaskType`, `blockedReason`. `AddOnUpsellFit` extended with 9 B9 fields: `addOnsTeamSetup`, `addOnsCustomerAction`, `addOnsBlocked`, `addOnsNotSupported`, `fulfillmentSummary`, `billingSummary`, `generatorSummary`, `portalSummary`, `supportTasksNeeded`. New `buildAddOnUpsellFit()` helper builds all classification buckets and summaries. `buildAddOnRecords()` updated to use canonical registry lookup.
+- `server/routers.ts`: `buildBlueprintFromQuestionnaire()` updated to call `buildAddOnUpsellFit()`. Checkout procedure (`createCheckoutAfterElena`) adds B9 guardrail: calls `findNonPurchasableAddons()` and throws `BAD_REQUEST` if any add-ons are not purchasable. Elena prompt BLOCKED ADD-ONS section now generated dynamically from `getBlockedAddons()` — no longer hardcoded. Elena prompt BLOCKED ADD-ONS section retains "flag this for our team" static language as required guardrail phrase.
+- `server/services/siteGenerator.ts`: `addonsForGenerator` variable filters accepted add-ons to only `generatorSupported === true` entries using the canonical registry. Brief passed to template engine only includes generator-supported add-ons. Build report add-on log now shows classified buckets: Generator-embedded, Team setup required, Customer action required, BLOCKED.
+- `server/addonFulfillmentTruth.test.ts` (NEW): 105 tests across 13 sections (A–M). Sections: A (registry structure), B (Elena guardrail), C (checkout guardrail), D (generator filter), E (lookup helpers), F (buildAddOnRecords), G (buildAddOnUpsellFit), H (pricing catalog consistency), I (blocked add-on integrity), J (internal-only add-ons), K (team-setup add-ons), L (customer-action add-ons), M (logical consistency invariants).
+- `server/blueprintSchema.test.ts`: Updated `online store is admin_review_required` → `online store is blocked (B9 — B2 open, cannot fulfill)` to reflect correct registry truth.
+- `server/elenaPromiseSafety.test.ts`: No changes — all 38 guardrail tests pass including "flag this for" (now in the BLOCKED ADD-ONS section static preamble).
+
+**What this proves:** Elena may only recommend add-ons with `canElenaRecommend === true`. Checkout may only accept add-ons with `canCheckoutPurchase === true`. Generator only embeds add-ons with `generatorSupported === true`. Every Blueprint's `addOnUpsellFit` now carries full classification buckets, fulfillment summaries, and support task lists. Blocked add-ons (online_store B2, event_calendar, menu_price_list) are blocked at all three guardrail points. Internal-only add-ons (GA4, Facebook Pixel) are auto-embedded but never offered or billed. 105 B9 tests + 85 B6 tests + 48 B7 tests + 90 B8 tests + 38 Elena safety tests = 378 gate tests passing. pnpm check clean. pnpm build PASS.
+
+**What this does NOT prove:** B10 customer site preview approval UI. B11 full Blueprint → generator handoff. B2 ecommerce fix. Dogfood readiness. Those gates follow.
+
+**Remaining open blockers:** B10 Customer Site Preview Approval, B11 Blueprint → Generator Handoff, B2 ecommerce return false.
+
+---
+
 ## Lifecycle Realignment Gate — 2026-05-15
 
 **Gate:** MMV4 End-to-End Lifecycle Realignment

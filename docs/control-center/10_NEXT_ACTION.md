@@ -4,10 +4,10 @@
 
 ---
 
-## Current Gate: Add-On Fulfillment Truth Gate (B9)
+## Current Gate: Customer Site Preview Approval Gate (B10)
 
 **Priority:** P1
-**Status:** OPEN — next gate after Lifecycle Realignment Gate
+**Status:** OPEN — next gate after Add-On Fulfillment Truth Gate (B9)
 
 ### What was completed before this gate
 
@@ -27,6 +27,7 @@
 | Admin Blueprint Gate (B7) | ✅ Done (`2682cfb`) |
 | Claim/Proof Validation Gate (B8) | ✅ Done (`70acded`) |
 | Lifecycle Realignment Gate | ✅ Done (`96952f9`) |
+| Add-On Fulfillment Truth Gate (B9) | ✅ Done (TBD commit) |
 
 ### Lifecycle Realignment — what changed
 
@@ -47,23 +48,22 @@ The correct MiniMorph operating model is:
 - `adminDenyPreview()` added: lifecycle step 7 deny path → routes project to "revisions" stage.
 - B10 redefined: customer reviews the **built site** (not Blueprint). Portal "approve site" flow, not "approve Blueprint."
 
-### Why B9 is the next gate
+### Why B10 is the next gate
 
-Elena may recommend add-ons (ecommerce, booking, SEO, photography, etc.) that the platform cannot fully fulfill. There is no end-to-end check verifying a recommended add-on is supported by billing, portal, admin, and generator before Elena offers it.
+Customers currently have no mechanism to view or approve the built site before it launches. The customer portal shows build stages but does not give the customer a clear approval step for the generated site. B10 adds the customer-facing site preview approval UI.
 
 ---
 
 ## Required Next Action
 
-**Add-On Fulfillment Truth Gate (B9)** — Add a complete add-on fulfillment registry to the Blueprint. Elena must only recommend add-ons whose `generatorSupported` and `billingSupported` flags are true. Blueprint must carry `recommendedAddOns`, `acceptedAddOns`, and `declinedAddOns` with fulfillment status per add-on.
+**Customer Site Preview Approval Gate (B10)** — Customer must be able to view the built site preview, and explicitly approve or request revisions. This approval must be recorded. Admin sees customer approval status. Customer portal shows preview iframe/link + Approve/Request Revisions buttons.
 
-After B9 is closed, proceed to B10 (customer site preview approval polish), then B11.
+After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
 
 ---
 
 ## Remaining Known Blockers Before MiniMorph Dogfood
 
-- B9: Add-On Truth/Fulfillment Gap — Elena may recommend unimplemented add-ons
 - B10: Customer site preview approval — customer reviews and approves the built site before launch (B10 is customer site review, NOT Blueprint approval)
 - B11: Blueprint → Generator Instruction Gap — SiteBrief does not carry full Blueprint to generator
 
@@ -104,9 +104,9 @@ After B9 is closed, proceed to B10 (customer site preview approval polish), then
         ↓
 [DONE]  Lifecycle Realignment Gate ✅ (`96952f9`)
         ↓
-[ACTIVE] Add-On Fulfillment Truth Gate (B9) — recommendedAddOns/acceptedAddOns in Blueprint
+[DONE]  Add-On Fulfillment Truth Gate (B9) ✅ (TBD commit)
         ↓
-        Customer Blueprint Approval Gate (B10) — customer can view/correct/approve Blueprint
+[ACTIVE] Customer Site Preview Approval Gate (B10) — customer views/approves built site
         ↓
         Blueprint → Generator Handoff Gate (B11) — full Blueprint consumed by generator/prompt
         ↓
@@ -141,8 +141,8 @@ After B9 is closed, proceed to B10 (customer site preview approval polish), then
 | B6 Blueprint Schema Gap resolved | ✅ Done (26aaf12) |
 | B7 Admin Blueprint Gate implemented | ✅ Done (`2682cfb`) |
 | B8 Claim/Proof Validation implemented | ✅ Done (`70acded`) |
-| B9 Add-On Truth/Fulfillment Gap resolved | ❌ Pending |
-| B10 Customer Blueprint Approval implemented | ❌ Pending |
+| B9 Add-On Truth/Fulfillment Gap resolved | ✅ Done (TBD commit) |
+| B10 Customer Site Preview Approval implemented | ❌ Pending |
 | B11 Blueprint → Generator Handoff complete | ❌ Pending |
 | MiniMorph internal dogfood gate | ❌ Pending (after B6–B11) |
 | Admin explicitly approves outside first customer | ❌ Pending (after dogfood) |

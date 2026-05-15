@@ -105,20 +105,22 @@ Additionally: no `adminDenyPreview()` procedure existed (step-9 deny branch was 
 ### B9 — Add-On Truth / Fulfillment Gap
 
 **Severity:** P1 — creates broken promises risk
-**Status:** OPEN
+**Status:** RESOLVED (B9 commit)
 **Discovered:** 2026-05-15 Elena Promise Enforcement Audit
+**Closed:** 2026-05-15 Add-On Fulfillment Truth Gate
 
-#### Symptom
+#### What was fixed
 
-Elena may mention or recommend add-ons (ecommerce, booking, SEO, photography, etc.) that the platform cannot fully fulfill. There is no structured `recommendedAddOns` / `acceptedAddOns` / `declinedAddOns` storage in the Blueprint. There is no end-to-end check that verifies a recommended add-on is supported by billing, portal, admin, and generator before Elena offers it.
+- `shared/addonFulfillment.ts` (NEW): 20-add-on canonical fulfillment registry with `canElenaRecommend`, `canCheckoutPurchase`, `generatorSupported`, `billingSupported`, and 24 more fields per add-on. `lookupAddonFulfillment()`, `getElenaRecommendableAddons()`, `getCheckoutPurchasableAddons()`, `getGeneratorSupportedAddons()`, `getBlockedAddons()`, `findNonPurchasableAddons()` all exported.
+- `shared/blueprintTypes.ts`: `AddOnRecord` + 11 B9 fields. `AddOnUpsellFit` + 9 B9 classification buckets. `buildAddOnUpsellFit()` added. `ADDON_FULFILLMENT_MAP` removed. `buildAddOnRecords()` now uses canonical registry.
+- `server/routers.ts`: Checkout guardrail (`findNonPurchasableAddons()` throws BAD_REQUEST for blocked add-ons). Elena BLOCKED ADD-ONS section generated from registry. Blueprint `addOnUpsellFit` fully populated.
+- `server/services/siteGenerator.ts`: Only `generatorSupported === true` add-ons passed to template engine. Build report logs classification buckets.
+- `server/addonFulfillmentTruth.test.ts` (NEW): 105 tests passing.
 
-#### Fix Required
+#### Remaining gaps (require later gates)
 
-Add the Add-On / Upsell Fit section to the Blueprint schema. Add a platform fulfillment registry that maps each add-on to its implementation status. Elena must only recommend add-ons whose `generatorSupported` and `billingSupported` flags are true.
-
-#### Impact
-
-Elena could recommend ecommerce to a customer, customer accepts, billing charges for it, and the platform cannot fulfill it. This breaks trust and may constitute a false promise.
+- B10: Customer site preview approval — not yet built.
+- B11: Blueprint → generator full handoff — not yet wired.
 
 ---
 

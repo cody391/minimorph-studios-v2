@@ -803,7 +803,29 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     const specialRequests = (q.specialRequests as string) || "None";
     const mustHaveFeaturesRaw = Array.isArray(q.mustHaveFeatures) ? (q.mustHaveFeatures as string[]) : [];
     const addonsSelectedRaw = Array.isArray(q.addonsSelected) ? (q.addonsSelected as any[]) : [];
-    const mergedFeatures = bridgeAddonsToFeatures(addonsSelectedRaw, mustHaveFeaturesRaw);
+
+    // B9: Only pass generator-supported add-ons to template/LLM — non-generator add-ons
+    // are fulfilled by the addon orchestrator, not embedded into the generated HTML.
+    const { lookupAddonFulfillment: lookupAddonFulfillmentFn } = await import("../../shared/addonFulfillment");
+    const addonsForGenerator = addonsSelectedRaw.filter((a: any) => {
+      const record = lookupAddonFulfillmentFn(a.product || "");
+      return record?.generatorSupported === true;
+    });
+    // Classification for build report
+    const addonsTeamSetup = addonsSelectedRaw.filter((a: any) => {
+      const record = lookupAddonFulfillmentFn(a.product || "");
+      return record && record.fulfillmentType === "team_setup";
+    });
+    const addonsCustomerAction = addonsSelectedRaw.filter((a: any) => {
+      const record = lookupAddonFulfillmentFn(a.product || "");
+      return record && record.fulfillmentType === "customer_action";
+    });
+    const addonsBlocked = addonsSelectedRaw.filter((a: any) => {
+      const record = lookupAddonFulfillmentFn(a.product || "");
+      return !record || record.publicOfferStatus === "blocked" || record.publicOfferStatus === "not_supported";
+    });
+
+    const mergedFeatures = bridgeAddonsToFeatures(addonsForGenerator, mustHaveFeaturesRaw);
     const mustHaveFeatures = mergedFeatures.join(", ") || "Standard";
 
     // ── New explicit contact/business fields (Fix 2 additions) ───────────────
@@ -1025,7 +1047,8 @@ ${assetSummary}`;
           appUrl: (ENV.appUrl || "https://www.minimorphstudios.net").replace(/\/portal\/?$/, "").replace(/\/$/, ""),
           subNiche,
           // Elena-sourced fields — wire every field she collects
-          addonsSelected: addonsSelectedRaw,
+          // B9: only generator-supported add-ons go into the site build
+          addonsSelected: addonsForGenerator,
           socialHandles: (q.socialHandles as Record<string, string>) || undefined,
           blogTopics: Array.isArray(q.blogTopics) ? (q.blogTopics as string[]) : undefined,
           specialRequests: (q.specialRequests as string) || undefined,
@@ -1422,7 +1445,13 @@ ${Object.keys(pages)
         if (database) {
           const reporter = await BuildReporter.create(project.customerId, projectId, database);
           await reporter.success("site_generation", `Site generated: ${cfProjectName}`, `Pages: ${Object.keys(pages).join(", ")}`);
-          await reporter.info("agent3", "Addon orchestration triggered", `Addons: ${addonsSelectedRaw.map((a: any) => a.product || a).join(", ") || "none"}`);
+          const addonBuildSummary = [
+            addonsForGenerator.length > 0 ? `Generator-embedded: ${addonsForGenerator.map((a: any) => a.product).join(", ")}` : null,
+            addonsTeamSetup.length > 0 ? `Team setup required: ${addonsTeamSetup.map((a: any) => a.product).join(", ")}` : null,
+            addonsCustomerAction.length > 0 ? `Customer action required: ${addonsCustomerAction.map((a: any) => a.product).join(", ")}` : null,
+            addonsBlocked.length > 0 ? `BLOCKED (not fulfilled): ${addonsBlocked.map((a: any) => a.product).join(", ")}` : null,
+          ].filter(Boolean).join(" | ") || "none";
+          await reporter.info("agent3", "Addon orchestration triggered", addonBuildSummary);
 
           const qaCtx = {
             customerId: project.customerId,

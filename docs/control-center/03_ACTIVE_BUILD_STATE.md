@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Add-On Fulfillment Truth Gate (B9)** — Lifecycle Realignment Gate is complete. Platform is now architecturally aligned with the correct MiniMorph operating model. Next gate is B9: add-on fulfillment truth.
+**Customer Site Preview Approval Gate (B10)** — B9 Add-On Fulfillment Truth Gate is complete. Next gate is B10: customer site preview approval.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -24,6 +24,7 @@ Previous lanes completed:
 - **Admin Blueprint Gate (B7) ✅** (hard adminBlueprintApprovedAt gate, 4 admin procedures, 48 tests, pnpm check + build clean)
 - **Claim/Proof Validation Gate (B8) ✅** (ClaimProofRecord, ClaimProofInventory, 7 claim sources, RISKY_CLAIM_WORDS scanner, 90 tests, pnpm check + build clean)
 - **Lifecycle Realignment Gate ✅** (Gate 1.5 corrected to block-only-on-blocked, Blueprint auto-approval via completenessScore ≥ 60, adminDenyPreview added, 273 tests, pnpm check + build clean)
+- **Add-On Fulfillment Truth Gate (B9) ✅** (20-add-on canonical registry, canElenaRecommend/canCheckoutPurchase/generatorSupported guardrails, checkout BAD_REQUEST for blocked add-ons, generator filter, 105 tests, pnpm check + build clean)
 
 ## Latest Known Commit
 
@@ -75,7 +76,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**Add-On Fulfillment Truth Gate (B9)** — Elena may mention or recommend add-ons that the platform cannot fully fulfill. There is no end-to-end check verifying a recommended add-on is supported by billing, portal, admin, and generator before Elena offers it.
+**Customer Site Preview Approval Gate (B10)** — Customers currently have no portal mechanism to view the built site and approve it before launch. B10 adds customer site preview approval: preview iframe/link, Approve/Request Revisions buttons, recorded approval status, admin visibility of customer approval decision.
 
 ## First Customer Status
 
@@ -95,6 +96,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 - [x] Admin Blueprint Gate (B7) — hard adminBlueprintApprovedAt gate in generateSiteForProject() (Gate 1.5), 4 admin procedures (adminApproveBlueprint, adminReturnBlueprint, adminBlockBlueprint, adminAddBlueprintFlags), 7 DB fields (migration 0057), admin UI review status badge + Approve/Return/Block buttons in OnboardingProjects, 48 tests passing ✅
 - [x] Claim/Proof Validation Gate (B8) — ClaimProofRecord type (23 fields), ClaimProofInventory, 7 claim source types, RISKY_CLAIM_WORDS scanner (3 risk tiers), buildClaimProofInventory() + extractGeneratorClaimLists() helpers; Blueprint now carries structured claim inventory in positioning.claimProofInventory; riskCompliance.claimsSummary; generatorInstructions.claimsSafeToUse/claimsToOmit/claimsNeedingAdminReview; 90 tests passing ✅
 - [x] Lifecycle Realignment Gate — Gate 1.5 corrected (only "blocked" stops generation; admin reviews built site at step 8, not Blueprint pre-generation); saveQuestionnaire now auto-approves Blueprint when completenessScore ≥ 60 (Elena conversation = customer confirmation); adminDenyPreview() added (step-9 deny path → revisions stage); B10 redefined as customer site approval (not Blueprint approval); 273 gate tests passing ✅
+- [x] Add-On Fulfillment Truth Gate (B9) — 20-add-on canonical fulfillment registry (shared/addonFulfillment.ts); Elena guardrail (canElenaRecommend), checkout guardrail (findNonPurchasableAddons), generator filter (generatorSupported-only to template engine); AddOnRecord + 11 B9 fields; AddOnUpsellFit + 9 classification buckets; buildAddOnUpsellFit() helper; 105 B9 tests passing ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

@@ -225,9 +225,11 @@ describe("buildAddOnRecords", () => {
     expect(rc?.generatorSupported).toBe(false);
   });
 
-  it("online store is admin_review_required", () => {
+  it("online store is blocked (B9 — B2 open, cannot fulfill)", () => {
     const os = records.find(r => r.product === "Online Store");
-    expect(os?.fulfillmentType).toBe("admin_review_required");
+    expect(os?.fulfillmentType).toBe("blocked");
+    expect(os?.canElenaRecommend).toBe(false);
+    expect(os?.canCheckoutPurchase).toBe(false);
   });
 
   it("all records have customerInterestLevel = accepted", () => {
