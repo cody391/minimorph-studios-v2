@@ -27,7 +27,7 @@ Previous lanes completed:
 
 | Field | Value |
 |---|---|
-| HEAD | TBD (B7 commit) |
+| HEAD | 2682cfb |
 | Branch | `main` |
 | Message | feat: require admin Blueprint approval before generation |
 | Production URL | https://www.minimorphstudios.net |

@@ -8,7 +8,7 @@ For full git history: `git log --oneline`
 ## Admin Blueprint Gate (B7) — 2026-05-15
 
 **Gate:** Admin Blueprint Gate (B7)
-**Commit:** TBD (B7 commit)
+**Commit:** 2682cfb
 **Status:** COMPLETE
 
 **What changed:**
