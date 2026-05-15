@@ -4,10 +4,10 @@
 
 ---
 
-## Current Gate: Blueprint → Generator Handoff Gate (B11)
+## Current Gate: MiniMorph Internal Dogfood Gate
 
 **Priority:** P1
-**Status:** OPEN — next gate after Customer Site Preview Approval Gate (B10)
+**Status:** OPEN — next gate after Blueprint → Generator Handoff Gate (B11)
 
 ### What was completed before this gate
 
@@ -57,15 +57,15 @@ Customers currently have no mechanism to view or approve the built site before i
 
 ## Required Next Action
 
-**Blueprint → Generator Handoff Gate (B11)** — SiteBrief does not carry the full Blueprint to the generator. Fields like customer psychology, buyer fears, trust triggers, do-not-say list, banned phrases, safe claims, risky claims, and CTA rules are not explicitly passed from Blueprint to generator prompt. B11 extends SiteBrief or creates a BlueprintHandoff object that carries all Blueprint sections into the generator and updates buildCustomTemplatePrompt() to consume them.
+**MiniMorph Internal Dogfood Gate** — Reset project 34 (or create a fresh test project), run the full Elena onboarding conversation, generate the site, review the build report (verify B11 handoff integrity entry), and QA the generated output against 06_QUALITY_RULES.md.
 
-After B11 is closed, proceed to MiniMorph Internal Dogfood Gate.
+After dogfood passes, proceed to first outside controlled customer.
 
 ---
 
 ## Remaining Known Blockers Before MiniMorph Dogfood
 
-- B11: Blueprint → Generator Instruction Gap — SiteBrief does not carry full Blueprint to generator
+- None — all B6–B11 gates closed. Dogfood is the next gate.
 
 ## Remaining Known Blockers Before Ecommerce Customers
 
@@ -110,9 +110,9 @@ After B11 is closed, proceed to MiniMorph Internal Dogfood Gate.
         ↓
 [DONE]  Customer Site Preview Approval Gate (B10) ✅ (ecab8a9)
         ↓
-[ACTIVE] Blueprint → Generator Handoff Gate (B11) — full Blueprint consumed by generator/prompt
+[DONE]  Blueprint → Generator Handoff Gate (B11) ✅ — full Blueprint consumed by generator/prompt
         ↓
-        MiniMorph Internal Dogfood Gate — reset project 34, run Elena, generate, QA
+[ACTIVE] MiniMorph Internal Dogfood Gate — reset project 34, run Elena, generate, QA
         ↓
         First Outside Controlled Customer
         ↓
@@ -146,6 +146,6 @@ After B11 is closed, proceed to MiniMorph Internal Dogfood Gate.
 | B9 Add-On Truth/Fulfillment Gap resolved | ✅ Done (2484fbe) |
 | B-Card Gate (checkout/contract integrity) | ✅ Done |
 | B10 Customer Site Preview Approval implemented | ✅ Done (ecab8a9) |
-| B11 Blueprint → Generator Handoff complete | ❌ Pending |
+| B11 Blueprint → Generator Handoff complete | ✅ Done |
 | MiniMorph internal dogfood gate | ❌ Pending (after B6–B11) |
 | Admin explicitly approves outside first customer | ❌ Pending (after dogfood) |

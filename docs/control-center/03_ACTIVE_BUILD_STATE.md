@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Blueprint → Generator Handoff Gate (B11)** — B10 Customer Site Preview Approval Gate is complete. Next gate is B11: full Blueprint → generator handoff.
+**MiniMorph Internal Dogfood Gate** — B11 Blueprint → Generator Handoff Gate is complete. Next gate is internal dogfood: reset project 34, run full Elena flow, generate, QA.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -27,6 +27,7 @@ Previous lanes completed:
 - **Add-On Fulfillment Truth Gate (B9) ✅** (20-add-on canonical registry, canElenaRecommend/canCheckoutPurchase/generatorSupported guardrails, checkout BAD_REQUEST for blocked add-ons, generator filter, 105 tests, pnpm check + build clean)
 - **B-Card Gate ✅** (createCheckout blocked, generateRepPaymentLink agreement fatal, resendPaymentLink agreement lookup, webhook COMPLIANCE_ALERT, getCustomerCardPacket helper, 52 tests, pnpm check + build clean)
 - **Customer Site Preview Approval Gate (B10) ✅** (approveLaunch adminPreviewApprovedAt guard, adminDenyPreview UI button added, requestChange changeCategory field, siteUpdater already correctly clears adminPreviewApprovedAt on revision, 58 tests, pnpm check + build clean)
+- **Blueprint → Generator Handoff Gate (B11) ✅** (BlueprintGeneratorHandoff type, 15-section prompt builder, integrity report 0-100, verbatim preservation, wired into siteGenerator.ts sharedContext + build reporter, 64 tests, pnpm check + build clean)
 
 ## Latest Known Commit
 
@@ -78,7 +79,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**Customer Site Preview Approval Gate (B10)** — Customers currently have no portal mechanism to view the built site and approve it before launch. B10 adds customer site preview approval: preview iframe/link, Approve/Request Revisions buttons, recorded approval status, admin visibility of customer approval decision.
+**MiniMorph Internal Dogfood Gate** — Reset project 34, run full Elena onboarding conversation, generate site, review build report (including B11 handoff integrity entry), QA generated output against quality rules.
 
 ## First Customer Status
 
@@ -101,6 +102,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 - [x] Add-On Fulfillment Truth Gate (B9) — 20-add-on canonical fulfillment registry (shared/addonFulfillment.ts); Elena guardrail (canElenaRecommend), checkout guardrail (findNonPurchasableAddons), generator filter (generatorSupported-only to template engine); AddOnRecord + 11 B9 fields; AddOnUpsellFit + 9 classification buckets; buildAddOnUpsellFit() helper; 105 B9 tests passing ✅
 - [x] B-Card Gate — createCheckout legacy path permanently blocked (BAD_REQUEST); generateRepPaymentLink agreement creation now fatal; resendPaymentLink passes agreement_id in Stripe metadata; webhook logs [COMPLIANCE_ALERT] when no agreement_id; getCustomerCardPacket() admin helper returns full lifetime card packet; siteBuildReports added to db.ts schema import; 52 B-Card tests passing ✅
 - [x] **Customer Site Preview Approval Gate (B10)** — approveLaunch now guards on adminPreviewApprovedAt (customer cannot approve before admin preview approval); adminDenyPreview UI button added to OnboardingProjects.tsx; requestChange accepts optional changeCategory (text_copy/design_style/photo_media/business_info/contact_form/other); siteUpdater.ts already correctly clears adminPreviewApprovedAt + sets stage: "pending_admin_review" on revision rebuild; approval status derivable from existing fields (no new columns needed); 58 B10 tests passing ✅
+- [x] **Blueprint → Generator Handoff Gate (B11)** — shared/blueprintHandoff.ts: BlueprintGeneratorHandoff type, buildBlueprintGeneratorHandoff(), buildHandoffIntegrityReport(), buildHandoffPromptSections() with 15 labeled sections; siteGenerator.ts wired at 3 points (handoff builder after blueprint gate, prompt injection in sharedContext before questionnaire JSON, build reporter b11_handoff entry); 64 B11 tests passing ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

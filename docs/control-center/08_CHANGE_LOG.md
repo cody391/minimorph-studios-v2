@@ -5,6 +5,26 @@ For full git history: `git log --oneline`
 
 ---
 
+## Blueprint → Generator Handoff Gate (B11) — 2026-05-15
+
+**Gate:** B11 — Blueprint → Generator Verbatim Handoff
+**Commit:** feat: add lossless Blueprint generator handoff
+**Status:** COMPLETE
+
+**What changed:**
+
+- `shared/blueprintHandoff.ts` (NEW): Full `BlueprintGeneratorHandoff` interface (~40 fields) carrying all generator-relevant Blueprint data. `HandoffVerbatimBlock` — customer truth that must survive handoff exactly. `HandoffIntegrityReport` (14 fields) — counts passed/omitted fields, lists omissions with reasons, computes integrity score 0-100, lists risk warnings, and exposes `safeToGenerate` flag. Safe extraction helpers (`safe()`, `safeArray()`, `safeStr()`, `safeBool()`) that never throw on missing/null Blueprint sections. `buildBlueprintGeneratorHandoff(blueprintJson)` — constructs full handoff from all 9 Blueprint sections. `buildHandoffIntegrityReport()` — scores handoff completeness. `buildHandoffPromptSections(handoff)` — generates 15 labeled LLM prompt sections injected before raw questionnaire JSON.
+- `server/services/siteGenerator.ts`: Three-point wiring. (1) After blueprint hard-block gate: dynamically imports `buildBlueprintGeneratorHandoff`, builds handoff from `blueprint.blueprintJson`, warns if `!integrityReport.safeToGenerate` but never blocks on score alone (legacy blueprint safety). (2) In `sharedContext` string: injects `buildHandoffPromptSections(blueprintHandoff)` BEFORE `FULL QUESTIONNAIRE DATA` dump — LLM receives structured Blueprint instructions before raw data. (3) In build reporter: logs `b11_handoff` entry with `score/fields_passed/fields_omitted/safeToGenerate` so admin can audit handoff completeness per build.
+- `server/blueprintGeneratorHandoff.test.ts` (NEW): 64 tests across 11 sections. A: builder null/empty/invalid — 5 tests. B: verbatim preservation businessIdentity — 5 tests. C: verbatim preservation positioning + offerStrategy — 5 tests. D: generator instructions — 7 tests. E: customer psychology — 6 tests. F: risk/compliance — 4 tests. G: integrity report — 8 tests. H: prompt section builder — 13 tests. I: claims fallback — 2 tests. J: add-on fulfillment truth — 4 tests. K: regression — 5 tests.
+
+**What this proves:** Every Blueprint section (businessIdentity, offerStrategy, customerPsychology, positioning, websiteStrategy, generatorInstructions, riskCompliance, addOnUpsellFit) now reaches the generator LLM as structured, labeled prompt sections. Verbatim customer text is preserved exactly. Banned phrases and do-not-say lists are explicitly injected. Claims safe/omit/flagged lists are carried. Add-on fulfillment truth is passed. Integrity score gives admin visibility into handoff quality per build. Generator never blocks on low score — legacy blueprints still generate. 64 B11 tests + 514 prior gate tests = 578 gate tests passing. pnpm check clean. pnpm build PASS.
+
+**What this does NOT prove:** MiniMorph internal dogfood. First outside customer. B2 ecommerce fix. Those gates follow.
+
+**Remaining open blockers:** B2 ecommerce return false. MiniMorph internal dogfood gate.
+
+---
+
 ## Customer Site Preview Approval Gate (B10) — 2026-05-15
 
 **Gate:** B10 — Customer Site Preview Approval

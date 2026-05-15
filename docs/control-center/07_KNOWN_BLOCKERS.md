@@ -26,7 +26,7 @@
 - B8: Claims/proof source tracking not yet wired — fields exist in schema but Elena does not yet populate them.
 - B9: Add-on fulfillment not yet built — schema captures accepted add-ons with team_setup status.
 - B10: Customer Blueprint approval UI does not yet show all 9 sections — only legacy fields shown.
-- B11: Generator still receives SiteBrief, not full Blueprint — handoff not yet wired.
+- B11: RESOLVED — generator now receives full Blueprint via BlueprintGeneratorHandoff.
 
 ---
 
@@ -178,20 +178,15 @@ All approval state is derivable from existing fields:
 ### B11 — Blueprint → Generator Instruction Gap
 
 **Severity:** P1 — reduces generation quality and truth
-**Status:** OPEN
+**Status:** RESOLVED (B11 commit — feat: add lossless Blueprint generator handoff)
 **Discovered:** 2026-05-15 Elena Promise Enforcement Audit
+**Closed:** 2026-05-15 Blueprint → Generator Handoff Gate
 
-#### Symptom
+#### What was fixed
 
-The generator receives a `SiteBrief` object that does not carry the full Blueprint structure. Fields like customer psychology, buyer fears, trust triggers, do-not-say list, banned phrases, safe claims, risky claims, and CTA rules are not explicitly passed from Blueprint to generator prompt. The generator prompt is constructed from a limited SiteBrief, not from the rich Blueprint Elena assembled.
-
-#### Fix Required
-
-Extend `SiteBrief` or create a `BlueprintHandoff` object that carries all Blueprint sections into the generator. Update `buildCustomTemplatePrompt()` to consume all relevant Blueprint fields. Add QA checks that verify Blueprint-sourced instructions appear in generated HTML.
-
-#### Impact
-
-Without a complete Blueprint → generator handoff, Elena's rich intake work does not translate into better, more truthful websites. The system is no smarter than a questionnaire.
+- `shared/blueprintHandoff.ts` (NEW): `BlueprintGeneratorHandoff` interface (~40 fields), `HandoffVerbatimBlock`, `HandoffIntegrityReport` (14 fields). Safe extraction helpers (`safe()`, `safeArray()`, `safeStr()`, `safeBool()`). `buildBlueprintGeneratorHandoff()` — never crashes, falls back to empty arrays on missing sections. `buildHandoffIntegrityReport()` — integrity score 0-100, `safeToGenerate = sectionPresenceScore > 0`. `buildHandoffPromptSections()` — 15 labeled LLM prompt sections: BLUEPRINT GENERATOR HANDOFF, CUSTOMER TRUTH TO PRESERVE, DO NOT INVENT, DO NOT SAY / BANNED PHRASES, CLAIMS / PROOF HANDLING, CUSTOMER PSYCHOLOGY, CTA RULES, SERVICE STRATEGY, ADD-ON FULFILLMENT TRUTH, TONE / CONTENT RULES, COMPETITIVE ADVANTAGES, RISK / COMPLIANCE, ADMIN FLAGS / REVIEW ITEMS, OMITTED FIELDS AND WHY, END BLUEPRINT HANDOFF.
+- `server/services/siteGenerator.ts`: B11 block inserted after blueprint hard-block gate. Imports `buildBlueprintGeneratorHandoff` dynamically. Builds handoff from `blueprint.blueprintJson`. Warns if `!integrityReport.safeToGenerate` but never blocks for legacy blueprints. Injects `buildHandoffPromptSections(blueprintHandoff)` into `sharedContext` BEFORE full questionnaire JSON dump. Build reporter logs `b11_handoff` entry with integrity score, fields passed, fields omitted, and safeToGenerate status.
+- `server/blueprintGeneratorHandoff.test.ts` (NEW): 64 tests across 11 sections (A–K). Covers: builder on null/empty/invalid input, verbatim preservation for all 9 Blueprint sections, generator instruction fields, customer psychology, risk/compliance, integrity report (score, safeToGenerate, riskWarnings), prompt section builder (all 15 sections), claims fallback, add-on fulfillment truth, regression checks. 64 B11 tests + 514 prior gate tests = 578 gate tests passing. pnpm check clean. pnpm build PASS.
 
 ---
 

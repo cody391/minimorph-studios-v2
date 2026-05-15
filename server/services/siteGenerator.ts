@@ -669,6 +669,18 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     return;
   }
 
+  // B11: Build full Blueprint handoff for generator (lossless — all Blueprint sections passed to prompt)
+  let blueprintHandoff: import("../../shared/blueprintHandoff").BlueprintGeneratorHandoff | null = null;
+  try {
+    const { buildBlueprintGeneratorHandoff } = await import("../../shared/blueprintHandoff");
+    blueprintHandoff = buildBlueprintGeneratorHandoff(blueprint.blueprintJson);
+    if (!blueprintHandoff.integrityReport.safeToGenerate) {
+      console.warn(`[B11] Blueprint handoff not safe to generate: score=${blueprintHandoff.integrityReport.integrityScore}/100 — proceeding anyway (legacy blueprint)`);
+    }
+  } catch (b11Err: any) {
+    console.error("[B11] Blueprint handoff builder failed — proceeding without handoff:", b11Err.message);
+  }
+
   // Gate 2 — For self-service projects, payment must be confirmed before generation begins
   // approvedAt is NEVER checked here — it means final customer site approval, not payment
   const p = project as any;
@@ -1000,7 +1012,7 @@ ${hours ? `  Hours: ${hours}` : ""}
 ${licenseNumber ? `  License: ${licenseNumber}` : ""}
 ${yearsInBusiness ? `  Years in Business: ${yearsInBusiness}` : ""}
 
-FULL QUESTIONNAIRE DATA:
+${blueprintHandoff ? (await import("../../shared/blueprintHandoff")).buildHandoffPromptSections(blueprintHandoff) + "\n\n" : ""}FULL QUESTIONNAIRE DATA:
 ${fullQuestionnaireText}
 
 UPLOADED ASSETS:
@@ -1452,6 +1464,15 @@ ${Object.keys(pages)
             addonsBlocked.length > 0 ? `BLOCKED (not fulfilled): ${addonsBlocked.map((a: any) => a.product).join(", ")}` : null,
           ].filter(Boolean).join(" | ") || "none";
           await reporter.info("agent3", "Addon orchestration triggered", addonBuildSummary);
+
+          if (blueprintHandoff) {
+            const ir = blueprintHandoff.integrityReport;
+            await reporter.info(
+              "b11_handoff",
+              "Blueprint handoff integrity",
+              `Score: ${ir.integrityScore}/100 | Fields passed: ${ir.fieldsPassedToGenerator} | Omitted: ${ir.fieldsOmitted} | safeToGenerate: ${ir.safeToGenerate}`
+            );
+          }
 
           const qaCtx = {
             customerId: project.customerId,
