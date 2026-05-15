@@ -28,7 +28,7 @@
 | Claim/Proof Validation Gate (B8) | ✅ Done (`70acded`) |
 | Lifecycle Realignment Gate | ✅ Done (`96952f9`) |
 | Add-On Fulfillment Truth Gate (B9) | ✅ Done (2484fbe) |
-| B-Card Gate (checkout/contract integrity) | ✅ Done (TBD) |
+| B-Card Gate (checkout/contract integrity) | ✅ Done (643ca4e) |
 
 ### Lifecycle Realignment — what changed
 
