@@ -8,7 +8,7 @@ For full git history: `git log --oneline`
 ## Claim/Proof Validation Gate (B8) — 2026-05-15
 
 **Gate:** Claim/Proof Validation Gate (B8)
-**Commit:** TBD (B8 commit)
+**Commit:** `70acded`
 **Status:** COMPLETE
 
 **What changed:**

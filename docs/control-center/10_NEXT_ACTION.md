@@ -25,7 +25,7 @@
 | Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
 | Blueprint Schema Gate (B6) | ✅ Done (`26aaf12`) |
 | Admin Blueprint Gate (B7) | ✅ Done (`2682cfb`) |
-| Claim/Proof Validation Gate (B8) | ✅ Done (B8 commit) |
+| Claim/Proof Validation Gate (B8) | ✅ Done (`70acded`) |
 
 ### Why this gate is open
 
@@ -80,7 +80,7 @@ After B9 is closed, proceed to B10 (Customer Blueprint Approval), then B11 in or
         ↓
 [DONE]  Admin Blueprint Gate (B7) ✅ (`2682cfb`)
         ↓
-[DONE]  Claim/Proof Validation Gate (B8) ✅ (B8 commit)
+[DONE]  Claim/Proof Validation Gate (B8) ✅ (`70acded`)
         ↓
 [ACTIVE] Add-On Fulfillment Truth Gate (B9) — recommendedAddOns/acceptedAddOns in Blueprint
         ↓
@@ -118,7 +118,7 @@ After B9 is closed, proceed to B10 (Customer Blueprint Approval), then B11 in or
 | Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
 | B6 Blueprint Schema Gap resolved | ✅ Done (26aaf12) |
 | B7 Admin Blueprint Gate implemented | ✅ Done (`2682cfb`) |
-| B8 Claim/Proof Validation implemented | ✅ Done (B8 commit) |
+| B8 Claim/Proof Validation implemented | ✅ Done (`70acded`) |
 | B9 Add-On Truth/Fulfillment Gap resolved | ❌ Pending |
 | B10 Customer Blueprint Approval implemented | ❌ Pending |
 | B11 Blueprint → Generator Handoff complete | ❌ Pending |
