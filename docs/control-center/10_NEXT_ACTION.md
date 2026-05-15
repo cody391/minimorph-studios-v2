@@ -4,10 +4,10 @@
 
 ---
 
-## Current Gate: Customer Site Preview Approval Gate (B10)
+## Current Gate: Blueprint → Generator Handoff Gate (B11)
 
 **Priority:** P1
-**Status:** OPEN — next gate after Add-On Fulfillment Truth Gate (B9)
+**Status:** OPEN — next gate after Customer Site Preview Approval Gate (B10)
 
 ### What was completed before this gate
 
@@ -57,15 +57,14 @@ Customers currently have no mechanism to view or approve the built site before i
 
 ## Required Next Action
 
-**Customer Site Preview Approval Gate (B10)** — Customer must be able to view the built site preview, and explicitly approve or request revisions. This approval must be recorded. Admin sees customer approval status. Customer portal shows preview iframe/link + Approve/Request Revisions buttons.
+**Blueprint → Generator Handoff Gate (B11)** — SiteBrief does not carry the full Blueprint to the generator. Fields like customer psychology, buyer fears, trust triggers, do-not-say list, banned phrases, safe claims, risky claims, and CTA rules are not explicitly passed from Blueprint to generator prompt. B11 extends SiteBrief or creates a BlueprintHandoff object that carries all Blueprint sections into the generator and updates buildCustomTemplatePrompt() to consume them.
 
-After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
+After B11 is closed, proceed to MiniMorph Internal Dogfood Gate.
 
 ---
 
 ## Remaining Known Blockers Before MiniMorph Dogfood
 
-- B10: Customer site preview approval — customer reviews and approves the built site before launch (B10 is customer site review, NOT Blueprint approval)
 - B11: Blueprint → Generator Instruction Gap — SiteBrief does not carry full Blueprint to generator
 
 ## Remaining Known Blockers Before Ecommerce Customers
