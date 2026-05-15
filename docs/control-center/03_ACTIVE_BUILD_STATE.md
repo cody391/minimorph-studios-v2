@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Admin Blueprint Gate (B7)** — Blueprint schema is complete. Every new Blueprint now contains all 9 Customer Reality Blueprint sections. Next gate is building the hard admin gate: `adminBlueprintApprovedAt` must be set before generation fires.
+**Claim/Proof Validation Gate (B8)** — Admin Blueprint Gate (B7) is complete. Generation is now hard-blocked until admin explicitly approves the Blueprint. Next gate is B8: claims/proof source tracking.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -21,14 +21,15 @@ Previous lanes completed:
 - Elena Promise Enforcement Audit ✅ (audit completed, all 35+ promises categorized vs. platform reality)
 - Elena Promise Safety Hotfix ✅ (all unsupported automation promises removed, safety test suite added, pnpm check clean)
 - **Blueprint Schema Gate (B6) ✅** (CustomerRealityBlueprint type, 9-section builder, 85 tests, pnpm check + build clean)
+- **Admin Blueprint Gate (B7) ✅** (hard adminBlueprintApprovedAt gate, 4 admin procedures, 48 tests, pnpm check + build clean)
 
 ## Latest Known Commit
 
 | Field | Value |
 |---|---|
-| HEAD | 26aaf12 |
+| HEAD | TBD (B7 commit) |
 | Branch | `main` |
-| Message | fix: soften Elena promises to match platform reality |
+| Message | feat: require admin Blueprint approval before generation |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
 | Production deploy confirmed | `2026-05-15 07:42:58 GMT` ✅ |
@@ -72,7 +73,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**Admin Blueprint Gate (B7)** — Add a hard `adminBlueprintApprovedAt` gate. Generation must be blocked until admin explicitly approves the Blueprint. Admin must be able to review all 9 Blueprint sections, flag risk items, edit Blueprint fields, and send back to customer if needed. B8, B9, B10, B11 follow.
+**Claim/Proof Validation Gate (B8)** — Claims, credentials, testimonials, certifications, guarantees, and proof items collected by Elena are not validated or flagged for admin review. Add a Claims/Proof section to the Blueprint. Each claim must have a source (customer-provided, skipped, admin-verified). Generator must treat unverified claims as either blank or flagged.
 
 ## First Customer Status
 
@@ -89,6 +90,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 - [x] Elena Promise Enforcement Audit — all 35+ Elena promises audited vs. platform reality, gaps categorized ✅
 - [x] Elena Promise Safety Hotfix — all unsupported automation, compliance, report, and "instant" promises removed from Elena prompt; ADDON HONESTY RULE, FIT-BASED RECOMMENDATION RULE, REGULATED INDUSTRY AWARENESS, BLOCKED ADD-ONS added; safety test suite (38 tests) passing ✅
 - [x] Blueprint Schema Gate (B6) — CustomerRealityBlueprint type (9 sections), buildBlueprintFromQuestionnaire() updated, industry/risk derivation helpers, add-on fulfillment registry, completeness scorer, backward compat with all legacy portal keys, 85 blueprint tests passing ✅
+- [x] Admin Blueprint Gate (B7) — hard adminBlueprintApprovedAt gate in generateSiteForProject() (Gate 1.5), 4 admin procedures (adminApproveBlueprint, adminReturnBlueprint, adminBlockBlueprint, adminAddBlueprintFlags), 7 DB fields (migration 0057), admin UI review status badge + Approve/Return/Block buttons in OnboardingProjects, 48 tests passing ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

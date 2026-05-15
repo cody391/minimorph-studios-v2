@@ -625,6 +625,15 @@ export async function repairSchema(): Promise<void> {
       UNIQUE KEY \`uq_rep_paperwork_repId_formType\` (\`repId\`, \`formType\`)
     )`);
 
+    // ── 0057: B7 Admin Blueprint Gate — admin must approve before generation ──
+    await safe("ALTER TABLE `website_blueprints` ADD COLUMN `adminBlueprintReviewStatus` enum('pending','approved','needs_changes','blocked') NOT NULL DEFAULT 'pending'");
+    await safe("ALTER TABLE `website_blueprints` ADD COLUMN `adminBlueprintApprovedAt` timestamp NULL DEFAULT NULL");
+    await safe("ALTER TABLE `website_blueprints` ADD COLUMN `adminBlueprintApprovedBy` int DEFAULT NULL");
+    await safe("ALTER TABLE `website_blueprints` ADD COLUMN `adminBlueprintApprovalNotes` text DEFAULT NULL");
+    await safe("ALTER TABLE `website_blueprints` ADD COLUMN `adminBlueprintReturnedAt` timestamp NULL DEFAULT NULL");
+    await safe("ALTER TABLE `website_blueprints` ADD COLUMN `adminBlueprintReturnReason` text DEFAULT NULL");
+    await safe("ALTER TABLE `website_blueprints` ADD COLUMN `adminBlueprintReviewFlags` json DEFAULT NULL");
+
     console.log("[SchemaRepair] Schema repair complete");
   } catch (err) {
     console.error("[SchemaRepair] Fatal error:", err);

@@ -2115,6 +2115,20 @@ export const websiteBlueprints = mysqlTable("website_blueprints", {
   createdBy: mysqlEnum("createdBy", ["elena", "admin", "system"]).default("elena").notNull(),
   lockedForGeneration: boolean("lockedForGeneration").default(false).notNull(),
 
+  // B7 — Admin Blueprint Gate (must be approved before generation)
+  adminBlueprintReviewStatus: mysqlEnum("adminBlueprintReviewStatus", [
+    "pending",
+    "approved",
+    "needs_changes",
+    "blocked",
+  ]).default("pending").notNull(),
+  adminBlueprintApprovedAt: timestamp("adminBlueprintApprovedAt"),
+  adminBlueprintApprovedBy: int("adminBlueprintApprovedBy"),
+  adminBlueprintApprovalNotes: text("adminBlueprintApprovalNotes"),
+  adminBlueprintReturnedAt: timestamp("adminBlueprintReturnedAt"),
+  adminBlueprintReturnReason: text("adminBlueprintReturnReason"),
+  adminBlueprintReviewFlags: json("adminBlueprintReviewFlags").$type<string[]>(),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

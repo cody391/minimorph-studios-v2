@@ -642,13 +642,25 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     return;
   }
 
-  // Gate 1 — Blueprint must be approved before any generation begins
+  // Gate 1 — Blueprint must be customer-approved before any generation begins
   const blueprint = await db.getBlueprintByProjectId(projectId);
   if (!blueprint || blueprint.status !== "approved") {
     console.warn(`[SiteGenerator] Project ${projectId}: blocked — blueprint not approved (status: ${blueprint?.status ?? "none"})`);
     await db.updateOnboardingProject(projectId, {
       generationStatus: "idle",
       generationLog: "Waiting for customer blueprint approval.",
+      stage: "blueprint_review",
+    });
+    return;
+  }
+
+  // Gate 1.5 — Admin must explicitly approve the Blueprint before generation (B7)
+  const bp = blueprint as any;
+  if (bp.adminBlueprintReviewStatus !== "approved" || !bp.adminBlueprintApprovedAt) {
+    console.warn(`[SiteGenerator] Project ${projectId}: blocked — admin Blueprint approval required (adminBlueprintReviewStatus: ${bp.adminBlueprintReviewStatus ?? "pending"})`);
+    await db.updateOnboardingProject(projectId, {
+      generationStatus: "idle",
+      generationLog: "Admin Blueprint approval required before generation.",
       stage: "blueprint_review",
     });
     return;

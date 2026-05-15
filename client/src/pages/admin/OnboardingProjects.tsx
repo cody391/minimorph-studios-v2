@@ -477,6 +477,9 @@ export default function OnboardingProjects() {
   const adminReleaseLaunchMutation = trpc.onboarding.adminReleaseLaunch.useMutation();
   const rollbackMutation = trpc.onboarding.rollbackToVersion.useMutation();
   const updateBlueprintForReviewMutation = trpc.compliance.updateBlueprintForReview.useMutation();
+  const adminApproveBlueprintMutation = trpc.compliance.adminApproveBlueprint.useMutation();
+  const adminReturnBlueprintMutation = trpc.compliance.adminReturnBlueprint.useMutation();
+  const adminBlockBlueprintMutation = trpc.compliance.adminBlockBlueprint.useMutation();
 
   const projects = projectsQuery.data || [];
 
@@ -542,6 +545,38 @@ export default function OnboardingProjects() {
       projectsQuery.refetch();
     } catch {
       toast.error("Failed to mark site live");
+    }
+  };
+
+  const handleAdminApproveBlueprint = async (projectId: number) => {
+    try {
+      await adminApproveBlueprintMutation.mutateAsync({ projectId });
+      toast.success("Blueprint approved — generation can now proceed");
+      projectsQuery.refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to approve blueprint");
+    }
+  };
+
+  const handleAdminReturnBlueprint = async (projectId: number, reason: string) => {
+    if (!reason.trim()) { toast.error("Return reason is required"); return; }
+    try {
+      await adminReturnBlueprintMutation.mutateAsync({ projectId, reason });
+      toast.success("Blueprint returned for changes");
+      projectsQuery.refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to return blueprint");
+    }
+  };
+
+  const handleAdminBlockBlueprint = async (projectId: number, reason: string) => {
+    if (!reason.trim()) { toast.error("Block reason is required"); return; }
+    try {
+      await adminBlockBlueprintMutation.mutateAsync({ projectId, reason });
+      toast.success("Blueprint blocked — generation prevented");
+      projectsQuery.refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to block blueprint");
     }
   };
 
@@ -1038,6 +1073,68 @@ export default function OnboardingProjects() {
                           />
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* B7 Admin Blueprint Review — shown when a blueprint exists */}
+                  {(project as any).blueprintStatus && (
+                    <div className="mt-3 border-t border-gray-100 pt-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-gray-500 font-medium">Blueprint Review:</span>
+                        {(() => {
+                          const rs = (project as any).adminBlueprintReviewStatus ?? "pending";
+                          const colors: Record<string, string> = {
+                            pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
+                            approved: "bg-green-100 text-green-800 border-green-300",
+                            needs_changes: "bg-orange-100 text-orange-800 border-orange-300",
+                            blocked: "bg-red-100 text-red-800 border-red-300",
+                          };
+                          return (
+                            <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded border ${colors[rs] ?? colors.pending}`}>
+                              {rs.replace("_", " ")}
+                            </span>
+                          );
+                        })()}
+                        {(project as any).adminBlueprintReviewStatus !== "approved" && (project as any).blueprintStatus === "approved" && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleAdminApproveBlueprint(project.id)}
+                            disabled={adminApproveBlueprintMutation.isPending}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs px-2"
+                          >
+                            {adminApproveBlueprintMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                            Approve Blueprint
+                          </Button>
+                        )}
+                        {(project as any).adminBlueprintReviewStatus !== "blocked" && (project as any).blueprintStatus && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const reason = window.prompt("Return reason (shown to team):");
+                              if (reason) handleAdminReturnBlueprint(project.id, reason);
+                            }}
+                            disabled={adminReturnBlueprintMutation.isPending}
+                            className="border-orange-400 text-orange-700 hover:bg-orange-50 h-7 text-xs px-2"
+                          >
+                            Return
+                          </Button>
+                        )}
+                        {(project as any).adminBlueprintReviewStatus !== "blocked" && (project as any).blueprintStatus && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const reason = window.prompt("Block reason (prevents generation):");
+                              if (reason) handleAdminBlockBlueprint(project.id, reason);
+                            }}
+                            disabled={adminBlockBlueprintMutation.isPending}
+                            className="border-red-400 text-red-700 hover:bg-red-50 h-7 text-xs px-2"
+                          >
+                            Block
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   )}
 

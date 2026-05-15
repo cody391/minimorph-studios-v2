@@ -33,20 +33,26 @@
 ### B7 — Admin Blueprint Gate Missing
 
 **Severity:** P0 — blocks first outside customer
-**Status:** OPEN
+**Status:** RESOLVED (B7 commit)
 **Discovered:** 2026-05-15 Elena Promise Enforcement Audit
+**Closed:** 2026-05-15 Admin Blueprint Gate
 
-#### Symptom
+#### What was fixed
 
-There is no hard gate requiring admin to review and approve the Blueprint before generation begins. The current admin review is either passive (admin can view) or bypassed (generation can be triggered without admin approval of Blueprint fields).
+- `drizzle/schema.ts`: 7 new columns on `website_blueprints` — `adminBlueprintReviewStatus` (enum: pending/approved/needs_changes/blocked), `adminBlueprintApprovedAt`, `adminBlueprintApprovedBy`, `adminBlueprintApprovalNotes`, `adminBlueprintReturnedAt`, `adminBlueprintReturnReason`, `adminBlueprintReviewFlags` (json array).
+- `server/db.ts`: Migration 0057 — 7 idempotent `ALTER TABLE ADD COLUMN` statements.
+- `server/services/siteGenerator.ts`: Gate 1.5 — blocks generation if `adminBlueprintReviewStatus !== "approved"` or `adminBlueprintApprovedAt` is missing.
+- `server/routers.ts` — `triggerGeneration`: now checks admin Blueprint approval before firing. `approveBlueprint` (customer): now checks admin approval before firing generation. `adminApproveBlueprint`: rewritten to record admin identity, timestamp, and notes; triggers generation if customer has also approved and payment confirmed. Three new admin procedures: `adminReturnBlueprint`, `adminBlockBlueprint`, `adminAddBlueprintFlags`.
+- `client/src/pages/admin/OnboardingProjects.tsx`: Admin Blueprint review status badge + Approve/Return/Block buttons added to each project card.
+- `server/adminBlueprintGate.test.ts` (NEW): 48 tests covering all gate states, customer-claim doctrine preservation, legacy compat, schema fields, and procedure wiring.
+- All 48 B7 tests + 85 B6 blueprint tests + 38 Elena safety tests pass. pnpm check clean. pnpm build PASS.
 
-#### Fix Required
+#### Remaining gaps (require later gates)
 
-Add a hard `adminBlueprintApprovedAt` gate. Generation must be blocked until admin explicitly approves the Blueprint. Admin must be able to edit Blueprint fields, flag risk items, and send back to Elena/customer if needed.
-
-#### Impact
-
-Without a hard admin gate, wrong, false, or legally risky information in the Blueprint can flow directly into generated HTML and be delivered to customers.
+- B8: Claims/proof source tracking not wired — fields exist in schema but Elena does not populate them.
+- B9: Add-on fulfillment not built.
+- B10: Customer Blueprint approval UI does not show all 9 sections.
+- B11: Generator still receives SiteBrief, not full Blueprint.
 
 ---
 

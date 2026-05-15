@@ -3687,7 +3687,13 @@ const onboardingRouter = router({
       const project = await db.getOnboardingProjectById(input.projectId);
       const paymentRequired = (project as any)?.source === "self_service";
       const paymentConfirmed = !!(project as any)?.paymentConfirmedAt;
-      const shouldGenerate = !!project && (!paymentRequired || paymentConfirmed);
+
+      // B7: Admin Blueprint approval is also required before generation can begin.
+      // Customer approval alone is not enough. Generation fires only when admin has approved.
+      const freshBlueprint = await db.getBlueprintByProjectId(input.projectId);
+      const adminApproved = (freshBlueprint as any)?.adminBlueprintReviewStatus === "approved"
+        && !!(freshBlueprint as any)?.adminBlueprintApprovedAt;
+      const shouldGenerate = !!project && (!paymentRequired || paymentConfirmed) && adminApproved;
 
       if (shouldGenerate) {
         await db.updateOnboardingProject(input.projectId, {
@@ -3699,22 +3705,24 @@ const onboardingRouter = router({
           console.error("[onboarding.approveBlueprint] Generation error:", err)
         );
       } else {
-        // Self-service without payment confirmed yet — park; generation fires when payment arrives
+        const pendingReason = !adminApproved
+          ? "Blueprint approved by customer — awaiting admin Blueprint review before generation."
+          : "Blueprint approved — waiting for payment confirmation before building.";
         await db.updateOnboardingProject(input.projectId, {
           stage: "assets_upload",
           generationStatus: "idle",
-          generationLog: "Blueprint approved — waiting for payment confirmation before building.",
+          generationLog: pendingReason,
         });
       }
 
       try {
         await notifyOwner({
           title: `Blueprint Approved: ${project?.businessName ?? input.projectId}`,
-          content: `Customer approved their Website Blueprint for project #${input.projectId}. ${shouldGenerate ? "Generation started automatically." : "Awaiting payment confirmation before generation."}`,
+          content: `Customer approved their Website Blueprint for project #${input.projectId}. ${shouldGenerate ? "Generation started automatically." : adminApproved ? "Awaiting payment confirmation before generation." : "Awaiting admin Blueprint approval before generation."}`,
         });
       } catch {}
 
-      return { success: true, generationStarted: !!shouldGenerate, awaitingPayment: paymentRequired && !paymentConfirmed };
+      return { success: true, generationStarted: !!shouldGenerate, awaitingPayment: paymentRequired && !paymentConfirmed, awaitingAdminApproval: !adminApproved };
     }),
 
   // Protected: customer requests blueprint changes
@@ -3802,11 +3810,20 @@ const onboardingRouter = router({
     }),
 
   // Admin: trigger site generation for a project
+  // B7: Admin Blueprint approval is required before generation can be manually triggered.
   triggerGeneration: adminProcedure
     .input(z.object({ projectId: z.number() }))
     .mutation(async ({ input }) => {
       const project = await db.getOnboardingProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      if (!blueprint) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Admin Blueprint approval required before generation. No blueprint found for this project." });
+      }
+      const bp = blueprint as any;
+      if (bp.adminBlueprintReviewStatus !== "approved" || !bp.adminBlueprintApprovedAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Admin Blueprint approval required before generation." });
+      }
       await db.updateOnboardingProject(input.projectId, {
         generationStatus: "generating",
         generationLog: "Manually triggered by admin...",
@@ -4128,15 +4145,31 @@ const onboardingRouter = router({
       if (!database) return projects;
       const ids = projects.map(p => p.id);
       const bpRows = await database
-        .select({ projectId: websiteBlueprints.projectId, status: websiteBlueprints.status })
+        .select({
+          projectId: websiteBlueprints.projectId,
+          status: websiteBlueprints.status,
+          adminBlueprintReviewStatus: (websiteBlueprints as any).adminBlueprintReviewStatus,
+          adminBlueprintApprovedAt: (websiteBlueprints as any).adminBlueprintApprovedAt,
+        })
         .from(websiteBlueprints)
         .where(sqlFn`${websiteBlueprints.projectId} IN (${sqlFn.raw(ids.join(","))})`)
         .orderBy(descFn(websiteBlueprints.versionNumber));
-      const bpStatus: Record<number, string> = {};
+      const bpStatus: Record<number, { status: string; adminBlueprintReviewStatus: string | null; adminBlueprintApprovedAt: Date | null }> = {};
       for (const bp of bpRows) {
-        if (!bpStatus[bp.projectId]) bpStatus[bp.projectId] = bp.status;
+        if (!bpStatus[bp.projectId]) {
+          bpStatus[bp.projectId] = {
+            status: bp.status,
+            adminBlueprintReviewStatus: (bp as any).adminBlueprintReviewStatus ?? null,
+            adminBlueprintApprovedAt: (bp as any).adminBlueprintApprovedAt ?? null,
+          };
+        }
       }
-      return projects.map(p => ({ ...p, blueprintStatus: bpStatus[p.id] ?? null }));
+      return projects.map(p => ({
+        ...p,
+        blueprintStatus: bpStatus[p.id]?.status ?? null,
+        adminBlueprintReviewStatus: bpStatus[p.id]?.adminBlueprintReviewStatus ?? null,
+        adminBlueprintApprovedAt: bpStatus[p.id]?.adminBlueprintApprovedAt ?? null,
+      }));
     }),
 
   // Admin: update project stage
@@ -7571,20 +7604,111 @@ ${Object.entries(pkg).map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(String(v))
       return db.listBlueprintsAdmin(100);
     }),
 
-  // Admin: approve blueprint on behalf of a customer (for testing / manual override)
-  // NOTE: this sets website_blueprints.approvedAt — NOT onboarding_projects.approvedAt
-  // onboarding_projects.approvedAt is ONLY set by approveLaunch (final site approval)
+  // Admin: approve the Blueprint for generation (B7 hard gate)
+  // Records admin identity, timestamp, and notes. Does NOT fire generation automatically —
+  // generation only fires once customer has also approved AND payment is confirmed.
+  // NOTE: does NOT overwrite website_blueprints.status (customer approval field) or
+  // customer-directed claim documentation (riskyCustomerDirectedClaims, courtesyRiskNotices,
+  // customerAcknowledgments). Those fields belong to the customer.
   adminApproveBlueprint: adminProcedure
-    .input(z.object({ projectId: z.number() }))
+    .input(z.object({
+      projectId: z.number(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      if (!blueprint) throw new TRPCError({ code: "NOT_FOUND", message: "No blueprint found for this project" });
+      const bp = blueprint as any;
+      if (bp.adminBlueprintReviewStatus === "blocked") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Blueprint is blocked and cannot be approved. Remove the block first." });
+      }
+      await db.updateBlueprint(blueprint.id, {
+        adminBlueprintReviewStatus: "approved",
+        adminBlueprintApprovedAt: new Date(),
+        adminBlueprintApprovedBy: ctx.user.id,
+        adminBlueprintApprovalNotes: input.notes ?? null,
+      } as any);
+      // If blueprint is also customer-approved and project exists, trigger generation
+      // (generator's own gates will double-check payment + admin approval)
+      if (blueprint.status === "approved") {
+        const project = await db.getOnboardingProjectById(input.projectId);
+        const paymentRequired = (project as any)?.source === "self_service";
+        const paymentConfirmed = !!(project as any)?.paymentConfirmedAt;
+        if (project && (!paymentRequired || paymentConfirmed)) {
+          await db.updateOnboardingProject(input.projectId, {
+            generationStatus: "generating",
+            generationLog: "Admin approved Blueprint — building your website.",
+            stage: "assets_upload",
+          });
+          generateSiteForProject(input.projectId).catch(err =>
+            console.error("[compliance.adminApproveBlueprint] Generation error:", err)
+          );
+        }
+      }
+      return { success: true, adminBlueprintReviewStatus: "approved" };
+    }),
+
+  // Admin: return Blueprint to needs_changes — blocks generation, records reason
+  adminReturnBlueprint: adminProcedure
+    .input(z.object({
+      projectId: z.number(),
+      reason: z.string().min(1),
+    }))
     .mutation(async ({ input }) => {
       const blueprint = await db.getBlueprintByProjectId(input.projectId);
       if (!blueprint) throw new TRPCError({ code: "NOT_FOUND", message: "No blueprint found for this project" });
       await db.updateBlueprint(blueprint.id, {
-        status: "approved",
-        approvedAt: new Date(),
-        lockedForGeneration: true,
+        adminBlueprintReviewStatus: "needs_changes",
+        adminBlueprintReturnedAt: new Date(),
+        adminBlueprintReturnReason: input.reason,
+        adminBlueprintApprovedAt: null,
+        adminBlueprintApprovedBy: null,
+      } as any);
+      await db.updateOnboardingProject(input.projectId, {
+        generationStatus: "idle",
+        generationLog: "Admin returned Blueprint for changes before generation can proceed.",
+        stage: "blueprint_review",
       });
-      return { success: true };
+      return { success: true, adminBlueprintReviewStatus: "needs_changes" };
+    }),
+
+  // Admin: block Blueprint — prevents generation until admin explicitly unblocks
+  adminBlockBlueprint: adminProcedure
+    .input(z.object({
+      projectId: z.number(),
+      reason: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      if (!blueprint) throw new TRPCError({ code: "NOT_FOUND", message: "No blueprint found for this project" });
+      await db.updateBlueprint(blueprint.id, {
+        adminBlueprintReviewStatus: "blocked",
+        adminBlueprintReturnReason: input.reason,
+        adminBlueprintApprovedAt: null,
+        adminBlueprintApprovedBy: null,
+      } as any);
+      await db.updateOnboardingProject(input.projectId, {
+        generationStatus: "idle",
+        generationLog: "Blueprint blocked by admin — generation cannot proceed.",
+        stage: "blueprint_review",
+      });
+      return { success: true, adminBlueprintReviewStatus: "blocked" };
+    }),
+
+  // Admin: add review flags to a Blueprint (additive — does not replace existing flags)
+  adminAddBlueprintFlags: adminProcedure
+    .input(z.object({
+      projectId: z.number(),
+      flags: z.array(z.string().min(1)).min(1),
+    }))
+    .mutation(async ({ input }) => {
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      if (!blueprint) throw new TRPCError({ code: "NOT_FOUND", message: "No blueprint found for this project" });
+      const bp = blueprint as any;
+      const existing: string[] = Array.isArray(bp.adminBlueprintReviewFlags) ? bp.adminBlueprintReviewFlags : [];
+      const merged = Array.from(new Set([...existing, ...input.flags]));
+      await db.updateBlueprint(blueprint.id, { adminBlueprintReviewFlags: merged } as any);
+      return { success: true, flags: merged };
     }),
 
   // Admin: respond to a customer's revision request by creating a new blueprint version

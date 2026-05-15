@@ -5,6 +5,36 @@ For full git history: `git log --oneline`
 
 ---
 
+## Admin Blueprint Gate (B7) — 2026-05-15
+
+**Gate:** Admin Blueprint Gate (B7)
+**Commit:** TBD (B7 commit)
+**Status:** COMPLETE
+
+**What changed:**
+
+- `drizzle/schema.ts`: 7 new columns on `website_blueprints` — `adminBlueprintReviewStatus` (enum: pending/approved/needs_changes/blocked, default pending), `adminBlueprintApprovedAt` (timestamp), `adminBlueprintApprovedBy` (int), `adminBlueprintApprovalNotes` (text), `adminBlueprintReturnedAt` (timestamp), `adminBlueprintReturnReason` (text), `adminBlueprintReviewFlags` (json string[]).
+- `server/db.ts`: Migration 0057 — 7 idempotent `ALTER TABLE ADD COLUMN` statements. Safe on existing production DB.
+- `server/services/siteGenerator.ts`: Gate 1.5 added after existing Gate 1. Checks `adminBlueprintReviewStatus === "approved"` AND `adminBlueprintApprovedAt` is present. If either fails: generationStatus set to idle, generationLog set to "Admin Blueprint approval required before generation.", stage set to blueprint_review. Error is logged as a warning.
+- `server/routers.ts`:
+  - `triggerGeneration` (admin): now checks admin Blueprint approval before firing generation. Throws `BAD_REQUEST` if blueprint missing or not admin-approved.
+  - `approveBlueprint` (customer): now checks `adminBlueprintReviewStatus === "approved"` before setting `shouldGenerate = true`. Customer-only approval parks generation with clear message.
+  - `adminApproveBlueprint` (admin): rewritten to record `adminBlueprintReviewStatus`, `adminBlueprintApprovedAt`, `adminBlueprintApprovedBy`, `adminBlueprintApprovalNotes`. Does NOT overwrite customer approval fields or blueprintJson. If customer has also approved and payment confirmed, triggers generation.
+  - `adminReturnBlueprint` (admin, NEW): sets needs_changes, records returnedAt + reason, clears approval fields, resets project to blueprint_review/idle.
+  - `adminBlockBlueprint` (admin, NEW): sets blocked status, records reason, clears approval fields, resets project.
+  - `adminAddBlueprintFlags` (admin, NEW): additively merges new flags into adminBlueprintReviewFlags without duplication.
+  - `onboarding.list` (admin): now returns `adminBlueprintReviewStatus` and `adminBlueprintApprovedAt` alongside `blueprintStatus` for each project.
+- `client/src/pages/admin/OnboardingProjects.tsx`: Admin Blueprint review status badge (color-coded: yellow=pending, green=approved, orange=needs_changes, red=blocked) added to each project card that has a blueprint. Approve/Return/Block buttons wired to new procedures.
+- `server/adminBlueprintGate.test.ts` (NEW): 48 tests across 12 sections — gate logic, customer-only blocked, admin approval records, return state, blocked state, regulated industry flags, customer claim doctrine preservation, legacy blueprint compat, review flags, Drizzle schema assertions, siteGenerator.ts gate assertions, routers.ts procedure wiring assertions.
+
+**What this proves:** Generation is impossible unless admin explicitly approves the Blueprint. Customer approval alone cannot start generation. Admin approval/return/block states are persisted with full audit fields. Customer-directed claim documentation (riskyCustomerDirectedClaims, courtesyRiskNotices, customerAcknowledgments) survives admin approval — approval columns are separate from blueprintJson. All 48 B7 tests + 85 B6 tests + 38 Elena safety tests pass. pnpm check clean. pnpm build PASS.
+
+**What this does NOT prove:** B8 claims/proof validation, B9 add-on fulfillment, B10 customer Blueprint approval UI (9 sections), B11 Blueprint → generator handoff, or dogfood readiness. Those gates follow in sequence.
+
+**Remaining open blockers:** B8 Claim/Proof Validation, B9 Add-On Fulfillment Gap, B10 Customer Blueprint Approval, B11 Blueprint → Generator Handoff, B2 ecommerce return false.
+
+---
+
 ## Blueprint Schema Gate (B6) — 2026-05-15
 
 **Gate:** Blueprint Schema Gate (B6)
