@@ -51,18 +51,233 @@ function buildBlueprintFromQuestionnaire(
   q: Record<string, unknown>,
   meta: { businessName: string; websiteType: string; brandTone: string; packageTier: string }
 ): Record<string, unknown> {
-  return {
-    businessName: q.businessName ?? meta.businessName,
-    websiteType: q.websiteType ?? meta.websiteType,
-    packageTier: q.packageTier ?? meta.packageTier,
+  const {
+    deriveIndustryLane,
+    deriveRiskLevel,
+    deriveRegulatedIndustry,
+    deriveTemplateLane,
+    buildAddOnRecords,
+    scoreBlueprint,
+  } = require("../shared/blueprintTypes");
+
+  const businessName = String(q.businessName ?? meta.businessName ?? "");
+  const websiteType  = String(q.websiteType  ?? meta.websiteType  ?? "");
+  const brandTone    = String(q.brandTone    ?? meta.brandTone    ?? "");
+  const packageTier  = String(q.packageTier  ?? meta.packageTier  ?? "growth");
+
+  const addonsSelected = Array.isArray(q.addonsSelected) ? q.addonsSelected as Array<{ product: string; price?: string; label?: string }> : [];
+  const industryLane   = deriveIndustryLane(websiteType, q.industry as string | undefined);
+  const riskLevel      = deriveRiskLevel(websiteType, addonsSelected, q.industry as string | undefined);
+  const regulated      = deriveRegulatedIndustry(websiteType, q.industry as string | undefined);
+  const templateLane   = deriveTemplateLane(websiteType);
+  const servicesOffered = Array.isArray(q.servicesOffered) ? q.servicesOffered as string[] : [];
+  const competitorWeaknesses = Array.isArray(q.competitorWeaknesses) ? q.competitorWeaknesses as string[] : [];
+  const competitorSites      = Array.isArray(q.competitorSites) ? q.competitorSites as any[] : [];
+  const brandColors          = Array.isArray(q.brandColors) ? q.brandColors as string[] : [];
+  const testimonials         = Array.isArray(q.testimonials) ? q.testimonials as any[] : [];
+  const inspirationSites     = Array.isArray(q.inspirationSites) ? q.inspirationSites as any[] : [];
+
+  const addOnRecords = buildAddOnRecords(addonsSelected, "accepted");
+
+  // ── 9-section Customer Reality Blueprint ─────────────────────────────────
+
+  const businessIdentity = {
+    businessName: businessName || null,
+    legalBusinessName: null,
+    ownerName: q.ownerName as string ?? null,
+    industry: websiteType || null,
+    industryLane,
+    riskLevel,
+    serviceArea: q.serviceArea as string ?? null,
+    phone: q.phone as string ?? null,
+    email: q.email as string ?? null,
+    existingDomain: q.domainName as string ?? null,
+    domainStatus: q.domainStatus as string ?? null,
+    domainEmailInUse: (q.domainEmailInUse as "yes" | "no" | "unsure" | null) ?? null,
+    emailProvider: q.emailProvider as string ?? null,
+    yearsInBusiness: q.yearsInBusiness as string ?? null,
+    licenses: q.licenseNumber ? [q.licenseNumber as string] : [],
+    certifications: [],
+    physicalAddress: q.address as string ?? null,
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  const offerStrategy = {
+    servicesOffered,
+    primaryOffer: servicesOffered[0] ?? null,
+    secondaryOffers: servicesOffered.slice(1),
+    mostProfitableServices: [],
+    leastProfitableServices: [],
+    servicesToPush: [],
+    servicesToAvoid: [],
+    badFitWork: [],
+    seasonalServices: [],
+    recurringServices: [],
+    pricingDisplayPreference: q.pricingDisplay as string ?? null,
+    pricingNotes: null,
+    addOnsRequested: addonsSelected.map((a: any) => a.product),
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  const customerPsychology = {
+    idealCustomerType: q.targetCustomerDescription as string ?? q.targetAudience as string ?? null,
+    badFitCustomerType: null,
+    customerFears: [],
+    customerObjections: [],
+    customerTrustTriggers: [],
+    customerComparisonFactors: [],
+    questionsCustomersAlwaysAsk: Array.isArray(q.blogTopics) ? q.blogTopics as string[] : [],
+    commonMisunderstandings: [],
+    buyerEducationNeeded: [],
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  const positioning = {
+    uniqueDifferentiator: q.uniqueDifferentiator as string ?? null,
+    primaryPromise: null,
+    brandTone: brandTone || null,
+    brandPersonality: null,
+    safeClaims: [],
+    riskyCustomerDirectedClaims: [],
+    courtesyRiskNotices: regulated
+      ? [`Industry "${websiteType}" flagged for compliance review. Admin review recommended before launch.`]
+      : [],
+    customerAcknowledgments: [],
+    doNotSayList: [],
+    competitorWeaknesses,
+    competitorSites,
+    competitiveAdvantages: [],
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  const websiteStrategy = {
+    primaryGoal: q.specialRequests as string ?? null,
+    secondaryGoals: [],
+    primaryCTA: null,
+    secondaryCTAs: [],
+    pageStructure: Array.isArray(q.mustHaveFeatures) ? q.mustHaveFeatures as string[] : [],
+    heroMessageDirection: null,
+    faqTopics: Array.isArray(q.blogTopics) ? q.blogTopics as string[] : [],
+    proofNeeded: testimonials.length > 0 ? ["testimonials_present"] : ["testimonials_needed"],
+    servicesFeatureOrder: servicesOffered.slice(),
+    customerEducationNeeded: [],
+    conversionStrategy: null,
+    inspirationStyle: q.inspirationStyle as Record<string, string> ?? null,
+    avoidPatterns: Array.isArray(q.avoidPatterns) ? q.avoidPatterns as string[] : [],
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  const mediaVisuals = {
+    hasLogo: !!(q.logoUrl),
+    logoUrl: q.logoUrl as string ?? null,
+    hasCustomPhotos: !!(q.hasCustomPhotos),
+    photoUrls: q.customerPhotoUrl ? [q.customerPhotoUrl as string] : [],
+    approvedAssetUrls: [],
+    mediaQuality: (q.hasCustomPhotos ? "customer_provided" : "needs_generation") as "customer_provided" | "needs_generation" | "mixed" | "unknown",
+    needsMediaRescue: false,
+    photoReplacementStrategy: q.hasCustomPhotos ? null : "ai_generated_plus_licensed_stock",
+    mediaWarnings: [],
+    styleDirection: null,
+    brandColors,
+    colorMood: q.inspirationStyle && typeof q.inspirationStyle === "object" ? (q.inspirationStyle as any).colorMood ?? null : null,
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  const riskCompliance = {
+    regulatedIndustry: regulated,
+    riskLevel,
+    riskReasons: regulated ? [`Industry type "${websiteType}" requires compliance review`] : [],
+    courtesyNoticesGiven: regulated ? ["Regulated industry notice given during onboarding"] : [],
+    customerDirectedClaims: [],
+    claimsRequiringAcknowledgment: [],
+    customerAcknowledgments: [],
+    unsupportedFeaturesRequested: addOnRecords.filter((a: any) => a.fulfillmentType === "blocked").map((a: any) => a.product),
+    unsupportedFeatureAcknowledgments: [],
+    requiredDisclaimersSuggested: [],
+    adminReviewRecommended: regulated || riskLevel === "high",
+    adminReviewReason: regulated
+      ? `Industry "${websiteType}" flagged as regulated — requires admin review before launch`
+      : riskLevel === "high"
+        ? `Risk level "high" for "${websiteType}" — admin review recommended`
+        : null,
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  const generatorInstructions = {
+    templateLane,
+    templateName: null,
+    bannedPhrases: [],
+    requiredFacts: [
+      ...(businessName ? [`Business name: ${businessName}`] : []),
+      ...(q.serviceArea ? [`Service area: ${q.serviceArea}`] : []),
+      ...(servicesOffered.length > 0 ? [`Primary services: ${servicesOffered.slice(0, 3).join(", ")}`] : []),
+    ],
+    ctaRules: [],
+    claimHandlingRules: [
+      "Do not invent testimonials, credentials, awards, or guarantees not provided by the customer.",
+      "Use only customer-provided proof items from the testimonials field.",
+    ],
+    toneRules: brandTone ? [`Brand tone: ${brandTone}`] : [],
+    proofRules: [
+      testimonials.length > 0 ? "Use provided testimonials only — do not invent." : "No testimonials provided — omit or use placeholder slot.",
+    ],
+    contentPriorities: servicesOffered.slice(0, 5),
+    factsNotToInvent: [
+      "phone_number", "address", "license_number", "years_in_business",
+      "team_member_names", "certifications", "awards", "prices", "guarantees",
+    ],
+    reviewFlags: [
+      ...(regulated ? ["regulated_industry"] : []),
+      ...(riskLevel === "high" || riskLevel === "regulated_review_required" ? ["high_risk"] : []),
+      ...(addOnRecords.some((a: any) => a.fulfillmentType === "blocked") ? ["blocked_addon_requested"] : []),
+    ],
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  const addOnUpsellFit = {
+    recommendedAddOns: [],
+    acceptedAddOns: addOnRecords,
+    declinedAddOns: [],
+    addOnsRequiringReview: addOnRecords.filter((a: any) => a.fulfillmentType === "admin_review_required" || a.fulfillmentType === "blocked"),
+    sourceNotes: ["elena_onboarding"],
+  };
+
+  // Build the full blueprint object
+  const fullBlueprint: Record<string, unknown> = {
+    // === 9 required sections (B6) ===
+    businessIdentity,
+    offerStrategy,
+    customerPsychology,
+    positioning,
+    websiteStrategy,
+    mediaVisuals,
+    riskCompliance,
+    generatorInstructions,
+    addOnUpsellFit,
+
+    // === Metadata ===
+    metadata: {
+      blueprintVersion: 2,
+      createdFromQuestionnaireVersion: "elena_v1",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completenessScore: 0,
+      missingCriticalFields: [],
+      internalWarnings: [],
+    },
+
+    // === Legacy keys — preserved for backward compatibility ===
+    businessName: businessName || null,
+    websiteType: websiteType || null,
+    packageTier,
     designDirection: {
-      brandTone: q.brandTone ?? meta.brandTone,
-      brandColors: q.brandColors ?? null,
+      brandTone: brandTone || null,
+      brandColors: brandColors.length > 0 ? brandColors : null,
       inspirationStyle: q.inspirationStyle ?? null,
-      avoidPatterns: q.avoidPatterns ?? [],
+      avoidPatterns: Array.isArray(q.avoidPatterns) ? q.avoidPatterns : [],
     },
     contentPlan: {
-      servicesOffered: q.servicesOffered ?? [],
+      servicesOffered,
       targetAudience: q.targetAudience ?? null,
       targetCustomerDescription: q.targetCustomerDescription ?? null,
       uniqueDifferentiator: q.uniqueDifferentiator ?? null,
@@ -70,8 +285,8 @@ function buildBlueprintFromQuestionnaire(
       specialRequests: q.specialRequests ?? null,
     },
     features: {
-      mustHaveFeatures: q.mustHaveFeatures ?? [],
-      addonsSelected: q.addonsSelected ?? [],
+      mustHaveFeatures: Array.isArray(q.mustHaveFeatures) ? q.mustHaveFeatures : [],
+      addonsSelected,
       pricingDisplay: q.pricingDisplay ?? "contact_for_pricing",
     },
     businessDetails: {
@@ -83,13 +298,24 @@ function buildBlueprintFromQuestionnaire(
       domainStatus: q.domainStatus ?? "undecided",
     },
     competitiveStrategy: {
-      competitorWeaknesses: q.competitorWeaknesses ?? [],
-      competitorSites: q.competitorSites ?? [],
+      competitorWeaknesses,
+      competitorSites,
     },
-    inspirationSites: q.inspirationSites ?? [],
-    testimonials: q.testimonials ?? [],
-    hasCustomPhotos: q.hasCustomPhotos ?? false,
+    inspirationSites,
+    testimonials,
+    hasCustomPhotos: !!(q.hasCustomPhotos),
   };
+
+  // Compute and attach completeness score
+  try {
+    const { score, missing } = scoreBlueprint(fullBlueprint as any);
+    (fullBlueprint.metadata as any).completenessScore = score;
+    (fullBlueprint.metadata as any).missingCriticalFields = missing;
+  } catch {
+    // non-fatal — scoring failure should not block blueprint creation
+  }
+
+  return fullBlueprint;
 }
 
 /* ═══════════════════════════════════════════════════════

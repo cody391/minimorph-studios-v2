@@ -4,10 +4,10 @@
 
 ---
 
-## Current Gate: Blueprint Schema Gate (B6)
+## Current Gate: Admin Blueprint Gate (B7)
 
 **Priority:** P0
-**Status:** OPEN — next gate after Elena promise safety hotfix
+**Status:** OPEN — next gate after B6 Blueprint Schema Gate
 
 ### What was completed before this gate
 
@@ -23,20 +23,19 @@
 | B5 Service Template Content Repair | ✅ Done (`2850228`) |
 | Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
 | Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
+| Blueprint Schema Gate (B6) | ✅ Done (pending push) |
 
 ### Why this gate is open
 
-Elena promise wording is now safe for internal testing — all unsupported automation, compliance, report, and "instant" promises have been removed. The platform still has structural gaps in the Blueprint schema (B6), admin gate (B7), claims validation (B8), add-on fulfillment (B9), customer approval sections (B10), and generator handoff (B11). These must be closed before dogfood or first customer.
+The Blueprint schema now has all 9 sections but admin has no hard gate to review the Blueprint before generation fires. Admin can currently bypass the customer Blueprint approval. There is no admin-reviewed checkpoint that verifies risk flags, regulated industry status, or claim safety before generation begins.
 
 ---
 
 ## Required Next Action
 
-**Blueprint Schema Gate (B6)** — Extend `blueprintJson` to include all 9 Elena Master Baseline sections: Business Identity (extend), Offer Strategy (extend), Customer Psychology (add), Positioning (extend), Website Strategy (extend), Media/Visuals (add), Risk/Compliance (add), Generator Instructions (add), Add-On/Upsell Fit (add).
+**Admin Blueprint Gate (B7)** — Add a hard `adminBlueprintApprovedAt` gate. Generation must be blocked until admin explicitly approves the Blueprint. Admin must be able to view all 9 Blueprint sections (including riskCompliance, positioning claims, addOnUpsellFit), flag risk items, edit Blueprint fields, and send back to customer/Elena if needed. The existing `adminApproveBlueprint` procedure must enforce this hard gate.
 
-Update Elena's prompt to populate the new sections. Update `buildBlueprintFromQuestionnaire()` to build the full schema. Update the generator to consume all Blueprint fields.
-
-After B6 is closed, proceed to B7 (Admin Blueprint Gate), then B8, B9, B10, B11 in order.
+After B7 is closed, proceed to B8 (Claims/Proof Validation), then B9, B10, B11 in order.
 
 ---
 
@@ -78,7 +77,9 @@ After B6 is closed, proceed to B7 (Admin Blueprint Gate), then B8, B9, B10, B11 
         ↓
 [DONE]  Elena Promise Safety Hotfix ✅ (all unsupported promises removed, 38 safety tests, f29e7a6)
         ↓
-[ACTIVE] Blueprint Schema Gate (B6) — extend blueprintJson to all 9 sections
+[DONE]  Blueprint Schema Gate (B6) ✅ (CustomerRealityBlueprint type, 9 sections, 85 tests, pending push)
+        ↓
+[ACTIVE] Admin Blueprint Gate (B7) — hard adminBlueprintApprovedAt gate before generation
         ↓
         Admin Blueprint Gate (B7) — hard adminBlueprintApprovedAt gate before generation
         ↓
@@ -118,7 +119,8 @@ After B6 is closed, proceed to B7 (Admin Blueprint Gate), then B8, B9, B10, B11 
 | B5 service template content repaired | ✅ Done (contractor language removed, 2850228) |
 | Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
 | Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
-| B6 Blueprint Schema Gap resolved | ❌ Pending (active gate) |
+| B6 Blueprint Schema Gap resolved | ✅ Done (pending push) |
+| B7 Admin Blueprint Gate implemented | ❌ Pending (active gate) |
 | B7 Admin Blueprint Gate implemented | ❌ Pending |
 | B8 Claim/Proof Validation implemented | ❌ Pending |
 | B9 Add-On Truth/Fulfillment Gap resolved | ❌ Pending |

@@ -9,29 +9,24 @@
 ### B6 — Blueprint Schema Gap
 
 **Severity:** P0 — blocks first outside customer
-**Status:** OPEN
+**Status:** RESOLVED (`feat: extend Customer Reality Blueprint schema`)
 **Discovered:** 2026-05-15 Elena Promise Enforcement Audit
+**Closed:** 2026-05-15 Blueprint Schema Gate
 
-#### Symptom
+#### What was fixed
 
-The current `blueprintJson` stored in the database does not include all 9 sections required by the Elena Master Baseline:
-- Business Identity *(partial)*
-- Offer Strategy *(partial)*
-- Customer Psychology *(missing or partial)*
-- Positioning *(missing)*
-- Website Strategy *(partial)*
-- Media / Visuals *(missing)*
-- Risk / Compliance *(missing)*
-- Generator Instructions *(missing — generator receives SiteBrief, not Blueprint)*
-- Add-On / Upsell Fit *(missing entirely)*
+- `shared/blueprintTypes.ts` (NEW): Full `CustomerRealityBlueprint` TypeScript type with all 9 required sections, derivation helpers, add-on fulfillment registry, completeness scorer.
+- `server/routers.ts`: `buildBlueprintFromQuestionnaire()` updated to output all 9 sections (businessIdentity, offerStrategy, customerPsychology, positioning, websiteStrategy, mediaVisuals, riskCompliance, generatorInstructions, addOnUpsellFit) plus metadata. All legacy keys preserved.
+- `server/blueprintSchema.test.ts` (NEW): 85 tests covering 9-section presence, legacy key backward compat, industry/risk derivation, add-on fulfillment, claim doctrine fields.
+- All 85 blueprint tests + 38 Elena safety tests pass. pnpm check clean. pnpm build PASS.
 
-#### Fix Required
+#### Remaining gaps (still require later gates)
 
-Extend `blueprintJson` schema to include all 9 sections. Update Elena's prompt to populate them. Update the generator to consume them.
-
-#### Impact
-
-Without a complete Blueprint schema, Elena cannot fully capture what she learns, the generator cannot fully use what Elena collected, and admin cannot verify truth before generation.
+- B7: Admin must review/approve Blueprint before generation fires — gate not yet built.
+- B8: Claims/proof source tracking not yet wired — fields exist in schema but Elena does not yet populate them.
+- B9: Add-on fulfillment not yet built — schema captures accepted add-ons with team_setup status.
+- B10: Customer Blueprint approval UI does not yet show all 9 sections — only legacy fields shown.
+- B11: Generator still receives SiteBrief, not full Blueprint — handoff not yet wired.
 
 ---
 

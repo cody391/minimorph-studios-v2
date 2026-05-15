@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Blueprint Schema Gate (B6)** — Elena promise safety hotfix is complete. Elena wording is now safe for internal testing. Next gate is extending blueprintJson to all 9 Master Baseline sections (B6).
+**Admin Blueprint Gate (B7)** — Blueprint schema is complete. Every new Blueprint now contains all 9 Customer Reality Blueprint sections. Next gate is building the hard admin gate: `adminBlueprintApprovedAt` must be set before generation fires.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -19,13 +19,14 @@ Previous lanes completed:
 - Service Template Routing Repair ✅ (selectTemplate service/agency branch, 37 routing tests, P0 guarantee fix)
 - B5 Service Template Content Repair ✅ (contractor-specific language removed from service/professional.html)
 - Elena Promise Enforcement Audit ✅ (audit completed, all 35+ promises categorized vs. platform reality)
-- **Elena Promise Safety Hotfix ✅** (all unsupported automation promises removed, safety test suite added, pnpm check clean)
+- Elena Promise Safety Hotfix ✅ (all unsupported automation promises removed, safety test suite added, pnpm check clean)
+- **Blueprint Schema Gate (B6) ✅** (CustomerRealityBlueprint type, 9-section builder, 85 tests, pnpm check + build clean)
 
 ## Latest Known Commit
 
 | Field | Value |
 |---|---|
-| HEAD | `f29e7a6` |
+| HEAD | pending push |
 | Branch | `main` |
 | Message | fix: soften Elena promises to match platform reality |
 | Production URL | https://www.minimorphstudios.net |
@@ -71,7 +72,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**Blueprint Schema Gate (B6)** — Extend blueprintJson to all 9 Master Baseline sections: Customer Psychology, Risk/Compliance, Generator Instructions, Add-On/Upsell Fit. Update Elena's prompt to populate them. Update the generator to consume them. B7–B11 follow in sequence.
+**Admin Blueprint Gate (B7)** — Add a hard `adminBlueprintApprovedAt` gate. Generation must be blocked until admin explicitly approves the Blueprint. Admin must be able to review all 9 Blueprint sections, flag risk items, edit Blueprint fields, and send back to customer if needed. B8, B9, B10, B11 follow.
 
 ## First Customer Status
 
@@ -87,6 +88,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 - [x] B5 Service Template Content Repair — removed all contractor-specific language from service/professional.html ("job site", "homeowners", "Licensed specialists", "Same-Day Available", "Weekends", LICENSE_NUMBER stat blocks) ✅
 - [x] Elena Promise Enforcement Audit — all 35+ Elena promises audited vs. platform reality, gaps categorized ✅
 - [x] Elena Promise Safety Hotfix — all unsupported automation, compliance, report, and "instant" promises removed from Elena prompt; ADDON HONESTY RULE, FIT-BASED RECOMMENDATION RULE, REGULATED INDUSTRY AWARENESS, BLOCKED ADD-ONS added; safety test suite (38 tests) passing ✅
+- [x] Blueprint Schema Gate (B6) — CustomerRealityBlueprint type (9 sections), buildBlueprintFromQuestionnaire() updated, industry/risk derivation helpers, add-on fulfillment registry, completeness scorer, backward compat with all legacy portal keys, 85 blueprint tests passing ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

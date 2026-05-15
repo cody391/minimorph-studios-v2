@@ -5,6 +5,24 @@ For full git history: `git log --oneline`
 
 ---
 
+## Blueprint Schema Gate (B6) — 2026-05-15
+
+**Gate:** Blueprint Schema Gate (B6)
+**Commit:** pending push
+**Status:** COMPLETE
+
+**What changed:**
+
+- `shared/blueprintTypes.ts` (NEW): Full `CustomerRealityBlueprint` TypeScript interface with all 9 required sections. Includes `BusinessIdentity`, `OfferStrategy`, `CustomerPsychology`, `Positioning`, `WebsiteStrategy`, `MediaVisuals`, `RiskCompliance`, `GeneratorInstructions`, `AddOnUpsellFit`, `BlueprintMetadata`, and `CustomerDirectedClaim` (courtesy-notice doctrine, not policing). Add-on fulfillment registry maps 15 add-ons to their `fulfillmentType` (team_setup / customer_action / admin_review_required / blocked). `deriveIndustryLane()`, `deriveRiskLevel()`, `deriveRegulatedIndustry()`, `deriveTemplateLane()`, `buildAddOnRecords()`, `scoreBlueprint()` helpers.
+- `server/routers.ts`: `buildBlueprintFromQuestionnaire()` updated to output all 9 sections plus metadata alongside all legacy keys. Backward compat: all existing portal/admin/generator readers continue working unchanged. `domainEmailInUse` preserved into `businessIdentity`. Add-ons preserved into `addOnUpsellFit`. Risk/compliance auto-derived from industry type. Generator instructions populated with `factsNotToInvent`, `claimHandlingRules`, `reviewFlags`.
+- `server/blueprintSchema.test.ts` (NEW): 85 tests covering all 9 sections present with sparse data, legacy key backward compat, industry/risk derivation for 12+ business types, add-on fulfillment records, courtesy-notice doctrine fields, generator instruction section completeness, completeness scoring.
+
+**What this proves:** Every new Blueprint from this commit forward will contain all 9 Customer Reality Blueprint sections. The schema gives the system a place to store truth Elena collects. Legacy portal/admin/generator code is unaffected.
+
+**What this does NOT prove:** B7 admin gate, B8 claims/proof, B9 add-on fulfillment, B10 customer Blueprint approval, B11 generator handoff are resolved. Those gates follow in sequence.
+
+---
+
 ## Elena Promise Safety Hotfix — 2026-05-15
 
 **Gate:** Elena Promise Safety Hotfix Gate
