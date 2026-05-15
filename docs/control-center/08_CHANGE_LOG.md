@@ -8,7 +8,7 @@ For full git history: `git log --oneline`
 ## Lifecycle Realignment Gate — 2026-05-15
 
 **Gate:** MMV4 End-to-End Lifecycle Realignment
-**Commit:** TBD (lifecycle commit)
+**Commit:** `96952f9`
 **Status:** COMPLETE
 
 **What changed:**

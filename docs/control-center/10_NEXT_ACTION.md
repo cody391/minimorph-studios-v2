@@ -26,7 +26,7 @@
 | Blueprint Schema Gate (B6) | ✅ Done (`26aaf12`) |
 | Admin Blueprint Gate (B7) | ✅ Done (`2682cfb`) |
 | Claim/Proof Validation Gate (B8) | ✅ Done (`70acded`) |
-| Lifecycle Realignment Gate | ✅ Done (lifecycle commit) |
+| Lifecycle Realignment Gate | ✅ Done (`96952f9`) |
 
 ### Lifecycle Realignment — what changed
 
@@ -102,7 +102,7 @@ After B9 is closed, proceed to B10 (customer site preview approval polish), then
         ↓
 [DONE]  Claim/Proof Validation Gate (B8) ✅ (`70acded`)
         ↓
-[DONE]  Lifecycle Realignment Gate ✅ (lifecycle commit)
+[DONE]  Lifecycle Realignment Gate ✅ (`96952f9`)
         ↓
 [ACTIVE] Add-On Fulfillment Truth Gate (B9) — recommendedAddOns/acceptedAddOns in Blueprint
         ↓
