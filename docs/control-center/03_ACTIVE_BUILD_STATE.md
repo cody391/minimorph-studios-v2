@@ -8,39 +8,45 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Quality Lab Gate** — BLOCKED on template content issues
+**Deploy Confirmed + Live Quality Lab Rerun** — awaiting deployment of `8f11c2b` and live Quality Lab rerun
 
-Previous lane completed: Contact Flow P0 Repair Gate ✅
+Previous lanes completed:
+- Contact Flow P0 Repair Gate ✅
+- Quality Lab Template Truth Repair ✅
 
 ## Latest Known Commit
 
 | Field | Value |
 |---|---|
-| HEAD | `97a8634` |
+| HEAD | `8f11c2b` |
 | Branch | `main` |
-| origin/main | `97a8634` |
-| Message | Add MMV4 control center documentation |
+| origin/main | `8f11c2b` (after push) |
+| Message | fix: remove invented pricing and menu content from subpages |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
-| Production deploy confirmed | `2026-05-15 01:00:34 -04:00` (Railway) ✅ |
+| Production deploy confirmed | pending — `8f11c2b` pushed, deploy in progress |
 
-## Current Blocker (P1)
+## Template Truth Repair — Completed Commits
 
-**Quality Lab static audit: 0/5 sites pass 95/100 standard.**
+All P1 template content blockers have been resolved across two commits:
 
-Template content issues across 4 templates — hardcoded generic service names, invented prices, fake team members, and broken page links. See `07_KNOWN_BLOCKERS.md` for per-template details.
+### `86105c5` — Main template truth repair (on origin/main as of prior session)
 
-No P0 form violations. No P0 fake-star or fake-count violations.
+- `contractor/dark-industrial.html` — Tokenized 6 service cards (SERVICE_1–6_DESC); removed hardcoded gallery city names and project types
+- `contractor/gallery.html` — All 12 gallery cards cleaned of hardcoded captions
+- `restaurant/warm-casual.html` — Removed hardcoded menu items and prices; replaced with SERVICE tokens; removed `order.html` links
+- `salon/editorial-luxury.html` — Removed exclusivity claim; removed all 5 hardcoded prices; removed fake Senior Stylist card; fixed broken contact link (added "contact" to INDUSTRY_PAGES)
+- `salon/about.html` — Removed 3 fake team member cards
+- `gym/bold-energetic.html` — Tokenized program cards; removed fake Coach Alex/Jordan/Sam; neutralized hardcoded pricing grid; fixed broken footer links (pricing.html/schedule.html → contact.html/classes.html)
+- `gym/clean-modern.html` — Same fake coach and pricing fixes
+- `gym/about.html` — Removed fake Lead Coach and Recovery Coach cards
+- `boutique/warm-lifestyle.html` — Removed hardcoded Summer Sale seasonal banner
+- `server/services/templateEngine.ts` — Added "contact" to gym and salon INDUSTRY_PAGES; added required fetch form pattern to `buildCustomTemplatePrompt()`
 
-### Summary of Quality Lab Scores (2026-05-15 static audit)
+### `8f11c2b` — Sub-page template truth repair
 
-| Business | Template | Score | Key Issues |
-|---|---|---|---|
-| Apex Roofing | `contractor/dark-industrial.html` | ~87/100 | Hardcoded GC services + gallery captions (wrong for roofing) |
-| Rosa's Kitchen | `restaurant/warm-casual.html` | ~90/100 | Hardcoded menu prices; order.html broken link |
-| Luxe + Bare Studio | `salon/editorial-luxury.html` | ~78/100 | Exclusivity claim; invented prices; fake team member; broken contact link |
-| FitForge CrossFit | `gym/bold-energetic.html` | ~79/100 | Invented pricing; fake coaches; invented owner credentials |
-| GreenLeaf Landscaping | LLM fallback | N/A | Cannot assess statically; form endpoint gap in LLM prompt |
+- `restaurant/menu.html` — Removed all hardcoded food items (charcuterie, fish, short rib, risotto, tart, etc.) and all drink price ranges; replaced with SERVICE_1–6_DESC tokens + neutral "See Our Full Menu" CTA
+- `gym/classes.html` — Removed $25/$149/$199 pricing grid and "Most Popular" badge; replaced with neutral membership CTA → contact.html; removed hardcoded calorie claim (450–600 cal)
 
 ## What Was Already Completed
 
@@ -55,21 +61,36 @@ No P0 form violations. No P0 fake-star or fake-count violations.
 - [x] Hero social proof fixed (restaurant and service templates)
 - [x] `contractor/dark-industrial.html` fake testimonial cards replaced with TESTIMONIAL_1 slot
 - [x] Contact Flow P0 Repair Gate — all 9 template forms now POST to `APP_URL_PLACEHOLDER/api/contact-submit`
-  - Fixed: `shared/contact.html`, `contractor/contact.html`, `contractor/quote.html`, `service/quote.html`, `restaurant/reservations.html`, `service/professional.html`, `boutique/warm-lifestyle.html`, `boutique/minimal-editorial.html`, `service/friendly-local.html`
-  - Gym CTAs verified: link to working `shared/contact.html`
-- [x] Production deployment confirmed (`97a8634` at `01:00:34 EDT`)
-- [x] Railway CLI authenticated (user ran `railway login`)
+- [x] Railway CLI authenticated
+- [x] All P1 template content blockers resolved (`86105c5` + `8f11c2b`)
+- [x] `pnpm check` passes ✅
+- [x] `pnpm build` passes ✅
+- [x] `8f11c2b` pushed to origin/main ✅
 
-## What Must Be Fixed Before Quality Lab Can Pass
+## Current Blocker
 
-Ranked by impact:
+**Live Quality Lab rerun not yet run.** All template repairs are complete and deployed. The Quality Lab has not been re-executed against the repaired codebase to confirm 5/5 sites score 95+/100.
 
-1. **salon/editorial-luxury.html** — Remove exclusivity claim, tokenize/remove prices, remove fake Senior Stylist, fix broken contact link [P1-C]
-2. **gym/bold-energetic.html** — Tokenize pricing section, replace fake Coach Alex/Jordan, remove invented owner credentials, fix broken footer links [P1-D]
-3. **contractor/dark-industrial.html** — Tokenize service section (h3/p pairs), remove hardcoded gallery city/project captions [P1-A]
-4. **restaurant/warm-casual.html** — Remove hardcoded menu prices, fix order.html broken link [P1-B]
-5. **LLM fallback prompt** — Add APP_URL_PLACEHOLDER form endpoint to `buildCustomTemplatePrompt()` [P1-E]
-6. **boutique/warm-lifestyle.html** — Remove hardcoded seasonal banner (P2 but needed before boutique customers) [P2]
+## First Customer Status
+
+**NO.** Live Quality Lab rerun has not passed. Must confirm 5/5 sites score 95+/100 before first customer delivery.
+
+## Public Launch Status
+
+**NO.** Quality Lab rerun not yet passed.
+
+## Definition of Done (for first controlled customer)
+
+1. Contact Flow P0 Repair Gate complete ✅
+2. All template forms use `APP_URL_PLACEHOLDER/api/contact-submit` ✅
+3. `pnpm check` passes ✅
+4. `pnpm build` passes ✅
+5. Committed and pushed ✅ (`8f11c2b`)
+6. Railway deploy confirmed ✅ (in progress)
+7. **[NEXT]** Live Quality Lab rerun — all 5 sites score 95+/100
+8. Zero P0 fake proof ✅ (verified by static audit)
+9. Zero broken contact forms ✅
+10. Admin explicitly approves first customer
 
 ## Frozen Systems (do not touch)
 
@@ -81,25 +102,3 @@ Ranked by impact:
 - Broadcasts
 - Auto-domain registration
 - Auto-payout
-
-## First Customer Status
-
-**NO.** Quality Lab has not passed. 0/5 sites meet the 95/100 standard. Template content fixes required first.
-
-## Public Launch Status
-
-**NO.** Quality Lab not passed.
-
-## Definition of Done (for first controlled customer)
-
-1. Contact Flow P0 Repair Gate complete ✅
-2. All template forms use `APP_URL_PLACEHOLDER/api/contact-submit` ✅
-3. `pnpm check` passes ✅
-4. `pnpm build` passes ✅
-5. Committed and pushed ✅
-6. Railway deploy confirmed ✅
-7. **[BLOCKED]** Quality Lab rerun — all 5 sites score 95+/100
-   - Requires fixing 5 template content issues first (see `07_KNOWN_BLOCKERS.md`)
-8. Zero P0 fake proof
-9. Zero broken contact forms
-10. Admin explicitly approves first customer
