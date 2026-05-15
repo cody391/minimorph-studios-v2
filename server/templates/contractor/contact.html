@@ -156,7 +156,8 @@ footer{background:#080808;padding:5rem 5% 2rem;border-top:1px solid var(--border
     <h2 class="contact-form-heading">We'll get back<br>to you fast.</h2>
     <p class="contact-form-sub">Fill out the form and expect a reply within one business day. For urgent matters, call PHONE directly.</p>
 
-    <form class="contact-form" action="https://formspree.io/f/placeholder" method="POST">
+    <form class="contact-form" id="contact-form">
+      <input type="hidden" name="businessName" value="BUSINESS_NAME">
       <div class="form-group">
         <label class="form-label" for="c-name">Full Name</label>
         <input id="c-name" class="form-input" type="text" name="name" placeholder="Your name" required>
@@ -178,6 +179,8 @@ footer{background:#080808;padding:5rem 5% 2rem;border-top:1px solid var(--border
         <textarea id="c-msg" class="form-input form-textarea" name="message" placeholder="Tell us about your project or question..." required></textarea>
       </div>
       <button type="submit" class="form-submit">Send Message →</button>
+      <div id="form-success" style="display:none;margin-top:1rem;padding:1rem 1.25rem;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#6ee7b7;font-size:0.875rem;">Your message was sent! We'll be in touch within one business day.</div>
+      <div id="form-error" style="display:none;margin-top:1rem;padding:1rem 1.25rem;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;font-size:0.875rem;">Something went wrong. Please try again or call us directly.</div>
     </form>
   </div>
 </div>
@@ -215,6 +218,41 @@ footer{background:#080808;padding:5rem 5% 2rem;border-top:1px solid var(--border
 <script>
 const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
 document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+<script>
+(function(){
+  var form=document.getElementById('contact-form');
+  if(!form)return;
+  form.addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=form.querySelector('[type="submit"]');
+    var orig=btn.textContent;
+    var ok=document.getElementById('form-success');
+    var err=document.getElementById('form-error');
+    btn.disabled=true;btn.textContent='Sending…';
+    ok.style.display='none';err.style.display='none';
+    try{
+      var subjectEl=form.querySelector('[name="subject"]');
+      var msgEl=form.querySelector('[name="message"]');
+      var msg=msgEl?msgEl.value:'';
+      if(subjectEl&&subjectEl.value)msg='Subject: '+subjectEl.value+'\n\n'+msg;
+      var res=await fetch('APP_URL_PLACEHOLDER/api/contact-submit',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name:form.querySelector('[name="name"]').value,
+          email:form.querySelector('[name="email"]').value,
+          phone:(form.querySelector('[name="phone"]')||{value:''}).value,
+          message:msg,
+          businessName:'BUSINESS_NAME'
+        })
+      });
+      if(res.ok){ok.style.display='block';form.reset();}
+      else throw new Error();
+    }catch(x){err.style.display='block';}
+    btn.disabled=false;btn.textContent=orig;
+  });
+})();
 </script>
 </body>
 </html>

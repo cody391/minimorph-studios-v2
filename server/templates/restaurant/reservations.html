@@ -114,7 +114,8 @@ footer{background:var(--text);color:rgba(255,255,255,0.7);padding:4rem 5% 2rem}
       <p>Fill out the form below and we'll confirm your reservation by email within a few hours. For same-day bookings or parties of 8 or more, please call us directly at PHONE.</p>
     </div>
 
-    <form class="res-form" action="https://formspree.io/f/placeholder" method="POST">
+    <form class="res-form" id="res-form">
+      <input type="hidden" name="businessName" value="BUSINESS_NAME">
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="r-name">Full Name</label>
@@ -176,6 +177,8 @@ footer{background:var(--text);color:rgba(255,255,255,0.7);padding:4rem 5% 2rem}
         <textarea id="r-notes" class="form-input form-textarea" name="notes" placeholder="Allergies, high chair needed, accessibility requirements, etc."></textarea>
       </div>
       <button type="submit" class="form-submit">Request Reservation →</button>
+      <div id="form-success" style="display:none;margin-top:0.75rem;padding:0.875rem 1rem;background:rgba(26,16,8,0.05);border:1px solid var(--primary);color:var(--text);font-size:0.875rem;">Reservation request received! You'll hear from us within a few hours to confirm.</div>
+      <div id="form-error" style="display:none;margin-top:0.75rem;padding:0.875rem 1rem;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;font-size:0.875rem;">Something went wrong. Please try again or call us to reserve directly.</div>
       <p class="form-note">Submitting this form is a reservation request, not a confirmed booking. You'll receive email confirmation within a few hours.</p>
     </form>
   </div>
@@ -234,6 +237,44 @@ footer{background:var(--text);color:rgba(255,255,255,0.7);padding:4rem 5% 2rem}
 <script>
 const io = new IntersectionObserver(entries => entries.forEach(e => e.isIntersecting && e.target.classList.add('visible')), {threshold:0.1});
 document.querySelectorAll('[data-animate]').forEach(el => io.observe(el));
+</script>
+<script>
+(function(){
+  var form=document.getElementById('res-form');
+  if(!form)return;
+  form.addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=form.querySelector('[type="submit"]');
+    var orig=btn.textContent;
+    var ok=document.getElementById('form-success');
+    var err=document.getElementById('form-error');
+    btn.disabled=true;btn.textContent='Sending…';
+    ok.style.display='none';err.style.display='none';
+    try{
+      var parts=[];
+      var dt=form.querySelector('[name="date"]');if(dt&&dt.value)parts.push('Date: '+dt.value);
+      var tm=form.querySelector('[name="time"]');if(tm&&tm.value)parts.push('Time: '+tm.value);
+      var ps=form.querySelector('[name="party_size"]');if(ps&&ps.value)parts.push('Party Size: '+ps.value);
+      var oc=form.querySelector('[name="occasion"]');if(oc&&oc.value)parts.push('Occasion: '+oc.value);
+      var nt=form.querySelector('[name="notes"]');if(nt&&nt.value)parts.push('Special Requests: '+nt.value);
+      var msg='Reservation Request\n\n'+parts.join('\n');
+      var res=await fetch('APP_URL_PLACEHOLDER/api/contact-submit',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name:form.querySelector('[name="name"]').value,
+          email:form.querySelector('[name="email"]').value,
+          phone:(form.querySelector('[name="phone"]')||{value:''}).value,
+          message:msg,
+          businessName:'BUSINESS_NAME'
+        })
+      });
+      if(res.ok){ok.style.display='block';form.reset();}
+      else throw new Error();
+    }catch(x){err.style.display='block';}
+    btn.disabled=false;btn.textContent=orig;
+  });
+})();
 </script>
 </body>
 </html>

@@ -896,29 +896,36 @@
 
         <div class="contact-form" data-animate data-animate-delay="1">
           <p class="form-title">Get Your Free Estimate</p>
-          <form onsubmit="return false;">
+          <form id="fl-form">
+            <input type="hidden" name="businessName" value="BUSINESS_NAME">
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">First Name</label>
-                <input class="form-input" type="text" placeholder="Jane" />
+                <label class="form-label" for="fl-fname">First Name</label>
+                <input id="fl-fname" class="form-input" type="text" name="first_name" placeholder="Jane" required />
               </div>
               <div class="form-group">
-                <label class="form-label">Last Name</label>
-                <input class="form-input" type="text" placeholder="Smith" />
+                <label class="form-label" for="fl-lname">Last Name</label>
+                <input id="fl-lname" class="form-input" type="text" name="last_name" placeholder="Smith" />
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Phone Number</label>
-              <input class="form-input" type="tel" placeholder="(555) 000-0000" />
+              <label class="form-label" for="fl-email">Email Address</label>
+              <input id="fl-email" class="form-input" type="email" name="email" placeholder="jane@example.com" required />
             </div>
             <div class="form-group">
-              <label class="form-label">Your Address</label>
-              <input class="form-input" type="text" placeholder="123 Main St, SERVICE_AREA" />
+              <label class="form-label" for="fl-phone">Phone Number</label>
+              <input id="fl-phone" class="form-input" type="tel" name="phone" placeholder="(555) 000-0000" />
             </div>
             <div class="form-group">
-              <label class="form-label">What do you need help with?</label>
-              <textarea class="form-input form-textarea" placeholder="Tell us a little about your project..."></textarea>
+              <label class="form-label" for="fl-address">Your Address</label>
+              <input id="fl-address" class="form-input" type="text" name="address" placeholder="123 Main St, SERVICE_AREA" />
             </div>
+            <div class="form-group">
+              <label class="form-label" for="fl-message">What do you need help with?</label>
+              <textarea id="fl-message" class="form-input form-textarea" name="message" placeholder="Tell us a little about your project..."></textarea>
+            </div>
+            <div id="form-success" style="display:none;margin-bottom:0.5rem;padding:0.875rem 1rem;background:#d1fae5;border-radius:6px;color:#065f46;font-size:0.875rem;">Your request was sent! We'll be in touch within one business day.</div>
+            <div id="form-error" style="display:none;margin-bottom:0.5rem;padding:0.875rem 1rem;background:#fee2e2;border-radius:6px;color:#991b1b;font-size:0.875rem;">Something went wrong. Please try again or call us directly.</div>
             <button class="form-submit" type="submit">Send My Request — It's Free →</button>
           </form>
         </div>
@@ -976,5 +983,43 @@
 
     document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
   </script>
+<script>
+(function(){
+  var form=document.getElementById('fl-form');
+  if(!form)return;
+  form.addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=form.querySelector('[type="submit"]');
+    var orig=btn.textContent;
+    var ok=document.getElementById('form-success');
+    var err=document.getElementById('form-error');
+    btn.disabled=true;btn.textContent='Sending…';
+    ok.style.display='none';err.style.display='none';
+    try{
+      var fname=(form.querySelector('[name="first_name"]')||{value:''}).value;
+      var lname=(form.querySelector('[name="last_name"]')||{value:''}).value;
+      var fullName=(fname+' '+lname).trim()||'(no name)';
+      var parts=[];
+      var addr=form.querySelector('[name="address"]');if(addr&&addr.value)parts.push('Address: '+addr.value);
+      var msgEl=form.querySelector('[name="message"]');if(msgEl&&msgEl.value)parts.push('Project Details: '+msgEl.value);
+      var msg=parts.join('\n\n')||'Estimate request';
+      var res=await fetch('APP_URL_PLACEHOLDER/api/contact-submit',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name:fullName,
+          email:form.querySelector('[name="email"]').value,
+          phone:(form.querySelector('[name="phone"]')||{value:''}).value,
+          message:msg,
+          businessName:'BUSINESS_NAME'
+        })
+      });
+      if(res.ok){ok.style.display='block';form.reset();}
+      else throw new Error();
+    }catch(x){err.style.display='block';}
+    btn.disabled=false;btn.textContent=orig;
+  });
+})();
+</script>
 </body>
 </html>

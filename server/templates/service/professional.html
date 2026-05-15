@@ -846,23 +846,30 @@
         </div>
         <div class="area-contact" data-animate>
           <p class="contact-title">Get a Free Quote</p>
-          <form onsubmit="return false;">
+          <form id="pf-form">
+            <input type="hidden" name="businessName" value="BUSINESS_NAME">
             <div class="contact-field">
-              <label class="contact-label">Your Name</label>
-              <input class="contact-input" type="text" placeholder="John Smith" />
+              <label class="contact-label" for="pf-name">Your Name</label>
+              <input id="pf-name" class="contact-input" type="text" name="name" placeholder="John Smith" required />
             </div>
             <div class="contact-field">
-              <label class="contact-label">Phone Number</label>
-              <input class="contact-input" type="tel" placeholder="(555) 000-0000" />
+              <label class="contact-label" for="pf-email">Email Address</label>
+              <input id="pf-email" class="contact-input" type="email" name="email" placeholder="you@example.com" required />
             </div>
             <div class="contact-field">
-              <label class="contact-label">Service Needed</label>
-              <input class="contact-input" type="text" placeholder="Describe what you need..." />
+              <label class="contact-label" for="pf-phone">Phone Number</label>
+              <input id="pf-phone" class="contact-input" type="tel" name="phone" placeholder="(555) 000-0000" />
             </div>
             <div class="contact-field">
-              <label class="contact-label">Message</label>
-              <textarea class="contact-input contact-textarea" placeholder="Any additional details..."></textarea>
+              <label class="contact-label" for="pf-service">Service Needed</label>
+              <input id="pf-service" class="contact-input" type="text" name="service" placeholder="Describe what you need..." />
             </div>
+            <div class="contact-field">
+              <label class="contact-label" for="pf-message">Message</label>
+              <textarea id="pf-message" class="contact-input contact-textarea" name="message" placeholder="Any additional details..."></textarea>
+            </div>
+            <div id="form-success" style="display:none;margin-bottom:0.5rem;padding:0.875rem 1rem;background:#d1fae5;border-radius:6px;color:#065f46;font-size:0.875rem;">Your request was sent! We'll be in touch within one business day.</div>
+            <div id="form-error" style="display:none;margin-bottom:0.5rem;padding:0.875rem 1rem;background:#fee2e2;border-radius:6px;color:#991b1b;font-size:0.875rem;">Something went wrong. Please try again or call us directly.</div>
             <button class="contact-submit" type="submit">Send Request →</button>
           </form>
         </div>
@@ -914,5 +921,40 @@
 
     document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
   </script>
+<script>
+(function(){
+  var form=document.getElementById('pf-form');
+  if(!form)return;
+  form.addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=form.querySelector('[type="submit"]');
+    var orig=btn.textContent;
+    var ok=document.getElementById('form-success');
+    var err=document.getElementById('form-error');
+    btn.disabled=true;btn.textContent='Sending…';
+    ok.style.display='none';err.style.display='none';
+    try{
+      var parts=[];
+      var svc=form.querySelector('[name="service"]');if(svc&&svc.value)parts.push('Service Needed: '+svc.value);
+      var msgEl=form.querySelector('[name="message"]');if(msgEl&&msgEl.value)parts.push('Additional Details: '+msgEl.value);
+      var msg=parts.join('\n\n')||'Contact request';
+      var res=await fetch('APP_URL_PLACEHOLDER/api/contact-submit',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name:form.querySelector('[name="name"]').value,
+          email:form.querySelector('[name="email"]').value,
+          phone:(form.querySelector('[name="phone"]')||{value:''}).value,
+          message:msg,
+          businessName:'BUSINESS_NAME'
+        })
+      });
+      if(res.ok){ok.style.display='block';form.reset();}
+      else throw new Error();
+    }catch(x){err.style.display='block';}
+    btn.disabled=false;btn.textContent=orig;
+  });
+})();
+</script>
 </body>
 </html>

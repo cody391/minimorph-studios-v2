@@ -837,10 +837,12 @@
       <p class="signup-sub" data-animate data-animate-delay="2">
         New pieces drop weekly. Be the first to know.
       </p>
-      <form class="signup-form" data-animate data-animate-delay="3" onsubmit="return false;">
-        <input class="signup-input" type="email" placeholder="your@email.com" />
+      <form class="signup-form" id="signup-form" data-animate data-animate-delay="3">
+        <input id="signup-email" class="signup-input" type="email" name="email" placeholder="your@email.com" required />
         <button class="signup-btn" type="submit">JOIN</button>
       </form>
+      <div id="signup-success" style="display:none;color:rgba(255,255,255,0.95);font-size:0.875rem;padding:0.75rem 0;text-align:center;">You're on the list! Watch your inbox for first access.</div>
+      <div id="signup-error" style="display:none;color:rgba(255,255,255,0.8);font-size:0.875rem;padding:0.75rem 0;text-align:center;">Something went wrong. Please try again.</div>
     </div>
   </section>
 
@@ -909,5 +911,38 @@
       });
     });
   </script>
+<script>
+(function(){
+  var form=document.getElementById('signup-form');
+  if(!form)return;
+  form.addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=form.querySelector('[type="submit"]');
+    var orig=btn.textContent;
+    var ok=document.getElementById('signup-success');
+    var err=document.getElementById('signup-error');
+    var emailVal=form.querySelector('[type="email"]').value;
+    if(!emailVal)return;
+    btn.disabled=true;btn.textContent='…';
+    ok.style.display='none';err.style.display='none';
+    try{
+      var res=await fetch('APP_URL_PLACEHOLDER/api/contact-submit',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name:'Newsletter Subscriber',
+          email:emailVal,
+          phone:'',
+          message:'Newsletter/signup request.',
+          businessName:'BUSINESS_NAME'
+        })
+      });
+      if(res.ok){ok.style.display='block';form.style.display='none';}
+      else throw new Error();
+    }catch(x){err.style.display='block';}
+    btn.disabled=false;btn.textContent=orig;
+  });
+})();
+</script>
 </body>
 </html>

@@ -132,7 +132,8 @@ footer{background:var(--dark);padding:3rem 5% 2rem}
       <p>We'll get back to you within one business day.</p>
     </div>
 
-    <form class="contact-form" action="https://formspree.io/f/placeholder" method="POST">
+    <form class="contact-form" id="contact-form">
+      <input type="hidden" name="businessName" value="BUSINESS_NAME">
       <div class="form-row">
         <div class="form-group">
           <label class="form-label" for="name">Name</label>
@@ -156,6 +157,8 @@ footer{background:var(--dark);padding:3rem 5% 2rem}
         <textarea id="message" class="form-input form-textarea" name="message" placeholder="Tell us more about what you're looking for..." required></textarea>
       </div>
       <button type="submit" class="form-submit">Send Message →</button>
+      <div id="form-success" style="display:none;margin-top:0.75rem;padding:0.875rem 1rem;background:#d1fae5;border-radius:6px;color:#065f46;font-size:0.875rem;">Your message was sent! We'll be in touch within one business day.</div>
+      <div id="form-error" style="display:none;margin-top:0.75rem;padding:0.875rem 1rem;background:#fee2e2;border-radius:6px;color:#991b1b;font-size:0.875rem;">Something went wrong. Please try again or call us directly.</div>
       <p class="form-note">We respond to every message personally. Your information is never shared.</p>
     </form>
   </div>
@@ -167,5 +170,40 @@ footer{background:var(--dark);padding:3rem 5% 2rem}
     <span class="footer-mini">PACKAGE_TIER Plan · Built by <a href="https://minimorphstudios.net">MiniMorph Studios</a></span>
   </div>
 </footer>
+<script>
+(function(){
+  var form=document.getElementById('contact-form');
+  if(!form)return;
+  form.addEventListener('submit',async function(e){
+    e.preventDefault();
+    var btn=form.querySelector('[type="submit"]');
+    var orig=btn.textContent;
+    var ok=document.getElementById('form-success');
+    var err=document.getElementById('form-error');
+    btn.disabled=true;btn.textContent='Sending…';
+    ok.style.display='none';err.style.display='none';
+    try{
+      var subjectEl=form.querySelector('[name="subject"]');
+      var msgEl=form.querySelector('[name="message"]');
+      var msg=msgEl?msgEl.value:'';
+      if(subjectEl&&subjectEl.value)msg='Subject: '+subjectEl.value+'\n\n'+msg;
+      var res=await fetch('APP_URL_PLACEHOLDER/api/contact-submit',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          name:form.querySelector('[name="name"]').value,
+          email:form.querySelector('[name="email"]').value,
+          phone:(form.querySelector('[name="phone"]')||{value:''}).value,
+          message:msg,
+          businessName:'BUSINESS_NAME'
+        })
+      });
+      if(res.ok){ok.style.display='block';form.reset();}
+      else throw new Error();
+    }catch(x){err.style.display='block';}
+    btn.disabled=false;btn.textContent=orig;
+  });
+})();
+</script>
 </body>
 </html>
