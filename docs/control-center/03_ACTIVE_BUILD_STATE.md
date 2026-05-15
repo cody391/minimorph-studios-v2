@@ -8,22 +8,23 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**First Controlled Customer Prep** — Production End-to-End Generation Test passed 5/5 (100/100 per site). All Quality Lab businesses generate clean, token-complete sites with correct form endpoints. System is ready for first customer onboarding pending admin approval.
+**First Controlled Customer** — All pre-customer gates complete. Customer portal rebuilt for clarity (portal patch committed). First real customer may be onboarded pending admin approval.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
 - Quality Lab Template Truth Repair ✅
 - Deploy Confirmed (61c8f14 proven live at 07:42:58 GMT) ✅
 - Production generation test — failed (Anthropic credits) ⚠️ → credits topped up → **PASSED 5/5 ✅**
+- Customer Portal Reality Patch ✅ (BuildCommandCenter, tab reorder, safe empty states, CheckoutSuccess rewrite, E2E tests)
 
 ## Latest Known Commit
 
 | Field | Value |
 |---|---|
-| HEAD | `a0a2cf1` |
+| HEAD | pending portal patch commit |
 | Branch | `main` |
 | origin/main | `a0a2cf1` |
-| Message | docs: record production generation test pass (5/5 — 100/100) |
+| Message | fix: make customer portal build experience clear after payment |
 | Production URL | https://www.minimorphstudios.net |
 | Railway project | `fabulous-dedication` / service `minimorph-studios-v2` |
 | Production deploy confirmed | `2026-05-15 07:42:58 GMT` ✅ |
@@ -79,6 +80,14 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## What Was Already Completed
 
+- [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅
+- [x] BuildCommandCenter component — stage card + 7-step progress timeline + "What You Purchased" + "Need Help?" two-column layout ✅
+- [x] "Your Website" tab first (renamed from "Onboarding") with electric indicator dot ✅
+- [x] PAGE_NAME_MAP: page selector shows "Home Page" instead of raw "index" ✅
+- [x] Safe empty states: no 0/100 health score, "Reports begin after your website is live", "No updates yet — your build has just started" ✅
+- [x] "Account Not Ready Yet" (non-alarming) state with Refresh button + email link ✅
+- [x] CheckoutSuccess.tsx rewritten: clear steps, Elena mention, email fallback ✅
+- [x] E2E test suite: 16 Playwright tests (portal-customer-experience.spec.ts) ✅
 - [x] All fake stars (`★★★★★`) removed from testimonial/review divs
 - [x] All fake testimonial cards beyond TESTIMONIAL_1 slot removed
 - [x] All `via Google`, `via Yelp`, `Verified Purchase` attributions removed

@@ -17,6 +17,7 @@ import { useLocation } from "wouter";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { AIChatBox } from "@/components/AIChatBox";
+import { BuildCommandCenter } from "@/components/BuildCommandCenter";
 import { Bot, Loader2, Sparkles, Globe, ExternalLink, RefreshCw, Copy, Upload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -29,6 +30,25 @@ const statusColors: Record<string, string> = {
   cancelled: "badge-neutral",
   pending_payment: "badge-pending-payment",
 };
+
+// Translate internal template page names to customer-friendly labels
+const PAGE_NAME_MAP: Record<string, string> = {
+  index: "Home Page",
+  services: "Services Page",
+  gallery: "Gallery / Portfolio",
+  about: "About Page",
+  contact: "Contact Page",
+  menu: "Menu Page",
+  reservations: "Reservations Page",
+  classes: "Classes Page",
+  privacy: "Privacy Policy",
+  quote: "Quote Request",
+  "sitemap.xml": "Sitemap",
+  "robots.txt": "Robots",
+};
+function friendlyPageName(p: string): string {
+  return PAGE_NAME_MAP[p.toLowerCase()] ?? (p.charAt(0).toUpperCase() + p.slice(1));
+}
 
 export default function CustomerPortal() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -126,16 +146,30 @@ export default function CustomerPortal() {
 
   const pendingChecklistItems = (checklist ?? []).filter((item: any) => item.status !== "completed");
 
-  // Auto-select "setup" tab when there are pending checklist items and user hasn't navigated yet
+  // Auto-select the most useful tab for the customer's current state.
+  // Priority: URL param → active build (onboarding) → pending checklist (setup) → overview
   useEffect(() => {
     const tabFromUrl = new URLSearchParams(window.location.search).get("tab");
     if (tabFromUrl) {
       setActiveTab(tabFromUrl);
-    } else if (pendingChecklistItems.length > 0 && activeTab === "overview") {
+      return;
+    }
+    // For customers with an active (non-complete) build, land on the "Your Website" tab
+    const projStage = onboardingProject?.stage;
+    if (projStage && projStage !== "complete" && projStage !== "launch" && activeTab === "overview") {
+      setActiveTab("onboarding");
+      return;
+    }
+    // For post-payment customers with no project yet
+    if (paymentBannerVisible && activeTab === "overview") {
+      setActiveTab("onboarding");
+      return;
+    }
+    if (pendingChecklistItems.length > 0 && activeTab === "overview") {
       setActiveTab("setup");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingChecklistItems.length]);
+  }, [pendingChecklistItems.length, onboardingProject?.stage, paymentBannerVisible]);
 
   const activeContract = contracts?.find((c: any) => c.status === "active" || c.status === "expiring_soon");
   const pendingPaymentContract = contracts?.find((c: any) => c.status === "pending_payment");
@@ -234,17 +268,34 @@ export default function CustomerPortal() {
         <Card className="max-w-md w-full border-border/50">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-12 w-12 text-electric/50 mx-auto mb-4" />
-            <h2 className="text-xl font-serif text-off-white mb-2">No Account Found</h2>
-            <p className="text-sm text-soft-gray font-sans mb-6">
-              We couldn't find a customer account linked to your profile. If you recently purchased, it may take a moment to set up.
+            <h2 className="text-xl font-serif text-off-white mb-2">Account Not Ready Yet</h2>
+            <p className="text-sm text-soft-gray font-sans mb-3">
+              If you recently made a purchase, your account may still be activating. This usually takes less than a minute.
             </p>
-            <Button
-              onClick={() => setLocation("/")}
-              className="bg-electric hover:bg-electric-light text-white font-sans rounded-full px-8"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Button>
+            <p className="text-sm text-soft-gray font-sans mb-6">
+              Try refreshing the page. If this keeps happening, email us at{" "}
+              <a href="mailto:hello@minimorphstudios.net" className="text-electric underline underline-offset-2">
+                hello@minimorphstudios.net
+              </a>{" "}
+              and we'll sort it out quickly.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                onClick={() => window.location.reload()}
+                className="bg-electric hover:bg-electric-light text-white font-sans rounded-full px-8"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button
+                onClick={() => setLocation("/")}
+                variant="outline"
+                className="border-electric/20 text-off-white font-sans rounded-full px-8"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -276,7 +327,9 @@ export default function CustomerPortal() {
             <p className="text-xs sm:text-sm text-off-white/50 font-sans capitalize">
               {activeContract
                 ? `${activeContract.packageTier} Plan · ${activeContract.status.replace(/_/g, " ")}`
-                : "Your MiniMorph website dashboard"}
+                : onboardingProject
+                ? `${(activeContract ?? pendingPaymentContract)?.packageTier ?? "Starter"} Plan · Build in progress`
+                : "Your MiniMorph website — getting started"}
             </p>
           </div>
           <Button variant="outline" onClick={() => setLocation("/")} className="text-off-white border-off-white/20 hover:bg-off-white/10 font-sans text-sm rounded-full w-fit">
@@ -287,9 +340,37 @@ export default function CustomerPortal() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Build Command Center — shown above tabs for all active-build customers */}
+        {onboardingProject && onboardingProject.stage !== "complete" && onboardingProject.stage !== "launch" && (
+          <BuildCommandCenter
+            project={onboardingProject}
+            customer={customer}
+            contract={activeContract}
+            onNavigateToOnboarding={() => setLocation("/onboarding")}
+            onTabChange={setActiveTab}
+          />
+        )}
+        {/* Post-payment, no project yet: show command center with questionnaire stage */}
+        {!onboardingProject && paymentBannerVisible && (
+          <BuildCommandCenter
+            project={null}
+            customer={customer}
+            contract={activeContract}
+            onNavigateToOnboarding={() => setLocation("/onboarding")}
+            onTabChange={setActiveTab}
+          />
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 mb-6 sm:mb-8">
           <TabsList className="bg-midnight-dark/30 rounded-full p-1 w-max sm:w-auto">
+            <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4 relative">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Your Website
+              {onboardingProject && onboardingProject.stage !== "complete" && onboardingProject.stage !== "launch" && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-electric rounded-full" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="setup" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4 relative">
               <ListChecks className="h-3 w-3 mr-1" />
               Setup
@@ -300,13 +381,12 @@ export default function CustomerPortal() {
               )}
             </TabsTrigger>
             <TabsTrigger value="overview" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Overview</TabsTrigger>
-            <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Reports</TabsTrigger>
             <TabsTrigger value="support" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Support</TabsTrigger>
-            <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Upgrades</TabsTrigger>
-            <TabsTrigger value="onboarding" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Onboarding</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Reports</TabsTrigger>
             <TabsTrigger value="billing" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Billing</TabsTrigger>
-            <TabsTrigger value="referrals" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Referrals</TabsTrigger>
+            <TabsTrigger value="upgrades" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Upgrades</TabsTrigger>
             <TabsTrigger value="insights" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Insights</TabsTrigger>
+            <TabsTrigger value="referrals" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">Referrals</TabsTrigger>
             <TabsTrigger value="ai-assistant" className="rounded-full font-sans text-sm data-[state=active]:bg-graphite min-h-[44px] px-3 sm:px-4">
               <Bot className="h-3 w-3 mr-1" /> AI Assistant
             </TabsTrigger>
@@ -328,27 +408,39 @@ export default function CustomerPortal() {
               <Card className="border-border/50">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">Health Score</span>
-                    <CheckCircle className={`h-4 w-4 ${customer.healthScore >= 70 ? "text-green-500" : customer.healthScore >= 40 ? "text-yellow-500" : "text-red-500"}`} />
+                    <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">Website Score</span>
+                    <CheckCircle className={`h-4 w-4 ${customer.healthScore >= 70 ? "text-green-500" : "text-soft-gray/40"}`} />
                   </div>
-                  <div className="text-3xl font-serif text-off-white mb-2">{customer.healthScore}/100</div>
-                  <Progress value={customer.healthScore} className="h-1.5" />
+                  {/* Only show the score if the site is live — otherwise it's misleading */}
+                  {(onboardingProject?.stage === "complete" || onboardingProject?.stage === "launch") ? (
+                    <>
+                      <div className="text-3xl font-serif text-off-white mb-2">{customer.healthScore}/100</div>
+                      <Progress value={customer.healthScore} className="h-1.5" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-base font-serif text-soft-gray mb-1">Available after launch</div>
+                      <p className="text-xs text-soft-gray/50 font-sans">Your website score will appear once your site is live.</p>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
               <Card className="border-border/50">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">Contract</span>
+                    <span className="text-xs text-soft-gray font-sans uppercase tracking-wide">Your Plan</span>
                     {activeContract && <Badge className={`text-[10px] font-sans ${statusColors[activeContract.status] ?? ""}`}>{activeContract.status.replace(/_/g, " ")}</Badge>}
                   </div>
-                  <div className="text-lg font-serif text-off-white capitalize">{activeContract?.packageTier ?? pendingPaymentContract?.packageTier ?? "No active"} Plan</div>
+                  <div className="text-lg font-serif text-off-white capitalize">
+                    {activeContract?.packageTier ?? pendingPaymentContract?.packageTier ?? "Starter"} Plan
+                  </div>
                   {activeContract ? (
                     <p className="text-xs text-soft-gray font-sans mt-1">{daysRemaining} days remaining</p>
                   ) : pendingPaymentContract ? (
                     <p className="text-xs text-amber-400 font-sans mt-1 font-medium">Awaiting payment</p>
                   ) : (
-                    <p className="text-xs text-soft-gray font-sans mt-1">No contract</p>
+                    <p className="text-xs text-soft-gray font-sans mt-1">Plan being activated</p>
                   )}
                 </CardContent>
               </Card>
@@ -365,7 +457,7 @@ export default function CustomerPortal() {
                       <p className="text-xs text-soft-gray font-sans mt-1">{(latestReport.pageViews ?? 0).toLocaleString()} page views</p>
                     </>
                   ) : (
-                    <p className="text-sm text-soft-gray font-sans">No reports yet</p>
+                    <p className="text-sm text-soft-gray font-sans">Reports begin after your website is live.</p>
                   )}
                 </CardContent>
               </Card>
@@ -433,7 +525,7 @@ export default function CustomerPortal() {
               </CardHeader>
               <CardContent>
                 {!nurtureLogs?.length ? (
-                  <p className="text-sm text-soft-gray font-sans text-center py-6">No recent activity</p>
+                  <p className="text-sm text-soft-gray font-sans text-center py-6">No updates yet — your build has just started.</p>
                 ) : (
                   <div className="space-y-3">
                     {nurtureLogs.slice(0, 5).map((log: any) => (
@@ -1322,7 +1414,7 @@ function OnboardingProjectTab({
                           : "bg-midnight text-soft-gray hover:text-off-white border border-border/30"
                       }`}
                     >
-                      {page}
+                      {friendlyPageName(page)}
                     </button>
                   ))}
                 </div>
@@ -1393,7 +1485,7 @@ function OnboardingProjectTab({
                         className="w-full px-2 py-1.5 text-sm font-sans rounded-lg border border-border/40 bg-graphite text-off-white focus:outline-none focus:ring-2 focus:ring-electric/30 focus:border-electric/50"
                       >
                         {pageNames.map(p => (
-                          <option key={p} value={p}>{p}</option>
+                          <option key={p} value={p}>{friendlyPageName(p)}</option>
                         ))}
                         <option value="General">General / Other</option>
                       </select>

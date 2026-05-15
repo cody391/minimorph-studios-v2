@@ -56,6 +56,8 @@ When ready:
         ↓
 [DONE]  Production Generation Test: 5/5 PASS, 100/100 ✅ (projects 46-50, 2026-05-15)
         ↓
+[DONE]  Customer Portal Reality Patch ✅ (BuildCommandCenter, tab reorder, E2E suite)
+        ↓
 [READY] First Controlled Customer — admin approval required
         ↓
         Public Launch
@@ -77,4 +79,5 @@ When ready:
 | Production admin API flow working (generation on server) | ✅ Done |
 | Anthropic API credits sufficient | ✅ Done (credits topped up 2026-05-15) |
 | Production generation test — all 5 sites score 95+/100 | ✅ Done (100/100 each, 2026-05-15) |
+| Customer portal clarity patch deployed | ✅ Done (BuildCommandCenter, tab reorder, E2E tests) |
 | Admin explicitly approves first customer | ❌ Pending |

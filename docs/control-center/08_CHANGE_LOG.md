@@ -5,6 +5,24 @@ For full git history: `git log --oneline`
 
 ---
 
+## Customer Portal Reality Patch — 2026-05-15
+
+**Gate:** Customer Portal Reality Patch Gate
+
+**What changed:**
+- `client/src/components/BuildCommandCenter.tsx` (NEW): Stage card with 7-step progress timeline + "What You Purchased" feature list + "Need Help?" quick-links. Shown unconditionally above all tabs for active-build customers. Returns null after launch.
+- `client/src/pages/CustomerPortal.tsx` (12 surgical edits): Added BuildCommandCenter injection; renamed "Onboarding" tab → "Your Website" (moved to position 1 with Sparkles icon + electric dot); added PAGE_NAME_MAP so page selector shows "Home Page" instead of raw "index"; fixed "No Account Found" → "Account Not Ready Yet" with Refresh button + email link; fixed Overview health score (shows "Available after launch" pre-launch); fixed Plan card ("Plan being activated" for no-contract state); fixed Reports empty ("Reports begin after your website is live."); fixed Activity empty ("No updates yet — your build has just started."); fixed header subtitle to be stage-aware; applied friendlyPageName() to page preview buttons and change-request selector.
+- `client/src/pages/CheckoutSuccess.tsx` (full rewrite): Title "Payment Received", 4-step "What happens next" mentioning Elena and portal explicitly, email fallback section with `hello@minimorphstudios.net`.
+- `tests/portal-customer-experience.spec.ts` (NEW): 16 Playwright tests covering checkout/success copy, account-not-ready state, payment=success state, BuildCommandCenter visibility, "Your Website" first tab, Overview safe empty states, Support tab, page name translation, customer questions ("What did I buy?", "How do I get help?"), mobile viewport, and 4 route smoke tests.
+
+**E2E test run result:** 6 pass, 1 fail (checkout/success email link — not yet deployed), 9 skipped (no ADMIN_PASSWORD). Route smoke tests 4/4 pass. Failing test will resolve after Railway deploys this commit.
+
+**What this proves:** A newly paid customer can immediately understand: what they bought, what happens next, where their site is, what action to take now, how to continue with Elena, and how to get help. The portal no longer shows alarming empty states or meaningless tab labels. pnpm check PASS. pnpm build PASS.
+
+**What this does NOT prove:** Authenticated portal E2E (requires ADMIN_PASSWORD). checkout/success email test against production (requires Railway deploy of this commit).
+
+---
+
 ## Production End-to-End Generation Test Rerun — 2026-05-15 (PASSED 5/5)
 
 **Result:** PASSED — 5/5 sites, 100/100 each
