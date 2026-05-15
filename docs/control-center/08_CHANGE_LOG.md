@@ -8,7 +8,7 @@ For full git history: `git log --oneline`
 ## Blueprint Schema Gate (B6) — 2026-05-15
 
 **Gate:** Blueprint Schema Gate (B6)
-**Commit:** pending push
+**Commit:** 26aaf12
 **Status:** COMPLETE
 
 **What changed:**

@@ -23,7 +23,7 @@
 | B5 Service Template Content Repair | ✅ Done (`2850228`) |
 | Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
 | Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
-| Blueprint Schema Gate (B6) | ✅ Done (pending push) |
+| Blueprint Schema Gate (B6) | ✅ Done (26aaf12) |
 
 ### Why this gate is open
 
@@ -77,7 +77,7 @@ After B7 is closed, proceed to B8 (Claims/Proof Validation), then B9, B10, B11 i
         ↓
 [DONE]  Elena Promise Safety Hotfix ✅ (all unsupported promises removed, 38 safety tests, f29e7a6)
         ↓
-[DONE]  Blueprint Schema Gate (B6) ✅ (CustomerRealityBlueprint type, 9 sections, 85 tests, pending push)
+[DONE]  Blueprint Schema Gate (B6) ✅ (CustomerRealityBlueprint type, 9 sections, 85 tests, 26aaf12)
         ↓
 [ACTIVE] Admin Blueprint Gate (B7) — hard adminBlueprintApprovedAt gate before generation
         ↓
@@ -119,7 +119,7 @@ After B7 is closed, proceed to B8 (Claims/Proof Validation), then B9, B10, B11 i
 | B5 service template content repaired | ✅ Done (contractor language removed, 2850228) |
 | Elena Promise Enforcement Audit | ✅ Done (`943e94d`) |
 | Elena Promise Safety Hotfix | ✅ Done (`f29e7a6`) |
-| B6 Blueprint Schema Gap resolved | ✅ Done (pending push) |
+| B6 Blueprint Schema Gap resolved | ✅ Done (26aaf12) |
 | B7 Admin Blueprint Gate implemented | ❌ Pending (active gate) |
 | B7 Admin Blueprint Gate implemented | ❌ Pending |
 | B8 Claim/Proof Validation implemented | ❌ Pending |
