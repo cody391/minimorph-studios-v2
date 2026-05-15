@@ -27,7 +27,7 @@
 | Admin Blueprint Gate (B7) | ✅ Done (`2682cfb`) |
 | Claim/Proof Validation Gate (B8) | ✅ Done (`70acded`) |
 | Lifecycle Realignment Gate | ✅ Done (`96952f9`) |
-| Add-On Fulfillment Truth Gate (B9) | ✅ Done (TBD commit) |
+| Add-On Fulfillment Truth Gate (B9) | ✅ Done (2484fbe) |
 
 ### Lifecycle Realignment — what changed
 
@@ -104,7 +104,7 @@ After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
         ↓
 [DONE]  Lifecycle Realignment Gate ✅ (`96952f9`)
         ↓
-[DONE]  Add-On Fulfillment Truth Gate (B9) ✅ (TBD commit)
+[DONE]  Add-On Fulfillment Truth Gate (B9) ✅ (2484fbe)
         ↓
 [ACTIVE] Customer Site Preview Approval Gate (B10) — customer views/approves built site
         ↓
@@ -141,7 +141,7 @@ After B10 is closed, proceed to B11 (Blueprint → generator full handoff).
 | B6 Blueprint Schema Gap resolved | ✅ Done (26aaf12) |
 | B7 Admin Blueprint Gate implemented | ✅ Done (`2682cfb`) |
 | B8 Claim/Proof Validation implemented | ✅ Done (`70acded`) |
-| B9 Add-On Truth/Fulfillment Gap resolved | ✅ Done (TBD commit) |
+| B9 Add-On Truth/Fulfillment Gap resolved | ✅ Done (2484fbe) |
 | B10 Customer Site Preview Approval implemented | ❌ Pending |
 | B11 Blueprint → Generator Handoff complete | ❌ Pending |
 | MiniMorph internal dogfood gate | ❌ Pending (after B6–B11) |
