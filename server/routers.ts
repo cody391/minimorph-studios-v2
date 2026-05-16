@@ -3101,6 +3101,101 @@ const onboardingRouter = router({
       return { success: true };
     }),
 
+  // Admin: fetch the structured review packet for a project
+  getAdminReviewPacket: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      const agreements = await db.listCustomerAgreementsByProject(input.projectId);
+
+      let buildReports: any[] = [];
+      let customerRow: any = null;
+      let hasContract = false;
+      const database = await getDb();
+      if (database) {
+        buildReports = await database.select().from(siteBuildReports)
+          .where(eq(siteBuildReports.projectId, input.projectId))
+          .orderBy(desc(siteBuildReports.createdAt))
+          .limit(3);
+        if (project.customerId) {
+          const { customers: customersTable, contracts: contractsTable } = await import("../drizzle/schema");
+          const [cust] = await database.select().from(customersTable).where(eq(customersTable.id, project.customerId)).limit(1);
+          customerRow = cust ?? null;
+          const contractRows = await database.select().from(contractsTable).where(eq(contractsTable.customerId, project.customerId));
+          hasContract = contractRows.length > 0;
+        }
+      }
+
+      const { buildAdminReviewPacket } = await import("../shared/adminReviewPacket");
+      return buildAdminReviewPacket({
+        project: project as any,
+        blueprint: blueprint as any,
+        agreements: agreements as any[],
+        buildReports,
+        customer: customerRow ? { status: customerRow.status, leadId: customerRow.leadId, repId: null } : null,
+        hasContract,
+      });
+    }),
+
+  // Admin: fetch category-specific fix guidance for a denied project
+  getAdminFixGuidance: adminProcedure
+    .input(z.object({ projectId: z.number() }))
+    .query(async ({ input }) => {
+      const project = await db.getOnboardingProjectById(input.projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+      if (!project.adminReviewNotes) return null;
+
+      let parsedDenial: { category: string; reason: string; fixInstructions?: string } | null = null;
+      try {
+        parsedDenial = JSON.parse(project.adminReviewNotes as string);
+      } catch {
+        return null;
+      }
+      if (!parsedDenial?.category || !parsedDenial?.reason) return null;
+
+      const blueprint = await db.getBlueprintByProjectId(input.projectId);
+      const agreements = await db.listCustomerAgreementsByProject(input.projectId);
+      let buildReports: any[] = [];
+      let customerRow: any = null;
+      let hasContract = false;
+      const database = await getDb();
+      if (database) {
+        buildReports = await database.select().from(siteBuildReports)
+          .where(eq(siteBuildReports.projectId, input.projectId))
+          .orderBy(desc(siteBuildReports.createdAt))
+          .limit(1);
+        if (project.customerId) {
+          const { customers: customersTable, contracts: contractsTable } = await import("../drizzle/schema");
+          const [cust] = await database.select().from(customersTable).where(eq(customersTable.id, project.customerId)).limit(1);
+          customerRow = cust ?? null;
+          const contractRows = await database.select().from(contractsTable).where(eq(contractsTable.customerId, project.customerId));
+          hasContract = contractRows.length > 0;
+        }
+      }
+
+      const { buildAdminReviewPacket, buildAdminFixGuidance } = await import("../shared/adminReviewPacket");
+      const packet = buildAdminReviewPacket({
+        project: project as any,
+        blueprint: blueprint as any,
+        agreements: agreements as any[],
+        buildReports,
+        customer: customerRow ? { status: customerRow.status, leadId: customerRow.leadId, repId: null } : null,
+        hasContract,
+      });
+
+      return buildAdminFixGuidance(
+        {
+          category: parsedDenial.category as any,
+          reason: parsedDenial.reason,
+          fixInstructions: parsedDenial.fixInstructions,
+        },
+        packet
+      );
+    }),
+
   // Admin: approve the generated site preview so customer can see it
   adminApprovePreview: adminProcedure
     .input(z.object({ projectId: z.number() }))
@@ -3109,6 +3204,31 @@ const onboardingRouter = router({
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
       if (project.generationStatus !== "complete") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Site generation is not yet complete" });
+      }
+
+      // Admin Review Packet Gate — enforce visibility before approval
+      const agreements = await db.listCustomerAgreementsByProject(input.projectId);
+      const SENTINEL_NAMES_AP = ["customer", "unknown", "test", "testuser", "n/a", "na", "none", "user", "client", "signer", "name", "fullname", "full name", "your name", "enter name", "legal name", "first last"];
+      const hasValidSignerAgreement = agreements.some((a: any) => {
+        if (!a.acceptedAt) return false;
+        const signer = (a.signerName || "").trim();
+        if (signer.length < 2) return false;
+        return !SENTINEL_NAMES_AP.includes(signer.toLowerCase());
+      });
+      if (!project.generatedSiteHtml) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No generated site found — cannot approve preview without a built site" });
+      }
+      const database = await getDb();
+      if (database) {
+        const reports = await database.select().from(siteBuildReports)
+          .where(eq(siteBuildReports.projectId, input.projectId))
+          .limit(1);
+        if (reports.length === 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "No build report found — generation must complete QA before admin approval" });
+        }
+      }
+      if ((project.userId || project.paymentConfirmedAt) && !hasValidSignerAgreement) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Contract issue blocking approval: no accepted service agreement with valid signer name on file" });
       }
       const now = new Date();
       await db.updateOnboardingProject(input.projectId, {
@@ -3158,7 +3278,8 @@ const onboardingRouter = router({
     .input(z.object({
       projectId: z.number(),
       reason: z.string().min(1),
-      fixInstructions: z.string().optional(),
+      denialCategory: z.enum(["text_copy", "design_style", "photo_media", "business_info", "contact_form", "contract_compliance", "other"]),
+      fixInstructions: z.string().min(1),
     }))
     .mutation(async ({ input }) => {
       const project = await db.getOnboardingProjectById(input.projectId);
@@ -3166,20 +3287,27 @@ const onboardingRouter = router({
       if (project.generationStatus !== "complete") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Site generation is not complete — nothing to deny" });
       }
-      const fixNote = input.fixInstructions ? ` Fix instructions: ${input.fixInstructions}` : "";
+      const structuredDenial = JSON.stringify({
+        category: input.denialCategory,
+        reason: input.reason,
+        fixInstructions: input.fixInstructions,
+        deniedAt: new Date().toISOString(),
+      });
       await db.updateOnboardingProject(input.projectId, {
         stage: "revisions",
         generationStatus: "idle",
-        generationLog: `Admin review: changes required — ${input.reason}.${fixNote}`,
+        adminPreviewApprovedAt: null,
+        generationLog: `Admin review: changes required — [${input.denialCategory}] ${input.reason}. Fix: ${input.fixInstructions}`,
+        adminReviewNotes: structuredDenial,
       });
       try {
         const { notifyOwner } = await import("./_core/notification");
         await notifyOwner({
           title: `Site Changes Required: ${project.businessName ?? input.projectId}`,
-          content: `Admin denied preview for project #${input.projectId}.\nReason: ${input.reason}${fixNote}\n\nStage set to: revisions — schedule fix work before re-submitting for admin review.`,
+          content: `Admin denied preview for project #${input.projectId}.\nCategory: ${input.denialCategory}\nReason: ${input.reason}\nFix: ${input.fixInstructions}\n\nStage set to: revisions — schedule fix work before re-submitting for admin review.`,
         });
       } catch {}
-      console.log(`[adminDenyPreview] Project ${input.projectId} preview denied — stage: revisions`);
+      console.log(`[adminDenyPreview] Project ${input.projectId} preview denied — category: ${input.denialCategory}, stage: revisions`);
       return { success: true };
     }),
 

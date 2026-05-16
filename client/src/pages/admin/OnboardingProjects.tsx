@@ -454,6 +454,264 @@ function AdminMediaPanel({ projectId, enabled }: { projectId: number; enabled: b
   );
 }
 
+const DENIAL_CATEGORY_OPTIONS = [
+  { value: "text_copy", label: "Text / Copy" },
+  { value: "design_style", label: "Design Style" },
+  { value: "photo_media", label: "Photo / Media" },
+  { value: "business_info", label: "Business Information" },
+  { value: "contact_form", label: "Contact Form" },
+  { value: "contract_compliance", label: "Contract / Compliance" },
+  { value: "other", label: "Other" },
+];
+
+function AdminReviewPanel({ projectId, enabled }: { projectId: number; enabled: boolean }) {
+  const packetQuery = trpc.onboarding.getAdminReviewPacket.useQuery({ projectId }, { enabled });
+  const packet = packetQuery.data;
+  const hasPriorDenial = !!(packet?.section10?.lastDenialCategory);
+  const guidanceQuery = trpc.onboarding.getAdminFixGuidance.useQuery(
+    { projectId },
+    { enabled: enabled && hasPriorDenial }
+  );
+
+  if (!enabled) return null;
+  if (packetQuery.isLoading) return <div className="text-xs text-gray-400 py-2 animate-pulse">Loading review packet...</div>;
+  if (!packet) return <div className="text-xs text-red-500 py-2">Could not load review packet</div>;
+
+  const { section2, section3, section4, section5, section6, section7, section8, section9, section10, blockers, canApprove } = packet;
+
+  return (
+    <div className="space-y-3 text-xs">
+
+      {/* Approval status */}
+      {blockers.length > 0 ? (
+        <div className="rounded border border-red-200 bg-red-50 p-2 space-y-1">
+          <p className="font-semibold text-red-700 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" /> Approval Blocked ({blockers.length})
+          </p>
+          {blockers.map((b, i) => <p key={i} className="text-red-600 pl-4">• {b}</p>)}
+        </div>
+      ) : (
+        <div className="rounded border border-green-200 bg-green-50 p-2">
+          <p className="font-semibold text-green-700 flex items-center gap-1">
+            <CheckCircle className="w-3 h-3" /> All checks passed — ready for customer review
+          </p>
+        </div>
+      )}
+
+      {/* Customer / card identity */}
+      <div className="rounded border border-gray-200 bg-gray-50 p-2 space-y-1">
+        <p className="font-semibold text-gray-600 uppercase tracking-wide">Customer</p>
+        <div className="grid grid-cols-2 gap-1">
+          <span className="text-gray-500">Name:</span>
+          <span className="text-gray-800">{section2.contactName}</span>
+          <span className="text-gray-500">Email:</span>
+          <span className="text-gray-800">{section2.contactEmail}</span>
+          {section2.contactPhone && (
+            <>
+              <span className="text-gray-500">Phone:</span>
+              <span className="text-gray-800">{section2.contactPhone}</span>
+            </>
+          )}
+          {section2.customerStatus && (
+            <>
+              <span className="text-gray-500">Status:</span>
+              <span className="text-gray-800">{section2.customerStatus}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Contract / payment */}
+      <div className="rounded border border-gray-200 bg-gray-50 p-2 space-y-1">
+        <p className="font-semibold text-gray-600 uppercase tracking-wide">Contract / Agreement</p>
+        <div className="grid grid-cols-2 gap-1">
+          <span className="text-gray-500">Valid signer:</span>
+          <span className={section3.hasValidSignerAgreement ? "text-green-700 font-medium" : "text-red-600 font-medium"}>
+            {section3.hasValidSignerAgreement ? `✓ ${section3.signerName ?? "on file"}` : "✗ missing"}
+          </span>
+          <span className="text-gray-500">Contract:</span>
+          <span className={section3.hasContract ? "text-green-700" : "text-red-600"}>
+            {section3.hasContract ? "✓ on file" : "✗ no contract"}
+          </span>
+          <span className="text-gray-500">Payment:</span>
+          <span className={section3.paymentConfirmedAt ? "text-green-700" : "text-amber-600"}>
+            {section3.paymentConfirmedAt
+              ? `✓ ${new Date(section3.paymentConfirmedAt as unknown as string).toLocaleDateString()}`
+              : "not confirmed"}
+          </span>
+          {section3.contractIssueBlockingCheckout && (
+            <>
+              <span className="text-gray-500">Checkout issue:</span>
+              <span className="text-red-600">{section3.contractIssueBlockingCheckout}</span>
+            </>
+          )}
+          {section3.contractIssueBlockingLaunch && (
+            <>
+              <span className="text-gray-500">Launch issue:</span>
+              <span className="text-red-600">{section3.contractIssueBlockingLaunch}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Intake / customer truth */}
+      {(section4.hasElenaConversation || section4.customerTruth.length > 0 || section4.doNotSayItems.length > 0) && (
+        <div className="rounded border border-gray-200 bg-gray-50 p-2 space-y-1">
+          <p className="font-semibold text-gray-600 uppercase tracking-wide">Intake / Customer Truth</p>
+          {section4.hasElenaConversation && (
+            <p className="text-gray-700">Elena conversation: {section4.messageCount} messages</p>
+          )}
+          {section4.customerTruth.length > 0 && (
+            <div className="mt-1">
+              <span className="text-gray-500 font-medium">Must preserve:</span>
+              {section4.customerTruth.map((t, i) => <p key={i} className="text-green-700 pl-2">✓ {t}</p>)}
+            </div>
+          )}
+          {section4.doNotSayItems.length > 0 && (
+            <div className="mt-1">
+              <span className="text-gray-500 font-medium">Do not say:</span>
+              {section4.doNotSayItems.map((t, i) => <p key={i} className="text-red-600 pl-2">✗ {t}</p>)}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Build report */}
+      <div className="rounded border border-gray-200 bg-gray-50 p-2 space-y-1">
+        <p className="font-semibold text-gray-600 uppercase tracking-wide">Build Report</p>
+        {!section8.hasBuildReport ? (
+          <p className="text-amber-600">No build report found</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-1">
+            <span className="text-gray-500">Status:</span>
+            <span className={section8.buildStatus?.includes("pass") || section8.buildStatus?.includes("commissioned") ? "text-green-700" : "text-amber-600"}>
+              {section8.buildStatus ?? "unknown"}
+            </span>
+            <span className="text-gray-500">QA Score:</span>
+            <span className={(section8.qaScore ?? 0) >= 80 ? "text-green-700 font-medium" : "text-amber-600 font-medium"}>
+              {section8.qaScore !== null ? `${section8.qaScore}/100` : "not scored"}
+            </span>
+            {section8.issuesPersistentCount > 0 && (
+              <>
+                <span className="text-gray-500">Persistent issues:</span>
+                <span className="text-orange-600">{section8.issuesPersistentCount}</span>
+              </>
+            )}
+            {section8.issuesEscalatedCount > 0 && (
+              <>
+                <span className="text-gray-500">Escalated issues:</span>
+                <span className="text-red-600">{section8.issuesEscalatedCount}</span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* B11 Handoff integrity */}
+      {section6.hasHandoffEntry && (
+        <div className="rounded border border-gray-200 bg-gray-50 p-2 space-y-1">
+          <p className="font-semibold text-gray-600 uppercase tracking-wide">Blueprint Handoff (B11)</p>
+          <div className="grid grid-cols-2 gap-1">
+            <span className="text-gray-500">Integrity:</span>
+            <span className={(section6.integrityScore ?? 0) >= 70 ? "text-green-700 font-medium" : "text-amber-600 font-medium"}>
+              {section6.integrityScore !== null ? `${section6.integrityScore}/100` : "unknown"}
+            </span>
+            <span className="text-gray-500">Safe to generate:</span>
+            <span className={section6.safeToGenerate ? "text-green-700" : "text-amber-600"}>
+              {section6.safeToGenerate ? "✓ yes" : "⚠ warnings present"}
+            </span>
+          </div>
+          {section6.warnings.length > 0 && section6.warnings.map((w, i) => (
+            <p key={i} className="text-amber-600 pl-2">• {w}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Generated site */}
+      <div className="rounded border border-gray-200 bg-gray-50 p-2 space-y-1">
+        <p className="font-semibold text-gray-600 uppercase tracking-wide">Generated Site</p>
+        {!section7.hasGeneratedSite ? (
+          <p className="text-red-600">No site generated</p>
+        ) : (
+          <>
+            <p className="text-green-700">{section7.pageCount} pages: {section7.pageNames.join(", ")}</p>
+            {section7.generatedSiteUrl && (
+              <a href={section7.generatedSiteUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 hover:underline mt-1">
+                <ExternalLink className="w-3 h-3" /> Preview site
+              </a>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Blueprint / risk / claims */}
+      {(section5.riskFlags.length > 0 || section5.claimsToOmit.length > 0 || section5.claimsNeedingAdminReview.length > 0 || section5.bannedPhrases.length > 0) && (
+        <div className="rounded border border-amber-200 bg-amber-50 p-2 space-y-1">
+          <p className="font-semibold text-amber-700 uppercase tracking-wide">Blueprint Flags / Claims</p>
+          {section5.templateLane && <p className="text-gray-600">Template lane: <span className="font-mono">{section5.templateLane}</span></p>}
+          {section5.riskFlags.map((f, i) => <p key={i} className="text-amber-700 pl-2">⚑ {f}</p>)}
+          {section5.claimsNeedingAdminReview.map((c, i) => <p key={i} className="text-orange-700 pl-2">⚑ Review: {c}</p>)}
+          {section5.claimsToOmit.map((c, i) => <p key={i} className="text-red-600 pl-2">✗ Omit: {c}</p>)}
+          {section5.bannedPhrases.map((p, i) => <p key={i} className="text-red-600 pl-2">✗ Banned: {p}</p>)}
+        </div>
+      )}
+
+      {/* Add-ons / manual tasks */}
+      {section9.manualAddOnsRequired.length > 0 && (
+        <div className="rounded border border-purple-200 bg-purple-50 p-2 space-y-1">
+          <p className="font-semibold text-purple-700 uppercase tracking-wide">Manual Add-Ons Required</p>
+          {section9.manualAddOnsRequired.map((a, i) => <p key={i} className="text-purple-700 pl-2">• {a}</p>)}
+        </div>
+      )}
+      {section9.adminReviewRecommended && section9.adminReviewReason && (
+        <div className="rounded border border-orange-200 bg-orange-50 p-2">
+          <p className="font-semibold text-orange-700">Admin Review Recommended</p>
+          <p className="text-orange-600 mt-1">{section9.adminReviewReason}</p>
+        </div>
+      )}
+
+      {/* Prior denial + fix guidance */}
+      {section10.lastDenialCategory && (
+        <div className="rounded border border-rose-200 bg-rose-50 p-2 space-y-1">
+          <p className="font-semibold text-rose-700 uppercase tracking-wide">Prior Denial</p>
+          <div className="grid grid-cols-2 gap-1">
+            <span className="text-gray-500">Category:</span>
+            <span className="text-rose-700 font-medium">{section10.lastDenialCategory.replace(/_/g, " ")}</span>
+            <span className="text-gray-500">Reason:</span>
+            <span className="text-rose-700">{section10.lastDenialReason}</span>
+            {section10.lastFixInstructions && (
+              <>
+                <span className="text-gray-500">Fix instructions:</span>
+                <span className="text-rose-700">{section10.lastFixInstructions}</span>
+              </>
+            )}
+          </div>
+          {guidanceQuery.data && (
+            <div className="mt-2 space-y-1 border-t border-rose-200 pt-2">
+              <p className="font-semibold text-rose-700">Fix Guidance — {guidanceQuery.data.categoryLabel}</p>
+              {guidanceQuery.data.primaryGuidance.map((g, i) => <p key={i} className="text-rose-600 pl-2">→ {g}</p>)}
+              {guidanceQuery.data.customerTruthToPreserve.length > 0 && (
+                <div className="mt-1">
+                  <p className="font-medium text-gray-600">Customer truth to preserve:</p>
+                  {guidanceQuery.data.customerTruthToPreserve.map((t, i) => <p key={i} className="text-green-700 pl-2">✓ {t}</p>)}
+                </div>
+              )}
+              {guidanceQuery.data.contentConstraints.length > 0 && (
+                <div className="mt-1">
+                  <p className="font-medium text-gray-600">Content constraints:</p>
+                  {guidanceQuery.data.contentConstraints.map((c, i) => <p key={i} className="text-red-600 pl-2">✗ {c}</p>)}
+                </div>
+              )}
+              <p className="text-purple-700 mt-1 italic">{guidanceQuery.data.rebuildNotes}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OnboardingProjects() {
   const [filterStage, setFilterStage] = useState<string>("all");
   const [markLiveForms, setMarkLiveForms] = useState<Record<number, { open: boolean; liveUrl: string; domainName: string }>>({});
@@ -461,6 +719,8 @@ export default function OnboardingProjects() {
   const [expandedVersions, setExpandedVersions] = useState<Record<number, boolean>>({});
   const [expandedBlueprintRevisions, setExpandedBlueprintRevisions] = useState<Record<number, boolean>>({});
   const [expandedMedia, setExpandedMedia] = useState<Record<number, boolean>>({});
+  const [expandedAdminReview, setExpandedAdminReview] = useState<Record<number, boolean>>({});
+  const [denyForms, setDenyForms] = useState<Record<number, { open: boolean; category: string; reason: string; fixInstructions: string }>>({});
   const [newBuildOpen, setNewBuildOpen] = useState(false);
   const [buildForm, setBuildForm] = useState(EMPTY_FORM);
   const [buildStep, setBuildStep] = useState<"idle" | "creating" | "queuing" | "done">("idle");
@@ -522,12 +782,29 @@ export default function OnboardingProjects() {
     }
   };
 
+  const handleOpenDenyForm = (projectId: number) => {
+    setDenyForms(prev => ({
+      ...prev,
+      [projectId]: prev[projectId]?.open
+        ? { ...prev[projectId], open: false }
+        : { open: true, category: "", reason: "", fixInstructions: "" },
+    }));
+  };
+
   const handleAdminDenyPreview = async (projectId: number) => {
-    const reason = window.prompt("Deny reason (required — describe what needs to be fixed before customer review):");
-    if (!reason?.trim()) return;
+    const form = denyForms[projectId];
+    if (!form?.category) { toast.error("Select a denial category"); return; }
+    if (!form?.reason?.trim()) { toast.error("Denial reason is required"); return; }
+    if (!form?.fixInstructions?.trim()) { toast.error("Fix instructions are required"); return; }
     try {
-      await adminDenyPreviewMutation.mutateAsync({ projectId, reason: reason.trim() });
+      await adminDenyPreviewMutation.mutateAsync({
+        projectId,
+        denialCategory: form.category as any,
+        reason: form.reason.trim(),
+        fixInstructions: form.fixInstructions.trim(),
+      });
       toast.success("Preview denied — site returned to revisions");
+      setDenyForms(prev => ({ ...prev, [projectId]: { open: false, category: "", reason: "", fixInstructions: "" } }));
       projectsQuery.refetch();
     } catch (e: any) {
       toast.error(e?.message || "Failed to deny preview");
@@ -973,13 +1250,10 @@ export default function OnboardingProjects() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleAdminDenyPreview(project.id)}
+                          onClick={() => handleOpenDenyForm(project.id)}
                           disabled={adminDenyPreviewMutation.isPending}
                           className="border-orange-500 text-orange-600 hover:bg-orange-50 h-8"
                         >
-                          {adminDenyPreviewMutation.isPending
-                            ? <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                            : null}
                           Deny — Needs Changes
                         </Button>
                       </>
@@ -1062,6 +1336,89 @@ export default function OnboardingProjects() {
                           Cancel
                         </Button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Admin deny form — structured denial with category + fix instructions */}
+                  {denyForms[project.id]?.open && (
+                    <div className="mt-3 p-4 rounded-lg border border-orange-200 bg-orange-50 space-y-3">
+                      <p className="text-sm font-medium text-orange-800">Deny Preview — Needs Changes</p>
+                      <div>
+                        <label className="text-xs text-orange-700 block mb-1">Denial Category *</label>
+                        <Select
+                          value={denyForms[project.id]?.category || ""}
+                          onValueChange={val => setDenyForms(prev => ({ ...prev, [project.id]: { ...prev[project.id], category: val } }))}
+                        >
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue placeholder="Select category..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {DENIAL_CATEGORY_OPTIONS.map(o => (
+                              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-xs text-orange-700 block mb-1">Denial Reason *</label>
+                        <Textarea
+                          value={denyForms[project.id]?.reason || ""}
+                          onChange={e => setDenyForms(prev => ({ ...prev, [project.id]: { ...prev[project.id], reason: e.target.value } }))}
+                          placeholder="Describe what is wrong..."
+                          className="text-sm min-h-[60px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-orange-700 block mb-1">Fix Instructions *</label>
+                        <Textarea
+                          value={denyForms[project.id]?.fixInstructions || ""}
+                          onChange={e => setDenyForms(prev => ({ ...prev, [project.id]: { ...prev[project.id], fixInstructions: e.target.value } }))}
+                          placeholder="Describe exactly what to fix before re-submitting..."
+                          className="text-sm min-h-[60px]"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAdminDenyPreview(project.id)}
+                          disabled={adminDenyPreviewMutation.isPending}
+                          className="bg-orange-600 hover:bg-orange-700 text-white"
+                        >
+                          {adminDenyPreviewMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                          Confirm Denial
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setDenyForms(prev => ({ ...prev, [project.id]: { open: false, category: "", reason: "", fixInstructions: "" } }))}
+                          className="text-gray-500"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Admin Review Packet — shown for pending_admin_review projects */}
+                  {project.stage === "pending_admin_review" && (
+                    <div className="mt-3 border-t border-rose-100 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedAdminReview(prev => ({ ...prev, [project.id]: !prev[project.id] }))}
+                        className="flex items-center gap-1.5 text-xs font-medium text-rose-600 hover:text-rose-800 transition-colors"
+                      >
+                        <ShieldAlert className="w-3 h-3" />
+                        Admin Review Details
+                        {expandedAdminReview[project.id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                      {expandedAdminReview[project.id] && (
+                        <div className="mt-2 p-3 rounded-lg border border-rose-200 bg-rose-50/30">
+                          <AdminReviewPanel
+                            projectId={project.id}
+                            enabled={!!expandedAdminReview[project.id]}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
 

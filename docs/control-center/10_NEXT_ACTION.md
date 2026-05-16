@@ -1,13 +1,13 @@
 # 10 — Next Action
 
-**Last updated: 2026-05-15**
+**Last updated: 2026-05-16**
 
 ---
 
-## Current Gate: Admin Review Packet + Admin-Side Elena Fix Loop
+## Current Gate: Customer Lifetime Card UI / Full History Timeline
 
 **Priority:** P1
-**Status:** OPEN — next gate after P0 Elena Contract Checkout Failure Gate (B-Card P0 Reopen)
+**Status:** OPEN — next gate after Admin Review Packet + Admin-Side Elena Fix Loop
 
 ### What was completed before this gate
 
@@ -30,6 +30,7 @@
 | Add-On Fulfillment Truth Gate (B9) | ✅ Done (2484fbe) |
 | B-Card Gate (checkout/contract integrity) | ✅ Done (643ca4e) — PARTIALLY REOPENED |
 | B-Card P0 Reopen (Elena contract bypass) | ✅ Done — actual Elena path now enforces agreement |
+| Admin Review Packet + Admin-Side Elena Fix Loop | ✅ Done — structured packet, approve guards, denial form, fix guidance, 52 tests |
 
 ### Lifecycle Realignment — what changed
 
@@ -65,17 +66,44 @@ The original B-Card Gate (643ca4e) blocked the legacy `createCheckout` path. But
 
 ---
 
+## Admin Review Packet + Admin-Side Elena Fix Loop — what changed
+
+Admin can now see the full 10-section review packet for every project in `pending_admin_review`:
+
+1. Project identity (stage, generationStatus, packageTier, source)
+2. Customer/card (name, email, phone, status, rep)
+3. Contract/payment (valid signer, contract on file, payment confirmed, contractIssueBlockingCheckout/Launch)
+4. Elena/intake (conversation count, customer truth to preserve, do-not-say items)
+5. Blueprint (template lane, risk flags, claims to omit, claims needing review, banned phrases)
+6. B11 handoff (integrity score, safeToGenerate, warnings)
+7. Generated site (page count, page names, preview URL)
+8. Build report (status, QA score, persistent/escalated issues)
+9. Claims/risk/add-ons (manual add-ons required, admin review reason)
+10. Prior denial (category, reason, fix instructions, fix guidance)
+
+**adminApprovePreview** now enforces 4 pre-approval guards: generated site HTML must exist, build report must exist, self-service/paid projects must have a valid signer agreement.
+
+**adminDenyPreview** now requires `denialCategory` (7-value enum) and `fixInstructions` (required). Stores structured denial JSON in `adminReviewNotes`. Clears `adminPreviewApprovedAt: null` immediately — customer preview hidden.
+
+**buildAdminFixGuidance()** deterministic helper produces category-specific guidance: customer truth to preserve, content constraints, rebuild notes — shown in admin UI panel.
+
+Customer visibility guarantee:
+- Customer cannot see generated preview until `adminPreviewApprovedAt` set by `adminApprovePreview`
+- `adminDenyPreview` clears `adminPreviewApprovedAt: null` — preview hidden
+- B10 `approveLaunch` still guards on `adminPreviewApprovedAt`
+- `adminReleaseLaunch` still requires customer `approvedAt`
+
 ## Required Next Action
 
-**Admin Review Packet + Admin-Side Elena Fix Loop** — Ensure admin has full visibility into every customer's contract/agreement status before and after generation. Admin must be able to see whether a customer's accepted agreement is valid, whether generation was blocked, and whether manual contract review is needed.
+**Customer Lifetime Card UI / Full History Timeline** — Build the customer-facing lifetime card UI showing the full history of their project: all site builds, all approvals, all revisions, all contract events, all add-ons, all support tickets. Admin should also have a cleaner card view per customer.
 
-After Admin Review Packet is complete, proceed to Internal Dogfood.
+After Customer Lifetime Card UI, proceed to Support + Nurture Pipeline.
 
 ---
 
 ## Remaining Known Blockers Before MiniMorph Dogfood
 
-- None from B6–B11 or B-Card P0. Dogfood is next after Admin Review Packet.
+- None from B6–B11, B-Card P0, or Admin Review Packet. Dogfood is next after Customer Lifetime Card UI.
 
 ## Ecommerce Status — Intentionally Excluded
 
@@ -90,7 +118,7 @@ After Admin Review Packet is complete, proceed to Internal Dogfood.
 
 | # | Gate | Status |
 |---|---|---|
-| 1 | Admin Review Packet + Admin-Side Elena Fix Loop | ❌ Pending |
+| 1 | Admin Review Packet + Admin-Side Elena Fix Loop | ✅ Done |
 | 2 | Customer Lifetime Card UI / Full History Timeline | ❌ Pending |
 | 3 | Support + Nurture Pipeline | ❌ Pending |
 | 4 | Rep / Lead Source / Commission Continuity | ❌ Pending |
@@ -145,11 +173,11 @@ After Admin Review Packet is complete, proceed to Internal Dogfood.
         ↓
 [DONE]  Blueprint → Generator Handoff Gate (B11) ✅ (73947a5)
         ↓
-[DONE]  B-Card P0 Reopen — Elena contract bypass closed ✅ (this commit)
+[DONE]  B-Card P0 Reopen — Elena contract bypass closed ✅ (08e900f)
         ↓
-[ACTIVE] Admin Review Packet + Admin-Side Elena Fix Loop
+[DONE]  Admin Review Packet + Admin-Side Elena Fix Loop ✅
         ↓
-        Customer Lifetime Card UI / Full History Timeline
+[ACTIVE] Customer Lifetime Card UI / Full History Timeline
         ↓
         Support + Nurture Pipeline
         ↓
@@ -201,12 +229,12 @@ After Admin Review Packet is complete, proceed to Internal Dogfood.
 | B10 Customer Site Preview Approval implemented | ✅ Done (ecab8a9) |
 | B11 Blueprint → Generator Handoff complete | ✅ Done (73947a5) |
 | B-Card P0 Reopen — Elena contract bypass closed | ✅ Done (this commit) |
-| Admin Review Packet + Admin-Side Elena Fix Loop | ❌ Pending |
+| Admin Review Packet + Admin-Side Elena Fix Loop | ✅ Done |
 | Customer Lifetime Card UI / Full History Timeline | ❌ Pending |
 | Support + Nurture Pipeline | ❌ Pending |
 | Rep / Lead Source / Commission Continuity | ❌ Pending |
 | Production Notifications + Email Reliability | ❌ Pending |
-| Internal Dogfood | ❌ Pending (after admin packet) |
+| Internal Dogfood | ❌ Pending (after Customer Lifetime Card UI) |
 | Full E2E / Smoke Test | ❌ Pending |
 | POV Simulations | ❌ Pending |
 | Controlled First Outside Customer | ❌ Pending (after dogfood + admin approval) |

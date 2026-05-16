@@ -5,6 +5,50 @@ For full git history: `git log --oneline`
 
 ---
 
+## Admin Review Packet + Admin-Side Elena Fix Loop — 2026-05-16
+
+**Gate:** Admin Review Packet + Admin-Side Elena Fix Loop
+**Commit:** feat: add admin review packet and fix loop
+**Status:** COMPLETE
+
+**What this gate provides:**
+
+Admin can now see every lifecycle-critical field for every project in one structured review packet before approving the generated site for customer preview. The gate enforces: no approval without a built site, a build report, and a valid accepted agreement. Denial is now structured with a required category and fix instructions — no window.prompt. Customer preview remains hidden until admin explicitly approves.
+
+**What changed:**
+
+- `shared/adminReviewPacket.ts` (NEW): `buildAdminReviewPacket()` — pure builder assembling a 10-section structured packet from project/blueprint/agreements/buildReports/customer. Sections: (1) project identity, (2) customer/card, (3) contract/payment status, (4) Elena/intake/customer truth, (5) Blueprint flags/claims/banned phrases/template lane, (6) B11 handoff integrity, (7) generated site pages, (8) build report QA, (9) claims/risk/manual add-ons, (10) approval/denial history. Exposes `blockers[]` and `canApprove`. `buildAdminFixGuidance()` — deterministic, category-specific guidance builder: takes denial (category + reason + fixInstructions) + packet, returns primary guidance, customer truth to preserve, content constraints, rebuild notes. Denial categories: `text_copy`, `design_style`, `photo_media`, `business_info`, `contact_form`, `contract_compliance`, `other`.
+- `server/routers.ts` — `getAdminReviewPacket` (NEW query): fetches project, blueprint, agreements, build reports, customer, contract; calls `buildAdminReviewPacket()`; returns structured 10-section packet with `blockers` and `canApprove`.
+- `server/routers.ts` — `getAdminFixGuidance` (NEW query): parses `adminReviewNotes` JSON from previous denial; calls `buildAdminReviewPacket()` + `buildAdminFixGuidance()`; returns category-specific fix guidance including customer truth to preserve, content constraints, rebuild notes.
+- `server/routers.ts` — `adminApprovePreview` (STRENGTHENED): now enforces 4 pre-approval guards in addition to `generationStatus === "complete"`: (1) `generatedSiteHtml` must exist; (2) at least one `siteBuildReports` row must exist for the project; (3) self-service or paid projects must have a valid signer agreement. Throws `BAD_REQUEST` with specific message for each blocker.
+- `server/routers.ts` — `adminDenyPreview` (ENHANCED): now requires `denialCategory` (z.enum of 7 categories) and `fixInstructions` (z.string().min(1)). Stores structured denial JSON `{ category, reason, fixInstructions, deniedAt }` in `adminReviewNotes`. Clears `adminPreviewApprovedAt: null` — customer preview immediately hidden. Sets `stage: "revisions"`, `generationStatus: "idle"`.
+- `client/src/pages/admin/OnboardingProjects.tsx` — `AdminReviewPanel` component (NEW): lazy-loaded when admin opens "Admin Review Details" on a `pending_admin_review` project. Shows: approval blockers, customer identity (name/email/phone/status), contract/payment status (valid signer, contract on file, payment confirmed, contractIssueBlockingCheckout/Launch), Elena intake (conversation count, customer truth, do-not-say), build report (status, QA score, persistent/escalated issues), B11 handoff (integrity score, safeToGenerate, warnings), generated site (page count, page names, preview URL), blueprint flags (risk flags, claims to omit, claims needing review, banned phrases, template lane), manual add-ons required, admin review reason. Uses `getAdminReviewPacket` query.
+- `client/src/pages/admin/OnboardingProjects.tsx` — structured deny form (REPLACES `window.prompt`): inline form with denial category selector, reason textarea, fix instructions textarea. Sends `denialCategory` + `reason` + `fixInstructions` to `adminDenyPreview` mutation.
+- `client/src/pages/admin/OnboardingProjects.tsx` — prior denial + fix guidance display (NEW): when `section10.lastDenialCategory` is set, loads `getAdminFixGuidance` query and displays prior denial category/reason/fix instructions + full category-specific guidance panel including customer truth to preserve, content constraints, rebuild notes.
+- `server/adminReviewPacketFixLoop.test.ts` (NEW): 52 tests across 10 sections (A–J). A: packet construction (7), B: null safety (4), C: canApprove blocker detection (8), D: buildAdminFixGuidance category guidance (5), E: adminApprovePreview source guards (4), F: adminDenyPreview source schema + storage (5), G: getAdminReviewPacket + getAdminFixGuidance source wiring (4), H: customer visibility gate source (4), I: admin UI source assertions (8), J: regression/export checks (3).
+
+**Customer visibility guarantee:**
+- Customer cannot see generated preview until `adminPreviewApprovedAt` is set by `adminApprovePreview`
+- `adminDenyPreview` clears `adminPreviewApprovedAt: null` immediately — preview hidden again
+- B10 `approveLaunch` still guards on `adminPreviewApprovedAt`
+- `adminReleaseLaunch` still requires customer `approvedAt`
+
+**Test totals:** 52 new + 613 prior gate tests = 665 total gate tests passing. pnpm check clean. pnpm build PASS.
+
+**Remaining open gates (100% docket):**
+1. Customer Lifetime Card UI / Full History Timeline
+2. Support + Nurture Pipeline
+3. Rep / Lead Source / Commission Continuity
+4. Production Notifications + Email Reliability
+5. Internal Dogfood
+6. Full E2E / Smoke Test
+7. POV Simulations
+8. Controlled First Outside Customer
+9. Public Launch Readiness
+10. Production Deployment Verification
+
+---
+
 ## P0 Elena Contract Checkout Failure Reopen — 2026-05-15
 
 **Gate:** B-Card P0 Reopen — Elena Contract Bypass Closed

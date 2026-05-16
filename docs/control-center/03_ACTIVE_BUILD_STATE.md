@@ -1,6 +1,6 @@
 # 03 — Active Build State
 
-**Last updated: 2026-05-15**
+**Last updated: 2026-05-16**
 
 ## Current Project
 
@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**Admin Review Packet + Admin-Side Elena Fix Loop** — B-Card P0 Reopen is complete. The real Elena checkout bypass is now closed. Next gate is Admin Review Packet: ensure admin has full visibility into customer contract/agreement status at every lifecycle stage.
+**Customer Lifetime Card UI / Full History Timeline** — Admin Review Packet gate is complete. Admin can now see the full 10-section review packet, approve/deny with structured denial categories, see fix guidance, and keep customer preview hidden until re-approved. Next gate: Customer Lifetime Card UI / Full History Timeline.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -29,6 +29,7 @@ Previous lanes completed:
 - **Customer Site Preview Approval Gate (B10) ✅** (approveLaunch adminPreviewApprovedAt guard, adminDenyPreview UI button added, requestChange changeCategory field, siteUpdater already correctly clears adminPreviewApprovedAt on revision, 58 tests, pnpm check + build clean)
 - **Blueprint → Generator Handoff Gate (B11) ✅** (BlueprintGeneratorHandoff type, 15-section prompt builder, integrity report 0-100, verbatim preservation, wired into siteGenerator.ts sharedContext + build reporter, 64 tests, pnpm check + build clean)
 - **B-Card P0 Reopen — Elena Contract Checkout Failure Gate ✅** (shared/contractValidation.ts: validateContractReadyForCheckout() helper; createCheckoutAfterElena: replaced inline validation with shared helper, unconditional agreement_id metadata; resendPaymentLink: fatal throw when no project/agreement found — no longer silently proceeds; siteGenerator.ts: Gate 2.5 — self-service projects blocked from generation without valid accepted agreement; getCustomerCardPacket(): lifecycleStatus is now structured object with contractReadyForCheckout/contractIssueBlockingCheckout/contractIssueBlockingGeneration/contractIssueBlockingLaunch; 61 P0 tests, 613 total gate tests, pnpm check + build clean)
+- **Admin Review Packet + Admin-Side Elena Fix Loop ✅** (shared/adminReviewPacket.ts: buildAdminReviewPacket() 10-section packet + buildAdminFixGuidance() category-specific correction guidance; getAdminReviewPacket + getAdminFixGuidance tRPC queries; adminApprovePreview strengthened with 4 pre-approval guards; adminDenyPreview enhanced with required denialCategory + fixInstructions, clears adminPreviewApprovedAt; AdminReviewPanel UI with full packet display, structured deny form, prior denial + fix guidance; 52 new tests, 665 total gate tests, pnpm check + build clean)
 
 ## Latest Known Commit
 
@@ -80,15 +81,15 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**Admin Review Packet + Admin-Side Elena Fix Loop** — Build admin visibility into customer contract/agreement status. Admin must be able to see `contractReadyForCheckout`, `contractIssueBlockingGeneration`, and `contractIssueBlockingLaunch` for every customer. After admin packet, proceed to Internal Dogfood.
+**Customer Lifetime Card UI / Full History Timeline** — Build the customer-facing and admin-facing lifetime card UI: all site builds, all approvals, all revisions, all contract events, all add-ons, all support tickets. Admin should see a clean per-customer history card. After Customer Lifetime Card UI, proceed to Support + Nurture Pipeline.
 
 ## First Customer Status
 
-**NO — Admin Review Packet and Internal Dogfood must complete first.** B-Card P0 Elena bypass is closed, but admin must have full contract visibility and internal dogfood must pass before any outside customer is onboarded.
+**NO — Customer Lifetime Card UI, Support + Nurture Pipeline, and Internal Dogfood must complete first.** Admin Review Packet is complete, but the full pre-launch docket remains.
 
 ## Public Launch Status
 
-**NO.** Remaining docket: Admin Review Packet → Customer Lifetime Card UI → Support + Nurture Pipeline → Rep/Lead/Commission Continuity → Production Notifications → Internal Dogfood → Full E2E → POV Simulations → Controlled First Customer → Public Launch Readiness → Production Deployment Verification.
+**NO.** Remaining docket: Customer Lifetime Card UI → Support + Nurture Pipeline → Rep/Lead/Commission Continuity → Production Notifications → Internal Dogfood → Full E2E → POV Simulations → Controlled First Customer → Public Launch Readiness → Production Deployment Verification.
 
 ## What Was Already Completed
 
@@ -104,6 +105,7 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 - [x] B-Card Gate — createCheckout legacy path permanently blocked (BAD_REQUEST); generateRepPaymentLink agreement creation now fatal; resendPaymentLink passes agreement_id in Stripe metadata; webhook logs [COMPLIANCE_ALERT] when no agreement_id; getCustomerCardPacket() admin helper returns full lifetime card packet; siteBuildReports added to db.ts schema import; 52 B-Card tests passing ✅
 - [x] **Customer Site Preview Approval Gate (B10)** — approveLaunch now guards on adminPreviewApprovedAt (customer cannot approve before admin preview approval); adminDenyPreview UI button added to OnboardingProjects.tsx; requestChange accepts optional changeCategory (text_copy/design_style/photo_media/business_info/contact_form/other); siteUpdater.ts already correctly clears adminPreviewApprovedAt + sets stage: "pending_admin_review" on revision rebuild; approval status derivable from existing fields (no new columns needed); 58 B10 tests passing ✅
 - [x] **Blueprint → Generator Handoff Gate (B11)** — shared/blueprintHandoff.ts: BlueprintGeneratorHandoff type, buildBlueprintGeneratorHandoff(), buildHandoffIntegrityReport(), buildHandoffPromptSections() with 15 labeled sections; siteGenerator.ts wired at 3 points (handoff builder after blueprint gate, prompt injection in sharedContext before questionnaire JSON, build reporter b11_handoff entry); 64 B11 tests passing ✅
+- [x] **Admin Review Packet + Admin-Side Elena Fix Loop** — shared/adminReviewPacket.ts: buildAdminReviewPacket() (10-section packet), buildAdminFixGuidance() (7 denial categories, category-specific guidance, customer truth, content constraints, rebuild notes); getAdminReviewPacket + getAdminFixGuidance tRPC queries; adminApprovePreview strengthened (generated site required, build report required, valid signer agreement required); adminDenyPreview enhanced (denialCategory required, fixInstructions required, adminPreviewApprovedAt cleared); AdminReviewPanel UI (contract status, customer identity, intake/truth, build report, B11 integrity, site pages, risk flags, prior denial + fix guidance); structured deny form (inline selector + textareas, no window.prompt); 52 tests passing ✅
 - [x] service/professional.html P0 fix — removed hardcoded "100% Satisfaction Guarantee" stat (quality rules violation) ✅
 - [x] 37 routing tests covering all industry types added (`server/templateRouting.test.ts`) ✅
 - [x] Customer Portal Reality Patch — newly paid customer can immediately understand what they bought, what happens next, where their site is, what to do next, and how to get help ✅

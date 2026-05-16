@@ -220,6 +220,24 @@ Admin Review Packet completeness. Live production test with real contract. Dogfo
 
 ---
 
+### Admin Review Packet + Admin-Side Elena Fix Loop
+
+**Severity:** P1 — blocks first outside customer
+**Status:** RESOLVED (feat: add admin review packet and fix loop)
+**Discovered:** 2026-05-15 after B-Card P0 Reopen
+**Closed:** 2026-05-16
+
+#### What was fixed
+
+- Admin can now see full 10-section review packet for every project in `pending_admin_review`
+- `adminApprovePreview` enforces: generated site HTML exists, build report exists, valid signer agreement for paid/self-service projects
+- `adminDenyPreview` now requires `denialCategory` (enum of 7) and `fixInstructions` (required string), stores structured denial JSON, clears `adminPreviewApprovedAt: null`
+- `buildAdminFixGuidance()` provides deterministic category-specific fix guidance including customer truth to preserve, content constraints, rebuild notes
+- Admin UI has structured deny form (no more window.prompt), full review panel, prior denial display with fix guidance
+- 52 tests. 665 total gate tests passing. pnpm check clean. pnpm build PASS.
+
+---
+
 ### B2 — ecommerce/product.html: `return false` in Form Handler
 
 **Severity:** INTENTIONALLY EXCLUDED — ecommerce is not part of the current launch path
