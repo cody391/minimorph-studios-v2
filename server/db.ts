@@ -1434,8 +1434,32 @@ export async function getCustomerCardPacket(opts: {
   const leadCostSummary = { totalCostCents: customer.totalLifetimeCostCents ?? 0, totalRevenueCents: customer.totalLifetimeRevenueCents ?? 0 };
 
   // Contract agreements status
+  const SENTINEL_NAMES_DB = ["customer", "unknown", "test", "testuser", "n/a", "na", "none", "user", "client", "signer"];
   const hasAcceptedAgreement = Object.values(agreementsByProject)
     .some(list => list.some((a: any) => a.acceptedAt));
+  const hasValidSignerAgreement = Object.values(agreementsByProject)
+    .some(list => list.some((a: any) => {
+      if (!a.acceptedAt) return false;
+      const signer = (a.signerName || "").trim();
+      if (signer.length < 2) return false;
+      return !SENTINEL_NAMES_DB.includes(signer.toLowerCase());
+    }));
+
+  // Determine contract readiness for each lifecycle phase
+  const hasCard = !!customer.id;
+  const hasContract = customerContracts.length > 0;
+  const hasProject = projects.length > 0;
+  const isLaunched = projects.some((p: any) => p.stage === "launch" || p.stage === "complete");
+  const contractReadyForCheckout = hasValidSignerAgreement;
+  const contractIssueBlockingCheckout = !hasValidSignerAgreement
+    ? "No accepted service agreement with valid signer name found. Customer must accept the agreement before checkout."
+    : null;
+  const contractIssueBlockingGeneration = !hasValidSignerAgreement
+    ? "No valid accepted agreement — generation blocked until agreement is on file."
+    : null;
+  const contractIssueBlockingLaunch = !hasContract
+    ? "No active contract found — cannot launch without a paid contract."
+    : null;
 
   return {
     identity: {
@@ -1471,6 +1495,7 @@ export async function getCustomerCardPacket(opts: {
     })),
     agreementStatus: {
       hasAcceptedAgreement,
+      hasValidSignerAgreement,
       totalAgreements: Object.values(agreementsByProject).reduce((s, l) => s + l.length, 0),
     },
     projects: projects.map((p: any) => ({
@@ -1494,7 +1519,19 @@ export async function getCustomerCardPacket(opts: {
       priority: t.priority,
       createdAt: t.createdAt,
     })),
-    lifecycleStatus: customer.status,
+    lifecycleStatus: {
+      customerStatus: customer.status,
+      hasCard,
+      hasAcceptedAgreement,
+      hasValidSignerAgreement,
+      hasActiveContract: hasContract,
+      hasProject,
+      isLaunched,
+      contractReadyForCheckout,
+      contractIssueBlockingCheckout,
+      contractIssueBlockingGeneration,
+      contractIssueBlockingLaunch,
+    },
     createdAt: customer.createdAt,
   };
 }

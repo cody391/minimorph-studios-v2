@@ -1933,25 +1933,38 @@ const contractsRouter = router({
         if (rep) repName = rep.fullName;
       }
 
-      // 3b. Look up existing agreement for this contract's project (B-Card Gate)
-      let resendAgreementId: string | null = null;
+      // 3b. Look up existing agreement for this contract's project (B-Card P0 — FATAL if missing)
+      // A resent payment link must carry an agreement_id. No agreement = no payment link resend.
+      let resendAgreementId: string;
       try {
         const { customerAgreements: caTable } = await import("../drizzle/schema");
         const { eq: eqFn, desc: descFn } = await import("drizzle-orm");
         const projectRow = await db.getOnboardingProjectByCustomerId(customer.id);
-        if (projectRow) {
-          const [existingAgreement] = await database
-            .select({ id: caTable.id })
-            .from(caTable)
-            .where(eqFn(caTable.projectId, projectRow.id))
-            .orderBy(descFn(caTable.createdAt))
-            .limit(1);
-          if (existingAgreement) {
-            resendAgreementId = String(existingAgreement.id);
-          }
+        if (!projectRow) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot resend payment link — no onboarding project found for customer ${customer.id}. A project with an accepted agreement must exist before a payment link can be sent.`,
+          });
         }
+        const [existingAgreement] = await database
+          .select({ id: caTable.id, signerName: caTable.signerName, acceptedAt: caTable.acceptedAt })
+          .from(caTable)
+          .where(eqFn(caTable.projectId, projectRow.id))
+          .orderBy(descFn(caTable.createdAt))
+          .limit(1);
+        if (!existingAgreement) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Cannot resend payment link — no accepted agreement found for project ${projectRow.id}. Customer must have an accepted service agreement before payment link can be resent.`,
+          });
+        }
+        resendAgreementId = String(existingAgreement.id);
       } catch (e) {
-        console.warn("[resendPaymentLink] Agreement lookup failed (will proceed without):", e instanceof Error ? e.message : String(e));
+        if (e instanceof TRPCError) throw e;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Cannot resend payment link — agreement lookup failed: ${e instanceof Error ? e.message : String(e)}. Admin must ensure customer has an accepted agreement before resending.`,
+        });
       }
 
       // 4. Create new Stripe checkout session (does NOT create duplicate contract/customer)
@@ -1986,7 +1999,7 @@ const contractsRouter = router({
             customer_id: String(customer.id),
             rep_closed: "true",
             self_sourced: isSelfSourced ? "true" : "false",
-            ...(resendAgreementId ? { agreement_id: resendAgreementId } : {}),
+            agreement_id: resendAgreementId,
           },
         },
         metadata: {
@@ -2001,7 +2014,7 @@ const contractsRouter = router({
           customer_id: String(customer.id),
           rep_closed: "true",
           self_sourced: isSelfSourced ? "true" : "false",
-          ...(resendAgreementId ? { agreement_id: resendAgreementId } : {}),
+          agreement_id: resendAgreementId,
         },
         line_items: (() => {
           const priceId = getStripePriceId(contract.packageTier);
@@ -3986,16 +3999,23 @@ const onboardingRouter = router({
       const project = await db.getOnboardingProjectById(input.projectId);
       if (!project) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
 
-      // Verify agreement was recorded before checkout is allowed
-      const agreement = await db.getCustomerAgreementById(input.agreementId);
-      if (!agreement) throw new TRPCError({ code: "BAD_REQUEST", message: "Legal agreement not found. Please accept the terms before proceeding to checkout." });
-      if (agreement.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Agreement does not belong to this account." });
-      if (agreement.projectId !== input.projectId) throw new TRPCError({ code: "BAD_REQUEST", message: "Agreement project mismatch." });
-      if (!agreement.acceptedAt) throw new TRPCError({ code: "BAD_REQUEST", message: "Agreement has not been accepted. Please complete the terms acceptance." });
-      const normalizedSigner = (agreement.signerName || "").trim().toLowerCase();
-      if (normalizedSigner.length < 2 || normalizedSigner === "customer" || normalizedSigner === "unknown") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "A valid legal name is required. Please enter your full name before checkout." });
+      // B-Card P0: Shared contract validation — runs before any Stripe session creation
+      const { validateContractReadyForCheckout } = await import("../shared/contractValidation");
+      const agreementRow = await db.getCustomerAgreementById(input.agreementId);
+      const contractCheck = validateContractReadyForCheckout({
+        agreement: agreementRow as any,
+        expectedUserId: ctx.user.id,
+        expectedProjectId: input.projectId,
+      });
+      if (!contractCheck.ready) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: contractCheck.blockingReason ||
+            "Legal agreement validation failed. Please complete the service agreement before checkout.",
+        });
       }
+      // Convenience alias for remaining code that references agreement
+      const agreement = agreementRow!;
 
       const q = (project.questionnaire || {}) as Record<string, unknown>;
       const packageTier = (q.packageTier as string || project.packageTier || "starter").toLowerCase();
@@ -4104,7 +4124,7 @@ const onboardingRouter = router({
           rep_closed: "true",
           self_sourced: elenaCheckoutSelfSourced ? "true" : "false",
           addons_monthly_total: addonsMonthlyTotal.toFixed(2),
-          ...(input.agreementId ? { agreement_id: String(input.agreementId) } : {}),
+          agreement_id: String(input.agreementId),
         };
       } else {
         // Self-service: no customer yet — webhook uses user_id to create one
@@ -4117,7 +4137,7 @@ const onboardingRouter = router({
           business_name: project.businessName !== "Pending" ? project.businessName || "" : ((q.businessName as string) || ""),
           source: "self_service",
           addons_monthly_total: addonsMonthlyTotal.toFixed(2),
-          ...(input.agreementId ? { agreement_id: String(input.agreementId) } : {}),
+          agreement_id: String(input.agreementId),
           ...((project as any).leadId ? { lead_id: String((project as any).leadId), acquisition_source: (project as any).acquisitionSource || "self_service" } : {}),
         };
       }

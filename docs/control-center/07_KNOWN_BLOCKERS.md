@@ -190,23 +190,45 @@ All approval state is derivable from existing fields:
 
 ---
 
+### B-Card P0 Reopen — Real Elena Checkout Path Bypassed Contract
+
+**Severity:** P0 — real buyer paid without a properly enforced contract
+**Status:** RESOLVED (fix: enforce contract acceptance in Elena checkout path)
+**Discovered:** 2026-05-15 (real incident — customer went through Elena and reached Stripe without valid signed agreement)
+**Closed:** 2026-05-15
+
+#### What was wrong
+
+The original B-Card Gate (643ca4e) blocked `createCheckout` (legacy path). But the real buyer used the **Elena path** (`createCheckoutAfterElena`) — not the legacy path. Three gaps existed:
+
+1. `resendPaymentLink` wrapped the agreement lookup in a try-catch and **silently proceeded without `agreement_id`** if the lookup failed. The Stripe session was created and payment link sent with no agreement_id in metadata.
+2. `createCheckoutAfterElena` conditionally added `agreement_id` via a spread (`...(input.agreementId ? {...} : {})`), creating a path where the metadata could omit it.
+3. `siteGenerator.ts` had no gate for agreements — a self-service project with payment confirmed but no valid agreement could still trigger generation.
+
+#### What was fixed
+
+- `shared/contractValidation.ts` (NEW): `validateContractReadyForCheckout()` — single shared helper checking agreement existence, userId/projectId ownership, acceptedAt, signerName (rejects all sentinel/placeholder names). Returns `{ ready, agreementId, blockingReason, metadataPayload }`.
+- `server/routers.ts` — `createCheckoutAfterElena`: replaced inline validation with `validateContractReadyForCheckout()`. `agreement_id` now unconditional in both metadata blocks.
+- `server/routers.ts` — `resendPaymentLink`: agreement lookup is now **fatal** — throws `BAD_REQUEST` if no project or agreement found; throws `INTERNAL_SERVER_ERROR` on lookup error. No longer silently proceeds. Both metadata blocks unconditionally include `agreement_id`.
+- `server/services/siteGenerator.ts` — Gate 2.5 (NEW): self-service projects blocked from generation without valid accepted agreement with non-sentinel signerName.
+- `server/db.ts` — `getCustomerCardPacket()`: `lifecycleStatus` upgraded from a simple string to a structured object: `{ customerStatus, hasCard, hasAcceptedAgreement, hasValidSignerAgreement, hasActiveContract, hasProject, isLaunched, contractReadyForCheckout, contractIssueBlockingCheckout, contractIssueBlockingGeneration, contractIssueBlockingLaunch }`.
+- `server/elenaContractCheckoutIntegrity.test.ts` (NEW): 61 tests across 13 sections proving every bypass path is closed.
+
+#### What this does NOT prove
+
+Admin Review Packet completeness. Live production test with real contract. Dogfood readiness.
+
+---
+
 ### B2 — ecommerce/product.html: `return false` in Form Handler
 
-**Severity:** P1 for ecommerce customers (not currently in Quality Lab test set)
-**Status:** OPEN
+**Severity:** INTENTIONALLY EXCLUDED — ecommerce is not part of the current launch path
+**Status:** OPEN (excluded from launch docket)
 **Discovered:** 2026-05-15 global template form grep
 
-#### Symptom
+#### Status
 
-`server/templates/ecommerce/product.html` line 741 contains `return false;` in a form handler. This would prevent the form from submitting to the correct endpoint.
-
-#### Fix Required
-
-Fix the ecommerce/product.html form to use the JS fetch handler pattern posting to `APP_URL_PLACEHOLDER/api/contact-submit`, consistent with all other templates.
-
-#### Impact
-
-Blocks ecommerce customers. Does NOT affect the 5 Quality Lab test businesses (roofing, restaurant, salon, gym, landscaping).
+Ecommerce is intentionally excluded from the current 100% launch path. Elena does not offer ecommerce packages. Checkout does not accept them. Generator does not build them. B2 is **not a launch blocker**. It will only become a blocker if Cody explicitly reopens the ecommerce gate.
 
 ---
 

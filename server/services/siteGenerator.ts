@@ -695,6 +695,28 @@ export async function generateSiteForProject(projectId: number): Promise<void> {
     return;
   }
 
+  // Gate 2.5 — For self-service projects, a valid accepted agreement must exist before generation
+  // Payment alone is not enough — the customer must have accepted the service agreement.
+  if (paymentRequired) {
+    const SENTINEL_NAMES = ["customer", "unknown", "test", "testuser", "n/a", "na", "none", "user", "client", "signer"];
+    const projectAgreements = await db.listCustomerAgreementsByProject(projectId);
+    const hasValidAgreement = projectAgreements.some((a: any) => {
+      if (!a.acceptedAt) return false;
+      const signer = (a.signerName || "").trim();
+      if (signer.length < 2) return false;
+      return !SENTINEL_NAMES.includes(signer.toLowerCase());
+    });
+    if (!hasValidAgreement) {
+      console.warn(`[SiteGenerator] Project ${projectId}: blocked — no valid accepted agreement for self-service project`);
+      await db.updateOnboardingProject(projectId, {
+        generationStatus: "idle",
+        generationLog: "Site generation blocked: no accepted service agreement on file. Contact support@minimorphstudios.com to resolve.",
+        stage: "blueprint_review",
+      });
+      return;
+    }
+  }
+
   await db.updateOnboardingProject(projectId, {
     generationStatus: "generating",
     stage: "design",

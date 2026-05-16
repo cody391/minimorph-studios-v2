@@ -4,10 +4,10 @@
 
 ---
 
-## Current Gate: MiniMorph Internal Dogfood Gate
+## Current Gate: Admin Review Packet + Admin-Side Elena Fix Loop
 
 **Priority:** P1
-**Status:** OPEN — next gate after Blueprint → Generator Handoff Gate (B11)
+**Status:** OPEN — next gate after P0 Elena Contract Checkout Failure Gate (B-Card P0 Reopen)
 
 ### What was completed before this gate
 
@@ -28,7 +28,8 @@
 | Claim/Proof Validation Gate (B8) | ✅ Done (`70acded`) |
 | Lifecycle Realignment Gate | ✅ Done (`96952f9`) |
 | Add-On Fulfillment Truth Gate (B9) | ✅ Done (2484fbe) |
-| B-Card Gate (checkout/contract integrity) | ✅ Done (643ca4e) |
+| B-Card Gate (checkout/contract integrity) | ✅ Done (643ca4e) — PARTIALLY REOPENED |
+| B-Card P0 Reopen (Elena contract bypass) | ✅ Done — actual Elena path now enforces agreement |
 
 ### Lifecycle Realignment — what changed
 
@@ -49,27 +50,59 @@ The correct MiniMorph operating model is:
 - `adminDenyPreview()` added: lifecycle step 7 deny path → routes project to "revisions" stage.
 - B10 redefined: customer reviews the **built site** (not Blueprint). Portal "approve site" flow, not "approve Blueprint."
 
-### Why B10 is the next gate
+### B-Card P0 Reopen — what happened and what changed
 
-Customers currently have no mechanism to view or approve the built site before it launches. The customer portal shows build stages but does not give the customer a clear approval step for the generated site. B10 adds the customer-facing site preview approval UI.
+The original B-Card Gate (643ca4e) blocked the legacy `createCheckout` path. But the real buyer went through **Elena** and still reached Stripe — the legacy path was not the actual bypass.
+
+**Root cause:** The Elena-to-Stripe path (`createCheckoutAfterElena`) had an agreement check that used the existing `customerAgreements` system, but `resendPaymentLink` silently proceeded without `agreement_id` when the agreement lookup failed, and the site generator had no gate to block generation when no valid agreement existed.
+
+**What was fixed:**
+- `shared/contractValidation.ts` (NEW): `validateContractReadyForCheckout()` — single shared validation helper used by all website package checkout routes. Validates agreement existence, userId/projectId ownership, acceptedAt, and signerName (rejects all sentinel/placeholder names).
+- `server/routers.ts` — `createCheckoutAfterElena`: replaced inline validation with `validateContractReadyForCheckout()`. `agreement_id` is now unconditional in both top-level metadata and subscription_data.metadata.
+- `server/routers.ts` — `resendPaymentLink`: agreement lookup is now **fatal** — throws `BAD_REQUEST` if no project found, throws `BAD_REQUEST` if no agreement found, throws `INTERNAL_SERVER_ERROR` if lookup errors. No longer silently proceeds without `agreement_id`. Both metadata blocks now unconditionally include `agreement_id`.
+- `server/services/siteGenerator.ts` — Gate 2.5 (NEW): self-service projects are blocked from generation if no valid accepted agreement with a non-sentinel signerName exists. Payment alone is not enough.
+- `server/db.ts` — `getCustomerCardPacket()`: `lifecycleStatus` is now a structured object exposing `contractReadyForCheckout`, `contractIssueBlockingCheckout`, `contractIssueBlockingGeneration`, `contractIssueBlockingLaunch`, `hasValidSignerAgreement`.
 
 ---
 
 ## Required Next Action
 
-**MiniMorph Internal Dogfood Gate** — Reset project 34 (or create a fresh test project), run the full Elena onboarding conversation, generate the site, review the build report (verify B11 handoff integrity entry), and QA the generated output against 06_QUALITY_RULES.md.
+**Admin Review Packet + Admin-Side Elena Fix Loop** — Ensure admin has full visibility into every customer's contract/agreement status before and after generation. Admin must be able to see whether a customer's accepted agreement is valid, whether generation was blocked, and whether manual contract review is needed.
 
-After dogfood passes, proceed to first outside controlled customer.
+After Admin Review Packet is complete, proceed to Internal Dogfood.
 
 ---
 
 ## Remaining Known Blockers Before MiniMorph Dogfood
 
-- None — all B6–B11 gates closed. Dogfood is the next gate.
+- None from B6–B11 or B-Card P0. Dogfood is next after Admin Review Packet.
 
-## Remaining Known Blockers Before Ecommerce Customers
+## Ecommerce Status — Intentionally Excluded
 
-- B2: `server/templates/ecommerce/product.html:741` — `return false` in form handler. Must be fixed before any ecommerce customer is onboarded.
+- **B2**: `server/templates/ecommerce/product.html:741` — `return false` in form handler.
+- **Ecommerce is NOT part of the current launch path.** It is intentionally excluded.
+- Elena does not offer ecommerce. Checkout does not accept ecommerce packages. Generator does not build ecommerce. B2 is not a launch blocker.
+- Ecommerce is a future optional gate only if Cody reopens it.
+
+---
+
+## 100% Completion Docket (Excluding Ecommerce)
+
+| # | Gate | Status |
+|---|---|---|
+| 1 | Admin Review Packet + Admin-Side Elena Fix Loop | ❌ Pending |
+| 2 | Customer Lifetime Card UI / Full History Timeline | ❌ Pending |
+| 3 | Support + Nurture Pipeline | ❌ Pending |
+| 4 | Rep / Lead Source / Commission Continuity | ❌ Pending |
+| 5 | Production Notifications + Email Reliability | ❌ Pending |
+| 6 | Internal Dogfood | ❌ Pending (after admin packet) |
+| 7 | Full E2E / Smoke Test | ❌ Pending |
+| 8 | POV Simulations | ❌ Pending |
+| 9 | Controlled First Outside Customer | ❌ Pending (after dogfood + admin approval) |
+| 10 | Public Launch Readiness | ❌ Pending |
+| 11 | Production Deployment Verification | ❌ Pending |
+
+| Ecommerce (B2) | Intentionally excluded — not a launch blocker |
 
 ---
 
@@ -106,17 +139,37 @@ After dogfood passes, proceed to first outside controlled customer.
         ↓
 [DONE]  Add-On Fulfillment Truth Gate (B9) ✅ (2484fbe)
         ↓
-[DONE]  B-Card Gate (checkout/contract integrity) ✅ (643ca4e)
+[DONE]  B-Card Gate (checkout/contract integrity) ✅ (643ca4e) — legacy path blocked
         ↓
 [DONE]  Customer Site Preview Approval Gate (B10) ✅ (ecab8a9)
         ↓
-[DONE]  Blueprint → Generator Handoff Gate (B11) ✅ — full Blueprint consumed by generator/prompt
+[DONE]  Blueprint → Generator Handoff Gate (B11) ✅ (73947a5)
         ↓
-[ACTIVE] MiniMorph Internal Dogfood Gate — reset project 34, run Elena, generate, QA
+[DONE]  B-Card P0 Reopen — Elena contract bypass closed ✅ (this commit)
         ↓
-        First Outside Controlled Customer
+[ACTIVE] Admin Review Packet + Admin-Side Elena Fix Loop
         ↓
-        Public Launch
+        Customer Lifetime Card UI / Full History Timeline
+        ↓
+        Support + Nurture Pipeline
+        ↓
+        Rep / Lead Source / Commission Continuity
+        ↓
+        Production Notifications + Email Reliability
+        ↓
+        Internal Dogfood
+        ↓
+        Full E2E / Smoke Test
+        ↓
+        POV Simulations
+        ↓
+        Controlled First Outside Customer
+        ↓
+        Public Launch Readiness
+        ↓
+        Production Deployment Verification
+        ↓
+        PUBLIC LAUNCH
 ```
 
 ---
@@ -144,8 +197,19 @@ After dogfood passes, proceed to first outside controlled customer.
 | B7 Admin Blueprint Gate implemented | ✅ Done (`2682cfb`) |
 | B8 Claim/Proof Validation implemented | ✅ Done (`70acded`) |
 | B9 Add-On Truth/Fulfillment Gap resolved | ✅ Done (2484fbe) |
-| B-Card Gate (checkout/contract integrity) | ✅ Done |
+| B-Card Gate (checkout/contract integrity) | ✅ Done (643ca4e) — legacy path blocked |
 | B10 Customer Site Preview Approval implemented | ✅ Done (ecab8a9) |
-| B11 Blueprint → Generator Handoff complete | ✅ Done |
-| MiniMorph internal dogfood gate | ❌ Pending (after B6–B11) |
-| Admin explicitly approves outside first customer | ❌ Pending (after dogfood) |
+| B11 Blueprint → Generator Handoff complete | ✅ Done (73947a5) |
+| B-Card P0 Reopen — Elena contract bypass closed | ✅ Done (this commit) |
+| Admin Review Packet + Admin-Side Elena Fix Loop | ❌ Pending |
+| Customer Lifetime Card UI / Full History Timeline | ❌ Pending |
+| Support + Nurture Pipeline | ❌ Pending |
+| Rep / Lead Source / Commission Continuity | ❌ Pending |
+| Production Notifications + Email Reliability | ❌ Pending |
+| Internal Dogfood | ❌ Pending (after admin packet) |
+| Full E2E / Smoke Test | ❌ Pending |
+| POV Simulations | ❌ Pending |
+| Controlled First Outside Customer | ❌ Pending (after dogfood + admin approval) |
+| Public Launch Readiness | ❌ Pending |
+| Production Deployment Verification | ❌ Pending |
+| Ecommerce (B2) | Intentionally excluded — not a launch blocker |

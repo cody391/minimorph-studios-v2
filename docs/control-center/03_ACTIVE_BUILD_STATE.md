@@ -8,7 +8,7 @@ MMV4 — MiniMorph Studios Website Generator
 
 ## Active Lane
 
-**MiniMorph Internal Dogfood Gate** — B11 Blueprint → Generator Handoff Gate is complete. Next gate is internal dogfood: reset project 34, run full Elena flow, generate, QA.
+**Admin Review Packet + Admin-Side Elena Fix Loop** — B-Card P0 Reopen is complete. The real Elena checkout bypass is now closed. Next gate is Admin Review Packet: ensure admin has full visibility into customer contract/agreement status at every lifecycle stage.
 
 Previous lanes completed:
 - Contact Flow P0 Repair Gate ✅
@@ -28,6 +28,7 @@ Previous lanes completed:
 - **B-Card Gate ✅** (createCheckout blocked, generateRepPaymentLink agreement fatal, resendPaymentLink agreement lookup, webhook COMPLIANCE_ALERT, getCustomerCardPacket helper, 52 tests, pnpm check + build clean)
 - **Customer Site Preview Approval Gate (B10) ✅** (approveLaunch adminPreviewApprovedAt guard, adminDenyPreview UI button added, requestChange changeCategory field, siteUpdater already correctly clears adminPreviewApprovedAt on revision, 58 tests, pnpm check + build clean)
 - **Blueprint → Generator Handoff Gate (B11) ✅** (BlueprintGeneratorHandoff type, 15-section prompt builder, integrity report 0-100, verbatim preservation, wired into siteGenerator.ts sharedContext + build reporter, 64 tests, pnpm check + build clean)
+- **B-Card P0 Reopen — Elena Contract Checkout Failure Gate ✅** (shared/contractValidation.ts: validateContractReadyForCheckout() helper; createCheckoutAfterElena: replaced inline validation with shared helper, unconditional agreement_id metadata; resendPaymentLink: fatal throw when no project/agreement found — no longer silently proceeds; siteGenerator.ts: Gate 2.5 — self-service projects blocked from generation without valid accepted agreement; getCustomerCardPacket(): lifecycleStatus is now structured object with contractReadyForCheckout/contractIssueBlockingCheckout/contractIssueBlockingGeneration/contractIssueBlockingLaunch; 61 P0 tests, 613 total gate tests, pnpm check + build clean)
 
 ## Latest Known Commit
 
@@ -79,15 +80,15 @@ Projects: IDs 46 (Apex Roofing), 47 (Rosa's Kitchen), 48 (Luxe + Bare Studio), 4
 
 ## Required Next Step
 
-**MiniMorph Internal Dogfood Gate** — Reset project 34, run full Elena onboarding conversation, generate site, review build report (including B11 handoff integrity entry), QA generated output against quality rules.
+**Admin Review Packet + Admin-Side Elena Fix Loop** — Build admin visibility into customer contract/agreement status. Admin must be able to see `contractReadyForCheckout`, `contractIssueBlockingGeneration`, and `contractIssueBlockingLaunch` for every customer. After admin packet, proceed to Internal Dogfood.
 
 ## First Customer Status
 
-**NO — Elena promise enforcement audit must complete first.** Blockers B6–B11 are open. Platform cannot guarantee what Elena currently promises.
+**NO — Admin Review Packet and Internal Dogfood must complete first.** B-Card P0 Elena bypass is closed, but admin must have full contract visibility and internal dogfood must pass before any outside customer is onboarded.
 
 ## Public Launch Status
 
-**NO — first controlled customer must complete the full gate sequence, including Elena promise enforcement, Blueprint schema, admin gate, customer approval, and generator handoff verification.**
+**NO.** Remaining docket: Admin Review Packet → Customer Lifetime Card UI → Support + Nurture Pipeline → Rep/Lead/Commission Continuity → Production Notifications → Internal Dogfood → Full E2E → POV Simulations → Controlled First Customer → Public Launch Readiness → Production Deployment Verification.
 
 ## What Was Already Completed
 

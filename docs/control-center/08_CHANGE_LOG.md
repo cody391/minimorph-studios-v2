@@ -5,6 +5,44 @@ For full git history: `git log --oneline`
 
 ---
 
+## P0 Elena Contract Checkout Failure Reopen — 2026-05-15
+
+**Gate:** B-Card P0 Reopen — Elena Contract Bypass Closed
+**Commit:** fix: enforce contract acceptance in Elena checkout path
+**Status:** COMPLETE
+
+**Incident:** A real buyer went through the Elena onboarding flow and reached Stripe without a properly enforced service agreement. The original B-Card Gate blocked `createCheckout` (the legacy path), but the actual incident was in `createCheckoutAfterElena` (the Elena path) and `resendPaymentLink` (the admin resend path). The legacy path fix was correct but incomplete.
+
+**What changed:**
+
+- `shared/contractValidation.ts` (NEW): `validateContractReadyForCheckout()` — single shared contract validation helper. Validates: agreement exists, belongs to same userId, belongs to same projectId, `acceptedAt` is non-null, `signerName` is ≥2 chars and not in the sentinel list (customer/unknown/test/none/etc.). Returns `{ ready, agreementId, blockingReason, missingRequirements, metadataPayload }`. `SENTINEL_SIGNER_NAMES` exported for use in gate logic.
+- `server/routers.ts` — `createCheckoutAfterElena`: replaced inline agreement validation with `validateContractReadyForCheckout()`. `agreement_id` is now unconditional in both `subscription_data.metadata` and top-level `metadata` (previously conditional on `input.agreementId` being truthy via spread — could in theory be omitted).
+- `server/routers.ts` — `resendPaymentLink`: **critical bypass closed** — agreement lookup upgraded from silent warn-and-continue to fatal throw. If no project found → throws `BAD_REQUEST`. If no agreement found → throws `BAD_REQUEST`. If lookup errors → throws `INTERNAL_SERVER_ERROR`. `agreement_id` now unconditional in both metadata blocks.
+- `server/services/siteGenerator.ts` — Gate 2.5 (NEW): self-service projects (`source === "self_service"`) are blocked from generation unless at least one `customerAgreements` row exists with non-null `acceptedAt` and a non-sentinel `signerName`. Payment confirmed alone is no longer sufficient — a valid accepted agreement must be on file.
+- `server/db.ts` — `getCustomerCardPacket()`: `lifecycleStatus` upgraded from a simple string (`customer.status`) to a structured object exposing: `customerStatus`, `hasCard`, `hasAcceptedAgreement`, `hasValidSignerAgreement`, `hasActiveContract`, `hasProject`, `isLaunched`, `contractReadyForCheckout`, `contractIssueBlockingCheckout`, `contractIssueBlockingGeneration`, `contractIssueBlockingLaunch`. Admin can now determine contract gate status from a single packet call.
+- `server/elenaContractCheckoutIntegrity.test.ts` (NEW): 61 tests across 13 sections (A–M). Sections: A (no agreement → blocked), B (ownership — wrong userId/projectId), C (acceptedAt null), D (sentinel signerNames — 9 tests), E (valid agreement happy path — 7 tests), F (source code: createCheckoutAfterElena uses shared helper, unconditional agreement_id), G (source code: resendPaymentLink throws not warns, unconditional agreement_id), H (source code: siteGenerator Gate 2.5), I (generation gate logic mirror — 7 tests), J (source code: getCustomerCardPacket contract readiness fields), K (frontend contract gate in Onboarding.tsx and GetStarted.tsx), L (webhook COMPLIANCE_ALERT), M (only one purchase door).
+
+**What this proves:** The actual Elena checkout path cannot create a Stripe session without a `validateContractReadyForCheckout()` call that passes. `agreement_id` is unconditional in all Stripe metadata. `resendPaymentLink` cannot silently bypass the agreement requirement. Site generation cannot start for self-service projects without a valid accepted agreement. Admin can see contract readiness at every lifecycle gate. 61 P0 tests + 552 prior gate tests = 613 total gate tests passing. pnpm check clean. pnpm build PASS.
+
+**What this does NOT prove:** Admin Review Packet completeness. Live production run with real contract acceptance. Internal dogfood.
+
+**Remaining open gates (100% docket):**
+1. Admin Review Packet + Admin-Side Elena Fix Loop
+2. Customer Lifetime Card UI / Full History Timeline
+3. Support + Nurture Pipeline
+4. Rep / Lead Source / Commission Continuity
+5. Production Notifications + Email Reliability
+6. Internal Dogfood
+7. Full E2E / Smoke Test
+8. POV Simulations
+9. Controlled First Outside Customer
+10. Public Launch Readiness
+11. Production Deployment Verification
+
+**Ecommerce (B2): Intentionally excluded — not a launch blocker.**
+
+---
+
 ## Blueprint → Generator Handoff Gate (B11) — 2026-05-15
 
 **Gate:** B11 — Blueprint → Generator Verbatim Handoff
