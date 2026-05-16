@@ -111,3 +111,8 @@ temp/
 
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
+
+# Playwright test results
+test-results/
+# Claude system files
+.claude/scheduled_tasks.lock
